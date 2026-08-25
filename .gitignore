@@ -1,0 +1,22 @@
+# Internal working documents stay local. Only the product statement is tracked.
+docs/*
+!docs/00-PRODUCT-STATEMENT.md
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.log
+
+# Node / React Native
+node_modules/
+.expo/
+*.jsbundle
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+.env
+.env.local
