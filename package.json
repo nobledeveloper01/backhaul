@@ -1,0 +1,19 @@
+{
+  "name": "backhaul",
+  "private": true,
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "ci": "pnpm typecheck && pnpm lint && pnpm test && ./scripts/doc-check.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.5",
+    "typescript": "^5.9.2"
+  }
+}
