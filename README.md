@@ -54,7 +54,7 @@ of the defects in §8 were found.
 | Domain tests | **140** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
-| App tests | **16** passing |
+| App tests | **18** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Screens | shipper, carrier and driver faces, both themes |
 | Authentication | **none** — see §11 |
@@ -493,11 +493,10 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 - **A real map.** The shipper sees a corridor drawn to scale, not tiles. That
   is deliberate for phase 0 and pinned to phase 2's exit gate rather than to
   anyone's judgement about whether it still feels sufficient — see ADR-0006.
-- **A persisted theme preference.** The switcher works; the choice does not
-  survive a restart. It needs a native storage dependency, which is not the
-  trade at phase 0.
-- **Android.** The app is built and verified on iOS only. The definition of
-  done requires a physical Transsion handset and that has not happened.
+- **Android on real hardware.** The app builds for Android; the definition of
+  done requires a physical Transsion handset — a Tecno or an Infinix — which is
+  where the battery and OEM-kill risks actually live, and no emulator stands in
+  for them.
 - **Corridor-segmented ETA.** What exists is the fallback tier — pace from the
   trip's own track, or a class average, marked as modelled either way. The
   empirical model needs a corpus of completed trips; building it now would

@@ -1,8 +1,19 @@
 buildscript {
     ext {
-        buildToolsVersion = "37.0.0"
+        // React Native 0.87 generates `compileSdkVersion = 37` and
+        // `buildToolsVersion = "37.0.0"`. Build-tools 37 is published; the
+        // *platform* android-37 is not — `sdkmanager` answers "Failed to find
+        // package 'platforms;android-37'", and a build against it dies with
+        // "Failed to find target with hash string 'android-37'", which reads
+        // like a broken SDK install rather than a platform that does not exist
+        // yet. A sibling project lost an afternoon to the same message.
+        //
+        // Compiled against the newest published platform instead. Revisit when
+        // android-37 reaches the stable channel; nothing here needs an API
+        // only it has.
+        buildToolsVersion = "36.1.0"
         minSdkVersion = 24
-        compileSdkVersion = 37
+        compileSdkVersion = 36
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.2.0"

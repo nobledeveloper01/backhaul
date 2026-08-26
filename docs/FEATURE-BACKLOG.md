@@ -67,18 +67,22 @@ interpolated position.
 
 ## Small, and known
 
-### F8 — The theme preference does not persist
+### F8 — Android on real hardware
 
-The switcher works and the choice resets on relaunch. Persisting it needs a
-native storage dependency and another CocoaPods cycle, which was not the trade
-at phase 0 — but a preference that resets every launch is a real annoyance, not
-a theoretical one. See ADR-0007.
+The app builds for Android and runs on an emulator. The definition of done
+requires a **physical Transsion handset** — a Tecno or an Infinix — which is
+where the battery and OEM-kill risks actually live, and no emulator can stand
+in for them. Nothing in phase 1's exit gate can be signed off without one.
 
-### F9 — Android
+### F9 — `compileSdk` is pinned behind React Native's default
 
-The app is built and verified on iOS. The definition of done requires a
-physical Transsion handset, which is where the battery and OEM-kill risks
-actually live, and that has not happened.
+RN 0.87 generates `compileSdkVersion = 37`. Build-tools 37 is published; the
+platform `android-37` is not, so the build dies with "Failed to find target
+with hash string 'android-37'" — which reads like a broken SDK install rather
+than a platform that does not exist yet.
+
+Compiled against 36 instead. Nothing here needs an API only 37 has. Revisit
+when android-37 reaches the stable channel.
 
 ---
 

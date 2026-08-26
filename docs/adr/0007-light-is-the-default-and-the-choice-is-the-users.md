@@ -46,11 +46,20 @@ A user whose phone is in dark mode sees a light app until they say otherwise.
 That is the intended trade and it is the one that is wrong least often, but it
 will surprise somebody.
 
-**The preference does not survive a restart.** It is React state, not storage.
-Persisting it needs a native storage dependency and another CocoaPods cycle,
-which is not the trade at phase 0 — but a preference that resets every launch
-is a real annoyance rather than a theoretical one, and it is in
-`docs/FEATURE-BACKLOG.md` rather than left to be rediscovered.
+**The preference is stored**, in `AsyncStorage` under
+`backhaul.appearance.v1`. It was React state at first and reset on every
+launch, which is a small annoyance that arrives every single time.
+
+Two details of the storage are deliberate:
+
+- **The app renders in the default while the read resolves.** A dark-preferring
+  user sees a frame or two of light. That is the right way round — starting
+  dark and flashing to light is worse, and blocking the first render on a disk
+  read to avoid either is worse still.
+- **The write is fire-and-forget.** The choice has already taken effect on
+  screen; a failed write costs the user the same tap next launch and nothing
+  more, and there is nothing useful to tell them about it. Unreadable storage
+  falls back to the default rather than failing to start.
 
 Two palettes to keep honest rather than one. That cost is already paid: every
 colour is a semantic token, no screen names a hex, and the elevation scale has

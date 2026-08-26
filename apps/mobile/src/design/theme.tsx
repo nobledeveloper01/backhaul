@@ -2,11 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { elevation, palette, type Colours, type Elevation } from './tokens';
 
@@ -30,6 +32,12 @@ export type ThemePreference = 'light' | 'dark' | 'system';
  */
 const DEFAULT: ThemePreference = 'light';
 
+const STORAGE_KEY = 'backhaul.appearance.v1';
+
+function isPreference(value: unknown): value is ThemePreference {
+  return value === 'light' || value === 'dark' || value === 'system';
+}
+
 interface Theme {
   readonly colours: Colours;
   readonly isDark: boolean;
@@ -52,7 +60,37 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const isDark = preference === 'system' ? scheme === 'dark' : preference === 'dark';
 
-  const change = useCallback((next: ThemePreference) => setPreference(next), []);
+  // Read once at start-up.
+  //
+  // The app renders in the default while this resolves, which is a frame or
+  // two of light before a dark-preferring user's choice lands. That is the
+  // right way round: starting dark and flashing to light would be worse, and
+  // blocking the first render on a disk read to avoid it would be worse still.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!cancelled && isPreference(stored)) {
+          setPreference(stored);
+        }
+      } catch {
+        // Unreadable storage is not a reason to fail to start. The default is
+        // a perfectly good answer and the user can set it again.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const change = useCallback((next: ThemePreference) => {
+    setPreference(next);
+    // Fire and forget. The choice has already taken effect on screen; a write
+    // that fails costs the user the same tap next launch and nothing more, and
+    // there is nothing useful to tell them about it.
+    void AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
+  }, []);
 
   const value = useMemo<Theme>(
     () => ({

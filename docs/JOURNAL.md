@@ -6,6 +6,47 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 — The API client, a round trip that holds both wire formats to each other, and a persisted appearance
+
+**Did.** Wrote the app's API client — a sealed result rather than exceptions,
+because a driver offline for hours is a normal condition and not an error path.
+Added `make round-trip`, which drives the running server through that client
+and demands the two agree. Persisted the appearance preference. Started on
+Android.
+
+### What surprised us
+
+**The round trip found nothing, and that is the point of having written it.**
+Parity fixtures hold the two *domains* to the same answers; nothing was holding
+the two *serialisers* to each other, and the last time these two spoke
+different spellings of the same instant it took a fixture comparing refusal
+wording character-for-character to notice. The check now runs the same position
+fixes through the TypeScript domain and the C# server and compares: same fixes
+kept and dropped, same distance to the metre, same observation.
+
+**Node's type-stripping cannot erase a TypeScript parameter property.** The
+client used constructor shorthand, which the round-trip script could not load —
+stripping can delete a type but not *emit* an assignment. Anything in this
+repository a script might import has to stay strip-compatible, which is a
+constraint worth knowing before it is discovered at the point of use.
+
+**React Native 0.87 generates a `compileSdkVersion` that does not exist.**
+Build-tools 37 is published; the platform `android-37` is not, so `sdkmanager`
+answers "Failed to find package" and Gradle answers "Failed to find target with
+hash string 'android-37'" — which reads like a broken SDK install. Grid lost an
+afternoon to the same message inside a Docker build. Pinned to 36, with the
+reason written next to it in `build.gradle`.
+
+**pnpm and Jest each ate a round on packaging, not on code.** `async-storage`
+ships untranspiled ESM, so every test that touched the theme died on "Cannot
+use import statement outside a module" pointing at a file nobody here wrote.
+
+**The appearance preference was verified by killing the app.** Set dark,
+terminate, relaunch — still dark. That is a thirty-second check and the only
+kind that actually proves persistence.
+
+
+
 ## 2026-08-26 (evening) — Screens, and what looking at them found
 
 **Did.** Built the React Native app: RN 0.87 on the New Architecture,

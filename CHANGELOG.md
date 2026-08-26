@@ -52,6 +52,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   with the record shown beside the price so the shipper can overrule the order.
   A new carrier ranks as unknown, not as bad.
 
+### Changed
+
+- The appearance choice now survives a restart.
+
 ### Fixed
 
 - The driver screen offered "signal lost" and "stalled" as buttons. Both are

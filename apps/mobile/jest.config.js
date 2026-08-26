@@ -8,7 +8,11 @@ module.exports = {
   moduleNameMapper: {
     '^@backhaul/domain$': '<rootDir>/../../packages/domain/src/index.ts',
   },
+  // Packages that ship untranspiled ESM and have to go through Babel.
+  // `async-storage` is the one that surfaced this: every test that touched the
+  // theme died on "Cannot use import statement outside a module", pointing at
+  // a file nobody in this repository wrote.
   transformIgnorePatterns: [
-    'node_modules/(?!(@react-native|react-native|@backhaul)/)',
+    'node_modules/(?!(@react-native|react-native|@backhaul|@react-native-async-storage)/)',
   ],
 };
