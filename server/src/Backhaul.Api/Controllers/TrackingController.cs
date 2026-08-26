@@ -1,3 +1,4 @@
+using Backhaul.Api.Auth;
 using Backhaul.Api.Contracts;
 using Backhaul.Domain.Tracking;
 using Backhaul.Domain.Trips;
@@ -12,7 +13,8 @@ namespace Backhaul.Api.Controllers;
 public sealed class TrackingController(
     PositionRepository positions,
     TripRepository trips,
-    TimeProvider clock) : ControllerBase
+    TimeProvider clock,
+    ILogger<TrackingController> log) : AuthorisedController
 {
     /// <summary>Submit a batch of position samples.</summary>
     /// <remarks>
@@ -39,19 +41,39 @@ public sealed class TrackingController(
         [FromBody] TrackingBatchRequest body,
         CancellationToken ct)
     {
-        var state = await trips.StateOfAsync(body.TripId, ct);
-        if (state is null)
+        var trip = await trips.StateOfAsync(body.TripId, Caller, ct);
+        if (trip is null)
         {
+            return NotFound("No such trip. Create the trip before sending positions for it.");
+        }
+
+        var (state, parties) = trip.Value;
+
+        // Only the driver may add to a position history. A carrier watching
+        // the truck and a shipper watching their goods can both read the
+        // track; neither can write to it, and a history a second party can
+        // append to is not evidence of anything.
+        if (!parties.MayReport(Caller))
+        {
+            // Logged rather than explained. The response says nothing about
+            // who may report, and a genuine permissions bug otherwise looks
+            // like missing data with nothing to go on. See ADR-0008.
+            log.LogWarning(
+                "Rejected positions for trip {TripId} from {Role} {UserId}, who is not its driver",
+                body.TripId,
+                Caller.Role,
+                Caller.UserId);
+
             return NotFound("No such trip. Create the trip before sending positions for it.");
         }
 
         // There is no off-trip tracking, and the server enforces it rather than
         // trusting the client to. A modified app must not be able to build a
         // position history for a truck that is not on a job.
-        if (!TripMachine.ShouldTrack(state.Value))
+        if (!TripMachine.ShouldTrack(state))
         {
             return UnprocessableEntity(
-                $"This trip is '{TripMachine.ToWire(state.Value)}' and is not tracking. " +
+                $"This trip is '{TripMachine.ToWire(state)}' and is not tracking. " +
                 "Positions are only recorded while a trip is under way.");
         }
 
@@ -87,12 +109,12 @@ public sealed class TrackingController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TrackResponse>> Track(Guid tripId, CancellationToken ct)
     {
-        if (!await trips.ExistsAsync(tripId, ct))
+        if (!await trips.ExistsAsync(tripId, Caller, ct))
         {
             return NotFound("No such trip.");
         }
 
-        var raw = await positions.ForTripAsync(tripId, ct);
+        var raw = await positions.ForTripAsync(tripId, Caller, ct);
         var cleaned = Geo.Clean(raw);
         var now = clock.GetUtcNow();
         var silent = Tracker.SilentFor(cleaned.Kept, now);

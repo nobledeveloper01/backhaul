@@ -4,6 +4,24 @@ namespace Backhaul.Api.Contracts;
 
 public sealed class OpenTripRequest
 {
+    /// <summary>Who carries it.</summary>
+    /// <remarks>
+    /// The three parties are fixed when the trip opens and are what every
+    /// later read is filtered against. "The carrier who employs this driver"
+    /// changes over time; who could see a trip in March is a fact about March.
+    /// See ADR-0008.
+    /// </remarks>
+    [Required]
+    public Guid DriverId { get; set; }
+
+    /// <summary>Who owns the truck.</summary>
+    [Required]
+    public Guid CarrierId { get; set; }
+
+    /// <summary>Who owns the goods.</summary>
+    [Required]
+    public Guid ShipperId { get; set; }
+
     [Required]
     public DateTimeOffset At { get; set; }
 

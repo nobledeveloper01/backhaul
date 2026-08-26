@@ -19,12 +19,26 @@ import type { Position, TripEvent, TripState } from '@backhaul/domain';
 export type ApiFailure =
   /** No network, or the server did not answer. */
   | { readonly kind: 'unreachable'; readonly detail: string }
-  /** The server answered, and said no. */
+  /**
+   * The server answered, and said no.
+   *
+   * A 401 means the token is missing, wrong or expired. A 404 on a trip may
+   * mean it does not exist *or* that this caller may not see it — the server
+   * does not distinguish, on purpose, because the existence of a trip id is
+   * itself information.
+   */
   | { readonly kind: 'refused'; readonly status: number; readonly detail: string };
 
 export type ApiResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly failure: ApiFailure };
+
+/** Who can see a trip: its driver, its carrier and its shipper. */
+export interface TripParties {
+  readonly driverId: string;
+  readonly carrierId: string;
+  readonly shipperId: string;
+}
 
 export interface TripView {
   readonly id: string;
@@ -67,23 +81,53 @@ export class BackhaulApi {
   // this repository that a script might import has to stay strip-compatible.
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private token: string | null;
 
-  constructor(baseUrl: string = DEFAULT_BASE_URL, timeoutMs: number = 8000) {
+  constructor(
+    baseUrl: string = DEFAULT_BASE_URL,
+    token: string | null = null,
+    timeoutMs: number = 8000,
+  ) {
     this.baseUrl = baseUrl;
+    this.token = token;
     this.timeoutMs = timeoutMs;
+  }
+
+  /**
+   * Sets or clears the bearer token.
+   *
+   * Held in memory only. A token belongs in the Keychain or the Keystore, and
+   * `AsyncStorage` is neither — it is unencrypted on disk, which is fine for
+   * an appearance preference and not for a credential. Secure storage arrives
+   * with the phone-plus-OTP exchange in phase 3; until then a token lives as
+   * long as the process and is passed in at construction.
+   */
+  setToken(token: string | null): void {
+    this.token = token;
   }
 
   async health(): Promise<ApiResult<{ status: string; store: string; durable: boolean }>> {
     return this.request('GET', '/healthz');
   }
 
+  /**
+   * Opens a trip.
+   *
+   * The three parties are fixed here and are what every later read is filtered
+   * against — the caller must be one of them or the server refuses. See
+   * ADR-0008.
+   */
   async openTrip(
     id: string,
+    parties: TripParties,
     at: Date,
     actor: TripEvent['actor'],
     note?: string,
   ): Promise<ApiResult<TripView>> {
     const result = await this.request<RawTrip>('POST', `/v1/trips/${id}`, {
+      driverId: parties.driverId,
+      carrierId: parties.carrierId,
+      shipperId: parties.shipperId,
       at: at.toISOString(),
       actor,
       ...(note === undefined ? {} : { note }),
@@ -156,10 +200,18 @@ export class BackhaulApi {
     const timer = setTimeout(() => abort.abort(), this.timeoutMs);
 
     try {
+      const headers: Record<string, string> = {};
+      if (body !== undefined) {
+        headers['content-type'] = 'application/json';
+      }
+      if (this.token !== null) {
+        headers['authorization'] = `Bearer ${this.token}`;
+      }
+
       const response = await fetch(`${this.baseUrl}${path}`, {
         method,
         signal: abort.signal,
-        headers: body === undefined ? {} : { 'content-type': 'application/json' },
+        headers,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
 

@@ -52,6 +52,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   with the record shown beside the price so the shipper can overrule the order.
   A new carrier ranks as unknown, not as bad.
 
+### Security
+
+- **Every endpoint except `/healthz` now needs a bearer token**, and a trip is
+  visible only to its driver, its carrier and its shipper. Anyone else is told
+  it does not exist rather than that they may not see it — the existence of a
+  trip id is itself information.
+- **Only a trip's driver can add positions to it.** A carrier watching the
+  truck and a shipper watching their goods can both read the track; neither can
+  write to it, because a position history a second party can append to is not
+  evidence of anything.
+- Tokens are stored as a SHA-256 hash. The value itself exists once, when it is
+  issued, and is never shown again.
+
 ### Changed
 
 - The appearance choice now survives a restart.

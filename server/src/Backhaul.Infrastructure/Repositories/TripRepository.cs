@@ -1,51 +1,139 @@
+using Backhaul.Domain.Access;
 using Backhaul.Domain.Trips;
 using Backhaul.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backhaul.Infrastructure.Repositories;
 
-public sealed record TripRecord(Guid Id, IReadOnlyList<TripEvent> History);
+public sealed record TripRecord(Guid Id, TripParties Parties, IReadOnlyList<TripEvent> History);
 
+/// <summary>
+/// Trips, and who may see them.
+/// </summary>
+/// <remarks>
+/// <para>
+/// **Every method that returns a trip takes a <see cref="Principal"/>**, and
+/// the principal is composed into the query rather than checked after it. A
+/// controller check protects the endpoint you remembered; a query filter
+/// protects the ones written next year. See ADR-0008.
+/// </para>
+/// <para>
+/// An unauthorised read comes back empty rather than forbidden. The existence
+/// of a trip id is itself information, and a 403 confirms it.
+/// </para>
+/// </remarks>
 public sealed class TripRepository(BackhaulDbContext db)
 {
-    public async Task<TripRecord?> GetAsync(Guid id, CancellationToken ct = default)
+    /// <summary>
+    /// The trips this caller may see. The only way into the table.
+    /// </summary>
+    /// <remarks>
+    /// Private on purpose. Nothing outside this class gets an unfiltered
+    /// <c>IQueryable&lt;TripEntity&gt;</c> to build on.
+    /// </remarks>
+    private IQueryable<TripEntity> Visible(Principal principal) =>
+        db.Trips.Where(trip =>
+            (principal.Role == Role.Driver && trip.DriverId == principal.UserId) ||
+            (principal.Role == Role.Carrier && trip.CarrierId == principal.UserId) ||
+            (principal.Role == Role.Shipper && trip.ShipperId == principal.UserId));
+
+    public async Task<TripRecord?> GetAsync(
+        Guid id,
+        Principal principal,
+        CancellationToken ct = default)
     {
+        var trip = await Visible(principal)
+            .Where(t => t.Id == id)
+            .Select(t => new { t.DriverId, t.CarrierId, t.ShipperId })
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
+
+        if (trip is null)
+        {
+            return null;
+        }
+
         var events = await db.TripEvents
             .Where(e => e.TripId == id)
             .OrderBy(e => e.Sequence)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        return events.Count == 0 ? null : new TripRecord(id, [.. events.Select(ToDomain)]);
+        return events.Count == 0
+            ? null
+            : new TripRecord(
+                id,
+                new TripParties(trip.DriverId, trip.CarrierId, trip.ShipperId),
+                [.. events.Select(ToDomain)]);
     }
 
-    public async Task<TripState?> StateOfAsync(Guid id, CancellationToken ct = default)
+    /// <summary>The trip's state and its parties, for the ingest path.</summary>
+    /// <remarks>
+    /// Reads the denormalised state column rather than the history: the ingest
+    /// path asks this on every batch and must not pay for loading a three-day
+    /// trip's events to answer it.
+    /// </remarks>
+    public async Task<(TripState State, TripParties Parties)?> StateOfAsync(
+        Guid id,
+        Principal principal,
+        CancellationToken ct = default)
     {
-        // Reads the denormalised column rather than the history: the ingest
-        // path asks this on every batch and must not pay for loading a
-        // three-day trip's events to answer it.
-        var state = await db.Trips
+        var row = await Visible(principal)
             .Where(t => t.Id == id)
-            .Select(t => t.State)
+            .Select(t => new { t.State, t.DriverId, t.CarrierId, t.ShipperId })
             .AsNoTracking()
             .FirstOrDefaultAsync(ct);
 
-        return state is null ? null : TripMachine.FromWire(state);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var state = TripMachine.FromWire(row.State);
+        return state is null
+            ? null
+            : (state.Value, new TripParties(row.DriverId, row.CarrierId, row.ShipperId));
     }
 
-    public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default) =>
+    public async Task<bool> ExistsAsync(
+        Guid id,
+        Principal principal,
+        CancellationToken ct = default) =>
+        await Visible(principal).AnyAsync(t => t.Id == id, ct);
+
+    /// <summary>
+    /// Whether the id is taken, ignoring who may see it.
+    /// </summary>
+    /// <remarks>
+    /// The one query that deliberately does not filter, and the only caller is
+    /// trip creation. Without it, two shippers could be handed the same trip id
+    /// because neither can see the other's trip — and the second write would
+    /// fail on the primary key with a message about nothing.
+    ///
+    /// It answers a boolean about an id the caller already holds, so it leaks
+    /// nothing they did not bring with them.
+    /// </remarks>
+    public async Task<bool> IdIsTakenAsync(Guid id, CancellationToken ct = default) =>
         await db.Trips.AnyAsync(t => t.Id == id, ct);
 
     public async Task<TripRecord> CreateAsync(
         Guid id,
+        TripParties parties,
         TripEvent first,
         DateTimeOffset recordedAt,
         CancellationToken ct = default)
     {
-        db.Trips.Add(new TripEntity { Id = id, State = TripMachine.ToWire(first.State) });
+        db.Trips.Add(new TripEntity
+        {
+            Id = id,
+            State = TripMachine.ToWire(first.State),
+            DriverId = parties.DriverId,
+            CarrierId = parties.CarrierId,
+            ShipperId = parties.ShipperId,
+        });
         db.TripEvents.Add(ToEntity(id, 0, first, recordedAt));
         await db.SaveChangesAsync(ct);
-        return new TripRecord(id, [first]);
+        return new TripRecord(id, parties, [first]);
     }
 
     /// <summary>Appends an event and moves the denormalised state with it.</summary>
@@ -57,18 +145,23 @@ public sealed class TripRepository(BackhaulDbContext db)
     /// </remarks>
     public async Task<TripRecord> AppendAsync(
         Guid id,
+        Principal principal,
+        TripParties parties,
         IReadOnlyList<TripEvent> history,
         TripEvent added,
         DateTimeOffset recordedAt,
         CancellationToken ct = default)
     {
-        var trip = await db.Trips.FirstAsync(t => t.Id == id, ct);
+        // Filtered again on the write, not only on the read that preceded it.
+        // A caller who cannot see the trip cannot move it, and reusing the
+        // same predicate means there is one definition of "may touch this".
+        var trip = await Visible(principal).FirstAsync(t => t.Id == id, ct);
         trip.State = TripMachine.ToWire(added.State);
 
         db.TripEvents.Add(ToEntity(id, history.Count, added, recordedAt));
         await db.SaveChangesAsync(ct);
 
-        return new TripRecord(id, [.. history, added]);
+        return new TripRecord(id, parties, [.. history, added]);
     }
 
     private static TripEventEntity ToEntity(

@@ -112,12 +112,30 @@ because an untracked copy of a document is not documentation.
 silently ignored. Both live in `pnpm-workspace.yaml` now, which cost an hour of
 Metro failing to resolve a workspace package.
 
+**Authorisation went in as a query filter, and the compiler did the work.**
+Adding a `Principal` parameter to the repositories produced eight compile
+errors in two controllers — every single place that reads a trip or a position,
+enumerated, with no chance of missing one. A controller guard would have
+compiled fine and protected only what somebody remembered. That is the whole
+argument of ADR-0008 and it was pleasant to watch it happen.
+
+**A stale assembly bit twice in one session.** `dotnet ef migrations add`
+writes source; running `bin/Debug/…dll` afterwards runs the *old* one, so the
+new table simply is not there and the error is `relation "AccessTokens" does
+not exist` — which reads like a broken migration rather than a build you did
+not do. It happened once with the first migration and again with the second.
+
+**EF Core threw `PendingModelChangesWarning` while `ef migrations
+has-pending-model-changes` said there were none.** Two migrations, no
+deployment anywhere, so the honest fix was one clean migration rather than
+carrying a phantom mismatch forward.
+
 ### Still open
 
 - **Android.** iOS only so far. The definition of done requires a physical
   Transsion handset.
-- **No auth**, still, and it gates the phase 2 pilot.
-- The theme preference does not survive a restart.
+- **Sign-in.** Tokens exist and gate everything; obtaining one still means
+  running a command. Phase 3.
 - The corridor is not a map, deliberately, and phase 2's gate is where that
   gets revisited.
 

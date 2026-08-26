@@ -44,6 +44,51 @@ Both parse. Both are ISO 8601. A driver would have seen a different sentence
 depending on which system answered. `Iso.Utc` and `IsoUtcConverter` exist
 because of that.
 
+## Who can see what
+
+**Every endpoint except `/healthz` needs `Authorization: Bearer <token>`.**
+
+Authorisation is a **filter on the query**, not a check in the controller. A
+controller check protects the endpoint somebody remembered; the next search,
+export or debugging route has to remember the same check or it quietly returns
+rows it should not. `TripRepository` and `PositionRepository` take a
+`Principal` and compose it into the query — there is no method on either that
+returns a position without one, so forgetting is a compile error. See
+[ADR-0008](../docs/adr/0008-authorisation-is-a-query-filter-not-a-controller-check.md).
+
+| | |
+|---|---|
+| Sees a trip and its track | its driver, its carrier, its shipper |
+| May add positions to it | its driver, and nobody else |
+| Anyone else | `404`, not `403` |
+
+The 404 is deliberate. The existence of a trip id is itself information and a
+403 confirms it, so a caller probing ids learns nothing either way. The refusal
+is logged server-side with the principal and the trip, because the cost of that
+choice is that a genuine permissions bug looks like missing data.
+
+Tokens are opaque 32-byte random values stored as a SHA-256 hash — a leaked
+database should be a set of useless hashes rather than a set of working
+credentials, and nothing anywhere needs to show a token back to anyone.
+
+```bash
+# Against a real database
+dotnet run --project src/Backhaul.Api -- --issue-token driver <user-guid>
+```
+
+Issuing is a command, not an endpoint: an endpoint that mints credentials is
+one somebody has to remember to protect, and getting that wrong is worse than
+having no auth, because it looks protected.
+
+On the in-memory store the server **seeds three tokens and prints them at
+start-up**. That exists because the in-memory default and the token model are
+otherwise contradictory — you cannot issue in one process and use in another
+when the store dies with the process — and it never happens when a database is
+configured.
+
+**Not yet:** phone-plus-OTP (there is no SMS provider, and a fake login flow is
+worse than an honest command), verification tiers, and rate limiting.
+
 ## The store
 
 PostgreSQL when `ConnectionStrings:Backhaul` is set; in-memory when it is not.

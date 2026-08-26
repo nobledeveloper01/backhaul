@@ -14,11 +14,18 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<IngestBatchEntity> IngestBatches => Set<IngestBatchEntity>();
 
+    public DbSet<AccessTokenEntity> AccessTokens => Set<AccessTokenEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
         {
             trip.HasKey(t => t.Id);
+
+            // Every authorised read filters on one of these three.
+            trip.HasIndex(t => t.DriverId);
+            trip.HasIndex(t => t.CarrierId);
+            trip.HasIndex(t => t.ShipperId);
             trip.HasMany(t => t.Events)
                 .WithOne()
                 .HasForeignKey(e => e.TripId)
@@ -44,5 +51,13 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
         });
 
         model.Entity<IngestBatchEntity>(batch => batch.HasKey(b => b.Id));
+
+        model.Entity<AccessTokenEntity>(token =>
+        {
+            // The hash is the key: a lookup is a lookup by hash, and there is
+            // no path that finds a token by anything else.
+            token.HasKey(t => t.Hash);
+            token.HasIndex(t => t.UserId);
+        });
     }
 }

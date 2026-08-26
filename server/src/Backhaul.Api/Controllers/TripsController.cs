@@ -1,5 +1,7 @@
+using Backhaul.Api.Auth;
 using Backhaul.Api.Contracts;
 using Backhaul.Domain;
+using Backhaul.Domain.Access;
 using Backhaul.Domain.Trips;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +11,8 @@ namespace Backhaul.Api.Controllers;
 [ApiController]
 [Route("v1/trips")]
 [Tags("trips")]
-public sealed class TripsController(TripRepository trips, TimeProvider clock) : ControllerBase
+public sealed class TripsController(TripRepository trips, TimeProvider clock)
+    : AuthorisedController
 {
     /// <summary>Open a trip.</summary>
     /// <remarks>
@@ -26,9 +29,23 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock) : 
         [FromBody] OpenTripRequest body,
         CancellationToken ct)
     {
-        if (await trips.ExistsAsync(tripId, ct))
+        // Unfiltered on purpose, and the only such query. Without it two
+        // shippers could be handed the same id because neither can see the
+        // other's trip, and the second write would fail on the primary key
+        // with a message about nothing. It answers a boolean about an id the
+        // caller already holds.
+        if (await trips.IdIsTakenAsync(tripId, ct))
         {
             return Conflict("A trip with this id already exists.");
+        }
+
+        var parties = new TripParties(body.DriverId, body.CarrierId, body.ShipperId);
+
+        // A trip you would not be able to see is a trip you cannot open. It is
+        // otherwise possible to create a record and immediately lose it.
+        if (!parties.Admit(Caller))
+        {
+            return BadRequest("You must be one of the three parties on a trip you open.");
         }
 
         var opened = TripHistory.Apply(
@@ -48,6 +65,7 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock) : 
 
         var record = await trips.CreateAsync(
             tripId,
+            parties,
             accepted.Event,
             clock.GetUtcNow(),
             ct);
@@ -61,7 +79,10 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock) : 
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TripResponse>> Get(Guid tripId, CancellationToken ct)
     {
-        var record = await trips.GetAsync(tripId, ct);
+        var record = await trips.GetAsync(tripId, Caller, ct);
+        // A trip the caller may not see is reported as absent rather than
+        // forbidden: the existence of a trip id is itself information, and a
+        // 403 confirms it.
         return record is null ? NotFound("No such trip.") : ToResponse(record);
     }
 
@@ -83,7 +104,7 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock) : 
         [FromBody] TripEventRequest body,
         CancellationToken ct)
     {
-        var record = await trips.GetAsync(tripId, ct);
+        var record = await trips.GetAsync(tripId, Caller, ct);
         if (record is null)
         {
             return NotFound("No such trip.");
@@ -120,6 +141,8 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock) : 
         var accepted = (TransitionResult.Accepted)result;
         var updated = await trips.AppendAsync(
             tripId,
+            Caller,
+            record.Parties,
             record.History,
             accepted.Event,
             clock.GetUtcNow(),

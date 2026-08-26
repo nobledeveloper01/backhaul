@@ -1,3 +1,4 @@
+using Backhaul.Domain.Access;
 using Backhaul.Domain.Tracking;
 using Backhaul.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -99,13 +100,36 @@ public sealed class PositionRepository(BackhaulDbContext db)
         return new BatchOutcome(fresh.Count, incoming.Count - fresh.Count, Replayed: false);
     }
 
-    /// <summary>Every sample for a trip, oldest first, exactly as sent.</summary>
+    /// <summary>
+    /// Every sample for a trip, oldest first, exactly as sent — and only for a
+    /// caller who is on the trip.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// **This is the only method on this class that returns a position, and it
+    /// cannot be called without a principal.** A truck's location history is
+    /// exactly what somebody planning a cargo theft would want, and the product
+    /// statement lists theft-by-platform as a live risk. See ADR-0008.
+    /// </para>
+    /// <para>
+    /// The join is against the trips the principal may see, so the filter is
+    /// part of the query rather than a check performed before it. An
+    /// unauthorised read is an empty list, not an error: the existence of a
+    /// trip id is itself information.
+    /// </para>
+    /// </remarks>
     public async Task<IReadOnlyList<Position>> ForTripAsync(
         Guid tripId,
+        Principal principal,
         CancellationToken ct = default)
     {
         var rows = await db.Positions
             .Where(p => p.TripId == tripId)
+            .Where(p => db.Trips.Any(trip =>
+                trip.Id == p.TripId &&
+                ((principal.Role == Role.Driver && trip.DriverId == principal.UserId) ||
+                 (principal.Role == Role.Carrier && trip.CarrierId == principal.UserId) ||
+                 (principal.Role == Role.Shipper && trip.ShipperId == principal.UserId))))
             .OrderBy(p => p.At)
             .AsNoTracking()
             .ToListAsync(ct);

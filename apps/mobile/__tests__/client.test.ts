@@ -133,3 +133,50 @@ describe('what comes back', () => {
     expect(result.value.tracking).toBe(false);
   });
 });
+
+/**
+ * The headers of the most recent fetch.
+ *
+ * `jest.Mock`'s `calls` is `any[][]`, so indexing into it is an unsafe access
+ * however it is written. Narrowing the whole array once, here, keeps that in
+ * one place instead of at every call site.
+ */
+function lastHeaders(): Record<string, string> {
+  const mock = globalThis.fetch as unknown as jest.Mock;
+  const calls = mock.mock.calls as [string, { headers?: Record<string, string> }][];
+  return calls[0]?.[1]?.headers ?? {};
+}
+
+describe('the bearer token', () => {
+  test('is sent when there is one, and absent when there is not', async () => {
+    respondWith(200, { status: 'ok', store: 'in-memory', durable: false });
+
+    await new BackhaulApi('http://x', 'a-token').health();
+    expect(lastHeaders()['authorization']).toBe('Bearer a-token');
+
+    respondWith(200, { status: 'ok', store: 'in-memory', durable: false });
+    await new BackhaulApi('http://x').health();
+    expect(lastHeaders()['authorization']).toBeUndefined();
+  });
+
+  test('a 401 is a refusal with the status, not a network failure', async () => {
+    // The two have different remedies — get a token, versus wait for signal —
+    // and a client that collapses them leaves the app unable to say which.
+    respondWith(401, { message: 'This endpoint needs a bearer token.' });
+
+    const result = await new BackhaulApi('http://x').trip('a-trip');
+    expect(result.ok).toBe(false);
+    if (result.ok || result.failure.kind !== 'refused') return;
+    expect(result.failure.status).toBe(401);
+  });
+
+  test('setToken replaces it', async () => {
+    const api = new BackhaulApi('http://x', 'first');
+    api.setToken('second');
+
+    respondWith(200, { status: 'ok', store: 'in-memory', durable: false });
+    await api.health();
+
+    expect(lastHeaders()['authorization']).toBe('Bearer second');
+  });
+});

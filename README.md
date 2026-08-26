@@ -57,7 +57,8 @@ of the defects in §8 were found.
 | App tests | **18** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Screens | shipper, carrier and driver faces, both themes |
-| Authentication | **none** — see §11 |
+| Authentication | bearer tokens; authorisation filtered at the query layer |
+| Server tests | **27** endpoint tests, 11 of them authorisation |
 
 Phase gates and what finishes each one: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -477,6 +478,7 @@ was missed, not in anticipation of it:
 | `make app-typecheck` | The app, under the same strict settings as the domain |
 | `make server-test` | 106 parity cases, 16 endpoint tests |
 | `make round-trip` | The app's client and the real server disagreeing about the wire format |
+| `make server-test` (auth) | A caller reading a trip they are not on, or writing positions to one they only watch |
 
 The doc gate's git-tracked check exists because a sibling project had a
 document written, committed with a message saying so, and absent from GitHub
@@ -486,10 +488,13 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 
 ## 11. What is deliberately missing
 
-- **Authentication.** No OTP, no JWT, no device binding. Anyone who knows a
-  trip id can post positions to it. The API is not exposed anywhere and must
-  not be until phase 3. This blocks phase 2's pilot and currently has no phase
-  of its own in the roadmap — it needs one.
+- **Phone-plus-OTP sign-in.** Tokens exist, are checked, and gate every
+  endpoint; what does not exist is a way for a user to *obtain* one without
+  somebody running a command. There is no SMS provider, and a fake login flow
+  is worse than an honest command. Phase 3.
+- **Verification tiers and rate limiting.** Both in the backend spec, neither
+  built. Rate limiting belongs with a reverse proxy rather than in the
+  application.
 - **A real map.** The shipper sees a corridor drawn to scale, not tiles. That
   is deliberate for phase 0 and pinned to phase 2's exit gate rather than to
   anyone's judgement about whether it still feels sufficient — see ADR-0006.

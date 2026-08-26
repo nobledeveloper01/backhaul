@@ -7,6 +7,15 @@ public sealed class TripEntity
 {
     public Guid Id { get; set; }
 
+    /// <summary>Who carries it.</summary>
+    public Guid DriverId { get; set; }
+
+    /// <summary>Who owns the truck.</summary>
+    public Guid CarrierId { get; set; }
+
+    /// <summary>Who owns the goods.</summary>
+    public Guid ShipperId { get; set; }
+
     /// <summary>
     /// Denormalised current state, for the ingest path.
     /// </summary>

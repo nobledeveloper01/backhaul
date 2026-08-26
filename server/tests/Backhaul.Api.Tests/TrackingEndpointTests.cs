@@ -2,13 +2,42 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+using Backhaul.Domain.Access;
+
 namespace Backhaul.Api.Tests;
 
 public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
-    private readonly HttpClient client = factory.CreateClient();
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    /// <summary>
+    /// A driver, and a trip they are on.
+    /// </summary>
+    /// <remarks>
+    /// These are tests of the ingest path's contract — durability,
+    /// idempotency, what a track reports — not of who may call it. That is
+    /// `AuthorisationTests`.
+    /// </remarks>
+    private async Task<(HttpClient Client, Guid Trip)> OnATripAsync()
+    {
+        var driver = await Identities.IssueAsync(factory, Role.Driver);
+        var client = driver.Carrying(factory.CreateClient());
+
+        var trip = Guid.NewGuid();
+        var response = await client.PostAsJsonAsync(
+            $"/v1/trips/{trip}",
+            new
+            {
+                driverId = driver.UserId,
+                carrierId = Guid.NewGuid(),
+                shipperId = Guid.NewGuid(),
+                at = T0,
+                actor = "shipper",
+            });
+        response.EnsureSuccessStatusCode();
+        return (client, trip);
+    }
 
     [Fact]
     public async Task A_trip_that_is_not_under_way_does_not_record_positions()
@@ -16,9 +45,9 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         // There is no off-trip tracking, and the server enforces it rather
         // than trusting the client. A modified app must not be able to build a
         // position history for a truck that is not on a job.
-        var trip = await OpenTripAsync();
+        var (client, trip) = await OnATripAsync();
 
-        var response = await PostBatchAsync(trip, Guid.NewGuid(), [Sample(6.455, 3.3841, 5)]);
+        var response = await PostBatchAsync(client, trip, Guid.NewGuid(), [Sample(6.455, 3.3841, 5)]);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
@@ -26,7 +55,9 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
     [Fact]
     public async Task Positions_for_an_unknown_trip_are_refused()
     {
+        var driver = await Identities.IssueAsync(factory, Role.Driver);
         var response = await PostBatchAsync(
+            driver.Carrying(factory.CreateClient()),
             Guid.NewGuid(),
             Guid.NewGuid(),
             [Sample(6.455, 3.3841, 5)]);
@@ -40,14 +71,14 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         // A device that never received its acknowledgement retries. If the
         // retry wrote again, a trip's distance would grow every time the
         // network flapped.
-        var trip = await OpenTripAsync();
-        await DriveAsync(trip);
+        var (client, trip) = await OnATripAsync();
+        await DriveAsync(client, trip);
 
         var batchId = Guid.NewGuid();
         var samples = new[] { Sample(6.455, 3.3841, 5), Sample(6.46, 3.39, 65) };
 
-        var first = await ReadBatchAsync(await PostBatchAsync(trip, batchId, samples));
-        var second = await ReadBatchAsync(await PostBatchAsync(trip, batchId, samples));
+        var first = await ReadBatchAsync(await PostBatchAsync(client, trip, batchId, samples));
+        var second = await ReadBatchAsync(await PostBatchAsync(client, trip, batchId, samples));
 
         Assert.False(first.Replayed);
         Assert.Equal(2, first.Accepted);
@@ -55,21 +86,21 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         Assert.True(second.Replayed);
         Assert.Equal(first.Accepted, second.Accepted);
 
-        var track = await ReadTrackAsync(trip);
+        var track = await ReadTrackAsync(client, trip);
         Assert.Equal(2, track.Kept);
     }
 
     [Fact]
     public async Task A_sample_already_held_counts_as_duplicate_not_an_error()
     {
-        var trip = await OpenTripAsync();
-        await DriveAsync(trip);
+        var (client, trip) = await OnATripAsync();
+        await DriveAsync(client, trip);
 
         var shared = Sample(6.455, 3.3841, 5);
-        await PostBatchAsync(trip, Guid.NewGuid(), [shared]);
+        await PostBatchAsync(client, trip, Guid.NewGuid(), [shared]);
 
         var second = await ReadBatchAsync(
-            await PostBatchAsync(trip, Guid.NewGuid(), [shared, Sample(6.46, 3.39, 65)]));
+            await PostBatchAsync(client, trip, Guid.NewGuid(), [shared, Sample(6.46, 3.39, 65)]));
 
         Assert.Equal(1, second.Accepted);
         Assert.Equal(1, second.Duplicate);
@@ -81,12 +112,12 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
     {
         // A duplicate inside one batch would otherwise violate the primary key
         // and fail the whole upload — losing every good sample beside it.
-        var trip = await OpenTripAsync();
-        await DriveAsync(trip);
+        var (client, trip) = await OnATripAsync();
+        await DriveAsync(client, trip);
 
         var repeated = Sample(6.455, 3.3841, 5);
         var outcome = await ReadBatchAsync(
-            await PostBatchAsync(trip, Guid.NewGuid(), [repeated, repeated, Sample(6.46, 3.39, 65)]));
+            await PostBatchAsync(client, trip, Guid.NewGuid(), [repeated, repeated, Sample(6.46, 3.39, 65)]));
 
         Assert.Equal(2, outcome.Accepted);
         Assert.Equal(1, outcome.Duplicate);
@@ -97,16 +128,16 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
     {
         // A distance computed from a fraction of the fixes is not wrong, but
         // nobody should be shown it without knowing that.
-        var trip = await OpenTripAsync();
-        await DriveAsync(trip);
+        var (client, trip) = await OnATripAsync();
+        await DriveAsync(client, trip);
 
-        await PostBatchAsync(trip, Guid.NewGuid(), [
+        await PostBatchAsync(client, trip, Guid.NewGuid(), [
             Sample(6.4550, 3.3841, 5),
             Sample(6.9000, 3.9000, 125),
             Sample(12.0022, 8.5920, 126), // Kano, one minute later: a tower fix
         ]);
 
-        var track = await ReadTrackAsync(trip);
+        var track = await ReadTrackAsync(client, trip);
 
         Assert.Equal(2, track.Kept);
         Assert.Equal(1, track.Dropped);
@@ -117,14 +148,14 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
     [Fact]
     public async Task A_batch_over_the_limit_is_rejected_by_validation()
     {
-        var trip = await OpenTripAsync();
-        await DriveAsync(trip);
+        var (client, trip) = await OnATripAsync();
+        await DriveAsync(client, trip);
 
         var tooMany = Enumerable.Range(0, 201)
             .Select(i => Sample(6.455 + (i * 0.0001), 3.3841, 5 + i))
             .ToArray();
 
-        var response = await PostBatchAsync(trip, Guid.NewGuid(), tooMany);
+        var response = await PostBatchAsync(client, trip, Guid.NewGuid(), tooMany);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -142,18 +173,8 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         at = T0.AddMinutes(minutes),
     };
 
-    private async Task<Guid> OpenTripAsync()
-    {
-        var id = Guid.NewGuid();
-        var response = await client.PostAsJsonAsync(
-            $"/v1/trips/{id}",
-            new { at = T0, actor = "shipper" });
-        response.EnsureSuccessStatusCode();
-        return id;
-    }
-
     /// <summary>Walks a trip to <c>in_transit</c>, which is where it records.</summary>
-    private async Task DriveAsync(Guid trip)
+    private static async Task DriveAsync(HttpClient client, Guid trip)
     {
         foreach (var (state, minutes) in new[]
                  {
@@ -167,7 +188,8 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         }
     }
 
-    private Task<HttpResponseMessage> PostBatchAsync(
+    private static Task<HttpResponseMessage> PostBatchAsync(
+        HttpClient client,
         Guid trip,
         Guid batchId,
         object[] samples) =>
@@ -179,7 +201,7 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         return (await response.Content.ReadFromJsonAsync<BatchOutcome>(Json))!;
     }
 
-    private async Task<TrackView> ReadTrackAsync(Guid trip)
+    private static async Task<TrackView> ReadTrackAsync(HttpClient client, Guid trip)
     {
         var response = await client.GetAsync($"/v1/tracking/trip/{trip}/track");
         response.EnsureSuccessStatusCode();

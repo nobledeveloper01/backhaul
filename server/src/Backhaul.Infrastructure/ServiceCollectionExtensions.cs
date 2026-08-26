@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<TripRepository>();
         services.AddScoped<PositionRepository>();
+        services.AddScoped<TokenRepository>();
 
         return services;
     }

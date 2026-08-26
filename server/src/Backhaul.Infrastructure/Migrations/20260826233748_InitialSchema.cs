@@ -13,6 +13,23 @@ namespace Backhaul.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AccessTokens",
+                columns: table => new
+                {
+                    Hash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Role = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    Label = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    IssuedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    RevokedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccessTokens", x => x.Hash);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "IngestBatches",
                 columns: table => new
                 {
@@ -51,6 +68,9 @@ namespace Backhaul.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    DriverId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CarrierId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShipperId = table.Column<Guid>(type: "uuid", nullable: false),
                     State = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false)
                 },
                 constraints: table =>
@@ -84,6 +104,11 @@ namespace Backhaul.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AccessTokens_UserId",
+                table: "AccessTokens",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Positions_TripId_At",
                 table: "Positions",
                 columns: new[] { "TripId", "At" });
@@ -93,11 +118,29 @@ namespace Backhaul.Infrastructure.Migrations
                 table: "TripEvents",
                 columns: new[] { "TripId", "Sequence" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trips_CarrierId",
+                table: "Trips",
+                column: "CarrierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trips_DriverId",
+                table: "Trips",
+                column: "DriverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Trips_ShipperId",
+                table: "Trips",
+                column: "ShipperId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AccessTokens");
+
             migrationBuilder.DropTable(
                 name: "IngestBatches");
 

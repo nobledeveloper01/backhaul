@@ -18,7 +18,21 @@ import { clean, distanceTravelled, observe } from '../packages/domain/src/index.
 import type { Position } from '../packages/domain/src/index.ts';
 
 const BASE = process.env['BACKHAUL_API'] ?? 'http://127.0.0.1:5111';
-const api = new BackhaulApi(BASE);
+
+/**
+ * A driver token.
+ *
+ * The server seeds three when it runs on the in-memory store and prints them
+ * at start-up; against a real database, mint one with
+ * `--issue-token driver <guid>` and pass it in `BACKHAUL_TOKEN`.
+ */
+const TOKEN = process.env['BACKHAUL_TOKEN'] ?? null;
+
+const api = new BackhaulApi(BASE, TOKEN);
+
+/** The seeded driver, whose id the server fixes so a restart is repeatable. */
+const SEEDED_DRIVER = 'd0000000-0000-4000-8000-000000000001';
+const DRIVER_ID = process.env['BACKHAUL_DRIVER_ID'] ?? SEEDED_DRIVER;
 
 let failures = 0;
 
@@ -67,7 +81,37 @@ async function main(): Promise<void> {
   const run = Math.floor(Date.now() / 1000) % 0xffffffff;
   const tripId = uuid(run);
 
-  const opened = await api.openTrip(tripId, at(0), 'shipper', 'Cement, Lagos to Kano');
+  // Authentication, before anything that needs it.
+  const anonymous = new BackhaulApi(BASE, null);
+  const refused = await anonymous.trip(tripId);
+  check(
+    'an anonymous request is refused',
+    !refused.ok && refused.failure.kind === 'refused' && refused.failure.status === 401,
+  );
+
+  if (TOKEN === null) {
+    process.stdout.write(
+      '  FAIL  no BACKHAUL_TOKEN — take a driver token from the server log\n',
+    );
+    process.exit(1);
+  }
+
+  // The caller is the driver, so the driver is one of the three parties. A
+  // trip you would not be able to see is a trip the server will not let you
+  // open.
+  const parties = {
+    driverId: DRIVER_ID,
+    carrierId: uuid(run + 900),
+    shipperId: uuid(run + 901),
+  };
+
+  const opened = await api.openTrip(
+    tripId,
+    parties,
+    at(0),
+    'driver',
+    'Cement, Lagos to Kano',
+  );
   check('a trip opens', opened.ok, opened.ok ? '' : opened.failure.detail);
   if (!opened.ok) return;
   check("it opens 'open'", opened.value.state === 'open', opened.value.state);

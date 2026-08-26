@@ -2,13 +2,28 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
+using Backhaul.Domain.Access;
+
 namespace Backhaul.Api.Tests;
 
 public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
-    private readonly HttpClient client = factory.CreateClient();
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    /// <summary>
+    /// One driver, on every trip these tests open.
+    /// </summary>
+    /// <remarks>
+    /// These are tests of the trip machine, not of authorisation — that is
+    /// `AuthorisationTests`. What they need is a caller who is allowed to see
+    /// what they created, and nothing more.
+    /// </remarks>
+    private async Task<(HttpClient Client, Identity Driver)> AsDriverAsync()
+    {
+        var driver = await Identities.IssueAsync(factory, Role.Driver);
+        return (driver.Carrying(factory.CreateClient()), driver);
+    }
 
     private static readonly DateTimeOffset T0 = new(2026, 3, 4, 6, 0, 0, TimeSpan.Zero);
 
@@ -17,8 +32,8 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     {
         // Sent so a client renders the actions the machine actually permits
         // rather than its own idea of them.
-        var trip = await OpenAsync();
-        var view = await GetAsync(trip);
+        var (trip, client) = await OpenAsync();
+        var view = await GetAsync(client, trip);
 
         Assert.Equal("open", view.State);
         Assert.False(view.Tracking);
@@ -28,11 +43,18 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     [Fact]
     public async Task The_same_id_cannot_be_opened_twice()
     {
-        var trip = await OpenAsync();
+        var (trip, client) = await OpenAsync();
 
         var again = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}",
-            new { at = T0, actor = "shipper" });
+            new
+            {
+                driverId = Guid.NewGuid(),
+                carrierId = Guid.NewGuid(),
+                shipperId = Guid.NewGuid(),
+                at = T0,
+                actor = "shipper",
+            });
 
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
     }
@@ -40,7 +62,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     [Fact]
     public async Task An_illegal_transition_is_refused_in_the_machines_own_words()
     {
-        var trip = await OpenAsync();
+        var (trip, client) = await OpenAsync();
 
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/events",
@@ -58,8 +80,8 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     {
         // The one hard refusal: accepting it corrupts every duration derived
         // from the history, and those durations end up on an invoice.
-        var trip = await OpenAsync();
-        await AppendAsync(trip, "assigned", T0.AddHours(1));
+        var (trip, client) = await OpenAsync();
+        await AppendAsync(client, trip, "assigned", T0.AddHours(1));
 
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/events",
@@ -75,8 +97,8 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     {
         // A phone with a coarse clock is not a corrupted history, and refusing
         // this would strand real trips.
-        var trip = await OpenAsync();
-        await AppendAsync(trip, "assigned", T0.AddHours(1));
+        var (trip, client) = await OpenAsync();
+        await AppendAsync(client, trip, "assigned", T0.AddHours(1));
 
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/events",
@@ -88,9 +110,9 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     [Fact]
     public async Task A_finished_trip_cannot_change_again()
     {
-        var trip = await OpenAsync();
-        await AppendAsync(trip, "assigned", T0.AddMinutes(10));
-        await AppendAsync(trip, "cancelled", T0.AddMinutes(20));
+        var (trip, client) = await OpenAsync();
+        await AppendAsync(client, trip, "assigned", T0.AddMinutes(10));
+        await AppendAsync(client, trip, "cancelled", T0.AddMinutes(20));
 
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/events",
@@ -106,12 +128,12 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     {
         // Append-only, and the order is the sequence it was appended in — not
         // the timestamp, which is not a total order.
-        var trip = await OpenAsync();
-        await AppendAsync(trip, "assigned", T0.AddMinutes(30));
-        await AppendAsync(trip, "loading", T0.AddMinutes(60));
-        await AppendAsync(trip, "in_transit", T0.AddMinutes(60));
+        var (trip, client) = await OpenAsync();
+        await AppendAsync(client, trip, "assigned", T0.AddMinutes(30));
+        await AppendAsync(client, trip, "loading", T0.AddMinutes(60));
+        await AppendAsync(client, trip, "in_transit", T0.AddMinutes(60));
 
-        var view = await GetAsync(trip);
+        var view = await GetAsync(client, trip);
 
         Assert.Equal(
             ["open", "assigned", "loading", "in_transit"],
@@ -125,7 +147,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         // `Z`, three fractional digits — what JavaScript's toISOString gives.
         // .NET's default renders UTC as `+00:00`, which is the same instant in
         // a different spelling, and two spellings across one API is a trap.
-        var trip = await OpenAsync();
+        var (trip, client) = await OpenAsync();
         var response = await client.GetAsync($"/v1/trips/{trip}");
         var body = await response.Content.ReadAsStringAsync();
 
@@ -136,23 +158,32 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
     [Fact]
     public async Task An_unknown_trip_is_a_404_not_an_empty_trip()
     {
+        var (client, _) = await AsDriverAsync();
         var response = await client.GetAsync($"/v1/trips/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     // --- helpers -----------------------------------------------------------
 
-    private async Task<Guid> OpenAsync()
+    private async Task<(Guid Trip, HttpClient Client)> OpenAsync()
     {
+        var (client, driver) = await AsDriverAsync();
         var id = Guid.NewGuid();
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{id}",
-            new { at = T0, actor = "shipper" });
+            new
+            {
+                driverId = driver.UserId,
+                carrierId = Guid.NewGuid(),
+                shipperId = Guid.NewGuid(),
+                at = T0,
+                actor = "shipper",
+            });
         response.EnsureSuccessStatusCode();
-        return id;
+        return (id, client);
     }
 
-    private async Task AppendAsync(Guid trip, string state, DateTimeOffset at)
+    private static async Task AppendAsync(HttpClient client, Guid trip, string state, DateTimeOffset at)
     {
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/events",
@@ -160,7 +191,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         response.EnsureSuccessStatusCode();
     }
 
-    private async Task<TripView> GetAsync(Guid trip)
+    private static async Task<TripView> GetAsync(HttpClient client, Guid trip)
     {
         var response = await client.GetAsync($"/v1/trips/{trip}");
         response.EnsureSuccessStatusCode();
