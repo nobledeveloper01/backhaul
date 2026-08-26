@@ -1,0 +1,71 @@
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Text } from './Text';
+import { space, target } from '../design/tokens';
+import { useColours } from '../design/theme';
+
+interface Props {
+  readonly title: string;
+  readonly onBack?: (() => void) | undefined;
+}
+
+/**
+ * An opaque bar pinned above the scroll.
+ *
+ * It exists because of what a full-screen ScrollView looks like without one:
+ * the content scrolls under the status bar with nothing behind it, so "Agreed
+ * fare" ends up printed through the clock. Every iOS app scrolls content under
+ * the status bar; the ones that look right have something opaque up there.
+ *
+ * Found by scrolling the screen, not by a test.
+ */
+export function ScreenHeader({ title, onBack }: Props) {
+  const colours = useColours();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      style={[
+        styles.bar,
+        {
+          paddingTop: insets.top,
+          backgroundColor: colours.surface,
+          borderBottomColor: colours.outline,
+        },
+      ]}
+    >
+      <View style={styles.row}>
+        {onBack !== undefined ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={space.md}
+            style={styles.back}
+          >
+            <Text variant="body" tone="accent">
+              ‹ Back
+            </Text>
+          </Pressable>
+        ) : null}
+        <Text variant="title" numberOfLines={1} style={styles.title}>
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  bar: { borderBottomWidth: StyleSheet.hairlineWidth * 2 },
+  row: {
+    minHeight: target.standard,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: space.lg,
+    gap: space.md,
+  },
+  back: { justifyContent: 'center' },
+  title: { flex: 1 },
+});

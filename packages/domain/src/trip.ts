@@ -99,6 +99,22 @@ export function shouldTrack(state: TripState): boolean {
 }
 
 /**
+ * States the tracker raises, never a person.
+ *
+ * `signal_lost` and `stalled` are *observations* — they are entered because
+ * fixes stopped arriving or stopped moving, and there is no circumstance in
+ * which a driver taps a button to say so. A UI that offers them as actions is
+ * asking a driver to self-report the thing the tracking exists to detect, and
+ * a server that accepts one from a driver is accepting a claim it was built to
+ * verify.
+ *
+ * Found by looking at the driver screen, which was offering both as buttons.
+ */
+export function isSystemRaised(state: TripState): boolean {
+  return state === 'signal_lost' || state === 'stalled';
+}
+
+/**
  * The states a cargo owner is shown as "on the road".
  *
  * `signal_lost` counts. A shipper watching a truck cross a dead zone should

@@ -64,6 +64,41 @@ state, and that is a product rule before it is a battery optimisation.
 
 ---
 
+## Depth
+
+Two elevation scales, because a shadow does nothing on a near-black background.
+In light a card lifts with a shadow; in dark it lifts by being a lighter
+surface. Same token name in both, so no screen has to know which theme it is in.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `flat` | no shadow | no shadow | Supporting detail inside a card |
+| `raised` | 3 dp, 6% | `surfaceRaised` | The card being read |
+| `lifted` | 8 dp, 10% | `surfaceRaised` | The driver's action button |
+
+One `accent` card per screen, and only one. More than one primary is none.
+
+## Icons
+
+Drawn in `src/components/Icon.tsx`, on a 24×24 grid at 1.75 stroke with round
+caps. **No emoji, ever** — an emoji is font-dependent, renders differently on
+every handset in the driver segment, and cannot be themed. Mixed stroke weights
+are the clearest tell of an interface assembled rather than designed.
+
+Three sizes, as tokens: `sm` (16) for inline glyphs, `md` (20) for controls,
+`lg` (28) for the driver face where a glance has to land.
+
+## Appearance
+
+**Light by default**, with a labelled three-state control — light, dark, or
+follow the phone. This is read in Nigerian daylight far more often than in the
+dark. See ADR-0007.
+
+The control names the current mode in words as well as an icon. An icon-only
+theme toggle is the textbook case of shape and colour carrying meaning alone.
+
+It lives on the shipper face and nowhere else: the driver face has one job.
+
 ## Colour
 
 | Token | Light | Dark | Use |
@@ -126,9 +161,13 @@ Plain and operational. Say what happened and what it means for the reader.
 ## Definition of done for anything visual
 
 - [ ] Light and dark both authored
-- [ ] 200% text scaling without truncation — **check it, do not assume it**;
-      Grid had seven rows across six screens overflow the first time anybody
-      actually looked
+- [ ] 200% text scaling without truncation — **check it, do not assume it**.
+      Display type is capped (`MAX_SCALE` in `Text.tsx`) and body text is not:
+      body is what a low-vision user needs bigger, and a 36 pt hero at 310% is
+      112 pt and fills a screen. Icons beside wrapping text are top-aligned, or
+      they float in the gap between lines two and three
+- [ ] Every card is a `Card`, every glyph an `Icon`, every colour a token —
+      no screen defines its own padding, radius, border or hex
 - [ ] Screen-reader labelled; colour never the sole carrier of meaning
 - [ ] Every error path has a forward path — no dead ends
 - [ ] Driver-face targets at 64 dp, shipper and fleet at 48 dp

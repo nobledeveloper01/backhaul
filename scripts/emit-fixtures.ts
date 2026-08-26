@@ -16,6 +16,7 @@ import { writeFileSync } from 'node:fs';
 import {
   TRIP_STATES,
   allowedFrom,
+  isSystemRaised,
   isTerminal,
   shouldTrack,
   timeIn,
@@ -82,6 +83,7 @@ const states = TRIP_STATES.map((state) => ({
   state,
   terminal: isTerminal(state),
   tracks: shouldTrack(state),
+  systemRaised: isSystemRaised(state),
 }));
 
 /**

@@ -45,6 +45,29 @@ doc-check:
 fixtures:
 	node scripts/emit-fixtures.ts
 
+## app-typecheck: tsc over the mobile app
+app-typecheck:
+	pnpm --filter @backhaul/mobile exec tsc --noEmit
+
+## app-test: the mobile app's tests
+app-test:
+	pnpm --filter @backhaul/mobile test
+
+## app-pods: CocoaPods, with the locale it needs
+##   Without LANG, CocoaPods fails with Encoding::CompatibilityError and the
+##   message does not mention the locale.
+app-pods:
+	cd apps/mobile/ios && LANG=en_US.UTF-8 pod install
+
+## app-ios: run the app on a booted simulator
+app-ios:
+	pnpm --filter @backhaul/mobile exec react-native run-ios
+
+## shot: capture a screenshot — make shot N=01-trips-light
+shot:
+	@test -n "$(N)" || (echo 'usage: make shot N="01-trips-light"'; exit 1)
+	@./scripts/screenshot.sh "$(N)"
+
 ## server-build: build the .NET solution
 server-build:
 	cd server && $(DOTNET) build
@@ -79,10 +102,10 @@ fixtures-check:
 	@echo "parity fixtures are current"
 
 ## gates: the blocking checks alone
-gates: typecheck lint boundary doc-check fixtures-check
+gates: typecheck app-typecheck lint boundary doc-check fixtures-check
 
 ## ci: everything
-ci: gates test server-test
+ci: gates test app-test server-test
 
 ## adr: new decision record — make adr T="the decision"
 adr:
@@ -112,6 +135,8 @@ journal:
 clean:
 	rm -rf packages/*/dist packages/*/.turbo .turbo
 	rm -rf server/src/*/bin server/src/*/obj server/tests/*/bin server/tests/*/obj
+	rm -rf apps/mobile/ios/build apps/mobile/android/build apps/mobile/android/app/build
+	rm -rf apps/mobile/android/.gradle
 	find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
 	@echo "cleaned — node_modules left alone; make setup-clean to drop that too"
 
@@ -120,4 +145,5 @@ setup-clean: clean
 	find . -name node_modules -maxdepth 3 -type d -prune -exec rm -rf {} +
 
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
-	fixtures fixtures-check server-build server-test server-run server-up server-down
+	fixtures fixtures-check server-build server-test server-run server-up server-down \
+	app-typecheck app-test app-pods app-ios shot

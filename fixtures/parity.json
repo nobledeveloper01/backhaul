@@ -30,52 +30,62 @@
       {
         "state": "open",
         "terminal": false,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       },
       {
         "state": "assigned",
         "terminal": false,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       },
       {
         "state": "loading",
         "terminal": false,
-        "tracks": true
+        "tracks": true,
+        "systemRaised": false
       },
       {
         "state": "in_transit",
         "terminal": false,
-        "tracks": true
+        "tracks": true,
+        "systemRaised": false
       },
       {
         "state": "signal_lost",
         "terminal": false,
-        "tracks": true
+        "tracks": true,
+        "systemRaised": true
       },
       {
         "state": "stalled",
         "terminal": false,
-        "tracks": true
+        "tracks": true,
+        "systemRaised": true
       },
       {
         "state": "arrived",
         "terminal": false,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       },
       {
         "state": "delivered",
         "terminal": true,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       },
       {
         "state": "disputed",
         "terminal": false,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       },
       {
         "state": "cancelled",
         "terminal": true,
-        "tracks": false
+        "tracks": false,
+        "systemRaised": false
       }
     ],
     "transitions": [
@@ -311,180 +321,180 @@
         "truck": "pickup",
         "corridor": "across town",
         "metres": 12000,
-        "low": 2050000,
+        "low": 2000000,
         "mid": 2500000,
-        "high": 2950000,
+        "high": 3000000,
         "atMinimum": true
       },
       {
         "truck": "pickup",
         "corridor": "Lagos–Ibadan",
         "metres": 120000,
-        "low": 8856000,
-        "mid": 10800000,
-        "high": 12744000,
+        "low": 9000000,
+        "mid": 11000000,
+        "high": 12500000,
         "atMinimum": false
       },
       {
         "truck": "pickup",
         "corridor": "Lagos–Abuja",
         "metres": 700000,
-        "low": 51660000,
+        "low": 51500000,
         "mid": 63000000,
-        "high": 74340000,
+        "high": 74500000,
         "atMinimum": false
       },
       {
         "truck": "pickup",
         "corridor": "Lagos–Kano",
         "metres": 830000,
-        "low": 61254000,
-        "mid": 74700000,
-        "high": 88146000,
+        "low": 61500000,
+        "mid": 74500000,
+        "high": 88000000,
         "atMinimum": false
       },
       {
         "truck": "canter",
         "corridor": "across town",
         "metres": 12000,
-        "low": 4920000,
+        "low": 5000000,
         "mid": 6000000,
-        "high": 7080000,
+        "high": 7000000,
         "atMinimum": true
       },
       {
         "truck": "canter",
         "corridor": "Lagos–Ibadan",
         "metres": 120000,
-        "low": 13776000,
-        "mid": 16800000,
-        "high": 19824000,
+        "low": 14000000,
+        "mid": 17000000,
+        "high": 20000000,
         "atMinimum": false
       },
       {
         "truck": "canter",
         "corridor": "Lagos–Abuja",
         "metres": 700000,
-        "low": 80360000,
+        "low": 80500000,
         "mid": 98000000,
-        "high": 115640000,
+        "high": 115500000,
         "atMinimum": false
       },
       {
         "truck": "canter",
         "corridor": "Lagos–Kano",
         "metres": 830000,
-        "low": 95284000,
-        "mid": 116200000,
-        "high": 137116000,
+        "low": 95500000,
+        "mid": 116000000,
+        "high": 137000000,
         "atMinimum": false
       },
       {
         "truck": "truck_15t",
         "corridor": "across town",
         "metres": 12000,
-        "low": 9840000,
+        "low": 10000000,
         "mid": 12000000,
-        "high": 14160000,
+        "high": 14000000,
         "atMinimum": true
       },
       {
         "truck": "truck_15t",
         "corridor": "Lagos–Ibadan",
         "metres": 120000,
-        "low": 18696000,
-        "mid": 22800000,
-        "high": 26904000,
+        "low": 18500000,
+        "mid": 23000000,
+        "high": 27000000,
         "atMinimum": false
       },
       {
         "truck": "truck_15t",
         "corridor": "Lagos–Abuja",
         "metres": 700000,
-        "low": 109060000,
+        "low": 109000000,
         "mid": 133000000,
-        "high": 156940000,
+        "high": 157000000,
         "atMinimum": false
       },
       {
         "truck": "truck_15t",
         "corridor": "Lagos–Kano",
         "metres": 830000,
-        "low": 129314000,
-        "mid": 157700000,
-        "high": 186086000,
+        "low": 129500000,
+        "mid": 157500000,
+        "high": 186000000,
         "atMinimum": false
       },
       {
         "truck": "trailer_30t",
         "corridor": "across town",
         "metres": 12000,
-        "low": 28700000,
+        "low": 28500000,
         "mid": 35000000,
-        "high": 41300000,
+        "high": 41500000,
         "atMinimum": true
       },
       {
         "truck": "trailer_30t",
         "corridor": "Lagos–Ibadan",
         "metres": 120000,
-        "low": 28700000,
+        "low": 28500000,
         "mid": 35000000,
-        "high": 41300000,
+        "high": 41500000,
         "atMinimum": true
       },
       {
         "truck": "trailer_30t",
         "corridor": "Lagos–Abuja",
         "metres": 700000,
-        "low": 154980000,
+        "low": 155000000,
         "mid": 189000000,
-        "high": 223020000,
+        "high": 223000000,
         "atMinimum": false
       },
       {
         "truck": "trailer_30t",
         "corridor": "Lagos–Kano",
         "metres": 830000,
-        "low": 183762000,
-        "mid": 224100000,
-        "high": 264438000,
+        "low": 184000000,
+        "mid": 224000000,
+        "high": 264500000,
         "atMinimum": false
       },
       {
         "truck": "lowbed",
         "corridor": "across town",
         "metres": 12000,
-        "low": 49200000,
+        "low": 49000000,
         "mid": 60000000,
-        "high": 70800000,
+        "high": 71000000,
         "atMinimum": true
       },
       {
         "truck": "lowbed",
         "corridor": "Lagos–Ibadan",
         "metres": 120000,
-        "low": 49200000,
+        "low": 49000000,
         "mid": 60000000,
-        "high": 70800000,
+        "high": 71000000,
         "atMinimum": true
       },
       {
         "truck": "lowbed",
         "corridor": "Lagos–Abuja",
         "metres": 700000,
-        "low": 241080000,
+        "low": 241000000,
         "mid": 294000000,
-        "high": 346920000,
+        "high": 347000000,
         "atMinimum": false
       },
       {
         "truck": "lowbed",
         "corridor": "Lagos–Kano",
         "metres": 830000,
-        "low": 285852000,
-        "mid": 348600000,
-        "high": 411348000,
+        "low": 286000000,
+        "mid": 348500000,
+        "high": 411500000,
         "atMinimum": false
       }
     ],

@@ -36,6 +36,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   pay, how far the truck runs empty to reach them, and how much of the run home
   they cover. Loads the truck cannot take are shown greyed with the reason
   rather than hidden.
+- **An app.** Three faces in one binary: a shipper's trip list and trip screen,
+  a carrier's ranked return loads, and a driver screen that is one screen with
+  one action. Light and dark, with a switcher; light by default.
+- **A corridor view.** Where the truck is along its route, drawn to scale, with
+  the stretches that had no signal marked in the position they happened.
 - **An API.** Trips can be opened and moved through their lifecycle, positions
   submitted in batches, a cleaned track read back, and indicative prices and
   settlement statements requested. Documented at `/swagger`, generated from the
@@ -43,6 +48,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Bid ranking.** Offers ranked for a shipper on price, record and proximity,
   with the record shown beside the price so the shipper can overrule the order.
   A new carrier ranks as unknown, not as bad.
+
+### Fixed
+
+- The driver screen offered "signal lost" and "stalled" as buttons. Both are
+  observations the tracker raises; offering them asked a driver to self-report
+  the thing the tracking exists to detect.
+- A trip's history attributed a lost signal to the driver rather than the
+  system.
+- Indicative price ranges were quoted to the naira — "₦1,861,487 – ₦2,678,725"
+  — which is arithmetic pretending to be a quote. They now round to ₦5,000.
+- At the largest accessibility text size the tab bar's labels wrapped into each
+  other and ran off the screen, and the headline filled the display.
+- "Recording starts when you begin loading" was shown on trips that had already
+  arrived.
 
 ### Notes
 

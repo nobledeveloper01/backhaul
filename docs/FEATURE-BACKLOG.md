@@ -65,6 +65,23 @@ interpolated position.
 
 ---
 
+## Small, and known
+
+### F8 — The theme preference does not persist
+
+The switcher works and the choice resets on relaunch. Persisting it needs a
+native storage dependency and another CocoaPods cycle, which was not the trade
+at phase 0 — but a preference that resets every launch is a real annoyance, not
+a theoretical one. See ADR-0007.
+
+### F9 — Android
+
+The app is built and verified on iOS. The definition of done requires a
+physical Transsion handset, which is where the battery and OEM-kill risks
+actually live, and that has not happened.
+
+---
+
 ## Blocked on a decision
 
 ### F6 — Multi-drop and multi-leg chaining

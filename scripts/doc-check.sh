@@ -88,11 +88,17 @@ if [ -d docs/screenshots ]; then
     fail=1
   fi
 
+  # Searched over git's own file list rather than the working tree. The
+  # recursive grep was fine when this repository was a domain package and a
+  # few documents; with node_modules, Pods and two build trees in it, the same
+  # check took minutes and then timed out. `git ls-files` is both faster and
+  # more correct — an untracked copy of a document is not documentation.
+  tracked_md=$(git ls-files '*.md' 2>/dev/null)
   orphans=""
   for shot in docs/screenshots/*.png; do
     [ -e "$shot" ] || continue
     base=$(basename "$shot")
-    if ! grep -qR --include='*.md' "$base" . 2>/dev/null; then
+    if [ -z "$tracked_md" ] || ! grep -ql "$base" $tracked_md 2>/dev/null; then
       orphans="$orphans $base"
     fi
   done

@@ -70,4 +70,13 @@ public static class Rates
 
     /// <summary>How far either side of the midpoint an indicative range runs.</summary>
     public const double Spread = 0.18;
+
+    /// <summary>Indicative figures are rounded to ₦5,000.</summary>
+    /// <remarks>
+    /// A range is a statement about a distribution, and stating its edges to
+    /// the naira claims a precision nothing here has. ₦5,000 is coarse enough
+    /// to read as an estimate and fine enough to stay useful on a ₦25,000
+    /// city run.
+    /// </remarks>
+    public const long IndicativeStep = 500_000;
 }

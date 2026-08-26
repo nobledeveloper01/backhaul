@@ -30,31 +30,34 @@ Full analysis in [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md).
 
 1. [Where this is](#1-where-this-is)
 2. [What is built](#2-what-is-built)
-3. [How it fits together](#3-how-it-fits-together)
-4. [The trip](#4-the-trip)
-5. [The ingest path](#5-the-ingest-path)
-6. [Two languages, one set of answers](#6-two-languages-one-set-of-answers)
-7. [Correctness notes](#7-correctness-notes)
-8. [Running it](#8-running-it)
-9. [The gates](#9-the-gates)
-10. [What is deliberately missing](#10-what-is-deliberately-missing)
-11. [Documents](#11-documents)
+3. [The app](#3-the-app)
+4. [How it fits together](#4-how-it-fits-together)
+5. [The trip](#5-the-trip)
+6. [The ingest path](#6-the-ingest-path)
+7. [Two languages, one set of answers](#7-two-languages-one-set-of-answers)
+8. [Correctness notes](#8-correctness-notes)
+9. [Running it](#9-running-it)
+10. [The gates](#10-the-gates)
+11. [What is deliberately missing](#11-what-is-deliberately-missing)
+12. [Documents](#12-documents)
 
 ---
 
 ## 1. Where this is
 
-**Phase 0 — Foundation.** The domain and the server are built and tested.
-**There are no screens yet**, and nothing here has been looked at by a person.
+**Phase 0 — Foundation.** The domain, the server and the app are built and
+tested, and the app has been walked through on a device — which is where most
+of the defects in §8 were found.
 
 | | |
 |---|---|
-| Domain tests | **136** passing |
+| Domain tests | **140** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
+| App tests | **10** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
-| Authentication | **none** — see §10 |
-| Screens | none |
+| Screens | shipper, carrier and driver faces, both themes |
+| Authentication | **none** — see §11 |
 
 Phase gates and what finishes each one: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -78,6 +81,10 @@ fails if the rule stays quiet.
 | `eta.ts` | An arrival window, or a refusal with a reason |
 | `matching.ts` | Which load a carrier should take, and whose bid a shipper should accept |
 
+### `apps/mobile` — React Native 0.87, New Architecture
+
+Three faces in one binary, consuming the domain package directly. See §3.
+
 ### `server/` — ASP.NET Core on .NET 9
 
 EF Core against PostgreSQL, Swagger generated from the controllers' own XML
@@ -87,7 +94,99 @@ Details: [`server/README.md`](server/README.md).
 
 ---
 
-## 3. How it fits together
+## 3. The app
+
+React Native 0.87 on the New Architecture, TypeScript strict, consuming
+`@backhaul/domain` directly — the screens render decisions they did not make.
+
+**Three faces, one binary.** They are not the same product with different data:
+a driver did not choose this app, is paid whether or not they use it, and is
+reading it in a moving cab, so the driver face is one screen with one action at
+64 dp targets. The shipper and fleet faces are dense and scannable at 48.
+
+### The shipper
+
+| Trips | A trip |
+|---|---|
+| ![The trip list](docs/screenshots/01-trips.png) | ![A trip](docs/screenshots/02-trip-detail.png) |
+
+The list is scanned down a colour rail, and every row carries the state as an
+icon, a word and a tint — never colour alone, because it is read in sunlight
+through a windscreen. The header says whether anything needs a person at all,
+which is usually "no" and is worth saying rather than making someone read six
+rows to work out.
+
+The trip screen leads with **where it is**: the corridor drawn to scale, with
+the truck's measured progress along it and the stretches with no signal marked
+grey *in the position they happened*. It is not a map and does not pretend to
+be one — see [ADR-0006](docs/adr/0006-the-corridor-view-is-not-a-map.md).
+
+Two rules are visible on it and both are load-bearing:
+
+- **Distance never appears without the share of fixes it was computed from.**
+  "From 168 positions, all of them usable" sits under the figure, and when
+  fixes were discarded it says how many and why.
+- **The ETA is a range, and a refusal when the evidence is thin.** A single
+  time reads as a promise; the domain's own sentence is rendered instead of a
+  dash.
+
+![History and settlement](docs/screenshots/03-history-and-settlement.png)
+
+The history is append-only, and it says so on the screen rather than only in an
+ADR. Every settlement line is whole naira, so the column adds up on screen as
+well as in the arithmetic.
+
+### The carrier
+
+![Return loads](docs/screenshots/04-return-loads.png)
+
+The reason the product is called Backhaul. An empty truck running 830 km home
+earns nothing, so a load going that way at ₦1,850,000 beats one going the wrong
+way at ₦2,600,000 — and the row says *why*, in empty kilometres and kilometres
+of the run home, so a haulier can disagree with it. Loads the truck cannot take
+are greyed with the reason rather than hidden.
+
+### The driver
+
+| On the road | Arrived | Done |
+|---|---|---|
+| ![Driver, tracking](docs/screenshots/05-driver.png) | ![Driver, arrived](docs/screenshots/06-driver-arrived.png) | ![Driver, finished](docs/screenshots/07-driver-finished.png) |
+
+One screen, one action, nothing to browse. The two things above the button
+answer the only two questions a driver has about tracking software — *what is
+it telling people about me*, and *is it costing me my battery* — because a
+driver who cannot see why their phone is doing something force-quits the app,
+and a force-quit trip is a trip with no evidence.
+
+The button says "I've arrived", not "transition to arrived". And the buttons
+offered are only the ones a person can press: `signal_lost` and `stalled` are
+raised by the tracker, and offering them would be asking a driver to
+self-report the thing the tracking exists to detect.
+
+### Both themes, and both text extremes
+
+| Dark | Largest text |
+|---|---|
+| ![Trips in dark](docs/screenshots/08-trips-dark.png) | ![At the largest text size](docs/screenshots/11-largest-text.png) |
+
+| A trip, dark | Return loads, dark |
+|---|---|
+| ![A trip in dark](docs/screenshots/09-trip-detail-dark.png) | ![Return loads in dark](docs/screenshots/10-return-loads-dark.png) |
+
+**Light by default**, with a labelled control to switch — see
+[ADR-0007](docs/adr/0007-light-is-the-default-and-the-choice-is-the-users.md).
+This is read in Nigerian daylight far more often than in the dark, and a
+handset set to dark months ago should not decide that for a driver at noon.
+
+The right-hand shot is iOS at its largest accessibility text size. Nothing
+truncates, the tab bar holds, and display type is capped while body text scales
+without limit — body is what a low-vision user needs bigger; a 36 pt hero at
+310% is 112 pt and fills a screen. It was broken the first time anybody looked,
+which is why the screenshot is in this README rather than a claim that it works.
+
+---
+
+## 4. How it fits together
 
 ```mermaid
 graph TB
@@ -127,7 +226,7 @@ arrive complete when signal returns.
 
 ---
 
-## 4. The trip
+## 5. The trip
 
 The state machine is written as **data, not control flow** — an explicit edge
 set that a test asserts exactly, so adding a transition fails the build rather
@@ -187,7 +286,7 @@ a new event and the original survives (ADR-0003).
 
 ---
 
-## 5. The ingest path
+## 6. The ingest path
 
 The one endpoint with a contract that cannot be relaxed.
 
@@ -233,7 +332,7 @@ afterwards returns the original outcome and writes nothing.
 
 ---
 
-## 6. Two languages, one set of answers
+## 7. Two languages, one set of answers
 
 The server is .NET; the domain is TypeScript. Every rule that exists on both
 sides therefore exists **twice**, and two implementations of a demurrage rule
@@ -262,7 +361,7 @@ broken"*. Full argument: [ADR-0005](docs/adr/0005-the-server-is-dotnet-and-parit
 
 ---
 
-## 7. Correctness notes
+## 8. Correctness notes
 
 The defects worth recording are the ones a green test suite did not catch.
 
@@ -306,11 +405,18 @@ trusted.
 
 ---
 
-## 8. Running it
+## 9. Running it
 
 ```bash
 make setup          # install
-make ci             # everything: gates, domain tests, server tests
+make ci             # everything: gates, domain, app and server tests
+```
+
+The app, on the iOS simulator:
+
+```bash
+make app-pods       # CocoaPods, with the locale it needs
+make app-ios
 ```
 
 The server, on an in-memory store — no database needed, Swagger at `/swagger`:
@@ -331,7 +437,7 @@ PATH; the Makefile's `DOTNET` variable points at it and is overridable for CI.
 
 ---
 
-## 9. The gates
+## 10. The gates
 
 `make gates` runs the blocking checks. Three of them exist because something
 was missed, not in anticipation of it:
@@ -343,6 +449,7 @@ was missed, not in anticipation of it:
 | `make boundary` | **The purity rule having silently stopped matching** — injects a violation and fails if lint stays quiet |
 | `make doc-check` | A required document missing, malformed, **or present on disk and untracked by git** |
 | `make fixtures-check` | **Fixtures stale after a rule changed on the TypeScript side** |
+| `make app-typecheck` | The app, under the same strict settings as the domain |
 | `make server-test` | 106 parity cases, 16 endpoint tests |
 
 The doc gate's git-tracked check exists because a sibling project had a
@@ -351,16 +458,20 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 
 ---
 
-## 10. What is deliberately missing
+## 11. What is deliberately missing
 
 - **Authentication.** No OTP, no JWT, no device binding. Anyone who knows a
   trip id can post positions to it. The API is not exposed anywhere and must
   not be until phase 3. This blocks phase 2's pilot and currently has no phase
   of its own in the roadmap — it needs one.
-- **Screens.** Nothing in this product has been looked at by a person, and the
-  clearest lesson from the sibling project is that the worst defects are
-  invisible to a green test suite and surface only from rendered output. There
-  are no screenshots in this README for that reason.
+- **A real map.** The shipper sees a corridor drawn to scale, not tiles. That
+  is deliberate for phase 0 and pinned to phase 2's exit gate rather than to
+  anyone's judgement about whether it still feels sufficient — see ADR-0006.
+- **A persisted theme preference.** The switcher works; the choice does not
+  survive a restart. It needs a native storage dependency, which is not the
+  trade at phase 0.
+- **Android.** The app is built and verified on iOS only. The definition of
+  done requires a physical Transsion handset and that has not happened.
 - **Corridor-segmented ETA.** What exists is the fallback tier — pace from the
   trip's own track, or a class average, marked as modelled either way. The
   empirical model needs a corpus of completed trips; building it now would
@@ -376,7 +487,7 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 
 ---
 
-## 11. Documents
+## 12. Documents
 
 | Document | Answers |
 |---|---|

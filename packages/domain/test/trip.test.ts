@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   TRIP_STATES,
   allowedFrom,
+  isSystemRaised,
   canTransition,
   currentState,
   isActive,
@@ -181,6 +182,22 @@ describe('what the machine refuses', () => {
           `${from} can reach delivered directly`,
         );
       }
+    }
+  });
+});
+
+describe('who raises a state', () => {
+  test('silence and stalling are observations, not driver actions', () => {
+    // A UI that offers these as buttons is asking a driver to self-report the
+    // thing the tracking exists to detect. The driver screen was doing exactly
+    // that until somebody looked at it.
+    assert.deepEqual(TRIP_STATES.filter(isSystemRaised), ['signal_lost', 'stalled']);
+  });
+
+  test('everything a person does is not system-raised', () => {
+    for (const state of ['open', 'assigned', 'loading', 'in_transit', 'arrived',
+      'delivered', 'disputed', 'cancelled'] as const) {
+      assert.equal(isSystemRaised(state), false, state);
     }
   });
 });

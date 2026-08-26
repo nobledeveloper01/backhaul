@@ -6,6 +6,82 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-26 (evening) — Screens, and what looking at them found
+
+**Did.** Built the React Native app: RN 0.87 on the New Architecture,
+TypeScript under the same strict settings as the domain, consuming
+`@backhaul/domain` directly. Three faces — the shipper's list and trip screen,
+the carrier's ranked return loads, and the driver's one-screen-one-action face.
+Design tokens, an icon set, an elevation scale, light and dark with a switcher.
+ADR-0006 and ADR-0007. Eleven screenshots in the README, all taken from a
+running app.
+
+### What surprised us
+
+**Almost every defect this session came from looking, not from testing.** The
+suite was green throughout. What was wrong:
+
+- The driver screen offered **"signal lost" and "stalled" as buttons** — asking
+  a driver to self-report the thing the tracking exists to detect. That is a
+  domain fact, not a UI slip, so `isSystemRaised` now lives in
+  `packages/domain`, is mirrored in C#, and is in the parity fixtures.
+- The trip history read **"signal lost · driver"**. Same root cause, one layer
+  down: the demo attributed every event to the driver.
+- The corridor reported **"33 stretches with no signal"** on a trip with one.
+  The view was honest; the demo's fix cadence was two hours apart, which the
+  tracking policy would never produce. The test that should have caught it
+  asserted `toBeGreaterThan(0)` — true, and useless.
+- Indicative prices were quoted as **"₦1,861,487 – ₦2,678,725"**. Every digit
+  after the first three is precision the estimate does not have.
+- **"Checking your position every 1 minutes."**
+- **"Recording starts when you begin loading"** on a trip that had arrived.
+- Content scrolled under the status bar with nothing behind it, so **"Agreed
+  fare" printed through the clock**.
+- A Swagger annotation said 200 where the endpoint returned 201.
+
+**The first UI was flat, and the reason was structural.** Every screen built
+its own `View` with the same padding, radius and hairline border inline — so
+every card looked identical, nothing led the eye, and there were no icons at
+all. One `Card` with three emphasis levels, one `Icon` set on a 24×24 grid at a
+single stroke width, and an elevation scale with a separate dark form (a shadow
+does nothing on a near-black background) fixed more than any amount of colour
+adjustment would have.
+
+**The generic design-system recommendation was wrong and worth ignoring.**
+Asked for a dark, data-dense logistics product, the tool proposed Orbitron and
+JetBrains Mono — a cyberpunk HUD. A driver in a cab and a shipper checking
+cargo need neither. The structural advice (elevation, status colour, one
+primary per screen) was good; the typography was not, and `DESIGN.md`'s palette
+was already reasoned from the product.
+
+**Accessibility text scaling broke exactly as it did on Grid.** At the largest
+size the tab bar's three labels wrapped into each other and "Driver" ran off
+the right edge, and the headline filled the entire display. Display type is now
+capped and body text still scales without limit — body is what a low-vision
+user actually needs bigger. The screenshot is in the README rather than a claim
+that it works.
+
+**The documentation gate timed out.** Its orphaned-screenshot check greps the
+tree for each filename; the tree now contains `node_modules`, `Pods` and two
+build directories. It searches `git ls-files` now — faster, and more correct,
+because an untracked copy of a document is not documentation.
+
+**pnpm 11 moved two settings and said nothing useful.** `node-linker` in
+`.npmrc` is silently ignored; `onlyBuiltDependencies` in `package.json` is
+silently ignored. Both live in `pnpm-workspace.yaml` now, which cost an hour of
+Metro failing to resolve a workspace package.
+
+### Still open
+
+- **Android.** iOS only so far. The definition of done requires a physical
+  Transsion handset.
+- **No auth**, still, and it gates the phase 2 pilot.
+- The theme preference does not survive a restart.
+- The corridor is not a map, deliberately, and phase 2's gate is where that
+  gets revisited.
+
+---
+
 ## 2026-08-26 (later) — The server, chosen three times
 
 **Did.** Built the API: ASP.NET Core on .NET 9, EF Core against PostgreSQL,

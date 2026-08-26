@@ -65,6 +65,19 @@ public readonly record struct Kobo(long Value) : IComparable<Kobo>
         return new((long)Math.Round(exact, MidpointRounding.AwayFromZero));
     }
 
+    /// <summary>Rounds to a step a human would actually say.</summary>
+    /// <remarks>
+    /// Indicative figures only. A range of "₦1,861,487 – ₦2,678,725" is
+    /// arithmetic pretending to be a quote: every digit after the first three
+    /// is precision the estimate does not have. Found by looking at a rendered
+    /// screen rather than by a test, which is where this class of defect
+    /// always turns up.
+    /// </remarks>
+    public Kobo RoundTo(long stepKobo) =>
+        stepKobo <= 0
+            ? this
+            : new((long)Math.Round((decimal)Value / stepKobo, MidpointRounding.AwayFromZero) * stepKobo);
+
     /// <summary>Rounds to the naira, so displayed lines add up to each other.</summary>
     public Kobo ToWholeNaira() =>
         new((long)Math.Round(Value / 100m, MidpointRounding.AwayFromZero) * 100);

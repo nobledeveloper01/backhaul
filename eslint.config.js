@@ -31,18 +31,37 @@ export default tseslint.config(
   },
   ...tseslint.configs.recommendedTypeChecked,
   {
-    // This file is config, not source, and belongs to no tsconfig. Type-aware
-    // linting of the thing that configures type-aware linting is a knot with
-    // nothing at the end of it.
-    files: ['eslint.config.js'],
+    // Config files, not source. They are CommonJS by necessity — Metro and
+    // Babel both require it — and type-aware linting of the file that
+    // configures type-aware linting is a knot with nothing at the end of it.
+    files: [
+      'eslint.config.js',
+      'apps/mobile/metro.config.js',
+      'apps/mobile/jest.config.js',
+      'apps/mobile/babel.config.js',
+    ],
     ...tseslint.configs.disableTypeChecked,
+    rules: {
+      // Spread first. A bare `rules` key after the spread *replaces* the one
+      // `disableTypeChecked` supplies rather than extending it, which silently
+      // turned every type-aware rule back on for exactly the files this block
+      // exists to exempt.
+      ...tseslint.configs.disableTypeChecked.rules,
+      '@typescript-eslint/no-require-imports': 'off',
+    },
   },
   {
     languageOptions: {
       parserOptions: {
         projectService: {
-          // This file is config, not source, and belongs to no tsconfig.
-          allowDefaultProject: ['eslint.config.js'],
+          // Config files, not source; they belong to no tsconfig and type-aware
+          // rules have nothing to say about them.
+          allowDefaultProject: [
+            'eslint.config.js',
+            'apps/mobile/babel.config.js',
+            'apps/mobile/jest.config.js',
+            'apps/mobile/metro.config.js',
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },

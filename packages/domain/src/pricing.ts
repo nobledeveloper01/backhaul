@@ -16,6 +16,7 @@ import {
   add,
   format,
   percent,
+  roundTo,
   scale,
   subtract,
   type Kobo,
@@ -110,6 +111,15 @@ export interface Quote {
 const SPREAD = 0.18;
 
 /**
+ * Indicative figures are rounded to ₦5,000.
+ *
+ * A range is a statement about a distribution, and stating its edges to the
+ * naira claims a precision nothing here has. ₦5,000 is coarse enough to read
+ * as an estimate and fine enough to stay useful on a ₦25,000 city run.
+ */
+export const INDICATIVE_STEP = 500_000;
+
+/**
  * An indicative range for moving a truck over a distance.
  *
  * A range, never a single number. A single number reads as a price, and this
@@ -130,9 +140,9 @@ export function quote(truck: TruckClass, distanceMetres: number): Quote {
   const mid = atMinimum ? floor : byDistance;
 
   return {
-    low: scale(mid, 1 - SPREAD),
-    mid,
-    high: scale(mid, 1 + SPREAD),
+    low: roundTo(scale(mid, 1 - SPREAD), INDICATIVE_STEP),
+    mid: roundTo(mid, INDICATIVE_STEP),
+    high: roundTo(scale(mid, 1 + SPREAD), INDICATIVE_STEP),
     isIndicative: true,
     atMinimum,
     basis: atMinimum

@@ -37,9 +37,9 @@ public sealed record Quote(Kobo Low, Kobo Mid, Kobo High, bool AtMinimum, string
             : $"{Math.Round(km)} km at {rate} a kilometre.";
 
         return new Quote(
-            mid.Scale(1 - Rates.Spread),
-            mid,
-            mid.Scale(1 + Rates.Spread),
+            mid.Scale(1 - Rates.Spread).RoundTo(Rates.IndicativeStep),
+            mid.RoundTo(Rates.IndicativeStep),
+            mid.Scale(1 + Rates.Spread).RoundTo(Rates.IndicativeStep),
             atMinimum,
             basis);
     }

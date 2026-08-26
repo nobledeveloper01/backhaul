@@ -1,0 +1,22 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    // The same strictness the domain package carries. Copied rather than
+    // inherited from tsconfig.base.json, which is written for a pure-ESM
+    // package and conflicts with React Native's module resolution.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@backhaul/domain": ["../../packages/domain/src/index.ts"]
+    }
+  },
+  "include": ["src", "__tests__", "index.js", "app.json"],
+  "exclude": ["node_modules", "ios", "android", "**/Pods"]
+}

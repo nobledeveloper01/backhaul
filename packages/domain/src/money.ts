@@ -62,6 +62,22 @@ export function percent(amount: Kobo, pct: number): Kobo {
   return (Math.sign(exact) * Math.round(Math.abs(exact))) as Kobo;
 }
 
+/**
+ * Rounds to a step a human would actually say.
+ *
+ * Indicative figures only. A range of "₦1,861,487 – ₦2,678,725" is arithmetic
+ * pretending to be a quote: every digit after the first three is precision the
+ * estimate does not have, and a haulier reading it either laughs or believes
+ * it, and both are bad.
+ *
+ * Found by looking at a rendered screen, not by a test — which is where this
+ * class of defect always turns up.
+ */
+export function roundTo(amount: Kobo, stepKobo: number): Kobo {
+  if (stepKobo <= 0) return amount;
+  return (Math.round(amount / stepKobo) * stepKobo) as Kobo;
+}
+
 export const NAIRA = '₦';
 
 /** Kobo per naira — and the unit everything user-facing is rounded to. */

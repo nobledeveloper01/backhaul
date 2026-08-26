@@ -92,7 +92,7 @@ public sealed record TripFixtures(
     IReadOnlyList<RefusalRow> Refusals,
     IReadOnlyList<TimeInRow> TimeInCases);
 
-public sealed record StateRow(string State, bool Terminal, bool Tracks);
+public sealed record StateRow(string State, bool Terminal, bool Tracks, bool SystemRaised);
 
 public sealed record TransitionRow(string From, string To);
 

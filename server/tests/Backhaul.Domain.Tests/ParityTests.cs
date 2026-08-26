@@ -107,6 +107,7 @@ public sealed class ParityTests
             var state = State(row.State);
             Assert.Equal(row.Terminal, TripMachine.IsTerminal(state));
             Assert.Equal(row.Tracks, TripMachine.ShouldTrack(state));
+            Assert.Equal(row.SystemRaised, TripMachine.IsSystemRaised(state));
         }
     }
 

@@ -97,6 +97,16 @@ public static class TripMachine
         state is TripState.Loading or TripState.InTransit
             or TripState.SignalLost or TripState.Stalled;
 
+    /// <summary>States the tracker raises, never a person.</summary>
+    /// <remarks>
+    /// <see cref="TripState.SignalLost"/> and <see cref="TripState.Stalled"/>
+    /// are observations — entered because fixes stopped arriving or stopped
+    /// moving. A server that accepts one of these with a driver as the actor
+    /// is accepting a claim it was built to verify.
+    /// </remarks>
+    public static bool IsSystemRaised(TripState state) =>
+        state is TripState.SignalLost or TripState.Stalled;
+
     public static string ToWire(TripState state) => WireMap[state];
 
     public static TripState? FromWire(string wire) =>

@@ -5,6 +5,7 @@ import { format, fromNaira, kobo, subtract, ZERO } from '../src/money.ts';
 import {
   COMMISSION_PCT,
   FREE_WAITING_MS,
+  INDICATIVE_STEP,
   MINIMUM_FARE,
   demurrage,
   fits,
@@ -201,5 +202,35 @@ describe('settlement', () => {
     assert.equal(s.gross, ZERO);
     assert.equal(s.commission, ZERO);
     assert.equal(s.toCarrier, ZERO);
+  });
+});
+
+describe('indicative figures are not falsely precise', () => {
+  test('every endpoint of a range lands on a readable step', () => {
+    // A range of "₦1,861,487 – ₦2,678,725" is arithmetic pretending to be a
+    // quote. Found on a rendered screen; pinned here so it stays fixed.
+    for (const truck of CLASSES) {
+      for (const metres of [8_000, LAGOS_IBADAN_M, 512_345, LAGOS_KANO_M]) {
+        const q = quote(truck, metres);
+        for (const [name, value] of [
+          ['low', q.low],
+          ['mid', q.mid],
+          ['high', q.high],
+        ] as const) {
+          assert.equal(
+            value % INDICATIVE_STEP,
+            0,
+            `${truck} at ${metres} m: ${name} is ${format(value)}`,
+          );
+        }
+      }
+    }
+  });
+
+  test('rounding does not invert the range', () => {
+    for (const truck of CLASSES) {
+      const q = quote(truck, 512_345);
+      assert.ok(q.low <= q.mid && q.mid <= q.high);
+    }
   });
 });

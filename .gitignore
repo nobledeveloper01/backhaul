@@ -41,3 +41,12 @@ dist/
 [Bb]in/
 [Oo]bj/
 *.user
+
+# React Native
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/ios/*.xcworkspace/xcuserdata/
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/.xcode.env.local
