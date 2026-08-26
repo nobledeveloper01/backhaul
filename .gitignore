@@ -36,3 +36,8 @@ android/app/build/
 dist/
 .turbo/
 *.tsbuildinfo
+
+# .NET
+[Bb]in/
+[Oo]bj/
+*.user

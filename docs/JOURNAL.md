@@ -6,6 +6,75 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-26 (later) — The server, chosen three times
+
+**Did.** Built the API: ASP.NET Core on .NET 9, EF Core against PostgreSQL,
+Swagger generated from the controllers' own XML comments. Trips, the ingest
+path, cleaned tracks, pricing and settlement. 106 parity cases and 16 endpoint
+tests, all green. ADR-0005. Docker build and a compose file with real Postgres.
+
+Verified against a real database rather than asserted: an acknowledged batch,
+its trip and its history survive a process restart, and replaying that batch
+afterwards returns the original outcome and writes nothing.
+
+### What surprised us
+
+**The stack was chosen, reversed, and chosen again — and the reversal was the
+useful part.** .NET went in first. Then NestJS, because the technical design
+picked Node for one stated reason: the server could import `packages/domain`
+and run the trip machine, ETA and match ranking *identically* to the device.
+NestJS delivered that, end to end, and it worked. Then back to .NET.
+
+Having built both is what makes the trade legible instead of theoretical. The
+Node server had one implementation of every rule. The .NET server has two, and
+the whole question is whether the second one can be made to fail loudly rather
+than drift quietly. ADR-0005 is that argument, and the parity fixtures are the
+answer.
+
+**The parity suite earned its keep on its first run.** The refusal message for
+a back-dated event embeds a timestamp. TypeScript's `toISOString()` writes
+`2026-03-04T06:20:00.000Z`. .NET's round-trip `"O"` format writes
+`2026-03-04T06:20:00.0000000+00:00`. Both parse. Both are ISO 8601. Nothing
+would ever have failed — a driver would just have seen a subtly different
+sentence depending on which system answered. It was caught because the fixture
+compares the wording character for character, which felt excessive when it was
+written.
+
+The same bug was then sitting in every response body: `+00:00` from the JSON
+serialiser, `Z` from the domain's own messages. **Found by reading a response,
+not by a test** — the same way Grid's allocation bug surfaced. `IsoUtcConverter`
+fixes it and a test now pins it.
+
+**A Swagger annotation was lying, and only calling the endpoint revealed it.**
+In the NestJS build, `POST /trips/:id/events` was documented as returning 200
+and actually returned Nest's default 201. Nothing was broken; the generated
+contract was simply wrong about the API it described, which is worse than no
+contract because it is trusted.
+
+**Every NuGet package resolved to the .NET 10 line** against `net9.0` projects
+and failed to restore — five projects, five failures, one confusing message
+each. `Directory.Packages.props` now pins centrally, so there is one place to
+move rather than five that can disagree.
+
+**zsh does not word-split unquoted parameters.** A test loop that worked out to
+`set -- $triple` passed each whole triple as a single argument, so three trip
+events silently did nothing and the next request failed with an unrelated 422.
+Two minutes of confusion about the API, none of which was the API's fault.
+
+### Still open
+
+- **No auth.** Anyone who knows a trip id can post positions to it. This gates
+  phase 2's pilot, and it has no phase of its own in the roadmap — it needs
+  one.
+- Samples insert row by row through EF Core. The backend spec's Redis buffer
+  and bulk `COPY` matter at ~850,000 samples a day; at pilot volume they would
+  be a premature complication.
+- PostGIS is in the compose image and nothing uses it. The first geometry
+  column arrives with load search, in phase 5.
+- Still no screens. Nothing in this product has been looked at by a person.
+
+---
+
 ## 2026-08-26 — The domain, before any screen
 
 **Did.** Stood up the monorepo (pnpm workspaces, Turborepo, TypeScript strict

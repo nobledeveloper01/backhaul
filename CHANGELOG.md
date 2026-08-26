@@ -36,6 +36,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   pay, how far the truck runs empty to reach them, and how much of the run home
   they cover. Loads the truck cannot take are shown greyed with the reason
   rather than hidden.
+- **An API.** Trips can be opened and moved through their lifecycle, positions
+  submitted in batches, a cleaned track read back, and indicative prices and
+  settlement statements requested. Documented at `/swagger`, generated from the
+  code rather than written beside it.
 - **Bid ranking.** Offers ranked for a shipper on price, record and proximity,
   with the record shown beside the price so the shipper can overrule the order.
   A new carrier ranks as unknown, not as bad.
+
+### Notes
+
+- The API has **no authentication yet**. Anyone who knows a trip id can post
+  positions to it. It is not exposed anywhere and must not be until phase 3.
+- The API defaults to an **in-memory store**, which loses everything on
+  restart. `/healthz` reports which store is in use and whether it is durable.

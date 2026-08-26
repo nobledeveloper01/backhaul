@@ -1,0 +1,39 @@
+<Project>
+  <!--
+    Central package management.
+
+    Versions live here and nowhere else. `dotnet add package` with no version
+    resolves to the newest on nuget.org, which is the .NET 10 line — every
+    package in this solution came back as 10.x against a net9.0 project and
+    failed to restore. Pinning centrally means one place to move when this
+    solution goes to .NET 10, rather than five csproj files that can disagree.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!--
+      Pinned to what Npgsql 9.0.4 was built against.
+
+      At 9.0.11 the test project linked EF Core Relational 9.0.1 while the app
+      built against 9.0.11 — MSB3277, which is a warning rather than an error
+      and so passed a build with TreatWarningsAsErrors on. Two versions of the
+      data layer in one test run is not something to leave to luck.
+    -->
+    <EFCoreVersion>9.0.1</EFCoreVersion>
+    <AspNetVersion>9.0.11</AspNetVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetVersion)" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EFCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EFCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EFCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetVersion)" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+</Project>

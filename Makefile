@@ -7,6 +7,10 @@ SHELL := /bin/bash
 
 BIN := node_modules/.bin
 
+# The SDK is installed per-user rather than system-wide, so it is not on a
+# default PATH. Overridable for CI, where it usually is.
+DOTNET ?= $(HOME)/.dotnet/dotnet
+
 ## help: list targets
 help:
 	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/## /  /'
@@ -19,9 +23,10 @@ setup:
 test:
 	pnpm test
 
-## typecheck: tsc across the workspace
+## typecheck: tsc across the workspace, and the scripts that guard the gates
 typecheck:
 	pnpm typecheck
+	$(BIN)/tsc -p scripts/tsconfig.json
 
 ## lint: eslint across the workspace
 lint:
@@ -35,11 +40,49 @@ boundary:
 doc-check:
 	./scripts/doc-check.sh
 
+## fixtures: regenerate the parity fixtures the server is held to
+##   Part of changing a rule, not an occasional chore. See ADR-0005.
+fixtures:
+	node scripts/emit-fixtures.ts
+
+## server-build: build the .NET solution
+server-build:
+	cd server && $(DOTNET) build
+
+## server-test: the parity suite and the endpoint tests
+server-test:
+	cd server && $(DOTNET) test
+
+## server-run: the API on an in-memory store; Swagger at /swagger
+server-run:
+	cd server && $(DOTNET) run --project src/Backhaul.Api
+
+## server-up: the API against a real PostgreSQL, in Docker
+server-up:
+	cd server && docker compose up --build
+
+## server-down: stop it and drop its scratch database
+server-down:
+	cd server && docker compose down -v
+
+## fixtures-check: fail if the committed fixtures are stale
+##   A rule changed on the TypeScript side without regenerating would otherwise
+##   only surface as a C# test failure, which reads as "the server is broken"
+##   rather than "you forgot a step".
+fixtures-check:
+	@node scripts/emit-fixtures.ts >/dev/null
+	@git diff --quiet -- fixtures/parity.json || { \
+		echo "fixtures/parity.json is stale — run 'make fixtures' and commit it"; \
+		git --no-pager diff --stat -- fixtures/parity.json; \
+		exit 1; \
+	}
+	@echo "parity fixtures are current"
+
 ## gates: the blocking checks alone
-gates: typecheck lint boundary doc-check
+gates: typecheck lint boundary doc-check fixtures-check
 
 ## ci: everything
-ci: gates test
+ci: gates test server-test
 
 ## adr: new decision record — make adr T="the decision"
 adr:
@@ -67,7 +110,8 @@ journal:
 
 ## clean: build output, caches, native artefacts
 clean:
-	rm -rf packages/*/dist packages/*/.turbo apps/*/.turbo .turbo
+	rm -rf packages/*/dist packages/*/.turbo .turbo
+	rm -rf server/src/*/bin server/src/*/obj server/tests/*/bin server/tests/*/obj
 	find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
 	@echo "cleaned — node_modules left alone; make setup-clean to drop that too"
 
@@ -75,4 +119,5 @@ clean:
 setup-clean: clean
 	find . -name node_modules -maxdepth 3 -type d -prune -exec rm -rf {} +
 
-.PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean
+.PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
+	fixtures fixtures-check server-build server-test server-run server-up server-down

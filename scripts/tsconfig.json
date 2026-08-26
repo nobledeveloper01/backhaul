@@ -1,0 +1,11 @@
+{
+  // The fixture generator is not a workspace package, but it is the thing that
+  // guards the parity gate — so it gets the same strictness as the domain it
+  // reads, and is typechecked in CI rather than only failing at runtime.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["*.ts", "../packages/domain/src"]
+}

@@ -1,0 +1,45 @@
+# Everything needed to run Backhaul's API against a real database.
+#
+#   docker compose up --build
+#   open http://localhost:8080/swagger
+#
+# Without this, the API runs on an in-memory store and says so on /healthz.
+# That is deliberate — see AddBackhaulPersistence — but it is not durable, and
+# the ingest path's whole contract is durability.
+
+name: backhaul
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: backhaul
+      POSTGRES_PASSWORD: backhaul
+      POSTGRES_DB: backhaul
+    ports:
+      # 55445, not 5432. This machine already runs other projects' databases,
+      # and a collision here would point Backhaul's migrations at somebody
+      # else's schema.
+      - '55445:5432'
+    volumes:
+      - backhaul-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U backhaul -d backhaul']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Backhaul: >-
+        Host=db;Port=5432;Database=backhaul;Username=backhaul;Password=backhaul
+    ports:
+      - '8080:8080'
+
+volumes:
+  backhaul-db:

@@ -14,6 +14,7 @@
     "ci": "pnpm typecheck && pnpm lint && pnpm test && ./scripts/doc-check.sh"
   },
   "devDependencies": {
+    "@types/node": "^24.13.3",
     "eslint": "^9.39.5",
     "turbo": "^2.5.5",
     "typescript": "^5.9.2",

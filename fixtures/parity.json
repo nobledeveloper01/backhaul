@@ -1,0 +1,1200 @@
+{
+  "version": 1,
+  "generatedBy": "scripts/emit-fixtures.ts",
+  "note": "Generated from packages/domain — the source of truth. Do not edit by hand; run `make fixtures`. See ADR-0005.",
+  "constants": {
+    "commissionPct": 8,
+    "freeWaitingMs": 14400000,
+    "ratePerKm": {
+      "pickup": 90000,
+      "canter": 140000,
+      "truck_15t": 190000,
+      "trailer_30t": 270000,
+      "lowbed": 420000
+    },
+    "minimumFare": {
+      "pickup": 2500000,
+      "canter": 6000000,
+      "truck_15t": 12000000,
+      "trailer_30t": 35000000,
+      "lowbed": 60000000
+    },
+    "maxUsefulAccuracyM": 100,
+    "maxPlausibleSpeedMs": 45,
+    "signalLostAfterMs": 1200000,
+    "stalledAfterMs": 2700000,
+    "stallRadiusM": 250
+  },
+  "trip": {
+    "states": [
+      {
+        "state": "open",
+        "terminal": false,
+        "tracks": false
+      },
+      {
+        "state": "assigned",
+        "terminal": false,
+        "tracks": false
+      },
+      {
+        "state": "loading",
+        "terminal": false,
+        "tracks": true
+      },
+      {
+        "state": "in_transit",
+        "terminal": false,
+        "tracks": true
+      },
+      {
+        "state": "signal_lost",
+        "terminal": false,
+        "tracks": true
+      },
+      {
+        "state": "stalled",
+        "terminal": false,
+        "tracks": true
+      },
+      {
+        "state": "arrived",
+        "terminal": false,
+        "tracks": false
+      },
+      {
+        "state": "delivered",
+        "terminal": true,
+        "tracks": false
+      },
+      {
+        "state": "disputed",
+        "terminal": false,
+        "tracks": false
+      },
+      {
+        "state": "cancelled",
+        "terminal": true,
+        "tracks": false
+      }
+    ],
+    "transitions": [
+      {
+        "from": "open",
+        "to": "assigned"
+      },
+      {
+        "from": "open",
+        "to": "cancelled"
+      },
+      {
+        "from": "assigned",
+        "to": "loading"
+      },
+      {
+        "from": "assigned",
+        "to": "cancelled"
+      },
+      {
+        "from": "assigned",
+        "to": "disputed"
+      },
+      {
+        "from": "loading",
+        "to": "in_transit"
+      },
+      {
+        "from": "loading",
+        "to": "cancelled"
+      },
+      {
+        "from": "loading",
+        "to": "disputed"
+      },
+      {
+        "from": "in_transit",
+        "to": "signal_lost"
+      },
+      {
+        "from": "in_transit",
+        "to": "stalled"
+      },
+      {
+        "from": "in_transit",
+        "to": "arrived"
+      },
+      {
+        "from": "in_transit",
+        "to": "disputed"
+      },
+      {
+        "from": "signal_lost",
+        "to": "in_transit"
+      },
+      {
+        "from": "signal_lost",
+        "to": "stalled"
+      },
+      {
+        "from": "signal_lost",
+        "to": "arrived"
+      },
+      {
+        "from": "signal_lost",
+        "to": "disputed"
+      },
+      {
+        "from": "stalled",
+        "to": "in_transit"
+      },
+      {
+        "from": "stalled",
+        "to": "signal_lost"
+      },
+      {
+        "from": "stalled",
+        "to": "arrived"
+      },
+      {
+        "from": "stalled",
+        "to": "disputed"
+      },
+      {
+        "from": "arrived",
+        "to": "delivered"
+      },
+      {
+        "from": "arrived",
+        "to": "disputed"
+      },
+      {
+        "from": "disputed",
+        "to": "delivered"
+      },
+      {
+        "from": "disputed",
+        "to": "cancelled"
+      }
+    ],
+    "refusals": [
+      {
+        "name": "first event must be open",
+        "history": [],
+        "to": "in_transit",
+        "at": "2026-03-04T06:00:00.000Z",
+        "ok": false,
+        "reason": "not_allowed",
+        "detail": "A trip starts as 'open', not 'in_transit'."
+      },
+      {
+        "name": "illegal edge",
+        "history": [
+          {
+            "state": "open",
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "state": "assigned",
+            "at": "2026-03-04T06:10:00.000Z"
+          },
+          {
+            "state": "loading",
+            "at": "2026-03-04T06:20:00.000Z"
+          },
+          {
+            "state": "in_transit",
+            "at": "2026-03-04T06:40:00.000Z"
+          }
+        ],
+        "to": "delivered",
+        "at": "2026-03-04T07:00:00.000Z",
+        "ok": false,
+        "reason": "not_allowed",
+        "detail": "A trip cannot go from 'in_transit' to 'delivered'."
+      },
+      {
+        "name": "already delivered",
+        "history": [
+          {
+            "state": "open",
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "state": "assigned",
+            "at": "2026-03-04T06:10:00.000Z"
+          },
+          {
+            "state": "loading",
+            "at": "2026-03-04T06:20:00.000Z"
+          },
+          {
+            "state": "in_transit",
+            "at": "2026-03-04T06:40:00.000Z"
+          },
+          {
+            "state": "arrived",
+            "at": "2026-03-04T16:00:00.000Z"
+          },
+          {
+            "state": "delivered",
+            "at": "2026-03-04T16:40:00.000Z"
+          }
+        ],
+        "to": "disputed",
+        "at": "2026-03-04T17:40:00.000Z",
+        "ok": false,
+        "reason": "terminal",
+        "detail": "This trip is already delivered and cannot change again."
+      },
+      {
+        "name": "back-dated",
+        "history": [
+          {
+            "state": "open",
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "state": "assigned",
+            "at": "2026-03-04T06:10:00.000Z"
+          },
+          {
+            "state": "loading",
+            "at": "2026-03-04T06:20:00.000Z"
+          }
+        ],
+        "to": "in_transit",
+        "at": "2026-03-04T06:15:00.000Z",
+        "ok": false,
+        "reason": "out_of_order",
+        "detail": "That is dated before the trip's last event (2026-03-04T06:20:00.000Z), and accepting it would corrupt every duration on the trip."
+      },
+      {
+        "name": "same instant is allowed",
+        "history": [
+          {
+            "state": "open",
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "state": "assigned",
+            "at": "2026-03-04T06:10:00.000Z"
+          }
+        ],
+        "to": "loading",
+        "at": "2026-03-04T06:10:00.000Z",
+        "ok": true,
+        "reason": null,
+        "detail": null
+      }
+    ],
+    "timeInCases": [
+      {
+        "state": "signal_lost",
+        "nowMinutes": 400,
+        "ms": 3900000
+      },
+      {
+        "state": "in_transit",
+        "nowMinutes": 400,
+        "ms": 16500000
+      },
+      {
+        "state": "stalled",
+        "nowMinutes": 400,
+        "ms": 0
+      }
+    ]
+  },
+  "pricing": {
+    "quotes": [
+      {
+        "truck": "pickup",
+        "corridor": "across town",
+        "metres": 12000,
+        "low": 2050000,
+        "mid": 2500000,
+        "high": 2950000,
+        "atMinimum": true
+      },
+      {
+        "truck": "pickup",
+        "corridor": "Lagos–Ibadan",
+        "metres": 120000,
+        "low": 8856000,
+        "mid": 10800000,
+        "high": 12744000,
+        "atMinimum": false
+      },
+      {
+        "truck": "pickup",
+        "corridor": "Lagos–Abuja",
+        "metres": 700000,
+        "low": 51660000,
+        "mid": 63000000,
+        "high": 74340000,
+        "atMinimum": false
+      },
+      {
+        "truck": "pickup",
+        "corridor": "Lagos–Kano",
+        "metres": 830000,
+        "low": 61254000,
+        "mid": 74700000,
+        "high": 88146000,
+        "atMinimum": false
+      },
+      {
+        "truck": "canter",
+        "corridor": "across town",
+        "metres": 12000,
+        "low": 4920000,
+        "mid": 6000000,
+        "high": 7080000,
+        "atMinimum": true
+      },
+      {
+        "truck": "canter",
+        "corridor": "Lagos–Ibadan",
+        "metres": 120000,
+        "low": 13776000,
+        "mid": 16800000,
+        "high": 19824000,
+        "atMinimum": false
+      },
+      {
+        "truck": "canter",
+        "corridor": "Lagos–Abuja",
+        "metres": 700000,
+        "low": 80360000,
+        "mid": 98000000,
+        "high": 115640000,
+        "atMinimum": false
+      },
+      {
+        "truck": "canter",
+        "corridor": "Lagos–Kano",
+        "metres": 830000,
+        "low": 95284000,
+        "mid": 116200000,
+        "high": 137116000,
+        "atMinimum": false
+      },
+      {
+        "truck": "truck_15t",
+        "corridor": "across town",
+        "metres": 12000,
+        "low": 9840000,
+        "mid": 12000000,
+        "high": 14160000,
+        "atMinimum": true
+      },
+      {
+        "truck": "truck_15t",
+        "corridor": "Lagos–Ibadan",
+        "metres": 120000,
+        "low": 18696000,
+        "mid": 22800000,
+        "high": 26904000,
+        "atMinimum": false
+      },
+      {
+        "truck": "truck_15t",
+        "corridor": "Lagos–Abuja",
+        "metres": 700000,
+        "low": 109060000,
+        "mid": 133000000,
+        "high": 156940000,
+        "atMinimum": false
+      },
+      {
+        "truck": "truck_15t",
+        "corridor": "Lagos–Kano",
+        "metres": 830000,
+        "low": 129314000,
+        "mid": 157700000,
+        "high": 186086000,
+        "atMinimum": false
+      },
+      {
+        "truck": "trailer_30t",
+        "corridor": "across town",
+        "metres": 12000,
+        "low": 28700000,
+        "mid": 35000000,
+        "high": 41300000,
+        "atMinimum": true
+      },
+      {
+        "truck": "trailer_30t",
+        "corridor": "Lagos–Ibadan",
+        "metres": 120000,
+        "low": 28700000,
+        "mid": 35000000,
+        "high": 41300000,
+        "atMinimum": true
+      },
+      {
+        "truck": "trailer_30t",
+        "corridor": "Lagos–Abuja",
+        "metres": 700000,
+        "low": 154980000,
+        "mid": 189000000,
+        "high": 223020000,
+        "atMinimum": false
+      },
+      {
+        "truck": "trailer_30t",
+        "corridor": "Lagos–Kano",
+        "metres": 830000,
+        "low": 183762000,
+        "mid": 224100000,
+        "high": 264438000,
+        "atMinimum": false
+      },
+      {
+        "truck": "lowbed",
+        "corridor": "across town",
+        "metres": 12000,
+        "low": 49200000,
+        "mid": 60000000,
+        "high": 70800000,
+        "atMinimum": true
+      },
+      {
+        "truck": "lowbed",
+        "corridor": "Lagos–Ibadan",
+        "metres": 120000,
+        "low": 49200000,
+        "mid": 60000000,
+        "high": 70800000,
+        "atMinimum": true
+      },
+      {
+        "truck": "lowbed",
+        "corridor": "Lagos–Abuja",
+        "metres": 700000,
+        "low": 241080000,
+        "mid": 294000000,
+        "high": 346920000,
+        "atMinimum": false
+      },
+      {
+        "truck": "lowbed",
+        "corridor": "Lagos–Kano",
+        "metres": 830000,
+        "low": 285852000,
+        "mid": 348600000,
+        "high": 411348000,
+        "atMinimum": false
+      }
+    ],
+    "demurrages": [
+      {
+        "truck": "pickup",
+        "waitedMs": 0,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "pickup",
+        "waitedMs": 14400000,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "pickup",
+        "waitedMs": 14400001,
+        "chargeableHours": 1,
+        "amount": 150000
+      },
+      {
+        "truck": "pickup",
+        "waitedMs": 16200000,
+        "chargeableHours": 1,
+        "amount": 150000
+      },
+      {
+        "truck": "pickup",
+        "waitedMs": 36000000,
+        "chargeableHours": 6,
+        "amount": 900000
+      },
+      {
+        "truck": "pickup",
+        "waitedMs": 100800000,
+        "chargeableHours": 24,
+        "amount": 3600000
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 0,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 14400000,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 14400001,
+        "chargeableHours": 1,
+        "amount": 300000
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 16200000,
+        "chargeableHours": 1,
+        "amount": 300000
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 36000000,
+        "chargeableHours": 6,
+        "amount": 1800000
+      },
+      {
+        "truck": "canter",
+        "waitedMs": 100800000,
+        "chargeableHours": 24,
+        "amount": 7200000
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 0,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 14400000,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 14400001,
+        "chargeableHours": 1,
+        "amount": 500000
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 16200000,
+        "chargeableHours": 1,
+        "amount": 500000
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 36000000,
+        "chargeableHours": 6,
+        "amount": 3000000
+      },
+      {
+        "truck": "truck_15t",
+        "waitedMs": 100800000,
+        "chargeableHours": 24,
+        "amount": 12000000
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 0,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 14400000,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 14400001,
+        "chargeableHours": 1,
+        "amount": 750000
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 16200000,
+        "chargeableHours": 1,
+        "amount": 750000
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 36000000,
+        "chargeableHours": 6,
+        "amount": 4500000
+      },
+      {
+        "truck": "trailer_30t",
+        "waitedMs": 100800000,
+        "chargeableHours": 24,
+        "amount": 18000000
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 0,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 14400000,
+        "chargeableHours": 0,
+        "amount": 0
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 14400001,
+        "chargeableHours": 1,
+        "amount": 1000000
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 16200000,
+        "chargeableHours": 1,
+        "amount": 1000000
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 36000000,
+        "chargeableHours": 6,
+        "amount": 6000000
+      },
+      {
+        "truck": "lowbed",
+        "waitedMs": 100800000,
+        "chargeableHours": 24,
+        "amount": 24000000
+      }
+    ],
+    "settlements": [
+      {
+        "agreedNaira": 4000000,
+        "demurrageNaira": 0,
+        "advanceNaira": 0,
+        "agreed": 400000000,
+        "demurrage": 0,
+        "gross": 400000000,
+        "commission": 32000000,
+        "advance": 0,
+        "toCarrier": 368000000
+      },
+      {
+        "agreedNaira": 4000000,
+        "demurrageNaira": 150000,
+        "advanceNaira": 1000000,
+        "agreed": 400000000,
+        "demurrage": 15000000,
+        "gross": 415000000,
+        "commission": 32000000,
+        "advance": 100000000,
+        "toCarrier": 283000000
+      },
+      {
+        "agreedNaira": 3999999,
+        "demurrageNaira": 123457,
+        "advanceNaira": 1,
+        "agreed": 399999900,
+        "demurrage": 12345700,
+        "gross": 412345600,
+        "commission": 32000000,
+        "advance": 100,
+        "toCarrier": 380345500
+      },
+      {
+        "agreedNaira": 2241000,
+        "demurrageNaira": 60000,
+        "advanceNaira": 500000,
+        "agreed": 224100000,
+        "demurrage": 6000000,
+        "gross": 230100000,
+        "commission": 17928000,
+        "advance": 50000000,
+        "toCarrier": 162172000
+      },
+      {
+        "agreedNaira": 1000001,
+        "demurrageNaira": 99999,
+        "advanceNaira": 0,
+        "agreed": 100000100,
+        "demurrage": 9999900,
+        "gross": 110000000,
+        "commission": 8000000,
+        "advance": 0,
+        "toCarrier": 102000000
+      },
+      {
+        "agreedNaira": 500000,
+        "demurrageNaira": 0,
+        "advanceNaira": 900000,
+        "agreed": 50000000,
+        "demurrage": 0,
+        "gross": 50000000,
+        "commission": 4000000,
+        "advance": 90000000,
+        "toCarrier": -44000000
+      },
+      {
+        "agreedNaira": 0,
+        "demurrageNaira": 0,
+        "advanceNaira": 0,
+        "agreed": 0,
+        "demurrage": 0,
+        "gross": 0,
+        "commission": 0,
+        "advance": 0,
+        "toCarrier": 0
+      }
+    ],
+    "roundings": [
+      {
+        "amount": 12345,
+        "pct": 8,
+        "result": 988
+      },
+      {
+        "amount": -12345,
+        "pct": 8,
+        "result": -988
+      },
+      {
+        "amount": 50,
+        "pct": 8,
+        "result": 4
+      },
+      {
+        "amount": -50,
+        "pct": 8,
+        "result": -4
+      },
+      {
+        "amount": 149,
+        "pct": 8,
+        "result": 12
+      },
+      {
+        "amount": 151,
+        "pct": 8,
+        "result": 12
+      },
+      {
+        "amount": 1,
+        "pct": 8,
+        "result": 0
+      },
+      {
+        "amount": -1,
+        "pct": 8,
+        "result": 0
+      },
+      {
+        "amount": 6250,
+        "pct": 8,
+        "result": 500
+      },
+      {
+        "amount": -6250,
+        "pct": 8,
+        "result": -500
+      }
+    ],
+    "classing": [
+      {
+        "weight": 0.5,
+        "truck": "pickup"
+      },
+      {
+        "weight": 1,
+        "truck": "pickup"
+      },
+      {
+        "weight": 1.01,
+        "truck": "canter"
+      },
+      {
+        "weight": 5,
+        "truck": "canter"
+      },
+      {
+        "weight": 5.01,
+        "truck": "truck_15t"
+      },
+      {
+        "weight": 15,
+        "truck": "truck_15t"
+      },
+      {
+        "weight": 15.01,
+        "truck": "trailer_30t"
+      },
+      {
+        "weight": 30,
+        "truck": "trailer_30t"
+      },
+      {
+        "weight": 40,
+        "truck": "lowbed"
+      },
+      {
+        "weight": 40.01,
+        "truck": null
+      },
+      {
+        "weight": 80,
+        "truck": null
+      }
+    ]
+  },
+  "tracking": {
+    "distances": [
+      {
+        "from": "lagos",
+        "to": "ibadan",
+        "metres": 119929
+      },
+      {
+        "from": "lagos",
+        "to": "abuja",
+        "metres": 529681
+      },
+      {
+        "from": "lagos",
+        "to": "kano",
+        "metres": 840780
+      },
+      {
+        "from": "lagos",
+        "to": "maiduguri",
+        "metres": 1227218
+      },
+      {
+        "from": "ibadan",
+        "to": "abuja",
+        "metres": 424224
+      },
+      {
+        "from": "ibadan",
+        "to": "kano",
+        "metres": 723537
+      },
+      {
+        "from": "ibadan",
+        "to": "maiduguri",
+        "metres": 1123786
+      },
+      {
+        "from": "abuja",
+        "to": "kano",
+        "metres": 350502
+      },
+      {
+        "from": "abuja",
+        "to": "maiduguri",
+        "metres": 699565
+      },
+      {
+        "from": "kano",
+        "to": "maiduguri",
+        "metres": 496372
+      }
+    ],
+    "tracks": [
+      {
+        "name": "empty",
+        "fixes": [],
+        "kept": 0,
+        "dropped": [],
+        "quality": 0,
+        "distanceMetres": 0
+      },
+      {
+        "name": "clean run",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.6,
+            "lon": 3.5,
+            "accuracy": 10,
+            "at": "2026-03-04T08:00:00.000Z"
+          },
+          {
+            "lat": 7.3775,
+            "lon": 3.947,
+            "accuracy": 10,
+            "at": "2026-03-04T11:00:00.000Z"
+          }
+        ],
+        "kept": 3,
+        "dropped": [],
+        "quality": 1,
+        "distanceMetres": 120129
+      },
+      {
+        "name": "one tower fix in the middle",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.46,
+            "lon": 3.39,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          },
+          {
+            "lat": 12.0022,
+            "lon": 8.592,
+            "accuracy": 10,
+            "at": "2026-03-04T07:30:00.000Z"
+          },
+          {
+            "lat": 6.465,
+            "lon": 3.395,
+            "accuracy": 10,
+            "at": "2026-03-04T08:00:00.000Z"
+          },
+          {
+            "lat": 6.47,
+            "lon": 3.4,
+            "accuracy": 10,
+            "at": "2026-03-04T09:00:00.000Z"
+          }
+        ],
+        "kept": 4,
+        "dropped": [
+          "implausible_jump"
+        ],
+        "quality": 0.8,
+        "distanceMetres": 2425
+      },
+      {
+        "name": "half the fixes are useless",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.456,
+            "lon": 3.385,
+            "accuracy": 5000,
+            "at": "2026-03-04T07:00:00.000Z"
+          },
+          {
+            "lat": 6.457,
+            "lon": 3.386,
+            "accuracy": 5000,
+            "at": "2026-03-04T08:00:00.000Z"
+          },
+          {
+            "lat": 6.458,
+            "lon": 3.387,
+            "accuracy": 10,
+            "at": "2026-03-04T09:00:00.000Z"
+          }
+        ],
+        "kept": 2,
+        "dropped": [
+          "too_imprecise",
+          "too_imprecise"
+        ],
+        "quality": 0.5,
+        "distanceMetres": 463
+      },
+      {
+        "name": "a parked truck does not drift into movement",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 90,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.4562,
+            "lon": 3.3852,
+            "accuracy": 90,
+            "at": "2026-03-04T06:30:00.000Z"
+          }
+        ],
+        "kept": 2,
+        "dropped": [],
+        "quality": 1,
+        "distanceMetres": 180
+      }
+    ],
+    "observations": [
+      {
+        "name": "no fixes",
+        "fixes": [],
+        "now": "2026-03-04T16:00:00.000Z",
+        "atWaypoint": false,
+        "observation": "unknown",
+        "silentForMs": null
+      },
+      {
+        "name": "one fix",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T06:05:00.000Z",
+        "atWaypoint": false,
+        "observation": "unknown",
+        "silentForMs": 300000
+      },
+      {
+        "name": "silent",
+        "fixes": [
+          {
+            "lat": 6.45,
+            "lon": 3.38,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.55,
+            "lon": 3.48,
+            "accuracy": 10,
+            "at": "2026-03-04T06:10:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T06:31:00.000Z",
+        "atWaypoint": false,
+        "observation": "silent",
+        "silentForMs": 1260000
+      },
+      {
+        "name": "a fifteen-minute gap is not an alert",
+        "fixes": [
+          {
+            "lat": 6.45,
+            "lon": 3.38,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.55,
+            "lon": 3.48,
+            "accuracy": 10,
+            "at": "2026-03-04T06:10:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T06:25:00.000Z",
+        "atWaypoint": false,
+        "observation": "moving",
+        "silentForMs": 900000
+      },
+      {
+        "name": "short stop",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:10:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:20:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T06:21:00.000Z",
+        "atWaypoint": false,
+        "observation": "stopped",
+        "silentForMs": 60000
+      },
+      {
+        "name": "an hour parked in the middle of nowhere",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:20:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:40:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T07:01:00.000Z",
+        "atWaypoint": false,
+        "observation": "stalled",
+        "silentForMs": 60000
+      },
+      {
+        "name": "the same hour parked at the depot",
+        "fixes": [
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:20:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T06:40:00.000Z"
+          },
+          {
+            "lat": 6.455,
+            "lon": 3.3841,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          }
+        ],
+        "now": "2026-03-04T07:01:00.000Z",
+        "atWaypoint": true,
+        "observation": "stopped",
+        "silentForMs": 60000
+      }
+    ]
+  }
+}

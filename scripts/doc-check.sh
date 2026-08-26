@@ -28,6 +28,8 @@ REQUIRED=(
   docs/00-PRODUCT-STATEMENT.md
   docs/ROADMAP.md
   docs/JOURNAL.md
+  server/README.md
+  fixtures/parity.json
 )
 
 for doc in "${REQUIRED[@]}"; do

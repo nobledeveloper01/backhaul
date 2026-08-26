@@ -23,12 +23,19 @@ artefacts for both platforms.
 | `packages/domain` importable by a non-RN consumer, proving the boundary holds | **green** — the package builds to plain ESM and its tests run under Node with no RN present |
 | Boundary rule proven to fire | **green** — `scripts/boundary-check.sh` |
 | Documentation gate running in CI | **green** — `scripts/doc-check.sh` |
+| The server builds, and agrees with the domain | **green** — 106 parity cases and 16 endpoint tests |
+| Parity staleness gate proven to fire | **green** — `make fixtures-check` |
 
 Domain engines for later phases are being written now, ahead of their app
 surfaces. That is deliberate: they are pure arithmetic, they need no device,
 and settling them first is what makes the app layer thin. The trip state
 machine belongs to phase 2 and the matching engine to phase 5; both are done
 and tested, and neither has a screen.
+
+The API is further along than phase 0 needs for the same reason: trips,
+ingest, tracks and pricing are all served, verified against real PostgreSQL,
+and proven to survive a process restart. What it does *not* have is auth,
+which gates it from being useful to anyone outside this machine.
 
 ---
 
@@ -64,6 +71,9 @@ position age and trail, stop detection, ETA ranges on screen.
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
 both platforms. First external pilot users onboard here — before any
 marketplace exists.
+
+**Blocked on auth**, which has no phase of its own and needs one: the ingest
+endpoint currently accepts a batch from anybody who knows a trip id.
 
 ---
 
