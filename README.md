@@ -54,7 +54,7 @@ of the defects in §8 were found.
 | Domain tests | **140** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
-| App tests | **10** passing |
+| App tests | **16** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Screens | shipper, carrier and driver faces, both themes |
 | Authentication | **none** — see §11 |
@@ -359,6 +359,31 @@ is two answers to give a shipper.
 regenerate surfaces as *"you forgot a step"* rather than *"the server is
 broken"*. Full argument: [ADR-0005](docs/adr/0005-the-server-is-dotnet-and-parity-is-a-test.md).
 
+### And the wire formats, which fixtures cannot check
+
+Fixtures hold the two *domains* to the same answers. Nothing was holding the
+two *serialisers* to each other — and the last time these two spoke different
+spellings of the same instant, it took a fixture comparing refusal wording to
+notice.
+
+`make round-trip` drives the running server through the app's own client and
+demands they agree:
+
+```
+ok    an illegal transition is refused
+ok    the refusal carries the sentence, not a status line
+ok    timestamps survive the round trip exactly
+ok    the same batch replays rather than writing twice
+ok    the tower fix was excluded
+ok    the server and the app clean the track identically
+ok    and agree on the distance, to the metre
+ok    and on what the truck is doing
+```
+
+The last three run the same position fixes through the TypeScript domain and
+compare against what the C# server returned — the whole stack, end to end, on
+one set of numbers.
+
 ---
 
 ## 8. Correctness notes
@@ -451,6 +476,7 @@ was missed, not in anticipation of it:
 | `make fixtures-check` | **Fixtures stale after a rule changed on the TypeScript side** |
 | `make app-typecheck` | The app, under the same strict settings as the domain |
 | `make server-test` | 106 parity cases, 16 endpoint tests |
+| `make round-trip` | The app's client and the real server disagreeing about the wire format |
 
 The doc gate's git-tracked check exists because a sibling project had a
 document written, committed with a message saying so, and absent from GitHub

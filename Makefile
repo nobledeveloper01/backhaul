@@ -84,6 +84,13 @@ server-run:
 server-up:
 	cd server && docker compose up --build
 
+## round-trip: drive the real server through the app's own client
+##   Proves the two wire formats agree, which the parity fixtures cannot: they
+##   hold the two domains to the same answers, not the two serialisers.
+##   Expects a server on :5111 — `make server-run` in another shell.
+round-trip:
+	node scripts/round-trip.ts
+
 ## server-down: stop it and drop its scratch database
 server-down:
 	cd server && docker compose down -v
@@ -146,4 +153,4 @@ setup-clean: clean
 
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
-	app-typecheck app-test app-pods app-ios shot
+	app-typecheck app-test app-pods app-ios shot round-trip

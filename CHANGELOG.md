@@ -41,6 +41,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   one action. Light and dark, with a switcher; light by default.
 - **A corridor view.** Where the truck is along its route, drawn to scale, with
   the stretches that had no signal marked in the position they happened.
+- **An API client in the app**, with a sealed result rather than exceptions: a
+  driver offline for hours is a normal condition, not an error path, and a
+  failed upload says so plainly so the phone keeps its rows.
 - **An API.** Trips can be opened and moved through their lifecycle, positions
   submitted in batches, a cleaned track read back, and indicative prices and
   settlement statements requested. Documented at `/swagger`, generated from the

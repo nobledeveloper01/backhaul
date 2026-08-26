@@ -1,11 +1,17 @@
 {
-  // The fixture generator is not a workspace package, but it is the thing that
-  // guards the parity gate — so it gets the same strictness as the domain it
-  // reads, and is typechecked in CI rather than only failing at runtime.
+  // The scripts are not a workspace package, but they are what guards the
+  // gates — the fixture generator and the round-trip check — so they get the
+  // same strictness as the domain they read, and are typechecked in CI rather
+  // than only failing at runtime.
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    // The client imports the domain by package name; here it resolves to the
+    // source, exactly as Metro resolves it in the app.
+    "paths": {
+      "@backhaul/domain": ["../packages/domain/src/index.ts"]
+    }
   },
-  "include": ["*.ts", "../packages/domain/src"]
+  "include": ["*.ts", "../packages/domain/src", "../apps/mobile/src/api"]
 }
