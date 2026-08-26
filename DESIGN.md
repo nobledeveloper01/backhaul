@@ -1,0 +1,136 @@
+# Design system
+
+Read this before any visual or interaction decision. Colour, type, spacing and
+target sizes are defined here and deviations need explicit approval.
+
+Full rationale lives in the UX design document; this is the operative
+reference and the tokens are the source of truth in
+`packages/design-tokens`.
+
+---
+
+## Three faces, one binary
+
+| Face | Wants | Default type | Target size |
+|---|---|---|---|
+| **Driver** | To be left alone | `bodyDriver` — 19/28 | **64 dp** |
+| **Shipper** | A map and an ETA | `body` — 16/24 | 48 dp |
+| **Fleet** | Utilisation | `body` — 16/24 | 48 dp |
+
+The driver face is not the shipper face with bigger text. It is a different
+product for a different person with different motivation: the driver did not
+choose this app, is paid whether or not they use it, and is reading it in a
+moving cab, possibly wearing gloves, on a mounted phone. **Driver screen time
+is the enemy.** Every interaction the driver has to perform is a cost, and the
+right number of them per trip is close to zero.
+
+---
+
+## The four rules that are easy to break by accident
+
+### 1. Show the age of everything
+
+A position from 40 minutes ago is not a position now. Every position, ETA and
+status carries its age, and past 30 minutes the age is what is emphasised —
+not the value.
+
+This is the same rule Grid enforces about measured versus modelled, arrived at
+for the same reason: a figure shown with more confidence than its provenance
+supports is worse than no figure. `Eta.isModelled` and `CleanedTrack`'s fix
+quality both exist to be rendered, not just computed.
+
+### 2. Stale is grey, never red
+
+`stale` is `#6E7B8A`, deliberately not an alarm colour. A gap in coverage is a
+fact about Nigerian network infrastructure, not a fault of the driver, and
+colouring it as an alarm trains shippers to distrust drivers for something
+nobody controls.
+
+The copy follows the colour: *"No signal since 3:40pm. This stretch of the
+Lagos–Ibadan road often has none."* Never blame the driver for the network.
+
+### 3. Ranges, not false precision
+
+ETAs are ranges. Rates are bands. A single number reads as a promise, and
+neither the road nor the diesel price will keep it. `quote()` returns
+`low`/`mid`/`high` and `eta()` returns `earliest`/`expected`/`latest` because
+the domain refuses to hand a screen a single figure it could render as one.
+
+### 4. Tracking is consented, visible and bounded
+
+The driver can always see what is being shared and with whom, and the sharing
+stops when the trip does. `shouldTrack()` returns false for every terminal
+state, and that is a product rule before it is a battery optimisation.
+
+---
+
+## Colour
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `surface` | `#FFFFFF` | `#0C0F14` | Background |
+| `surfaceDim` | `#F2F4F7` | `#151A21` | Cards |
+| `outline` | `#D8DDE4` | `#252D37` | Dividers |
+| `textPrimary` | `#0C1119` | `#EBEFF4` | Body |
+| `textSecondary` | `#5A6675` | `#9BA7B5` | Labels |
+| `accent` | `#1A4FA0` | `#5B93E0` | Primary action |
+| `moving` | `#1B7F4B` | `#4FBF84` | Truck in motion |
+| `stopped` | `#B4690E` | `#E0A44A` | Stationary beyond threshold |
+| `stale` | `#6E7B8A` | `#8A96A5` | Position older than 30 min |
+| `exception` | `#B0281F` | `#E8695E` | Damage, incident, deviation |
+| `verifiedTier` | `#1A4FA0` | `#5B93E0` | Verified badge |
+| `businessTier` | `#1B7F4B` | `#4FBF84` | Business badge |
+| `trustedTier` | `#9A6B12` | `#D6A93F` | Trusted badge |
+
+Colour never carries meaning alone. Every state that has a colour also has a
+label or an icon, because the map is read in sunlight through a windscreen.
+
+---
+
+## Typography
+
+**Inter** throughout; **Roboto Mono, tabular** for plate numbers, rates,
+weights and timestamps.
+
+| Style | Size / Line | Use |
+|---|---|---|
+| `display` | 34 / 40 | The ETA; the rate on a bid |
+| `headline` | 26 / 32 | Screen titles |
+| `title` | 19 / 25 | Card titles |
+| `body` | 16 / 24 | Default |
+| `bodyDriver` | 19 / 28 | Driver face default |
+| `label` | 14 / 20 | Metadata |
+| `mono` | 16 / 22 tabular | Plates, rates, weights |
+
+Tabular figures are not a nicety. A rate that shifts horizontally as its digits
+change is a rate that looks like it is being edited while you read it.
+
+---
+
+## Voice
+
+Plain and operational. Say what happened and what it means for the reader.
+
+- **Never blame the driver for the network.** "No signal since 3:40pm", not
+  "the driver has not reported".
+- **A refusal explains what would fix it.** Every `unknown` result in the
+  domain carries a `detail` sentence written to be rendered directly. "Only 2
+  positions so far. An estimate from this truck's own pace needs 4."
+- **Say the figure is an estimate where it is one**, in the same breath as the
+  figure — not in a footnote.
+- **No exclamation marks.** Nothing in freight is exciting to the person
+  reading about it at 11pm.
+
+---
+
+## Definition of done for anything visual
+
+- [ ] Light and dark both authored
+- [ ] 200% text scaling without truncation — **check it, do not assume it**;
+      Grid had seven rows across six screens overflow the first time anybody
+      actually looked
+- [ ] Screen-reader labelled; colour never the sole carrier of meaning
+- [ ] Every error path has a forward path — no dead ends
+- [ ] Driver-face targets at 64 dp, shipper and fleet at 48 dp
+- [ ] Verified on a physical low-end Android (Tecno or Infinix, 2 GB RAM)
+- [ ] Copy read against the voice rules above

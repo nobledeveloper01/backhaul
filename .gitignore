@@ -1,6 +1,17 @@
-# Internal working documents stay local. Only the product statement is tracked.
+# Internal working documents stay local; the shipped ones are allow-listed.
+#
+# This block is a trap and has already sprung once, on Grid: a document was
+# written, committed with a message saying so, and was not on GitHub for a day,
+# because it was not on the list and `git add` had nothing to add. Adding a
+# document here is half the job — `scripts/doc-check.sh` asserts each required
+# document is actually *tracked*, which is the half that catches it.
 docs/*
 !docs/00-PRODUCT-STATEMENT.md
+!docs/ROADMAP.md
+!docs/JOURNAL.md
+!docs/FEATURE-BACKLOG.md
+!docs/adr/
+!docs/screenshots/
 
 # OS / editors
 .DS_Store
@@ -20,3 +31,8 @@ android/build/
 android/app/build/
 .env
 .env.local
+
+# Build output and task cache
+dist/
+.turbo/
+*.tsbuildinfo

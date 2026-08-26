@@ -15,6 +15,13 @@
     "exactOptionalPropertyTypes": true,
 
     "verbatimModuleSyntax": true,
+
+    // Source imports carry the `.ts` extension so Node's own type stripping
+    // can run the tests and the engines directly, with no build step and no
+    // loader. `rewriteRelativeImportExtensions` turns them into `.js` on the
+    // way out, so the built package is ordinary ESM.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
