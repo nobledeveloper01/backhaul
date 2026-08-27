@@ -519,4 +519,45 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
         long PaysAKobo,
         long PaysBKobo,
         long CarrierGetsKobo);
+
+    [Fact]
+    public async Task A_shipper_can_still_see_a_load_after_it_is_awarded()
+    {
+        // The board is what is still on offer; this is what they posted. A
+        // shipper who could no longer see an awarded load would have no way to
+        // reach the bids on it.
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var load = Guid.NewGuid();
+        await PostAsync(shipper, load, Load());
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var bidding = carrier.Carrying(board.CreateClient());
+        var placed = await bidding.PutAsJsonAsync(
+            $"/v1/loads/{load}/bid",
+            new { amountKobo = 180_000_000L, atLat = LagosLat, atLon = LagosLon });
+        placed.EnsureSuccessStatusCode();
+
+        var bids = await shipper.GetFromJsonAsync<List<RankedBidView>>($"/v1/loads/{load}/bids", Json);
+        await shipper.PostAsync($"/v1/loads/{load}/bids/{bids![0].Bid.Id}/accept", null);
+
+        var onTheBoard = await bidding.GetFromJsonAsync<List<RankedLoadView>>("/v1/loads", Json);
+        Assert.DoesNotContain(onTheBoard!, entry => entry.Load.Id == load);
+
+        var mine = await shipper.GetFromJsonAsync<List<LoadView>>("/v1/me/loads", Json);
+        var found = Assert.Single(mine!, row => row.Id == load);
+        Assert.True(found.Awarded);
+    }
+
+    [Fact]
+    public async Task A_carrier_has_no_posted_loads()
+    {
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var mine = await carrier.Carrying(factory.CreateClient())
+            .GetFromJsonAsync<List<LoadView>>("/v1/me/loads", Json);
+
+        Assert.Empty(mine!);
+    }
+
 }

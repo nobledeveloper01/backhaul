@@ -47,10 +47,25 @@ public sealed class LoadRequest
     public DateTimeOffset ExpiresAt { get; set; }
 }
 
+/// <summary>
+/// A load on the board.
+/// </summary>
+/// <remarks>
+/// The coordinates travel. "Going your way" is a claim about where a load
+/// starts and ends, and a client that cannot place one is a client that cannot
+/// price the haul, draw it, or say how far the empty run to reach it is — the
+/// three things this board exists to answer. They are the same coordinates the
+/// ranking used, so a carrier can check the ranking's arithmetic rather than
+/// take it on faith.
+/// </remarks>
 public sealed record LoadResponse(
     Guid Id,
     string OriginName,
     string DestinationName,
+    double OriginLat,
+    double OriginLon,
+    double DestinationLat,
+    double DestinationLon,
     string Cargo,
     double WeightTonnes,
     string Requires,

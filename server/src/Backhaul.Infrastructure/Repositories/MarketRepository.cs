@@ -65,6 +65,30 @@ public sealed class MarketRepository(BackhaulDbContext db)
         return rows.Select(ToRecord).ToList();
     }
 
+    /// <summary>
+    /// A shipper's own loads, newest first, awarded ones included.
+    /// </summary>
+    /// <remarks>
+    /// Not the board. The board is what is still on offer; this is what a
+    /// shipper posted, and the two diverge the moment one is awarded — a
+    /// shipper who could no longer see a load they had posted would have no
+    /// way to reach the bids on it.
+    /// </remarks>
+    public async Task<IReadOnlyList<LoadRecord>> MineAsync(
+        Principal principal,
+        CancellationToken ct = default)
+    {
+        if (principal.Role != Role.Shipper) return [];
+
+        var rows = await db.Loads
+            .Where(l => l.ShipperId == principal.UserId)
+            .OrderByDescending(l => l.ReadyBy)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        return rows.Select(ToRecord).ToList();
+    }
+
     public async Task<LoadRecord?> LoadAsync(Guid loadId, CancellationToken ct = default)
     {
         var row = await db.Loads.AsNoTracking().FirstOrDefaultAsync(l => l.Id == loadId, ct);

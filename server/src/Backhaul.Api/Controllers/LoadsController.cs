@@ -122,6 +122,19 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
             .ToList();
     }
 
+    /// <summary>
+    /// The caller's own loads, newest first.
+    /// </summary>
+    /// <remarks>
+    /// Not the board. The board is what is still on offer; this is what the
+    /// shipper posted, awarded ones included — a shipper who could no longer
+    /// see a load they had posted would have no way to reach the bids on it.
+    /// </remarks>
+    [HttpGet("/v1/me/loads")]
+    [ProducesResponseType<IReadOnlyList<LoadResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<LoadResponse>>> Mine(CancellationToken ct) =>
+        (await market.MineAsync(Caller, ct)).Select(ToResponse).ToList();
+
     /// <summary>Post a load, or amend one that has not been awarded.</summary>
     [HttpPut("{loadId:guid}")]
     [ProducesResponseType<LoadResponse>(StatusCodes.Status200OK)]
@@ -281,6 +294,10 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         row.Id,
         row.OriginName,
         row.DestinationName,
+        row.OriginLat,
+        row.OriginLon,
+        row.DestinationLat,
+        row.DestinationLon,
         row.Cargo,
         row.WeightTonnes,
         row.Requires,

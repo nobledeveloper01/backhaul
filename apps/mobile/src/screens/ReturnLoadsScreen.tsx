@@ -7,17 +7,14 @@ import {
   margin,
   walkAwayBelow,
   distance,
-  filterLoads,
   format,
   fromNaira,
   quote,
-  rankLoads,
-  type Carrier,
-  type Load,
   type LoadFilter,
-  type LoadScore,
-  type LoadSummary,
   type Position,
+  type Blocker,
+  type Kobo,
+  type TruckClass,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -30,6 +27,9 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { RankedLoadView } from '../api/client';
 import { BLOCKER_WORDS, whyNoLoads, whyThisFare, whyThisLoad } from '../state/words';
 
 const at = (lat: number, lon: number, when: Date): Position => ({
@@ -71,85 +71,37 @@ export function ReturnLoadsScreen({
   const KANO = at(12.0022, 8.592, now);
   const LAGOS = at(6.455, 3.3841, now);
 
-  const carrier: Carrier = { at: KANO, freeFrom: now, truck: 'trailer_30t', base: LAGOS };
 
-  const loads: Load[] = useMemo(
-    () => [
-      {
-        id: 'l1',
-        origin: at(12.0022, 8.592, now),
-        destination: at(6.455, 3.3841, now),
-        weight: 26,
-        requires: 'trailer_30t',
-        offered: fromNaira(1_850_000),
-        readyBy: new Date(now.getTime() + 6 * 3_600_000),
-        expiresAt: new Date(now.getTime() + 40 * 3_600_000),
-      },
-      {
-        id: 'l2',
-        origin: at(11.8311, 13.151, now),
-        destination: at(11.8, 13.2, now),
-        weight: 24,
-        requires: 'trailer_30t',
-        offered: fromNaira(2_600_000),
-        readyBy: new Date(now.getTime() + 20 * 3_600_000),
-        expiresAt: new Date(now.getTime() + 60 * 3_600_000),
-      },
-      {
-        id: 'l3',
-        origin: at(10.5222, 7.4383, now),
-        destination: at(7.3775, 3.947, now),
-        weight: 28,
-        requires: 'trailer_30t',
-        offered: fromNaira(1_600_000),
-        readyBy: new Date(now.getTime() + 30 * 3_600_000),
-        expiresAt: new Date(now.getTime() + 70 * 3_600_000),
-      },
-      {
-        id: 'l4',
-        origin: at(12.0, 8.6, now),
-        destination: at(6.5, 3.4, now),
-        weight: 38,
-        requires: 'lowbed',
-        offered: fromNaira(4_200_000),
-        readyBy: new Date(now.getTime() + 4 * 3_600_000),
-        expiresAt: new Date(now.getTime() + 50 * 3_600_000),
-      },
-    ],
-    [now],
-  );
-
-  const routes: Record<string, [string, string, string]> = {
-    l1: ['Kano', 'Lagos', 'cement'],
-    l2: ['Maiduguri', 'Gwoza', 'fertiliser'],
-    l3: ['Kaduna', 'Ibadan', 'grain'],
-    l4: ['Kano', 'Lagos', 'plant hire'],
-  };
-
+  const { api } = useSession();
   const [filter, setFilter] = useState<LoadFilter>(NO_LOAD_FILTER);
 
   /*
-    Filtered before ranking, not after. Ranking a load out of a search the
-    carrier typed would leave "1." missing from the list with no explanation,
-    and the ranks are what the screen is arguing with.
-  */
-  const summaries: LoadSummary[] = loads.map((load) => {
-    const [from, to, cargo] = routes[load.id] ?? ['', '', ''];
-    return {
-      id: load.id,
-      origin: from,
-      destination: to,
-      cargo,
-      weightKg: load.weight * 1_000,
-      offered: load.offered ?? fromNaira(0),
-      readyFrom: load.readyBy,
-      truckClass: load.requires,
-      shipperTier: 'business',
-    };
-  });
+    The board is ranked by the server, and the filter goes with the request.
 
-  const allowed = new Set(filterLoads(summaries, filter).map((summary) => summary.id));
-  const ranked = rankLoads(carrier, loads.filter((load) => allowed.has(load.id)), now);
+    Ranking on the phone would need every load on the board on the phone, which
+    is the thing a board exists to avoid — and the ranking is the product, so
+    two implementations of it is two answers to "where should this truck go
+    next". Both sides run `rankLoads`; only one of them has the board.
+
+    Filtered before ranked, on the server, for the reason it was filtered before
+    ranked here: ranking a load out of a search the carrier typed leaves "1."
+    missing from the list with no explanation.
+  */
+  const { query } = useMine(
+    () =>
+      api.loads({
+        lat: KANO.lat,
+        lon: KANO.lon,
+        truck: 'trailer_30t',
+        baseLat: LAGOS.lat,
+        baseLon: LAGOS.lon,
+        ...(filter.text.trim() === '' ? {} : { text: filter.text }),
+        ...(filter.minimumOffer === null ? {} : { minimumOfferKobo: filter.minimumOffer }),
+      }),
+    [api, filter.text, filter.minimumOffer],
+  );
+
+  const ranked = query.state === 'ready' ? query.value : [];
   const takeable = ranked.filter((scored) => scored.blocked === null);
   const blocked = ranked.filter((scored) => scored.blocked !== null);
 
@@ -281,12 +233,7 @@ export function ReturnLoadsScreen({
       ) : null}
 
       {takeable.map((scored, index) => (
-        <LoadRow
-          key={scored.load.id}
-          scored={scored}
-          route={routes[scored.load.id] ?? ['', '', '']}
-          rank={index + 1}
-        />
+        <LoadRow key={scored.load.id} scored={scored} rank={index + 1} />
       ))}
 
       {blocked.length > 0 ? (
@@ -295,12 +242,7 @@ export function ReturnLoadsScreen({
             {t('not_for_this_truck').toUpperCase()}
           </Text>
           {blocked.map((scored) => (
-            <LoadRow
-              key={scored.load.id}
-              scored={scored}
-              route={routes[scored.load.id] ?? ['', '', '']}
-              rank={0}
-            />
+        <LoadRow key={scored.load.id} scored={scored} rank={0} />
           ))}
         </>
       ) : null}
@@ -348,34 +290,49 @@ function Shortcut({
   );
 }
 
-function LoadRow({
-  scored,
-  route,
-  rank,
-}: {
-  scored: LoadScore;
-  route: [string, string, string];
-  rank: number;
-}) {
+function LoadRow({ scored, rank }: { scored: RankedLoadView; rank: number }) {
   const colours = useColours();
   const { t } = useLanguage();
   const blocked = scored.blocked !== null;
-  const [from, to, cargo] = route;
 
-  const indicative = quote(scored.load.requires, distance(scored.load.origin, scored.load.destination));
-  const homeward = scored.progressHome > 50_000;
+  const from = scored.load.originName;
+  const to = scored.load.destinationName;
+  const cargo = scored.load.cargo;
+  const truck = scored.load.requires as TruckClass;
 
-  const laden = distance(scored.load.origin, scored.load.destination);
+  /*
+    Priced here, from the coordinates the ranking used.
+
+    The quote and the cost model are cheap, pure and parity-held, and running
+    them locally means the carrier sees the arithmetic move when they change
+    the diesel price rather than after a round trip. What could not be done
+    locally is the ranking, which needs the whole board.
+  */
+  const laden = distance(
+    { lat: scored.load.originLat, lon: scored.load.originLon, accuracy: 0, at: scored.load.readyBy },
+    {
+      lat: scored.load.destinationLat,
+      lon: scored.load.destinationLon,
+      accuracy: 0,
+      at: scored.load.readyBy,
+    },
+  );
+
+  const indicative = quote(truck, laden);
+  const homeward = scored.progressHomeKm > 50;
+
   const costing = {
-    truck: scored.load.requires,
+    truck,
     ladenM: laden,
     // The empty run to reach it. The whole argument of this screen.
-    emptyM: scored.deadhead,
+    emptyM: scored.deadheadKm * 1_000,
     dieselPerLitre: fromNaira(1_100),
     levies: fromNaira(Math.round((laden / 1_000) * 45)),
     other: fromNaira(15_000),
   };
-  const verdict = advise(scored.load.offered ?? (0 as never), costing);
+
+  const offered = (scored.load.offeredKobo ?? 0) as Kobo;
+  const verdict = advise(offered, costing);
 
   return (
     <Card
@@ -408,7 +365,7 @@ function LoadRow({
         <View style={styles.metaRow}>
           <Icon name="alert" size="sm" colour={colours.stale} />
           <Text variant="body" tone="stale" style={styles.flex}>
-            {t(BLOCKER_WORDS[scored.blocked ?? 'expired'])}
+            {t(BLOCKER_WORDS[(scored.blocked ?? 'expired') as Blocker])}
           </Text>
         </View>
       ) : (
@@ -416,7 +373,7 @@ function LoadRow({
           <View style={styles.metaRow}>
             <Icon name={homeward ? 'swap' : 'route'} size="sm" colour={colours.textSecondary} />
             <Text variant="body" tone="secondary" style={styles.flex}>
-              {whyThisLoad(scored.deadhead, scored.progressHome, true, t)}
+              {whyThisLoad(scored.deadheadKm * 1_000, scored.progressHomeKm * 1_000, true, t)}
             </Text>
           </View>
 
@@ -428,7 +385,7 @@ function LoadRow({
               The settlement column keeps tabular, because that is a column.
             */}
             <Text variant="display">
-              {scored.load.offered === undefined ? '—' : format(scored.load.offered)}
+              {scored.load.offeredNaira ?? '—'}
             </Text>
           </View>
           <Text variant="label" tone="secondary">
@@ -460,8 +417,8 @@ function LoadRow({
             >
               {whyThisFare(
                 verdict.take,
-                margin(scored.load.offered ?? (0 as never), costing).fraction,
-                (scored.load.offered ?? 0) < walkAwayBelow(costing),
+                margin(offered, costing).fraction,
+                offered < walkAwayBelow(costing),
                 t,
               )}
             </Text>

@@ -224,6 +224,15 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'recommended'
+  | 'cheapest'
+  | 'completed_trips'
+  | 'carriers_have_bid'
+  | 'at_the_pickup_now'
+  | 'km_from_the_pickup'
+  | 'award'
+  | 'no_bids_yet'
+  | 'no_loads_posted'
   | 'of_that_is_your_own_money'
   | 'usually'
   | 'after_three_runs'
@@ -700,6 +709,15 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  recommended: "Recommended",
+  cheapest: "Cheapest",
+  completed_trips: "completed trips",
+  carriers_have_bid: "carriers have bid",
+  at_the_pickup_now: "At the pickup now",
+  km_from_the_pickup: "km from the pickup",
+  award: "Award",
+  no_bids_yet: "No bids yet",
+  no_loads_posted: "You have not posted a load yet.",
   of_that_is_your_own_money: "of that is your own money, spent on the road.",
   usually: "Usually",
   after_three_runs: "after three runs",
@@ -1176,6 +1194,15 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  recommended: "An ba da shawara",
+  cheapest: "Mafi arha",
+  completed_trips: "tafiye-tafiyen da aka kammala",
+  carriers_have_bid: "masu jigilar kaya sun bayar da farashi",
+  at_the_pickup_now: "Yana wurin ɗaukar kaya yanzu",
+  km_from_the_pickup: "kilomita daga wurin ɗaukar kaya",
+  award: "Ba shi aikin",
+  no_bids_yet: "Ba a bayar da farashi tukuna ba",
+  no_loads_posted: "Ba ka sanya kaya ba tukuna.",
   of_that_is_your_own_money: "daga cikin haka kuɗinka ne, da ka kashe a kan hanya.",
   usually: "Yawanci",
   after_three_runs: "bayan tafiye-tafiye uku",
@@ -1657,6 +1684,15 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  recommended: "A dábàá rẹ̀",
+  cheapest: "Ó tọ́ jùlọ",
+  completed_trips: "ìrìn tí a ti parí",
+  carriers_have_bid: "àwọn awakọ̀ ti gbé owó kalẹ̀",
+  at_the_pickup_now: "Ó wà ní ibi ìkó ẹrù báyìí",
+  km_from_the_pickup: "kílómítà sí ibi ìkó ẹrù",
+  award: "Fún un ní iṣẹ́ náà",
+  no_bids_yet: "A kò tíì gbé owó kankan kalẹ̀",
+  no_loads_posted: "O kò tíì gbé ẹrù kankan kalẹ̀.",
   of_that_is_your_own_money: "nínú ìyẹn jẹ́ owó tìrẹ, tí o ná lójú ọ̀nà.",
   usually: "Ní gbogbogbò",
   after_three_runs: "lẹ́yìn ìrìn mẹ́ta",
@@ -2136,6 +2172,15 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  recommended: "A tụrụ aro ya",
+  cheapest: "Kacha ọnụ ala",
+  completed_trips: "njem emechara",
+  carriers_have_bid: "ndị na-ebu ibu enyela ọnụahịa",
+  at_the_pickup_now: "Ọ nọ n’ebe a ga-ebuli ibu ugbu a",
+  km_from_the_pickup: "kilomita site n’ebe a ga-ebuli ibu",
+  award: "Nye ya ọrụ ahụ",
+  no_bids_yet: "Enyebeghị ọnụahịa ọ bụla",
+  no_loads_posted: "Ibipụtabeghị ibu ọ bụla.",
   of_that_is_your_own_money: "n’ime nke ahụ bụ ego gị, nke i mefuru n’ụzọ.",
   usually: "Mgbe niile",
   after_three_runs: "mgbe njem atọ gasịrị",

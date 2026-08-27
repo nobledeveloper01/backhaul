@@ -707,6 +707,19 @@ export class BackhaulApi {
     );
   }
 
+  /**
+   * The caller's own loads, newest first.
+   *
+   * Not the board. The board is what is still on offer; this is what they
+   * posted, awarded ones included — a shipper who could no longer see a load
+   * they had posted would have no way to reach the bids on it.
+   */
+  async myLoads(): Promise<ApiResult<readonly LoadView[]>> {
+    return map(await this.request<readonly RawLoad[]>('GET', '/v1/me/loads'), (rows) =>
+      rows.map(toLoad),
+    );
+  }
+
   async postLoad(loadId: string, load: LoadDraft): Promise<ApiResult<LoadView>> {
     return map(
       await this.request<RawLoad>('PUT', `/v1/loads/${loadId}`, {
@@ -1527,6 +1540,17 @@ export interface LoadView {
   readonly id: string;
   readonly originName: string;
   readonly destinationName: string;
+  /**
+   * Where it starts and ends.
+   *
+   * The same coordinates the ranking used. A client that cannot place a load
+   * cannot price the haul, draw it, or check the ranking's arithmetic — and
+   * "going your way" is a claim about exactly these four numbers.
+   */
+  readonly originLat: number;
+  readonly originLon: number;
+  readonly destinationLat: number;
+  readonly destinationLon: number;
   readonly cargo: string;
   readonly weightTonnes: number;
   readonly requires: string;
@@ -1541,6 +1565,10 @@ interface RawLoad {
   id: string;
   originName: string;
   destinationName: string;
+  originLat: number;
+  originLon: number;
+  destinationLat: number;
+  destinationLon: number;
   cargo: string;
   weightTonnes: number;
   requires: string;

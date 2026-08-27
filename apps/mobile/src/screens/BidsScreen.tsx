@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
+
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { format, rankBids, type BidScore } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
@@ -11,7 +10,9 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
-import { demoBids } from '../state/fleet';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { RankedBidView } from '../api/client';
 
 interface Props {
   readonly onBack: () => void;
@@ -29,12 +30,36 @@ export function BidsScreen({ onBack }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const now = useMemo(() => new Date(), []);
 
-  const { pickup, bids } = useMemo(() => demoBids(now), [now]);
-  const ranked = useMemo(() => rankBids(bids, pickup), [bids, pickup]);
+  const { api } = useSession();
 
-  const cheapest = Math.min(...bids.map((bid) => bid.amount as number));
+  /*
+    The newest load this shipper posted, and the bids on it.
+
+    Two reads rather than one route that does both: a shipper with three open
+    loads will want to move between them, and a route that answered "the bids
+    on my newest load" would have to be replaced the day that screen exists.
+  */
+  const { query: mine } = useMine(() => api.myLoads(), [api]);
+  const load = mine.state === 'ready' ? (mine.value[0] ?? null) : null;
+
+  const { query: bidQuery, refresh } = useMine(
+    async () =>
+      load === null
+        ? ({ ok: true, value: [] } as const)
+        : api.bids(load.id),
+    [api, load],
+  );
+
+  const ranked = bidQuery.state === 'ready' ? bidQuery.value : [];
+  const cheapest = ranked.length === 0
+    ? 0
+    : Math.min(...ranked.map((scored) => scored.bid.amountKobo));
+
+  const award = (bidId: string) => {
+    if (load === null) return;
+    void api.acceptBid(load.id, bidId).then(() => refresh());
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -48,7 +73,9 @@ export function BidsScreen({ onBack }: Props) {
         <View style={styles.lede}>
           <Icon name="package" size="sm" colour={colours.textSecondary} />
           <Text variant="body" tone="secondary" style={styles.flex}>
-            Kano → Lagos, 26 t cement. {bids.length} carriers have bid.
+            {load === null
+              ? t('no_loads_posted')
+              : `${load.originName} → ${load.destinationName} · ${load.cargo} · ${ranked.length} ${t('carriers_have_bid')}`}
           </Text>
         </View>
 
@@ -57,7 +84,8 @@ export function BidsScreen({ onBack }: Props) {
             key={scored.bid.id}
             scored={scored}
             rank={index + 1}
-            isCheapest={(scored.bid.amount as number) === cheapest}
+            isCheapest={scored.bid.amountKobo === cheapest}
+            onAward={() => award(scored.bid.id)}
           />
         ))}
 
@@ -73,10 +101,12 @@ function BidRow({
   scored,
   rank,
   isCheapest,
+  onAward,
 }: {
-  scored: BidScore;
+  scored: RankedBidView;
   rank: number;
   isCheapest: boolean;
+  onAward: () => void;
 }) {
   const colours = useColours();
   const { t } = useLanguage();
@@ -86,23 +116,23 @@ function BidRow({
     <Card emphasis={best ? 'accent' : 'raised'}>
       <View style={styles.top}>
         <Text variant="title" style={styles.flex} numberOfLines={2}>
-          {scored.bid.carrierId}
+          {scored.bid.tripsCompleted} {t('completed_trips')}
         </Text>
         {best ? (
           <View style={[styles.badge, { backgroundColor: colours.accent }]}>
             <Text variant="label" style={{ color: colours.onAccent }}>
-              Recommended
+              {t('recommended')}
             </Text>
           </View>
         ) : null}
       </View>
 
       <View style={styles.priceRow}>
-        <Text variant="display">{format(scored.bid.amount)}</Text>
+        <Text variant="display">{scored.bid.amountNaira}</Text>
         {isCheapest ? (
           <View style={[styles.tag, { borderColor: colours.outline }]}>
             <Text variant="label" tone="secondary">
-              Cheapest
+              {t('cheapest')}
             </Text>
           </View>
         ) : null}
@@ -120,19 +150,19 @@ function BidRow({
         */}
         <Icon
           name={
-            scored.reliability === null
+            scored.reliabilityPct === null
               ? 'clock'
-              : scored.reliability >= 0.8
+              : scored.reliabilityPct >= 80
                 ? 'check'
                 : 'alert'
           }
           size="sm"
           colour={
-            scored.reliability === null
+            scored.reliabilityPct === null
               ? colours.textSecondary
-              : scored.reliability >= 0.9
+              : scored.reliabilityPct >= 90
                 ? colours.moving
-                : scored.reliability >= 0.8
+                : scored.reliabilityPct >= 80
                   ? colours.stopped
                   : colours.exception
           }
@@ -146,14 +176,14 @@ function BidRow({
         <Icon name="pin" size="sm" colour={colours.textSecondary} />
         <Text variant="body" tone="secondary" style={styles.flex}>
           {scored.kmToPickup === 0
-            ? 'At the pickup now'
-            : `${scored.kmToPickup} km from the pickup`}
+            ? t('at_the_pickup_now')
+            : `${scored.kmToPickup} ${t('km_from_the_pickup')}`}
         </Text>
       </View>
 
       <Press
-        onPress={() => {}}
-        accessibilityLabel={`Award to ${scored.bid.carrierId}`}
+        onPress={onAward}
+        accessibilityLabel={t('award')}
         accessibilityHint={t('assigns_the_load')}
         style={[
           styles.award,
@@ -166,7 +196,7 @@ function BidRow({
           variant="title"
           style={best ? { color: colours.onAccent } : { color: colours.accent }}
         >
-          Award
+          {t('award')}
         </Text>
       </Press>
     </Card>
