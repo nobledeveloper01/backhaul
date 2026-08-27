@@ -26,6 +26,14 @@ interface Props {
    */
   readonly feedback?: 'scale' | 'opacity';
   readonly disabled?: boolean | undefined;
+  /**
+   * Extra touch area outside the visual bounds.
+   *
+   * For controls whose *drawn* size is deliberately smaller than the 48 dp
+   * minimum — a filter chip in a row of six, a clear button inside a field.
+   * The rule is about what a thumb can hit, not about what is painted.
+   */
+  readonly hitSlop?: number | undefined;
   readonly style?: ViewStyle | ViewStyle[] | undefined;
 }
 
@@ -44,6 +52,7 @@ export function Press({
   accessibilityHint,
   feedback = 'scale',
   disabled = false,
+  hitSlop,
   style,
 }: Props) {
   const progress = useRef(new Animated.Value(0)).current;
@@ -78,19 +87,49 @@ export function Press({
           }),
         };
 
+  /*
+    Layout lives on the Pressable; everything visual lives on the animated view
+    inside it.
+
+    The scale animation has to be on the view that carries the background and
+    the border, or a press scales the label and leaves the box behind. But that
+    view is a *child*, so `flex: 1` written by a caller was landing one level
+    too deep: three buttons meant to share a row equally came out as three
+    different widths, sized by how long each word was. Same for `width: '48%'`
+    on the incident tiles.
+
+    So the layout properties are lifted out and put where they can work. This
+    is the whole reason `Press` takes a style at all rather than being wrapped
+    in a `View` by every caller.
+  */
+  const { flex, flexGrow, flexShrink, flexBasis, width, alignSelf, ...visual } =
+    StyleSheet.flatten(style) ?? {};
+
+  // Lifted out of the visual style, not copied from it. Left in both places,
+  // `width: '48%'` applied twice — 48% of 48% — and a grid of six report
+  // buttons came out a fifth of the screen wide with every label truncated.
+  const layout: ViewStyle = { flex, flexGrow, flexShrink, flexBasis, width, alignSelf };
+
   return (
     <Pressable
       onPress={onPress}
       onPressIn={() => animate(1)}
       onPressOut={() => animate(0)}
       disabled={disabled}
+      hitSlop={hitSlop}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
-      style={disabled ? styles.disabled : undefined}
+      style={[layout, disabled ? styles.disabled : null]}
     >
-      <Animated.View style={[animated, style]}>{children}</Animated.View>
+      {/*
+        No sizing of its own. A Pressable lays its children out with
+        `align-items: stretch`, so once the flex lives on the Pressable the box
+        fills it for free. An explicit `flexGrow: 1` here — added to "make it
+        fill" — turned a small dashed pill into one the height of the screen.
+      */}
+      <Animated.View style={[animated, visual]}>{children}</Animated.View>
     </Pressable>
   );
 }

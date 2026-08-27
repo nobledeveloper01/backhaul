@@ -9,36 +9,51 @@ import { Text } from './components/Text';
 import { ThemeProvider, useColours, useTheme } from './design/theme';
 import { radius, space, target } from './design/tokens';
 import { BidsScreen } from './screens/BidsScreen';
+import { ChainScreen } from './screens/ChainScreen';
 import { DriverScreen } from './screens/DriverScreen';
 import { DriverHistoryScreen } from './screens/DriverHistoryScreen';
 import { FleetScreen } from './screens/FleetScreen';
+import { FollowScreen } from './screens/FollowScreen';
+import { IncidentScreen } from './screens/IncidentScreen';
+import { MessagesScreen } from './screens/MessagesScreen';
 import { PostLoadScreen } from './screens/PostLoadScreen';
+import { ProofScreen } from './screens/ProofScreen';
 import { ReturnLoadsScreen } from './screens/ReturnLoadsScreen';
+import { ReviewScreen } from './screens/ReviewScreen';
+import { ShareScreen } from './screens/ShareScreen';
 import { TripDetailScreen } from './screens/TripDetailScreen';
 import { TripsScreen } from './screens/TripsScreen';
-import { demoNow, type DemoTrip } from './state/demo';
+import { VerificationScreen } from './screens/VerificationScreen';
+import { useStacks } from './nav/stack';
+import { demoNow, demoTrips } from './state/demo';
 
 /**
- * Three faces, one binary.
+ * Four faces, one binary.
  *
  * A tab bar rather than a role switcher because this build is a portfolio
  * walkthrough: in the product a driver never sees the shipper's list and a
  * shipper never sees the driver's screen, and the two are different apps
  * wearing the same icon.
+ *
+ * Each face keeps its own stack (`nav/stack.ts`), so switching tabs does not
+ * lose your place and tapping the tab you are already on gets you out. This
+ * replaced a `face` plus one boolean per screen, which was fine at four screens
+ * and unreadable at fifteen.
  */
-type Face = 'shipper' | 'loads' | 'fleet' | 'driver';
-
 function Shell() {
   const colours = useColours();
   const { isDark } = useTheme();
   const now = useMemo(demoNow, []);
 
   const insets = useSafeAreaInsets();
-  const [face, setFace] = useState<Face>('shipper');
-  const [open, setOpen] = useState<DemoTrip | null>(null);
-  const [bidsOpen, setBidsOpen] = useState(false);
-  const [postOpen, setPostOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const { face, current, push, pop, select } = useStacks();
+
+  /*
+    The driver face is one trip, not a list — a driver has exactly one load on
+    board. The first demo trip is that trip, and the report and hand-over
+    screens need it.
+  */
+  const driverTrip = useMemo(() => demoTrips(now)[0], [now]);
 
   /**
    * Connectivity, faked.
@@ -71,37 +86,78 @@ function Shell() {
       />
 
       <View style={styles.body}>
-        {face === 'shipper' ? (
-          open === null ? (
-            <TripsScreen onOpen={setOpen} />
-          ) : (
-            <TripDetailScreen trip={open} now={now} onBack={() => setOpen(null)} />
-          )
+        {current.name === 'trips' ? (
+          <TripsScreen onOpen={(trip) => push({ name: 'trip', trip })} />
         ) : null}
-        {face === 'loads' ? (
-          postOpen ? (
-            <PostLoadScreen onBack={() => setPostOpen(false)} />
-          ) : (
-            <ReturnLoadsScreen onPost={() => setPostOpen(true)} />
-          )
+        {current.name === 'trip' ? (
+          <TripDetailScreen
+            trip={current.trip}
+            now={now}
+            onBack={pop}
+            onShare={() => push({ name: 'share', trip: current.trip })}
+            onMessages={() => push({ name: 'messages', trip: current.trip })}
+            onReport={() => push({ name: 'incident', trip: current.trip })}
+            onProof={() => push({ name: 'pod', trip: current.trip })}
+          />
         ) : null}
-        {face === 'fleet' ? (
-          bidsOpen ? (
-            <BidsScreen onBack={() => setBidsOpen(false)} />
-          ) : (
-            <FleetScreen onOpenBids={() => setBidsOpen(true)} />
-          )
+        {current.name === 'share' ? (
+          <ShareScreen
+            trip={current.trip}
+            onBack={pop}
+            onPreview={() => push({ name: 'follow', trip: current.trip })}
+          />
         ) : null}
-        {face === 'driver' ? (
-          historyOpen ? (
-            <DriverHistoryScreen onBack={() => setHistoryOpen(false)} />
-          ) : (
-            <DriverScreen
-              online={online}
-              onToggleConnection={() => setOnline((was) => !was)}
-              onOpenHistory={() => setHistoryOpen(true)}
-            />
-          )
+        {current.name === 'follow' ? (
+          <FollowScreen trip={current.trip} onBack={pop} />
+        ) : null}
+        {current.name === 'messages' ? (
+          <MessagesScreen trip={current.trip} onBack={pop} />
+        ) : null}
+        {current.name === 'incident' ? (
+          <IncidentScreen trip={current.trip} onBack={pop} />
+        ) : null}
+        {current.name === 'pod' ? <ProofScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'review' ? <ReviewScreen trip={current.trip} onBack={pop} /> : null}
+
+        {current.name === 'loads' ? (
+          <ReturnLoadsScreen
+            onPost={() => push({ name: 'post' })}
+            onChain={() => push({ name: 'chain' })}
+          />
+        ) : null}
+        {current.name === 'post' ? <PostLoadScreen onBack={pop} /> : null}
+        {current.name === 'chain' ? <ChainScreen onBack={pop} /> : null}
+
+        {current.name === 'fleet' ? (
+          <FleetScreen
+            onOpenBids={() => push({ name: 'bids' })}
+            onOpenVerification={() => push({ name: 'verification' })}
+          />
+        ) : null}
+        {current.name === 'bids' ? <BidsScreen onBack={pop} /> : null}
+        {current.name === 'verification' ? <VerificationScreen onBack={pop} /> : null}
+
+        {current.name === 'driver' ? (
+          <DriverScreen
+            online={online}
+            onToggleConnection={() => setOnline((was) => !was)}
+            onOpenHistory={() => push({ name: 'history' })}
+            onReport={() =>
+              driverTrip !== undefined ? push({ name: 'driver-report', trip: driverTrip }) : undefined
+            }
+            onDeliver={() =>
+              driverTrip !== undefined
+                ? push({ name: 'driver-delivery', trip: driverTrip })
+                : undefined
+            }
+          />
+        ) : null}
+        {current.name === 'history' ? <DriverHistoryScreen onBack={pop} /> : null}
+        {current.name === 'driver-report' ? (
+          <IncidentScreen trip={current.trip} onBack={pop} />
+        ) : null}
+        {current.name === 'driver-delivery' ? (
+          <ProofScreen trip={current.trip} onBack={pop} />
         ) : null}
       </View>
 
@@ -135,13 +191,7 @@ function Shell() {
             label={label}
             icon={icon}
             active={face === value}
-            onPress={() => {
-              setFace(value);
-              setOpen(null);
-              setBidsOpen(false);
-              setPostOpen(false);
-              setHistoryOpen(false);
-            }}
+            onPress={() => select(value)}
           />
         ))}
       </View>

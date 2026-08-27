@@ -38,7 +38,18 @@ export type IconName =
   | 'pin'
   | 'sun'
   | 'moon'
-  | 'auto';
+  | 'auto'
+  | 'link'
+  | 'search'
+  | 'filter'
+  | 'message'
+  | 'shield'
+  | 'camera'
+  | 'pen'
+  | 'flag'
+  | 'document'
+  | 'close'
+  | 'plus';
 
 const SIZE = { sm: 16, md: 20, lg: 28 } as const;
 
@@ -196,6 +207,69 @@ function paths(
       );
     case 'moon':
       return <Path {...common} d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />;
+    case 'link':
+      return (
+        <>
+          <Path {...common} d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.5 6.3" />
+          <Path {...common} d="M14 10.5a4 4 0 0 0-5.7 0L5.5 13.3a4 4 0 0 0 5.7 5.7l1.3-1.3" />
+        </>
+      );
+    case 'search':
+      return (
+        <>
+          <Circle {...common} cx={11} cy={11} r={6.5} />
+          <Path {...common} d="M15.8 15.8L20.5 20.5" />
+        </>
+      );
+    case 'filter':
+      return <Path {...common} d="M3.5 6h17l-6.5 7.5V20l-4-2v-4.5z" />;
+    case 'message':
+      return (
+        <>
+          <Path {...common} d="M4 5.5h16v11H9.5L5 20.5v-4H4z" />
+          <Path {...common} d="M8 9.5h8M8 12.5h5" />
+        </>
+      );
+    case 'shield':
+      return (
+        <>
+          <Path {...common} d="M12 3l7 2.5v6c0 4.2-2.9 7.4-7 9.5-4.1-2.1-7-5.3-7-9.5v-6z" />
+          <Path {...common} d="M9 12l2.2 2.2L15.5 10" />
+        </>
+      );
+    case 'camera':
+      return (
+        <>
+          <Path {...common} d="M3.5 8h3.2l1.4-2h7.8l1.4 2h3.2v11h-17z" />
+          <Circle {...common} cx={12} cy={13} r={3.6} />
+        </>
+      );
+    case 'pen':
+      return (
+        <>
+          <Path {...common} d="M4 20h4l10-10-4-4L4 16z" />
+          <Path {...common} d="M13.5 6.5l4 4" />
+        </>
+      );
+    case 'flag':
+      return (
+        <>
+          <Path {...common} d="M6 21V4" />
+          <Path {...common} d="M6 4.5h11l-2 3.5 2 3.5H6z" />
+        </>
+      );
+    case 'document':
+      return (
+        <>
+          <Path {...common} d="M6 3h8l4 4v14H6z" />
+          <Path {...common} d="M14 3v4h4" />
+          <Path {...common} d="M9 12h6M9 15.5h6M9 19h3" />
+        </>
+      );
+    case 'close':
+      return <Path {...common} d="M6 6l12 12M18 6L6 18" />;
+    case 'plus':
+      return <Path {...common} d="M12 5v14M5 12h14" />;
     case 'auto':
       return (
         <>

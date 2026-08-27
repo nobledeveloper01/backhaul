@@ -1,11 +1,26 @@
-import { memo, useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { memo, useMemo, useState } from 'react';
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { observe, shouldTrack, silentFor, type Observation } from '@backhaul/domain';
+import {
+  NO_TRIP_FILTER,
+  describeTripFilter,
+  filterTrips,
+  isFiltering,
+  observe,
+  shouldTrack,
+  silentFor,
+  type Observation,
+  type TripFilter,
+  type TripState,
+  type TripSummary,
+} from '@backhaul/domain';
 
 import { Appear } from '../components/Appear';
-import { Icon } from '../components/Icon';
+import { Chip } from '../components/Chip';
+import { Empty } from '../components/Empty';
+import { Icon, type IconName } from '../components/Icon';
 import { PositionAge } from '../components/PositionAge';
+import { SearchField } from '../components/SearchField';
 import { StatusChip } from '../components/StatusChip';
 import { Text } from '../components/Text';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -17,6 +32,53 @@ interface Props {
   readonly onOpen: (trip: DemoTrip) => void;
 }
 
+/**
+ * The list's view of a trip, for the filter engine.
+ *
+ * Built here rather than stored, because everything in it is either already on
+ * the phone or derived from a track that is. The point of the narrow shape is
+ * that the same predicate runs on the server against a load board this device
+ * has never seen.
+ */
+function summarise(trip: DemoTrip, now: Date): TripSummary {
+  const state: TripState = trip.history[trip.history.length - 1]?.state ?? 'open';
+  const observation = observe(trip.track.kept, now);
+
+  return {
+    id: trip.id,
+    reference: trip.id.slice(-4).toUpperCase(),
+    state,
+    origin: trip.originName,
+    destination: trip.destinationName,
+    cargo: trip.cargo,
+    truckPlate: trip.plate,
+    driverName: trip.driver,
+    startedAt: trip.history[0]?.at ?? now,
+    hasOpenIncident: observation === 'stalled',
+    isLate: observation === 'silent' || observation === 'stalled',
+  };
+}
+
+/**
+ * The states worth offering as a filter.
+ *
+ * Not all ten. A filter row with every state in it is a state machine diagram
+ * on a phone, and the four here are the four a fleet owner actually sorts by.
+ */
+const STATE_FILTERS: readonly {
+  readonly label: string;
+  readonly icon: IconName;
+  readonly states: readonly TripState[];
+}[] = [
+  // A different icon each, or none. The first version gave all four the same
+  // route glyph, which rendered as a row of identical marks carrying no
+  // information and taking the space a longer label needed.
+  { label: 'On the road', icon: 'truck', states: ['in_transit', 'signal_lost', 'stalled'] },
+  { label: 'Loading', icon: 'package', states: ['loading'] },
+  { label: 'Arrived', icon: 'pin', states: ['arrived'] },
+  { label: 'Delivered', icon: 'check', states: ['delivered'] },
+];
+
 /** The shipper's list. Every row answers "where is it and is it moving?". */
 export function TripsScreen({ onOpen }: Props) {
   const colours = useColours();
@@ -24,12 +86,36 @@ export function TripsScreen({ onOpen }: Props) {
   const now = useMemo(demoNow, []);
   const trips = useMemo(() => demoTrips(now), [now]);
 
+  const [filter, setFilter] = useState<TripFilter>(NO_TRIP_FILTER);
+
+  const shown = useMemo(() => {
+    const summaries = filterTrips(
+      trips.map((trip) => summarise(trip, now)),
+      filter,
+    );
+    const keep = new Set(summaries.map((summary) => summary.id));
+    return trips.filter((trip) => keep.has(trip.id));
+  }, [trips, filter, now]);
+
   const attention = trips.filter((trip) => needsAttention(trip, now)).length;
+  const filtering = isFiltering(filter);
+
+  const toggleStates = (states: readonly TripState[]) => {
+    setFilter((was) => {
+      const on = states.every((state) => was.states.includes(state));
+      return {
+        ...was,
+        states: on
+          ? was.states.filter((state) => !states.includes(state))
+          : [...was.states, ...states.filter((state) => !was.states.includes(state))],
+      };
+    });
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
       <FlatList
-        data={trips}
+        data={shown}
         keyExtractor={(trip) => trip.id}
         contentContainerStyle={[
           styles.list,
@@ -49,6 +135,61 @@ export function TripsScreen({ onOpen }: Props) {
               usually "no", which is worth saying rather than making them read
               six rows to work out.
             */}
+            <SearchField
+              value={filter.text}
+              onChange={(text) => setFilter((was) => ({ ...was, text }))}
+              placeholder="Plate, driver, cargo, town"
+              accessibilityLabel="Search trips"
+            />
+
+            {/*
+              Horizontal, and scrollable rather than wrapped. Wrapped, the row
+              grew to three lines at the largest text size and pushed the first
+              trip below the fold — on the one screen whose whole job is to
+              show trips.
+            */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+            >
+              {STATE_FILTERS.map((option) => (
+                <Chip
+                  key={option.label}
+                  label={option.label}
+                  icon={option.icon}
+                  selected={option.states.every((state) => filter.states.includes(state))}
+                  onPress={() => toggleStates(option.states)}
+                />
+              ))}
+              <Chip
+                label="Needs a look"
+                icon="alert"
+                selected={filter.onlyLate}
+                onPress={() => setFilter((was) => ({ ...was, onlyLate: !was.onlyLate }))}
+              />
+              {filtering ? (
+                <Chip
+                  label="Clear"
+                  icon="close"
+                  selected={false}
+                  onPress={() => setFilter(NO_TRIP_FILTER)}
+                />
+              ) : null}
+            </ScrollView>
+
+            {/*
+              The filter as a sentence, and only while one is on. A chip row
+              says *that* something is filtered; this says *which*, and that is
+              the difference between "no trips" reading as a bug and reading as
+              an answer.
+            */}
+            {filtering ? (
+              <Text variant="label" tone="secondary">
+                {describeTripFilter(filter)} · {shown.length} of {trips.length}
+              </Text>
+            ) : null}
+
             <View style={styles.summary}>
               {/*
                 Top-aligned, not centre. At the largest text size this line
@@ -73,6 +214,22 @@ export function TripsScreen({ onOpen }: Props) {
               </Text>
             </View>
           </View>
+        }
+        ListEmptyComponent={
+          filtering ? (
+            <Empty
+              icon="search"
+              title="Nothing matches that"
+              detail={`${describeTripFilter(filter)} — none on the road right now.`}
+              action={{ label: 'Clear the filter', onPress: () => setFilter(NO_TRIP_FILTER) }}
+            />
+          ) : (
+            <Empty
+              icon="truck"
+              title="No trips yet"
+              detail="Already got a truck on the road? Track it in a minute, even if you arranged it somewhere else."
+            />
+          )
         }
         ItemSeparatorComponent={Separator}
         renderItem={({ item, index }) => (
@@ -188,7 +345,8 @@ function needsAttention(trip: DemoTrip, now: Date): boolean {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   list: { paddingHorizontal: space.lg },
-  header: { marginBottom: space.lg, gap: space.sm },
+  header: { marginBottom: space.lg, gap: space.md },
+  chips: { gap: space.sm, paddingRight: space.lg },
   headerTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1 },
   summary: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },

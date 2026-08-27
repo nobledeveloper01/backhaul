@@ -1,21 +1,29 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  NO_LOAD_FILTER,
   distance,
+  filterLoads,
   format,
   fromNaira,
   quote,
   rankLoads,
+  whyNothing,
   type Carrier,
   type Load,
+  type LoadFilter,
   type LoadScore,
+  type LoadSummary,
   type Position,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
+import { Chip } from '../components/Chip';
+import { Empty } from '../components/Empty';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
+import { SearchField } from '../components/SearchField';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -40,7 +48,13 @@ const at = (lat: number, lon: number, when: Date): Position => ({
  * reason rather than hidden: a carrier who cannot see why the 30-tonne load is
  * missing assumes the app is broken.
  */
-export function ReturnLoadsScreen({ onPost }: { readonly onPost: () => void }) {
+export function ReturnLoadsScreen({
+  onPost,
+  onChain,
+}: {
+  readonly onPost: () => void;
+  readonly onChain: () => void;
+}) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
@@ -103,8 +117,32 @@ export function ReturnLoadsScreen({ onPost }: { readonly onPost: () => void }) {
     l4: ['Kano', 'Lagos', 'plant hire'],
   };
 
-  const ranked = rankLoads(carrier, loads, now);
+  const [filter, setFilter] = useState<LoadFilter>(NO_LOAD_FILTER);
+
+  /*
+    Filtered before ranking, not after. Ranking a load out of a search the
+    carrier typed would leave "1." missing from the list with no explanation,
+    and the ranks are what the screen is arguing with.
+  */
+  const summaries: LoadSummary[] = loads.map((load) => {
+    const [from, to, cargo] = routes[load.id] ?? ['', '', ''];
+    return {
+      id: load.id,
+      origin: from,
+      destination: to,
+      cargo,
+      weightKg: load.weight * 1_000,
+      offered: load.offered ?? fromNaira(0),
+      readyFrom: load.readyBy,
+      truckClass: load.requires,
+      shipperTier: 'business',
+    };
+  });
+
+  const allowed = new Set(filterLoads(summaries, filter).map((summary) => summary.id));
+  const ranked = rankLoads(carrier, loads.filter((load) => allowed.has(load.id)), now);
   const takeable = ranked.filter((scored) => scored.blocked === null);
+  const blocked = ranked.filter((scored) => scored.blocked !== null);
 
   return (
     <ScrollView
@@ -139,6 +177,80 @@ export function ReturnLoadsScreen({ onPost }: { readonly onPost: () => void }) {
         </Text>
       </View>
 
+      <SearchField
+        value={filter.text}
+        onChange={(text) => setFilter((was) => ({ ...was, text }))}
+        placeholder="Town or cargo"
+        accessibilityLabel="Search the load board"
+      />
+
+      <View style={styles.filters}>
+        <Chip
+          label="₦1m and up"
+          selected={filter.minimumOffer !== null}
+          onPress={() =>
+            setFilter((was) => ({
+              ...was,
+              minimumOffer: was.minimumOffer === null ? fromNaira(1_000_000) : null,
+            }))
+          }
+        />
+        <Chip
+          label="Trailer only"
+          selected={filter.truckClasses.length > 0}
+          onPress={() =>
+            setFilter((was) => ({
+              ...was,
+              truckClasses: was.truckClasses.length > 0 ? [] : ['trailer_30t'],
+            }))
+          }
+        />
+        <Chip
+          label="Ready today"
+          selected={filter.readyBefore !== null}
+          onPress={() =>
+            setFilter((was) => ({
+              ...was,
+              readyBefore:
+                was.readyBefore === null ? new Date(now.getTime() + 24 * 3_600_000) : null,
+            }))
+          }
+        />
+      </View>
+
+      {/*
+        Three legs rather than one, offered where a carrier is already thinking
+        about the run home. Buried on another tab, the feature that fixes the
+        empty leg would sit two taps from the screen about the empty leg.
+      */}
+      <Press
+        onPress={onChain}
+        accessibilityLabel="Chain three legs"
+        accessibilityHint="Strings return loads together so the truck never runs empty"
+        feedback="opacity"
+        style={[styles.chain, { backgroundColor: colours.accentWash, borderColor: colours.accent }]}
+      >
+        <Icon name="swap" size="md" colour={colours.accent} />
+        <View style={styles.flex}>
+          <Text variant="title" tone="accent">
+            Chain three legs
+          </Text>
+          <Text variant="label" tone="secondary">
+            Kano → Kaduna → Lagos, loaded the whole way
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.accent} />
+      </Press>
+
+      {ranked.length === 0 ? (
+        <Empty
+          icon="search"
+          title="Nothing on the board for that"
+          detail={whyNothing(filter)}
+          action={{ label: 'Clear the filter', onPress: () => setFilter(NO_LOAD_FILTER) }}
+        />
+      ) : null}
+
       {takeable.map((scored, index) => (
         <LoadRow
           key={scored.load.id}
@@ -148,19 +260,21 @@ export function ReturnLoadsScreen({ onPost }: { readonly onPost: () => void }) {
         />
       ))}
 
-      <Text variant="overline" tone="secondary" style={styles.blockedHead}>
-        NOT FOR THIS TRUCK
-      </Text>
-      {ranked
-        .filter((scored) => scored.blocked !== null)
-        .map((scored) => (
-          <LoadRow
-            key={scored.load.id}
-            scored={scored}
-            route={routes[scored.load.id] ?? ['', '', '']}
-            rank={0}
-          />
-        ))}
+      {blocked.length > 0 ? (
+        <>
+          <Text variant="overline" tone="secondary" style={styles.blockedHead}>
+            NOT FOR THIS TRUCK
+          </Text>
+          {blocked.map((scored) => (
+            <LoadRow
+              key={scored.load.id}
+              scored={scored}
+              route={routes[scored.load.id] ?? ['', '', '']}
+              rank={0}
+            />
+          ))}
+        </>
+      ) : null}
 
       <Text variant="label" tone="secondary" style={styles.footer}>
         Ranked on what the trip pays, how far you run empty to reach it, and how
@@ -250,6 +364,15 @@ function LoadRow({
 }
 
 const styles = StyleSheet.create({
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  chain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.lg,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+  },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, gap: space.md },
   flex: { flex: 1 },

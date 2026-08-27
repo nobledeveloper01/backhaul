@@ -64,8 +64,8 @@ export const DEFAULT_SEVERITY: Readonly<Record<IncidentKind, Severity>> = {
  * "something happened" instead of "the two sides disagree", and then nobody
  * looks at the list.
  */
-export function raisesDispute(incident: Incident): boolean {
-  return incident.kind === 'cargo' || incident.kind === 'security';
+export function raisesDispute(kind: IncidentKind): boolean {
+  return kind === 'cargo' || kind === 'security';
 }
 
 /**
@@ -98,9 +98,16 @@ export function headline(all: readonly Incident[]): Incident | null {
   return first ?? null;
 }
 
-/** Plain words for a status line. Never an error tone — this is a fact. */
-export function describe(incident: Incident): string {
-  switch (incident.kind) {
+/**
+ * Plain words for a status line. Never an error tone — this is a fact.
+ *
+ * Takes the kind rather than the incident: the report screen needs these words
+ * for six kinds nobody has reported yet, and making it assemble a whole
+ * incident to ask what a breakdown is called put six fake incidents on a
+ * screen that files real ones.
+ */
+export function describeKind(kind: IncidentKind): string {
+  switch (kind) {
     case 'breakdown':
       return 'Broken down';
     case 'security':

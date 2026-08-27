@@ -13,33 +13,57 @@ import {
   settle,
   shouldTrack,
   silentFor,
+  chargeableWaiting,
+  headline,
+  remaining,
   stops,
   timeStopped,
   type Kobo,
   type Position,
   type Stop,
+  type Visit,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Corridor } from '../components/Corridor';
 import { EtaRange } from '../components/EtaRange';
 import { Icon } from '../components/Icon';
-import { PositionAge, agoLabel, plural } from '../components/PositionAge';
+import { PositionAge, agoLabel, humanDuration, plural } from '../components/PositionAge';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Press } from '../components/Press';
 import { Sparkline } from '../components/Sparkline';
 import { StatusChip } from '../components/StatusChip';
 import { Text } from '../components/Text';
-import { space } from '../design/tokens';
+import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
+import {
+  demoIncidents,
+  demoMessages,
+  demoVisits,
+  demoWaypoints,
+} from '../state/product';
+import { unread } from '@backhaul/domain';
 
 interface Props {
   readonly trip: DemoTrip;
   readonly now: Date;
   readonly onBack: () => void;
+  readonly onShare: () => void;
+  readonly onMessages: () => void;
+  readonly onReport: () => void;
+  readonly onProof: () => void;
 }
 
-export function TripDetailScreen({ trip, now, onBack }: Props) {
+export function TripDetailScreen({
+  trip,
+  now,
+  onBack,
+  onShare,
+  onMessages,
+  onReport,
+  onProof,
+}: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
 
@@ -55,6 +79,13 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
   const silence = silentFor(trip.track.kept, now);
 
   const tripStops = useMemo(() => stops(trip.track.kept), [trip]);
+  const waypoints = useMemo(() => demoWaypoints(trip), [trip]);
+  const visited = useMemo(() => demoVisits(trip), [trip]);
+  const ahead = useMemo(() => remaining(visited, waypoints), [visited, waypoints]);
+  const messages = useMemo(() => demoMessages(trip, now), [trip, now]);
+  const incidents = useMemo(() => demoIncidents(trip, now), [trip, now]);
+  const openIncident = headline(incidents);
+  const waiting = chargeableWaiting(visited);
   const waited = demurrage(trip.truck, trip.waitedMinutes * 60_000);
   const settlement = settle(fromNaira(trip.agreedNaira), waited.amount, fromNaira(trip.advanceNaira));
 
@@ -87,6 +118,22 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
           </View>
         </View>
 
+        {/*
+          Three things a shipper does from here, side by side above the fold.
+          Buried at the bottom of a scroll, the share action — the one the whole
+          wedge depends on — was four hundred pixels below the thing it shares.
+        */}
+        <View style={styles.actions}>
+          <Action icon="link" label="Share" onPress={onShare} primary />
+          <Action
+            icon="message"
+            label="Messages"
+            onPress={onMessages}
+            badge={unread(messages, 'shipper').length}
+          />
+          <Action icon="flag" label="Report" onPress={onReport} />
+        </View>
+
         {/* The one card per screen that leads the eye. */}
         <Card overline="Where it is" icon="route" emphasis="accent">
           <Corridor
@@ -98,7 +145,35 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
           />
         </Card>
 
+        {/*
+          An open incident sits above the arrival estimate, because a blocking
+          one makes the estimate meaningless and the two read as a contradiction
+          in the other order.
+        */}
+        {openIncident !== null ? (
+          <Card overline="Reported" icon="flag" emphasis="plain">
+            <Text variant="title">{openIncident.note}</Text>
+            <Text variant="body" tone="secondary" style={styles.note}>
+              Reported by the {openIncident.reportedBy} · {agoLabel(now.getTime() - openIncident.at.getTime())}
+            </Text>
+          </Card>
+        ) : null}
+
         <EtaRange eta={arrival} />
+
+        <Card overline="Along the way" icon="pin">
+          {waypoints.map((waypoint) => {
+            const visit = visited.find((v) => v.waypoint.id === waypoint.id);
+            return <WaypointRow key={waypoint.id} name={waypoint.name} visit={visit} now={now} />;
+          })}
+          <Text variant="body" tone="secondary" style={styles.note}>
+            {waiting > 0
+              ? `${humanDuration(waiting)} waiting at ${chargeablePlaces(visited)} so far — the part a demurrage claim is made of. Time at the weighbridge is not counted.`
+              : ahead.length > 0
+                ? `${ahead.length} still ahead. Arrival is measured against each place's own radius, not one distance for the whole trip — a depot yard is 400 m and a weighbridge queue can be a kilometre.`
+                : 'Every point on the route was reached.'}
+          </Text>
+        </Card>
 
         <Card overline="Pace" icon="truck">
           <Sparkline series={paceSeries(trip.track.kept)} />
@@ -197,7 +272,147 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
             Append-only. A correction is a new entry; nothing here is ever edited.
           </Text>
         </Card>
+        <Press
+          onPress={onProof}
+          accessibilityLabel="Open the delivery document"
+          accessibilityHint="Photographs, signature and where it was captured"
+          style={[styles.proof, { borderColor: colours.outline }]}
+        >
+          <Icon name="document" size="md" colour={colours.textSecondary} />
+          <Text variant="title" style={styles.flex}>
+            Delivery document
+          </Text>
+          <Icon name="chevron-right" size="md" colour={colours.outline} />
+        </Press>
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * One of the three actions at the top.
+ *
+ * Only the first is filled. One primary per screen — three filled buttons in a
+ * row is a row with no primary in it, which is the same as having none.
+ */
+function Action({
+  icon,
+  label,
+  onPress,
+  primary = false,
+  badge = 0,
+}: {
+  icon: 'link' | 'message' | 'flag';
+  label: string;
+  onPress: () => void;
+  primary?: boolean;
+  badge?: number;
+}) {
+  const colours = useColours();
+  const tint = primary ? colours.onAccent : colours.textSecondary;
+
+  return (
+    <Press
+      onPress={onPress}
+      accessibilityLabel={badge > 0 ? `${label}, ${badge} unread` : label}
+      style={[
+        styles.action,
+        {
+          backgroundColor: primary ? colours.accent : colours.surfaceDim,
+          borderColor: primary ? colours.accent : colours.outline,
+        },
+      ]}
+    >
+      <View>
+        <Icon name={icon} size="md" colour={tint} />
+        {badge > 0 ? (
+          <View style={[styles.badge, { backgroundColor: colours.accent }]}>
+            <Text variant="overline" style={{ color: colours.onAccent }}>
+              {badge}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <Text variant="label" numberOfLines={1} style={{ color: primary ? colours.onAccent : colours.textPrimary }}>
+        {label}
+      </Text>
+    </Press>
+  );
+}
+
+/**
+ * The chargeable places actually visited, named.
+ *
+ * "waiting at the depot and the market" was written flat, and printed on a
+ * trip that had only reached the depot. A sentence that names somewhere the
+ * truck has never been is the screen inventing evidence for a demurrage claim.
+ */
+function chargeablePlaces(visited: readonly Visit[]): string {
+  const names = [
+    ...new Set(
+      visited
+        .filter(
+          (visit) =>
+            visit.waypoint.kind === 'origin' || visit.waypoint.kind === 'destination',
+        )
+        .map((visit) => visit.waypoint.name),
+    ),
+  ];
+  if (names.length === 0) return 'the depot';
+  if (names.length === 1) return names[0] ?? 'the depot';
+  return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+}
+
+/**
+ * A place on the route, reached or not.
+ *
+ * A waypoint with no visit is not an error state and is not greyed out to
+ * nothing — it is simply ahead, and a route that shows only what has happened
+ * gives a shipper no idea what is left.
+ */
+function WaypointRow({
+  name,
+  visit,
+  now,
+}: {
+  name: string;
+  visit: Visit | undefined;
+  now: Date;
+}) {
+  const colours = useColours();
+  const reached = visit !== undefined;
+  const stillThere = visit?.left === null;
+
+  return (
+    <View style={styles.waypoint}>
+      <View
+        style={[
+          styles.waypointDot,
+          {
+            backgroundColor: stillThere
+              ? colours.stopped
+              : reached
+                ? colours.moving
+                : 'transparent',
+            borderColor: reached ? 'transparent' : colours.outline,
+          },
+        ]}
+      />
+      <View style={styles.flex}>
+        <Text variant="body">{name}</Text>
+        <Text variant="label" tone="secondary">
+          {/*
+            `humanDuration`, not `plural(ms / 3_600_000, 'hour')` — which is
+            what this said first, and which rendered a twenty-minute stop at
+            the depot as "0.3 hours". Nobody has ever said that out loud.
+          */}
+          {visit === undefined
+            ? 'Ahead'
+            : stillThere
+              ? `There now · ${humanDuration(visit.durationMs)} so far`
+              : `Arrived ${agoLabel(now.getTime() - visit.arrived.getTime())} · stayed ${humanDuration(visit.durationMs)}`}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -319,6 +534,50 @@ function summariseDropped(dropped: readonly { readonly problem: string }[]): str
 }
 
 const styles = StyleSheet.create({
+  actions: { flexDirection: 'row', gap: space.sm },
+  action: {
+    flex: 1,
+    minHeight: target.standard,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    paddingVertical: space.md,
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  waypoint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.md,
+    paddingVertical: space.sm,
+  },
+  waypointDot: {
+    width: 12,
+    height: 12,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    marginTop: 6,
+  },
+  proof: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: target.standard,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   flex: { flex: 1 },

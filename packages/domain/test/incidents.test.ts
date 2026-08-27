@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   DEFAULT_SEVERITY,
-  describe as describeIncident,
+  describeKind,
   headline,
   needsPhoto,
   open,
@@ -53,17 +53,17 @@ describe('DEFAULT_SEVERITY', () => {
 
 describe('raisesDispute', () => {
   test('cargo and security do', () => {
-    assert.equal(raisesDispute(incident({ kind: 'cargo' })), true);
-    assert.equal(raisesDispute(incident({ kind: 'security' })), true);
+    assert.equal(raisesDispute('cargo'), true);
+    assert.equal(raisesDispute('security'), true);
   });
 
   test('a breakdown is a delay, not a disagreement', () => {
     // Raising every breakdown to a dispute would make "disputed" mean
     // "something happened" instead of "the two sides disagree", and then
     // nobody reads the list.
-    assert.equal(raisesDispute(incident({ kind: 'breakdown' })), false);
-    assert.equal(raisesDispute(incident({ kind: 'detained' })), false);
-    assert.equal(raisesDispute(incident({ kind: 'road' })), false);
+    assert.equal(raisesDispute('breakdown'), false);
+    assert.equal(raisesDispute('detained'), false);
+    assert.equal(raisesDispute('road'), false);
   });
 });
 
@@ -131,10 +131,10 @@ describe('needsPhoto', () => {
   });
 });
 
-describe('describe', () => {
+describe('describeKind', () => {
   test('every kind has plain words', () => {
     for (const kind of KINDS) {
-      const words = describeIncident(incident({ kind }));
+      const words = describeKind(kind);
       assert.ok(words.length > 0);
       assert.doesNotMatch(words, /_/);
     }

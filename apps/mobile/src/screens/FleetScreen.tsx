@@ -22,6 +22,7 @@ import { agoLabel } from '../components/PositionAge';
 
 interface Props {
   readonly onOpenBids: () => void;
+  readonly onOpenVerification: () => void;
 }
 
 /**
@@ -32,7 +33,7 @@ interface Props {
  * fleet's income, and this is where that claim becomes a figure they can check
  * against their own trucks.
  */
-export function FleetScreen({ onOpenBids }: Props) {
+export function FleetScreen({ onOpenBids, onOpenVerification }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
@@ -100,6 +101,32 @@ export function FleetScreen({ onOpenBids }: Props) {
           </Press>
         </Card>
       ) : null}
+
+      {/*
+        Verification sits with the fleet rather than in a settings screen. It is
+        not account admin — it is the thing that decides which loads this
+        carrier is allowed to bid on, and a tier expiring is a truck that stops
+        earning.
+      */}
+      <Press
+        onPress={onOpenVerification}
+        accessibilityLabel="Verification and papers"
+        accessibilityHint="What this carrier has proved, and what is left"
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="shield" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">Verification</Text>
+          <Text variant="label" tone="secondary">
+            One document short of Trusted · a licence expires in 18 days
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
 
       <Text variant="overline" tone="secondary" style={styles.sectionHead}>
         NEEDS A LOOK
@@ -206,6 +233,15 @@ function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
 export type { AlertKind };
 
 const styles = StyleSheet.create({
+  verify: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.lg,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  verifyBody: { flex: 1, gap: 2 },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, gap: space.md },
   flex: { flex: 1 },

@@ -37,9 +37,17 @@ interface Props {
   readonly online: boolean;
   readonly onToggleConnection: () => void;
   readonly onOpenHistory: () => void;
+  readonly onReport: () => void;
+  readonly onDeliver: () => void;
 }
 
-export function DriverScreen({ online, onToggleConnection, onOpenHistory }: Props) {
+export function DriverScreen({
+  online,
+  onToggleConnection,
+  onOpenHistory,
+  onReport,
+  onDeliver,
+}: Props) {
   const colours = useColours();
   const elevation = useElevation();
   const insets = useSafeAreaInsets();
@@ -183,6 +191,38 @@ export function DriverScreen({ online, onToggleConnection, onOpenHistory }: Prop
         </View>
       ) : null}
 
+      {/*
+        Two things a driver does that are not a state change: say something
+        went wrong, and hand the goods over. Both at driver size, side by side,
+        above the state buttons — a driver at a roadside should not scroll past
+        four cards to report a breakdown.
+      */}
+      <View style={styles.pair}>
+        <Press
+          onPress={onReport}
+          accessibilityLabel="Report a problem"
+          feedback="opacity"
+          style={[styles.half, { borderColor: colours.outline }]}
+        >
+          <Icon name="flag" size="lg" colour={colours.textSecondary} />
+          <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
+            Report
+          </Text>
+        </Press>
+
+        <Press
+          onPress={onDeliver}
+          accessibilityLabel="Hand over and sign"
+          feedback="opacity"
+          style={[styles.half, { borderColor: colours.outline }]}
+        >
+          <Icon name="camera" size="lg" colour={colours.textSecondary} />
+          <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
+            Hand over
+          </Text>
+        </Press>
+      </View>
+
       <Press
         onPress={onOpenHistory}
         accessibilityLabel="Your past trips and earnings"
@@ -270,6 +310,17 @@ function actionLabel(state: TripState): string {
 }
 
 const styles = StyleSheet.create({
+  pair: { flexDirection: 'row', gap: space.md },
+  half: {
+    flex: 1,
+    minHeight: target.driver + space.lg,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    padding: space.md,
+  },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, gap: space.lg },
   flex: { flex: 1 },
