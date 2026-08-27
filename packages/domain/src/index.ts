@@ -1,4 +1,13 @@
 /**
+ * One flat surface, so a screen has one import line.
+ *
+ * Duplicate names across engines are caught here by `tsc`, in seconds, with
+ * the file and the name in the message. That is the whole enforcement
+ * mechanism and it is deliberate — see ADR-0011, which also records the four
+ * collisions that produced the rule.
+ */
+
+/**
  * The domain. Pure TypeScript: no React Native, no DOM, no I/O.
  *
  * Everything the product actually decides lives behind this barrel — what a
@@ -26,6 +35,21 @@ export * from './pod.ts';
 export * from './ratings.ts';
 export * from './search.ts';
 export * from './chaining.ts';
+export * from './deviation.ts';
+export * from './alerts.ts';
+export * from './budget.ts';
+export * from './vehicles.ts';
+export * from './duress.ts';
+export * from './cancellation.ts';
+export * from './dispute.ts';
+export * from './drops.ts';
+export * from './levies.ts';
+export * from './escrow.ts';
+export * from './costs.ts';
+export * from './consolidation.ts';
+export * from './language.ts';
+export * from './earnings.ts';
+export * from './lanes.ts';
 export * from './money.ts';
 export * from './pricing.ts';
 export * from './eta.ts';

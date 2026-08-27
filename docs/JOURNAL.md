@@ -6,6 +6,89 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 (very late) — Fifteen more, and three that argued back
+
+**Did.** Fifteen further features, phased across 2–6 in
+`docs/ROADMAP.md` (*The fifteen after that*). Twelve new engines: `deviation`,
+`alerts`, `budget`, `vehicles`, `duress`, `cancellation`, `dispute`, `drops`,
+`levies`, `escrow`, `costs`, `consolidation`, plus `language`, `earnings` and
+`lanes`. The domain went from 317 tests to 526.
+
+Also [ADR-0011](adr/0011-the-domain-is-one-flat-namespace-and-names-must-earn-it.md),
+which the last session said would be written *"if it happens again"*. It
+happened twice more.
+
+### What surprised us
+
+**The obvious implementation of deviation is wrong, and would have shipped.**
+Cross-track distance from a line between origin and destination: draw the line,
+measure how far the truck is from it, alarm past a threshold. The straight line
+from Lagos to Kano runs through Kwara farmland — the road goes Ibadan, Ilorin,
+Jebba, Mokwa, Tegina, Kaduna, and is up to 90 km off that line for hours at a
+time. **The alarm would fire on every trip that went the right way.**
+
+`deviation.ts` measures progress instead: distance-to-destination against the
+smallest it has been in the last ninety minutes. That is true whatever road the
+truck is on. It also has to measure from the *closest* point rather than the
+window's first fix, or a turn hides behind whatever progress preceded it.
+
+**Writing the data-cost engine disproved the feature.** The premise was that
+drivers force-quit trackers because they eat data, so the app should show the
+cost. The arithmetic says a day of tracking is **about fifteen kobo** — 1,440
+samples at 180 bytes, plus batch overhead, at ₦350 a gigabyte. A three-day
+Lagos–Kano run costs under a naira.
+
+So the feature is not a warning, it is an answer: the number is on the driver's
+screen because it is *reassuring*, and `worthMentioning` is a guard that never
+fires today and starts firing if the payload or the price moves by an order of
+magnitude. What it settled is that **battery, not data, is the price a driver
+pays** — which is where `tracking.ts` was already spending its care.
+
+**A duress alarm's success state is nothing at all.** No toast, no changed
+screen, no sound, no haptic. Whoever is standing over the driver must not be
+able to tell it happened, so `visibleConfirmation()` returns `null` — a
+function whose only job is to make that testable and impossible for a screen to
+disagree with while somebody makes an empty state friendlier.
+
+The same reasoning ran through the rest of it: the follow window overrides the
+battery policy (conserving battery to finish a trip assumes the trip is still
+happening); nobody is dispatched automatically (a platform that dispatches a
+response on a signal it cannot verify is a platform that gets used to dispatch
+responses); and time alone never clears the signal.
+
+**The cost model checks the pricing engine.** `costs.test.ts` asserts that
+`quote()`'s own midpoint leaves a carrier a real margin on a Lagos–Kano round
+trip *after* a full empty return leg. Two engines written weeks apart, one of
+them from a mistake about tonne-kilometres, now hold each other to a number a
+haulier would recognise.
+
+**A paper lapsing mid-trip does not stop the truck.** The first version of
+`vehicles.ts` had a `mustStop` that returned true for a lapsed certificate. It
+does not make the cargo safer by the side of the road: it strands a driver 800
+km from home for an administrative failure in an office. It now blocks the
+*next* assignment, which is where the pressure belongs, and `mustStopMidTrip()`
+returns `false` with the reasoning attached.
+
+**Two more name collisions, one of them eleven minutes after the ADR.**
+`Conditions` (escrow vs tracking) and `MINIMUM_TRIPS_FOR_RATE` (earnings vs
+trust). Both generic enough that two engines wanted them; both caught by `tsc`
+at the barrel in seconds. ADR-0011 keeps the flat namespace and writes down the
+rule the five renames actually taught: *a name that could belong to any engine
+belongs to none*.
+
+### Still open
+
+- **None of the fifteen has a screen yet.** Same position as last time and the
+  same lesson: green tests say nothing about whether a feature is usable.
+- `consolidation.ts` proposes pairs but nothing agrees them. Two shippers
+  consenting to share a truck is a negotiation, and a negotiation needs a
+  surface.
+- The Hausa in `language.ts` is eighteen phrases written carefully and **read
+  by nobody who speaks it**. It ships behind a review by somebody who does, and
+  that is a person rather than a task.
+
+---
+
 ## 2026-08-27 (late) — The one route with no token on it
 
 **Did.** Served the share link. `GET /v1/share/{token}` is the first and only

@@ -53,6 +53,52 @@ against guesses.
 
 ---
 
+## The fifteen after that
+
+A second set, specified and split the same way — and for the same reason. The
+first fifteen widened the product; these deepen it, and most of them exist
+because of something the first fifteen made visible.
+
+| # | Feature | Phase | Engine |
+|---|---|---|---|
+| 16 | Route deviation — a truck moving *away* from where it is going | 2 | `deviation.ts` |
+| 17 | Alert policy: who is told what, and never at 3am | 2 | `alerts.ts` |
+| 18 | What the tracking costs a driver in data | 2 | `budget.ts` |
+| 19 | Vehicle registry with roadworthiness and insurance expiry | 3 | `vehicles.ts` |
+| 20 | Duress alarm — silent, and it stays silent | 3 | `duress.ts` |
+| 21 | Cancellation and no-show terms | 3 | `cancellation.ts` |
+| 22 | Dispute pack assembly | 4 | `dispute.ts` |
+| 23 | Multi-drop loads | 4 | `drops.ts` |
+| 24 | The checkpoint ledger — what the road actually takes | 4 | `levies.ts` |
+| 25 | Payment milestones with verifiable conditions | 5 | `escrow.ts` |
+| 26 | Carrier cost model: diesel, running, levies, margin | 5 | `costs.ts` |
+| 27 | Part-load consolidation | 5 | `consolidation.ts` |
+| 28 | Hausa for the driver face | 6 | `language.ts` |
+| 29 | Driver earnings statement | 6 | `earnings.ts` |
+| 30 | Recurring lanes | 6 | `lanes.ts` |
+
+Two moved forward out of phase 7: **multi-drop** and **rate history**, the
+latter arriving as `lanes.ts` — a lane's own median price, which is the version
+of corridor rate bands that does not need a corpus to be useful.
+
+**What the writing of these changed.** Three of them contradicted the obvious
+design, and the contradiction is the feature:
+
+- **Deviation is not cross-track distance.** The straight line from Lagos to
+  Kano runs through farmland; the road is up to 90 km off it for hours. A
+  cross-track alarm fires on every correct trip. `deviation.ts` measures
+  *progress* instead — a truck getting further from its destination, for long
+  enough, while moving.
+- **The data cost turned out to be negligible.** A day of tracking is about
+  fifteen kobo. Writing `budget.ts` is what established that battery, not data,
+  is the price a driver pays — which is where `tracking.ts` was already
+  spending its care.
+- **A duress alarm's success state is nothing at all.** No toast, no changed
+  screen, no sound. `visibleConfirmation()` returns `null` and is tested,
+  because the person standing over the driver must not be able to tell.
+
+---
+
 ## Phase 0 — Foundation · **complete**
 
 Monorepo, the pure domain package and the lint boundary that keeps it pure, RN
@@ -123,8 +169,8 @@ scoped and revocable share links, the shipper map with position age and trail,
 stop detection, ETA ranges on screen, trip search, and a message thread
 attached to the trip.
 
-Carries features **1–5** of the fifteen. All five engines are written and
-tested; none has a screen yet.
+Carries features **1–5** and **16–18**. All eight engines are written and
+tested.
 
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
 both platforms, **and the public share route is rate limited** — *green in
@@ -149,9 +195,14 @@ endpoint currently accepts a batch from anybody who knows a trip id.
 Verification tiers, document capture, liveness and ID match, expiry tracking,
 post-trip reviews, incident reporting.
 
-Carries features **6–9**. A review here is a set of facts each side answers yes
-or no to, never a star average — see the reasoning at the top of
-`packages/domain/src/ratings.ts`.
+Carries features **6–9** and **19–21**. A review here is a set of facts each
+side answers yes or no to, never a star average — see the reasoning at the top
+of `packages/domain/src/ratings.ts`.
+
+The duress alarm (**20**) belongs to this phase because it depends on knowing
+who a driver's carrier actually is, which is what verification establishes. It
+is the one feature in the product whose correctness is measured by what the
+screen does *not* do.
 
 **Exit gate:** tier gates enforced server-side and proven unbypassable from a
 modified client.
@@ -162,7 +213,11 @@ modified client.
 
 Loading and delivery capture, exceptions, offline queueing, the POD document.
 
-Carries features **10–12**.
+Carries features **10–12** and **22–24**. The dispute pack (**22**) is what
+every careful decision so far was for: the append-only history, the discarded
+fixes, the message written in a dead zone, the geotagged photograph. It adds
+nothing and decides nothing — a platform that adjudicates its own disputes is
+one both sides stop trusting.
 
 **Exit gate:** a complete proof-of-delivery document generated on a device that
 has been offline for the entire trip.
@@ -174,9 +229,14 @@ has been offline for the entire trip.
 Load posting, bidding, award and assignment, proactive return-load alerts,
 reverse discovery, fleet utilisation reporting.
 
-Carries features **13–15**. The ranking, filtering and chaining engines are
-written and tested (`matching.ts`, `search.ts`, `chaining.ts`); phase 5 builds
-what surrounds them.
+Carries features **13–15** and **25–27**. The ranking, filtering, chaining,
+escrow, cost and consolidation engines are all written and tested; phase 5
+builds what surrounds them.
+
+`costs.ts` is the one that checks the rest: a test asserts that `quote()`'s own
+midpoint leaves a carrier a real margin on a Lagos–Kano round trip **after** a
+full empty return leg. If the pricing engine ever prices below what the road
+costs, that test fails rather than a haulier finding out.
 
 **Exit gate:** match query under 2 s; first return load matched and completed
 end to end.
@@ -189,8 +249,10 @@ Device matrix including Transsion handsets, battery and data budgets enforced
 in CI, deviation alerts, waybill OCR, Hausa driver localisation, web shipper
 console, staged rollout.
 
-Shareable tracking links moved out of this phase and into phase 2, where the
-wedge needs them.
+Carries features **28–30**. Shareable tracking links moved out of this phase
+and into phase 2, where the wedge needs them; Hausa, the driver's earnings
+statement and recurring lanes moved *in*, because each one is about keeping
+people rather than about acquiring them.
 
 **v1.0 ships to both stores.**
 
@@ -198,7 +260,7 @@ wedge needs them.
 
 ## Phase 7 — Depth · v1.1
 
-Multi-drop loads, rate bands from corridor history,
+Rate bands from corridor history,
 insurance partner integration, broker tooling, fleet accounting exports.
 
 Several of these are in `docs/FEATURE-BACKLOG.md` with the reason they are

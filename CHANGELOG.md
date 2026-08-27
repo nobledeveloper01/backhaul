@@ -51,6 +51,60 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   connection the truck could not physically make. The loads it passed over are
   shown too, each with the reason — a proposal you cannot argue with is a
   proposal nobody acts on.
+- **Route deviation.** A truck that has been getting further from its
+  destination for ninety minutes, while moving, is reported. Not measured
+  against a straight line between origin and destination — the road is nowhere
+  near it — so a legitimate diversion no longer looks like a wrong turn.
+- **One alert policy for the whole product.** Who is told, how often the same
+  condition may repeat, and what is allowed to interrupt a person at 3am.
+  Exactly one kind of alert overrides quiet hours; everything else waits and
+  arrives as one overnight summary rather than four buzzes in a minute.
+- **What the tracking costs in data**, on the driver's own screen: a day of
+  recording is about fifteen kobo, and the figure is there because a driver who
+  can see why their phone is doing something leaves it alone.
+- **A vehicle registry.** Licence, roadworthiness, insurance and haulage
+  permit, each with its own expiry. A truck whose papers have lapsed cannot be
+  assigned to a new trip; one whose papers lapse *during* a trip is never
+  stranded by the side of the road for it.
+- **A silent duress alarm for drivers.** It shows nothing, sounds nothing and
+  changes nothing on screen. The truck is tracked every thirty seconds for half
+  an hour regardless of battery policy, and the carrier is told first — they
+  are the ones who will make a phone call in the next minute.
+- **Cancellation terms both sides can read.** Free within two hours of a bid
+  being accepted and before the truck moves; priced after that, by stage, with
+  the sentence that explains the figure attached to it.
+- **The dispute pack.** Everything the trip recorded, in the order it happened,
+  each item marked as measured by the tracker, attested by a person, or
+  attested late. It adds nothing and decides nothing.
+- **Multi-drop trips.** One truck, several deliveries, in the order the trailer
+  was loaded. The trip finishes on the last signature rather than on arriving
+  at the last address, and drops made out of order are recorded rather than
+  refused.
+- **The checkpoint ledger.** What a driver actually paid on the road, by kind
+  and by trip, reconciled against their advance — including when it goes
+  negative, which is the number they care about. Enough trips on a corridor and
+  it becomes the median cost of running that lane.
+- **Payment milestones.** Thirty per cent on loading, twenty on the road, forty
+  on proof of delivery, ten held for a week. Every condition is one the platform
+  can verify from evidence it already holds — delivery releases on the *proof*,
+  not on somebody saying the trip is done.
+- **A carrier's own cost model.** Diesel at today's price, running cost per
+  kilometre, what the road took, and what is left. It will tell a carrier to
+  walk away from a load, with the figure in litres.
+- **Part-load consolidation.** Two half-loads on one trailer when the pickups
+  are within 50 km, the deliveries within 80, and the pair actually fills the
+  truck. Both shippers pay less than a full truck; the carrier collects more
+  than one fare.
+- **Hausa on the driver's screens.** Eighteen phrases, the working language of
+  the northern corridors, on the one face whose reader had no say in what they
+  are using.
+- **A driver earnings statement.** Trips, kilometres, what was paid, what is
+  still owed, and what a kilometre earned — a figure nobody has been able to
+  give a driver before. Unpaid trips oldest first, because that is the one to
+  ask about.
+- **Recurring lanes.** The same run, named and saved, with what it has actually
+  gone for. A price a quarter either side of the lane's own median is remarked
+  on once — never blocked.
 - **The share link is served.** `GET /v1/share/{token}` needs no account and no
   token of its own — that is the point — and answers with exactly what the
   link's stored scope allows. Issuing and revoking are authenticated and open
