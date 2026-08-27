@@ -38,6 +38,20 @@ function Shell() {
           View below paints the ground instead. */}
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
+      {/*
+        An opaque strip behind the status bar.
+        
+        Scrolling content under the status bar is normal; doing it with nothing
+        behind it is not, and "1 of 3 need a look" printed through the clock on
+        the first Android run. The trip screen already had a header solving
+        this for itself — this covers the screens that do not have one, in one
+        place rather than three.
+      */}
+      <View
+        pointerEvents="none"
+        style={[styles.statusScrim, { height: insets.top, backgroundColor: colours.surface }]}
+      />
+
       <View style={styles.body}>
         {face === 'shipper' ? (
           open === null ? (
@@ -147,6 +161,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  statusScrim: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   body: { flex: 1 },
   tabs: {
     flexDirection: 'row',

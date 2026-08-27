@@ -10,6 +10,7 @@ docs/*
 !docs/ROADMAP.md
 !docs/JOURNAL.md
 !docs/FEATURE-BACKLOG.md
+!docs/TOOLCHAIN.md
 !docs/adr/
 !docs/screenshots/
 

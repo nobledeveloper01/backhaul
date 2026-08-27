@@ -54,9 +54,9 @@ of the defects in §8 were found.
 | Domain tests | **140** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
-| App tests | **18** passing |
+| App tests | **21** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
-| Screens | shipper, carrier and driver faces, both themes |
+| Screens | shipper, carrier and driver faces, both themes, iOS and Android |
 | Authentication | bearer tokens; authorisation filtered at the query layer |
 | Server tests | **27** endpoint tests, 11 of them authorisation |
 
@@ -173,6 +173,22 @@ self-report the thing the tracking exists to detect.
 | A trip, dark | Return loads, dark |
 |---|---|
 | ![A trip in dark](docs/screenshots/09-trip-detail-dark.png) | ![Return loads in dark](docs/screenshots/10-return-loads-dark.png) |
+
+### And Android
+
+| Trips | Driver |
+|---|---|
+| ![Trips on Android](docs/screenshots/13-android-trips.png) | ![The driver face on Android](docs/screenshots/12-android-driver.png) |
+
+One codebase, and the same design system. The emulator here is 320×640 —
+smaller than most phones, and a useful proxy for the low-end Transsion
+handsets that dominate the driver segment.
+
+The Android build needed three corrections React Native's own scaffolding does
+not make for a workspace, all recorded in
+[`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md): the Gradle paths assume no monorepo,
+`compileSdkVersion` names a platform that has not shipped, and `avdmanager`
+resolves its SDK from its own directory rather than `ANDROID_HOME`.
 
 **Light by default**, with a labelled control to switch — see
 [ADR-0007](docs/adr/0007-light-is-the-default-and-the-choice-is-the-users.md).
@@ -530,3 +546,4 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 | [`CLAUDE.md`](CLAUDE.md) | How to work in this repository |
 | [`DESIGN.md`](DESIGN.md) | Colour, type, targets, voice |
 | [`server/README.md`](server/README.md) | The API in detail |
+| [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | What to install, and what goes wrong installing it |

@@ -68,6 +68,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - The appearance choice now survives a restart.
+- The app builds and runs on Android.
 
 ### Fixed
 
@@ -82,6 +83,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   other and ran off the screen, and the headline filled the display.
 - "Recording starts when you begin loading" was shown on trips that had already
   arrived.
+- On screens without a header, content scrolled under the status bar with
+  nothing behind it, printing the summary line through the clock.
 
 ### Notes
 

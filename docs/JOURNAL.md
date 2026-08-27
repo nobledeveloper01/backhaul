@@ -130,10 +130,38 @@ has-pending-model-changes` said there were none.** Two migrations, no
 deployment anywhere, so the honest fix was one clean migration rather than
 carrying a phantom mismatch forward.
 
+**Android took four attempts, and none of the errors said what was wrong.**
+React Native's generated Gradle files assume the app is not in a workspace, so
+`../node_modules` should be `../../../node_modules` — the failure is "Included
+build ... does not exist". Then `compileSdkVersion = 37` names a platform that
+has not shipped, which fails as "Failed to find target with hash string
+'android-37'" and reads like a broken SDK install. Then `avdmanager` computes
+its SDK from its own directory with `pwd -P`, so a symlink from the SDK to the
+Homebrew copy resolves *back* to Homebrew and it reports "Valid system image
+paths are: null" with the images sitting right there. Then the emulator wanted
+12 GB of userdata on a machine with 22 GB free.
+
+All four are in `docs/TOOLCHAIN.md`, which exists because none of them is
+findable from the message it produces.
+
+**A clever fix was worse than two literals.** Resolving `node_modules` by
+walking up seemed obviously better than hard-coded `../../../`. Gradle requires
+`plugins {}` to be the first statement after `pluginManagement {}`, so the
+search had to live inside that block — and from there `includeBuild` failed to
+register the composite, leaving "No included builds contain this plugin", which
+points at the plugin rather than the path. Reverted to literals that fail
+loudly.
+
+**The status bar bug was still there, on the screens I had not scrolled.** I
+fixed it on the trip screen with a header and thought it was done. The first
+Android run had "1 of 3 need a look" printed through the clock, because the
+list has no header. One opaque strip in `App.tsx` now covers every screen that
+does not have one.
+
 ### Still open
 
-- **Android.** iOS only so far. The definition of done requires a physical
-  Transsion handset.
+- **Android on real hardware.** The emulator proves it compiles and runs; it
+  proves nothing about OEM battery management or a 2 GB device.
 - **Sign-in.** Tokens exist and gate everything; obtaining one still means
   running a command. Phase 3.
 - The corridor is not a map, deliberately, and phase 2's gate is where that

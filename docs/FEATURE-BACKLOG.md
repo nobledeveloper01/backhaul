@@ -69,10 +69,13 @@ interpolated position.
 
 ### F8 — Android on real hardware
 
-The app builds for Android and runs on an emulator. The definition of done
-requires a **physical Transsion handset** — a Tecno or an Infinix — which is
-where the battery and OEM-kill risks actually live, and no emulator can stand
-in for them. Nothing in phase 1's exit gate can be signed off without one.
+The app builds for Android and runs on an emulator, which is exactly as far as
+an emulator gets you. The definition of done requires a **physical Transsion
+handset** — a Tecno or an Infinix — because the risks that matter there are
+OEM battery management killing a foreground service and a 2 GB device running
+out of memory mid-trip, and neither reproduces on a simulated Pixel.
+
+Nothing in phase 1's exit gate can be signed off without one.
 
 ### F9 — `compileSdk` is pinned behind React Native's default
 

@@ -1,6 +1,21 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+// The paths are `../../../node_modules`, not React Native's generated
+// `../node_modules`.
+//
+// pnpm hoists to the repository root, so the plugin is three directories up
+// rather than one. The generated path fails with "Included build ... does not
+// exist", which says nothing about why.
+//
+// Written as literals rather than a lookup that walks up looking for
+// node_modules. That was the first attempt and Gradle rejected it in a way
+// worth recording: the `plugins {}` block must be the first statement after
+// `pluginManagement {}`, so the search had to live inside that block, and from
+// there `includeBuild` silently failed to register the composite — leaving
+// "No included builds contain this plugin", which points at the plugin rather
+// than at the path. Two literals that are checked by the build failing are
+// better than clever resolution that fails quietly.
+pluginManagement { includeBuild("../../../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'com.backhaul.app'
 include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
+includeBuild('../../../node_modules/@react-native/gradle-plugin')

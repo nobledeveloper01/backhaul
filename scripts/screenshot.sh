@@ -17,15 +17,31 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 name="${1:-}"
+platform="${2:-ios}"
 if [ -z "$name" ]; then
-  echo "usage: $0 <name>   e.g. $0 01-trips-light" >&2
+  echo "usage: $0 <name> [ios|android]   e.g. $0 01-trips" >&2
   exit 1
 fi
 
 mkdir -p docs/screenshots
 out="docs/screenshots/${name}.png"
 
-xcrun simctl io booted screenshot --type=png "$out" >/dev/null
+case "$platform" in
+  ios)
+    xcrun simctl io booted screenshot --type=png "$out" >/dev/null
+    ;;
+  android)
+    # Through a file on the device rather than piping `exec-out`: adb's stdout
+    # mangles CRLF on some hosts and the PNG arrives corrupt with no error.
+    adb shell screencap -p /sdcard/backhaul-shot.png
+    adb pull /sdcard/backhaul-shot.png "$out" >/dev/null
+    adb shell rm /sdcard/backhaul-shot.png
+    ;;
+  *)
+    echo "unknown platform '$platform' — expected ios or android" >&2
+    exit 1
+    ;;
+esac
 
 if command -v pngquant >/dev/null 2>&1; then
   pngquant --force --quality 60-85 --output "$out" -- "$out"

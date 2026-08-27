@@ -59,14 +59,23 @@ app-test:
 app-pods:
 	cd apps/mobile/ios && LANG=en_US.UTF-8 pod install
 
+## app-android: build and install on a booted emulator or device
+##   Needs JAVA_HOME and ANDROID_HOME; see docs/TOOLCHAIN.md.
+app-android:
+	pnpm --filter @backhaul/mobile exec react-native run-android
+
+## app-apk: just the debug APK
+app-apk:
+	cd apps/mobile/android && ./gradlew :app:assembleDebug
+
 ## app-ios: run the app on a booted simulator
 app-ios:
 	pnpm --filter @backhaul/mobile exec react-native run-ios
 
-## shot: capture a screenshot — make shot N=01-trips-light
+## shot: capture a screenshot — make shot N=01-trips [P=android]
 shot:
-	@test -n "$(N)" || (echo 'usage: make shot N="01-trips-light"'; exit 1)
-	@./scripts/screenshot.sh "$(N)"
+	@test -n "$(N)" || (echo 'usage: make shot N="01-trips" [P=android]'; exit 1)
+	@./scripts/screenshot.sh "$(N)" "$(or $(P),ios)"
 
 ## server-build: build the .NET solution
 server-build:
@@ -153,4 +162,4 @@ setup-clean: clean
 
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
-	app-typecheck app-test app-pods app-ios shot round-trip
+	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip

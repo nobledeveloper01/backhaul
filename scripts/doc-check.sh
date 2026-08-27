@@ -29,6 +29,7 @@ REQUIRED=(
   docs/ROADMAP.md
   docs/JOURNAL.md
   server/README.md
+  docs/TOOLCHAIN.md
   fixtures/parity.json
 )
 
