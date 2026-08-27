@@ -95,6 +95,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void AsyncStorage.removeMany([TOKEN_KEY, WHO_KEY]).catch(() => {});
   }, [api]);
 
+  /*
+    A token the server no longer knows is a signed-out session that has not
+    noticed yet.
+
+    Without this the app sits on the trips screen showing "this endpoint needs
+    a bearer token" — the server's own words, in English, with a Try again
+    button that sends the same dead token. Every error path has a forward path,
+    and the forward path here is the sign-in screen.
+
+    It happens for real: a token expires after ninety days, and a
+    demonstration server keeps its tokens in memory and forgets them all when
+    it restarts.
+  */
+  useEffect(() => {
+    api.onUnauthorised = signOut;
+    return () => {
+      api.onUnauthorised = null;
+    };
+  }, [api, signOut]);
+
   const value = useMemo<Session>(
     () => ({ who, ready, api, signIn, signOut }),
     [who, ready, api, signIn, signOut],

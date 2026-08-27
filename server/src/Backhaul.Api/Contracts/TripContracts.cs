@@ -106,6 +106,38 @@ public sealed class TripResponse
     public List<TripEventResponse> History { get; set; } = [];
 }
 
+/// <summary>
+/// One trip on a list.
+/// </summary>
+/// <remarks>
+/// No history. A list renders a corridor, a state and an age; loading a
+/// three-day trip's events to draw one line of it is what makes a list of
+/// twenty trips slow enough that nobody opens it twice.
+/// </remarks>
+public sealed class TripSummaryResponse
+{
+    public Guid Id { get; set; }
+
+    public string Origin { get; set; } = string.Empty;
+
+    public string Destination { get; set; } = string.Empty;
+
+    public string State { get; set; } = string.Empty;
+
+    public bool Tracking { get; set; }
+
+    public DateTimeOffset StartedAt { get; set; }
+
+    /// <summary>When a position last arrived, or null if none ever has.</summary>
+    /// <remarks>
+    /// Null is not the same as "a long time ago", and a list that renders it as
+    /// one has told a shipper their truck went quiet when it never started.
+    /// </remarks>
+    public DateTimeOffset? LastSeenAt { get; set; }
+
+    public bool HasOpenIncident { get; set; }
+}
+
 /// <summary>A refusal, in the machine's own words.</summary>
 public sealed class RefusalResponse
 {

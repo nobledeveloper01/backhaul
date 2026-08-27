@@ -24,6 +24,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **A token the server had forgotten left the app stuck.** A 401 sat on the
+  trips screen showing the server's own English sentence with a Try again button
+  that sent the same dead token. It signs the session out now and returns to
+  sign-in, which is the only forward path from a token nobody recognises. It
+  happens for real: a token expires after ninety days, and a demonstration
+  server keeps its tokens in memory and forgets them when it restarts.
+
 - **The server's refusals arrived in English.** Every "no" from the API carries
   a machine-readable code as well as a sentence, and the client was throwing the
   code away and rendering the sentence. The sentence is English on purpose — it

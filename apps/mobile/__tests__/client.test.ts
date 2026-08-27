@@ -270,3 +270,55 @@ describe('a refusal', () => {
     expect(result.failure.detail).toBe('No.');
   });
 });
+
+describe('a token the server no longer knows', () => {
+  /*
+    A 401 is not an error a screen can recover from. Retrying sends the same
+    dead token, and the person is left reading "this endpoint needs a bearer
+    token" with a button that does nothing.
+
+    It happens for real — a token expires after ninety days, and the
+    demonstration server keeps its tokens in memory and forgets them when it
+    restarts. Found exactly that way: the app sat on the trips screen with the
+    server's own English sentence and no way forward.
+  */
+  test('signs the session out rather than leaving the screen stuck', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'This endpoint needs a bearer token.' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    const api = new BackhaulApi('http://example.test', 'a-token-the-server-forgot');
+    let signedOut = false;
+    api.onUnauthorised = () => {
+      signedOut = true;
+    };
+
+    await api.trips();
+
+    expect(signedOut).toBe(true);
+  });
+
+  test('but a 401 with no token is the endpoint asking, not the session ending', async () => {
+    // Signing out somebody who was never signed in would clear a session that
+    // does not exist and bounce them off a screen they were allowed on.
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'This endpoint needs a bearer token.' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    const api = new BackhaulApi('http://example.test', null);
+    let signedOut = false;
+    api.onUnauthorised = () => {
+      signedOut = true;
+    };
+
+    await api.trips();
+
+    expect(signedOut).toBe(false);
+  });
+});

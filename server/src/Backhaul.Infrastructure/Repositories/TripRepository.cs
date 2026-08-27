@@ -14,6 +14,24 @@ public sealed record TripRecord(
     IReadOnlyList<TripEvent> History);
 
 /// <summary>
+/// One trip on a list, without its history.
+/// </summary>
+/// <remarks>
+/// The list view loads a row per trip and no events at all. Loading a
+/// three-day trip's history to render one line of it is what makes a list of
+/// twenty trips a list nobody opens twice — and the denormalised state column
+/// exists precisely so this query does not have to.
+/// </remarks>
+public sealed record TripSummaryRecord(
+    Guid Id,
+    string Origin,
+    string Destination,
+    TripState State,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? LastSeenAt,
+    bool HasOpenIncident);
+
+/// <summary>
 /// Trips, and who may see them.
 /// </summary>
 /// <remarks>
@@ -72,6 +90,60 @@ public sealed class TripRepository(BackhaulDbContext db)
                 new Corridor(trip.Origin, trip.Destination),
                 new TripParties(trip.DriverId, trip.CarrierId, trip.ShipperId),
                 [.. events.Select(ToDomain)]);
+    }
+
+    /// <summary>
+    /// Every trip this caller may see, newest first.
+    /// </summary>
+    /// <remarks>
+    /// No history and no positions: one row per trip plus the two facts a list
+    /// renders beside it — when a position last arrived, and whether anything
+    /// is unresolved. Both are aggregates, so both are one query rather than
+    /// one query per trip.
+    /// </remarks>
+    public async Task<IReadOnlyList<TripSummaryRecord>> MineAsync(
+        Principal principal,
+        CancellationToken ct = default)
+    {
+        var trips = await Visible(principal)
+            .Select(t => new { t.Id, t.Origin, t.Destination, t.State })
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var ids = trips.Select(t => t.Id).ToList();
+
+        var opened = await db.TripEvents
+            .Where(e => ids.Contains(e.TripId))
+            .GroupBy(e => e.TripId)
+            .Select(g => new { TripId = g.Key, At = g.Min(e => e.At) })
+            .AsNoTracking()
+            .ToDictionaryAsync(g => g.TripId, g => g.At, ct);
+
+        var lastSeen = await db.Positions
+            .Where(p => ids.Contains(p.TripId))
+            .GroupBy(p => p.TripId)
+            .Select(g => new { TripId = g.Key, At = g.Max(p => p.At) })
+            .AsNoTracking()
+            .ToDictionaryAsync(g => g.TripId, g => g.At, ct);
+
+        var open = await db.Incidents
+            .Where(i => ids.Contains(i.TripId) && i.ResolvedAt == null)
+            .AsNoTracking()
+            .Select(i => i.TripId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return trips
+            .Select(t => new TripSummaryRecord(
+                t.Id,
+                t.Origin,
+                t.Destination,
+                TripMachine.FromWire(t.State) ?? TripState.Open,
+                opened.TryGetValue(t.Id, out var at) ? at : DateTimeOffset.MinValue,
+                lastSeen.TryGetValue(t.Id, out var seen) ? seen : null,
+                open.Contains(t.Id)))
+            .OrderByDescending(t => t.StartedAt)
+            .ToList();
     }
 
     /// <summary>The trip's state and its parties, for the ingest path.</summary>

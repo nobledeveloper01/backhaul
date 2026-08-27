@@ -224,6 +224,10 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'cannot_reach_the_server'
+  | 'your_trips_are_still_there'
+  | 'loading_your_trips'
+  | 'showing_the_walkthrough'
   | 'refusal_not_a_number'
   | 'refusal_too_many'
   | 'refusal_too_soon'
@@ -682,6 +686,10 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  cannot_reach_the_server: "Cannot reach Backhaul",
+  your_trips_are_still_there: "Your trips are still there. This phone cannot see them right now.",
+  loading_your_trips: "Loading your trips…",
+  showing_the_walkthrough: "This is the walkthrough, not your trips. The server has none for you.",
   refusal_not_a_number: "That does not look like a Nigerian mobile number.",
   refusal_too_many: "Too many codes asked for. Try again later.",
   refusal_too_soon: "A code was just sent. Wait before asking for another.",
@@ -1140,6 +1148,10 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  cannot_reach_the_server: "Ba a iya kaiwa ga Backhaul ba",
+  your_trips_are_still_there: "Tafiye-tafiyenka na nan. Wannan wayar ba ta iya ganin su a yanzu ba.",
+  loading_your_trips: "Ana ɗauko tafiye-tafiyenka…",
+  showing_the_walkthrough: "Wannan nuni ne kawai, ba tafiye-tafiyenka ba. Uwar garken ba ta da naka.",
   refusal_not_a_number: "Wannan bai yi kama da lambar wayar Najeriya ba.",
   refusal_too_many: "An nemi lambobi da yawa. Ka sake gwadawa daga baya.",
   refusal_too_soon: "An aika lamba yanzu-yanzu. Ka jira kafin ka nemi wata.",
@@ -1603,6 +1615,10 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  cannot_reach_the_server: "A kò lè dé ọ̀dọ̀ Backhaul",
+  your_trips_are_still_there: "Àwọn ìrìn rẹ ṣì wà. Fóònù yìí kò lè rí wọn báyìí.",
+  loading_your_trips: "À ń mú àwọn ìrìn rẹ wá…",
+  showing_the_walkthrough: "Àpẹẹrẹ ni èyí, kì í ṣe àwọn ìrìn rẹ. Sáfà kò ní tìrẹ.",
   refusal_not_a_number: "Èyí kò dà bí nọ́mbà fóònù Nàìjíríà.",
   refusal_too_many: "A ti béèrè fún kóòdù púpọ̀ jù. Tún gbìyànjú lẹ́yìn náà.",
   refusal_too_soon: "A ṣẹ̀ṣẹ̀ fi kóòdù ránṣẹ́. Dúró kí o tó béèrè fún òmíràn.",
@@ -2064,6 +2080,10 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  cannot_reach_the_server: "Enweghị ike iru Backhaul",
+  your_trips_are_still_there: "Njem gị ka dị. Ekwentị a apụghị ịhụ ha ugbu a.",
+  loading_your_trips: "A na-ebubata njem gị…",
+  showing_the_walkthrough: "Nke a bụ ihe ngosi, ọ bụghị njem gị. Sava enweghị nke gị.",
   refusal_not_a_number: "Nke a adịghị ka nọmba ekwentị Naịjirịa.",
   refusal_too_many: "A rịọrọ ọtụtụ koodu. Nwaa ọzọ ma emesịa.",
   refusal_too_soon: "E zitere koodu ugbu a. Chere tupu ị rịọ nke ọzọ.",

@@ -58,6 +58,31 @@ export interface TripParties {
   readonly shipperId: string;
 }
 
+/**
+ * One trip on a list.
+ *
+ * No history: a list renders a corridor, a state and an age, and loading a
+ * three-day trip's events to draw one line of it is what makes a list of
+ * twenty trips slow enough that nobody opens it twice.
+ */
+export interface TripSummaryView {
+  readonly id: string;
+  readonly origin: string;
+  readonly destination: string;
+  readonly state: TripState;
+  readonly tracking: boolean;
+  readonly startedAt: Date;
+  /**
+   * When a position last arrived, or null if none ever has.
+   *
+   * Null is not "a long time ago". A list that renders it as one has told a
+   * shipper their truck went quiet when it never started — which is the
+   * distinction `PositionAge` exists to keep.
+   */
+  readonly lastSeenAt: Date | null;
+  readonly hasOpenIncident: boolean;
+}
+
 export interface TripView {
   readonly id: string;
   readonly state: TripState;
@@ -159,6 +184,19 @@ export class BackhaulApi {
    * with the phone-plus-OTP exchange in phase 3; until then a token lives as
    * long as the process and is passed in at construction.
    */
+  /**
+   * What to do when the server stops recognising the token.
+   *
+   * A 401 is not an error a screen can recover from: retrying sends the same
+   * dead token, and the person is left reading "this endpoint needs a bearer
+   * token" with a button that does nothing. Every error path has a forward
+   * path, and the forward path from an unknown token is the sign-in screen.
+   *
+   * Set once by `SessionProvider`. Kept here rather than checked at each call
+   * site because it has to hold for the call sites written next year.
+   */
+  onUnauthorised: (() => void) | null = null;
+
   setToken(token: string | null): void {
     this.token = token;
   }
@@ -225,6 +263,32 @@ export class BackhaulApi {
       ...(note === undefined ? {} : { note }),
     });
     return map(result, toTrip);
+  }
+
+  /**
+   * Every trip this caller may see, newest first.
+   *
+   * Filtered on the server by the same engine the app filters with, so a
+   * search that finds a trip on the phone finds it here — see `search.ts`.
+   */
+  async trips(filter?: {
+    readonly text?: string;
+    readonly states?: readonly TripState[];
+    readonly onlyWithIncidents?: boolean;
+  }): Promise<ApiResult<readonly TripSummaryView[]>> {
+    const query = new URLSearchParams();
+    if (filter?.text !== undefined && filter.text.trim() !== '') query.set('text', filter.text);
+    if (filter?.states !== undefined && filter.states.length > 0) {
+      query.set('states', filter.states.join(','));
+    }
+    if (filter?.onlyWithIncidents === true) query.set('onlyWithIncidents', 'true');
+
+    const suffix = query.toString() === '' ? '' : `?${query.toString()}`;
+
+    return map(
+      await this.request<readonly RawTripSummary[]>('GET', `/v1/trips${suffix}`),
+      (rows) => rows.map(toSummary),
+    );
   }
 
   async trip(id: string): Promise<ApiResult<TripView>> {
@@ -336,6 +400,13 @@ export class BackhaulApi {
       });
 
       if (!response.ok) {
+        // Before anything else, and only when a token was actually sent: a
+        // 401 on an unauthenticated call is the endpoint saying "sign in",
+        // not the session saying "you have been signed out".
+        if (response.status === 401 && this.token !== null) {
+          this.onUnauthorised?.();
+        }
+
         const refusal = await readRefusal(response);
         return {
           ok: false,
@@ -402,6 +473,32 @@ async function readRefusal(
     // A body that is not JSON is not a reason to lose the status code.
   }
   return { code: null, detail: `The server answered ${response.status}.` };
+}
+
+interface RawTripSummary {
+  id: string;
+  origin: string;
+  destination: string;
+  state: TripState;
+  tracking: boolean;
+  startedAt: string;
+  lastSeenAt: string | null;
+  hasOpenIncident: boolean;
+}
+
+function toSummary(raw: RawTripSummary): TripSummaryView {
+  return {
+    id: raw.id,
+    origin: raw.origin,
+    destination: raw.destination,
+    state: raw.state,
+    tracking: raw.tracking,
+    startedAt: new Date(raw.startedAt),
+    // Null stays null. `new Date(null)` is 1970, which would render as
+    // "56 years ago" beside a truck that has not started.
+    lastSeenAt: raw.lastSeenAt === null ? null : new Date(raw.lastSeenAt),
+    hasOpenIncident: raw.hasOpenIncident,
+  };
 }
 
 interface RawTrip {

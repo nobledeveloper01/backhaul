@@ -119,8 +119,14 @@ the honest answer to "how far along is this".
 
 **The right-hand column is down to the two that should stay there.** Every
 other engine now has a route, so the answer a screen renders can come from the
-server rather than from `state/demo.ts`. Wiring the app's screens to those
-routes is the work that remains, and it is a different job from building them.
+server rather than from `state/demo.ts`.
+
+**Wiring the screens to those routes is the work that remains**, and it is a
+different job from building them. The trips list is done and is the pattern for
+the rest: `useQuery` in `state/server.tsx`, four empty states rather than one —
+*loading*, *nothing yet*, *nothing matching* and *cannot see* — and the
+walkthrough shown only when the server answers with nothing, labelled as the
+walkthrough. Everything else still reads `state/demo.ts`.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
 exists on both sides gets a parity case before it gets an endpoint. Thirty-two

@@ -6,6 +6,47 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-30 (night) — The list reads the server, and the server forgot us
+
+**Did.** `GET /v1/trips`, a `useQuery` hook, and the trips list wired to it end
+to end: a trip created against the API through curl appears on the phone,
+labelled in Yorùbá, with the walkthrough banner gone. 159 endpoint tests, 49 app
+tests.
+
+### What surprised us
+
+**There was no route to list trips.** Nine controllers, thirty-two engines
+served, and `GET /v1/trips/{id}` for one trip — nothing that answers "what are
+mine". It had never been noticed because the app read `state/demo.ts` and never
+asked. The first thing integration does is tell you which of your endpoints
+nobody has ever called.
+
+**A 401 is not an error a screen can recover from, and the app had no idea.**
+Restarting the server threw away its in-memory tokens, the phone kept the one it
+had, and the trips screen sat there showing *"This endpoint needs a bearer
+token."* — the server's own words, in English, under a Yorùbá heading, with a
+Try again button that resent the same dead token forever. `BackhaulApi` now
+calls `onUnauthorised`, `SessionProvider` wires that to `signOut`, and the app
+returns to sign-in with the language remembered. Guarded on a token having
+actually been sent: a 401 on an unauthenticated call is the endpoint asking, not
+the session ending.
+
+**Four empty states, not one.** *Loading*, *nothing yet*, *nothing matching* and
+*cannot see* are four different facts and only two are about the person's data.
+Collapsing them into "no trips" tells a shipper on a bad stretch of road that
+their trucks have disappeared — the same mistake as rendering `unknown` as
+`stopped`, which is one of the seven things this product never trades.
+
+**The walkthrough had to say it was the walkthrough.** With the server
+answering zero trips, the demo data is still the most useful thing to show — and
+a demo that cannot be told apart from real data is how somebody makes a decision
+on it. One line, in the reader's language, above the list.
+
+**And a bare middot.** The server has no cargo and no plate in its schema, so
+the row that renders `{cargo} · {plate}` came out as a package icon beside a
+single "·". An absence rendered as punctuation reads as a bug. The row is
+dropped when there is nothing in it.
+
 ## 2026-08-30 (evening) — Translated, and then translated again twice
 
 **Did.** A sweep script over every `.tsx` — JSX text nodes and user-facing props,

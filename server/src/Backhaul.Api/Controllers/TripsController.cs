@@ -2,6 +2,7 @@ using Backhaul.Api.Auth;
 using Backhaul.Api.Contracts;
 using Backhaul.Domain;
 using Backhaul.Domain.Access;
+using Backhaul.Domain.Market;
 using Backhaul.Domain.Trips;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -75,6 +76,84 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
     }
 
     /// <summary>A trip and its full history.</summary>
+    /// <summary>
+    /// Every trip this caller may see, newest first.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Filtered by the same engine the app filters with, so a search that finds
+    /// a trip on the phone finds it on the server: <c>search.ts</c> flattens
+    /// case, accents and punctuation, because three people write the same plate
+    /// as <c>LSR-482-XA</c>, <c>lsr 482 xa</c> and <c>lsr482xa</c>.
+    /// </para>
+    /// <para>
+    /// The filter is applied here rather than in the database for the same
+    /// reason: matching is a rule, the rule lives in the domain, and a `LIKE`
+    /// in SQL would be a second implementation of it that agrees on most inputs.
+    /// A caller with enough trips for that to matter is a caller who needs
+    /// paging, which is a different change.
+    /// </para>
+    /// </remarks>
+    /// <param name="text">Town, cargo, plate, driver or reference.</param>
+    /// <param name="states">Comma-separated trip states.</param>
+    /// <param name="onlyWithIncidents">Only trips with something unresolved.</param>
+    /// <param name="ct">Cancellation.</param>
+    [HttpGet]
+    [ProducesResponseType<IReadOnlyList<TripSummaryResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<TripSummaryResponse>>> List(
+        [FromQuery] string? text = null,
+        [FromQuery] string? states = null,
+        [FromQuery] bool onlyWithIncidents = false,
+        CancellationToken ct = default)
+    {
+        var wanted = new List<TripState>();
+        foreach (var wire in (states ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var state = TripMachine.FromWire(wire.Trim());
+            if (state is null) return BadRequest($"Unknown trip state '{wire.Trim()}'.");
+            wanted.Add(state.Value);
+        }
+
+        var mine = await trips.MineAsync(Caller, ct);
+
+        var summaries = mine
+            .Select(row => new TripSummary(
+                row.Id,
+                // No reference number in the schema yet; the corridor is what a
+                // person actually searches for, and naming the field rather
+                // than dropping it keeps the two shapes the same.
+                $"{row.Origin}–{row.Destination}",
+                row.State,
+                row.Origin,
+                row.Destination,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                row.StartedAt,
+                row.HasOpenIncident,
+                false))
+            .ToList();
+
+        var filter = new TripFilter(text ?? string.Empty, wanted, false, onlyWithIncidents, null, null);
+        var kept = Search.FilterTrips(summaries, filter).Select(s => s.Id).ToHashSet();
+
+        return mine
+            .Where(row => kept.Contains(row.Id))
+            .Select(row => new TripSummaryResponse
+            {
+                Id = row.Id,
+                Origin = row.Origin,
+                Destination = row.Destination,
+                State = TripMachine.ToWire(row.State),
+                Tracking = TripMachine.ShouldTrack(row.State),
+                StartedAt = row.StartedAt,
+                LastSeenAt = row.LastSeenAt,
+                HasOpenIncident = row.HasOpenIncident,
+            })
+            .ToList();
+    }
+
     [HttpGet("{tripId:guid}")]
     [ProducesResponseType<TripResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -212,4 +212,98 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         List<EventView> History);
 
     private sealed record EventView(string State, DateTimeOffset At, string Actor, string? Note);
+
+    [Fact]
+    public async Task The_list_holds_only_the_callers_own_trips()
+    {
+        // ADR-0008: the principal is composed into the query, so a stranger's
+        // trip is not in the list rather than being in it and refused.
+        var mine = await Identities.IssueAsync(factory, Role.Shipper);
+        var client = mine.Carrying(factory.CreateClient());
+        var trip = Guid.NewGuid();
+
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(mine.UserId));
+        opened.EnsureSuccessStatusCode();
+
+        var stranger = await Identities.IssueAsync(factory, Role.Shipper);
+        var theirs = await stranger.Carrying(factory.CreateClient())
+            .GetFromJsonAsync<List<SummaryView>>("/v1/trips", Json);
+
+        Assert.DoesNotContain(theirs!, row => row.Id == trip);
+
+        var ours = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips", Json);
+        Assert.Contains(ours!, row => row.Id == trip);
+    }
+
+    [Fact]
+    public async Task A_trip_that_never_reported_has_no_last_seen_rather_than_an_old_one()
+    {
+        // Null is not "a long time ago". A list that renders it as one has told
+        // a shipper their truck went quiet when it never started.
+        var shipper = await Identities.IssueAsync(factory, Role.Shipper);
+        var client = shipper.Carrying(factory.CreateClient());
+        var trip = Guid.NewGuid();
+
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(shipper.UserId));
+        opened.EnsureSuccessStatusCode();
+
+        var list = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips", Json);
+        var row = Assert.Single(list!, r => r.Id == trip);
+
+        Assert.Null(row.LastSeenAt);
+        Assert.False(row.Tracking);
+        Assert.False(row.HasOpenIncident);
+    }
+
+    [Fact]
+    public async Task A_search_finds_a_town_typed_in_lower_case()
+    {
+        // The same flattening the app uses — held to it by the parity fixtures.
+        var shipper = await Identities.IssueAsync(factory, Role.Shipper);
+        var client = shipper.Carrying(factory.CreateClient());
+        var trip = Guid.NewGuid();
+
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(shipper.UserId));
+        opened.EnsureSuccessStatusCode();
+
+        var found = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips?text=KANO", Json);
+        Assert.Contains(found!, row => row.Id == trip);
+
+        var none = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips?text=zzz", Json);
+        Assert.DoesNotContain(none!, row => row.Id == trip);
+    }
+
+    [Fact]
+    public async Task An_unknown_state_is_refused_rather_than_ignored()
+    {
+        // Silently dropping it would answer a question nobody asked, and the
+        // caller would trust the list.
+        var shipper = await Identities.IssueAsync(factory, Role.Shipper);
+        var response = await shipper.Carrying(factory.CreateClient())
+            .GetAsync("/v1/trips?states=nowhere");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private static object Open(Guid shipperId) => new
+    {
+        driverId = Guid.NewGuid(),
+        carrierId = Guid.NewGuid(),
+        shipperId,
+        origin = "Lagos",
+        destination = "Kano",
+        at = DateTimeOffset.UtcNow.AddHours(-3),
+        actor = "shipper",
+    };
+
+    private sealed record SummaryView(
+        Guid Id,
+        string Origin,
+        string Destination,
+        string State,
+        bool Tracking,
+        DateTimeOffset StartedAt,
+        DateTimeOffset? LastSeenAt,
+        bool HasOpenIncident);
+
 }

@@ -28,7 +28,11 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips, type DemoTrip } from '../state/demo';
+import type { TripSummaryView } from '../api/client';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { emptiness, useQuery } from '../state/server';
+import { refusalWords } from '../state/words';
 
 interface Props {
   readonly onOpen: (trip: DemoTrip) => void;
@@ -62,6 +66,45 @@ function summarise(trip: DemoTrip, now: Date): TripSummary {
 }
 
 /**
+ * A server row, as this list needs it.
+ *
+ * The list renders a corridor, a state and an age, and the server sends
+ * exactly those — no history and no positions. What it cannot send is the
+ * track, so the fields the walkthrough fills from a `CleanedTrack` are empty
+ * here rather than invented: an empty track produces `unknown`, which is what
+ * this app renders when it does not know, and that is the correct answer.
+ *
+ * The one field worth naming is `lastSeenAt`. Null means no position has ever
+ * arrived, which is *not* "a long time ago" — a trip that has not started
+ * reads "not started", never "no signal for 56 years".
+ */
+function fromServer(row: TripSummaryView): DemoTrip {
+  const at = row.lastSeenAt ?? row.startedAt;
+
+  return {
+    id: row.id,
+    cargo: '',
+    originName: row.origin,
+    destinationName: row.destination,
+    origin: { lat: 0, lon: 0, accuracy: 0, at: row.startedAt },
+    destination: { lat: 0, lon: 0, accuracy: 0, at: row.startedAt },
+    truck: 'trailer_30t',
+    plate: '',
+    driver: '',
+    carrier: '',
+    history: [{ state: row.state, at: row.startedAt, actor: 'system' }],
+    track:
+      row.lastSeenAt === null
+        ? { kept: [], dropped: [] }
+        : { kept: [{ lat: 0, lon: 0, accuracy: 10, at }], dropped: [] },
+    raw: [],
+    agreedNaira: 0,
+    advanceNaira: 0,
+    waitedMinutes: 0,
+  };
+}
+
+/**
  * The states worth offering as a filter.
  *
  * Not all ten. A filter row with every state in it is a state machine diagram
@@ -81,15 +124,40 @@ const STATE_FILTERS: readonly {
   { label: 'delivered_state', icon: 'check', states: ['delivered'] },
 ];
 
-/** The shipper's list. Every row answers "where is it and is it moving?". */
+/**
+ * The shipper's list. Every row answers "where is it and is it moving?".
+ *
+ * The list comes from the server, and the walkthrough trips are shown *only*
+ * when it answers with none — labelled as the walkthrough, because a demo that
+ * cannot be told apart from real data is how somebody ends up trusting it.
+ *
+ * A server that cannot be reached is not an empty list. That distinction is
+ * the whole of `emptiness`, and it is the same one `observe()` makes between
+ * *stopped* and *unknown*: a shipper on a bad connection has trips, and this
+ * phone cannot see them.
+ */
 export function TripsScreen({ onOpen }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
-  const trips = useMemo(() => demoTrips(now), [now]);
   const { t } = useLanguage();
+  const { api } = useSession();
 
   const [filter, setFilter] = useState<TripFilter>(NO_TRIP_FILTER);
+
+  // Unfiltered. The filter runs locally on what came back, so typing does not
+  // fire a request per keystroke on a network that charges for each one — and
+  // `search.ts` gives the same answer either side, which is what the parity
+  // fixtures are for.
+  const { query, refresh } = useQuery(() => api.trips(), [api]);
+
+  const live = query.state === 'ready' ? query.value : [];
+  const walkthrough = live.length === 0 && query.state === 'ready';
+
+  const trips = useMemo(
+    () => (walkthrough ? demoTrips(now) : live.map(fromServer)),
+    [walkthrough, live, now],
+  );
 
   const shown = useMemo(() => {
     const summaries = filterTrips(
@@ -102,6 +170,7 @@ export function TripsScreen({ onOpen }: Props) {
 
   const attention = trips.filter((trip) => needsAttention(trip, now)).length;
   const filtering = isFiltering(filter);
+  const empty = emptiness(query, shown.length, filtering);
 
   const toggleStates = (states: readonly TripState[]) => {
     setFilter((was) => {
@@ -191,7 +260,18 @@ export function TripsScreen({ onOpen }: Props) {
             */}
             {filtering ? (
               <Text variant="label" tone="secondary">
-                {describeTripFilter(filter)} · {shown.length} of {trips.length}
+                {describeTripFilter(filter)} · {shown.length}/{trips.length}
+              </Text>
+            ) : null}
+
+            {/*
+              Said out loud, not implied. A walkthrough that cannot be told
+              apart from real data is how somebody ends up making a decision on
+              it, and the sentence costs one line.
+            */}
+            {walkthrough ? (
+              <Text variant="label" tone="stale">
+                {t('showing_the_walkthrough')}
               </Text>
             ) : null}
 
@@ -228,7 +308,39 @@ export function TripsScreen({ onOpen }: Props) {
           </View>
         }
         ListEmptyComponent={
-          filtering ? (
+          /*
+            Four empty screens, not one.
+
+            "Nothing yet", "nothing matching", "cannot see" and "the server
+            said no" are four different facts, and only the first two are about
+            this person's data. Collapsing them into "no trips" tells a shipper
+            on a bad stretch of road that their trucks have disappeared.
+          */
+          empty === 'loading' ? (
+            <Empty icon="clock" title={t('loading_your_trips')} detail="" />
+          ) : empty === 'unreachable' ? (
+            <Empty
+              icon="signal-off"
+              title={t('cannot_reach_the_server')}
+              detail={t('your_trips_are_still_there')}
+              action={{ label: t('try_again'), onPress: refresh }}
+            />
+          ) : empty === 'refused' ? (
+            <Empty
+              icon="alert"
+              title={t('cannot_reach_the_server')}
+              detail={
+                query.state === 'refused'
+                  ? refusalWords(
+                      query.failure.kind === 'refused' ? query.failure.code : null,
+                      query.failure.detail,
+                      t,
+                    )
+                  : ''
+              }
+              action={{ label: t('try_again'), onPress: refresh }}
+            />
+          ) : empty === 'filtered' ? (
             <Empty
               icon="search"
               title={t('nothing_matches_that')}
@@ -285,7 +397,9 @@ const Row = memo(function Row({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${trip.cargo}, ${trip.originName} to ${trip.destinationName}`}
+      accessibilityLabel={[trip.cargo, `${trip.originName} → ${trip.destinationName}`]
+        .filter((part) => part !== '')
+        .join(', ')}
       accessibilityHint={t('opens_the_trip')}
       style={({ pressed }) => [
         styles.row,
@@ -311,14 +425,24 @@ const Row = memo(function Row({
           <Icon name="chevron-right" size="md" colour={colours.outline} />
         </View>
 
-        <View style={styles.meta}>
-          <View style={styles.summaryIcon}>
-            <Icon name="package" size="sm" colour={colours.textSecondary} />
+        {/*
+          Dropped entirely when there is nothing to say.
+
+          The walkthrough always has a cargo and a plate; the server has
+          neither in its schema yet, so this rendered as a package icon beside
+          a bare middot — which reads as a bug rather than as an absence. An
+          empty row is better than a row that looks broken.
+        */}
+        {[trip.cargo, trip.plate].some((part) => part !== '') ? (
+          <View style={styles.meta}>
+            <View style={styles.summaryIcon}>
+              <Icon name="package" size="sm" colour={colours.textSecondary} />
+            </View>
+            <Text variant="body" tone="secondary" style={styles.metaText}>
+              {[trip.cargo, trip.plate].filter((part) => part !== '').join(' · ')}
+            </Text>
           </View>
-          <Text variant="body" tone="secondary" style={styles.metaText}>
-            {trip.cargo} · {trip.plate}
-          </Text>
-        </View>
+        ) : null}
 
         <View style={styles.footer}>
           <StatusChip observation={observation} tracking={tracking} />
