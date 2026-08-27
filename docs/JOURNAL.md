@@ -6,6 +6,43 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-31 — The client catches up, and the wire disagrees twice
+
+**Did.** The API client covered 13 of the server's 62 routes. It covers them
+all now — every view type, every timestamp converted in exactly one place — and
+`scripts/round-trip.ts` drives each one against a live server, sixty-odd checks,
+clean.
+
+### What surprised us
+
+**Two wire mismatches, both found on the first run and neither by a test.**
+
+`POST /v1/trips/{id}/levies` returns the levy it wrote, not the ledger. The
+client assumed the ledger and crashed on `undefined.map` — which is the good
+failure, because the alternative is a screen rendering an empty list and nobody
+noticing. `GET` also needs an `advanceKobo` query parameter, because the server
+does not hold an advance: it lives with the trip's terms and only for trips that
+have them.
+
+`GET /v1/pricing/quote` sends `low`, `mid`, `high` — not `lowKobo`, `midKobo`,
+`highKobo` the way every money route does. The client now uses the server's
+names rather than papering over the inconsistency, with a comment saying whose
+it is. It also carries `isIndicative`, which is always true and travels anyway:
+a quote that arrives without it is a quote a screen can render as a price, and
+no estimate in this product is presented as a measurement.
+
+**Neither of these is something a unit test could have caught.** The client's
+own tests mock the server, and the parity fixtures hold the two *domains* to the
+same answers rather than the two *serialisers*. The round-trip is the only place
+the two wire formats meet, and extending it was worth more than the code it
+tests.
+
+**One design note that came out of the levies fix.** `recordLevy` returns the
+levy and a caller that wants the new balance reads the ledger again. That is one
+more request and it is the honest one: the balance depends on an advance this
+endpoint was never told, and inventing one to save a round trip would put a
+wrong number in front of a driver.
+
 ## 2026-08-30 (night) — The list reads the server, and the server forgot us
 
 **Did.** `GET /v1/trips`, a `useQuery` hook, and the trips list wired to it end
