@@ -222,3 +222,51 @@ describe('an unreachable server', () => {
     expect(result.failure.kind).toBe('unreachable');
   });
 });
+
+describe('a refusal', () => {
+  /*
+    The server sends a code and a sentence, and the app needs both.
+
+    The sentence is English — it is what an API consumer reads and what the
+    parity fixtures hold both implementations to, character for character. The
+    app is read in four languages, so a screen renders from the code and keeps
+    the sentence as the fallback for a code it has not seen.
+
+    This asserts the client does not throw either half away, which it did:
+    `readDetail` returned only the message and the code went in the bin.
+  */
+  test('carries the code as well as the sentence', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ refusal: 'too_soon', message: 'A code was just sent.' }),
+        { status: 429, headers: { 'content-type': 'application/json' } },
+      ),
+    ) as unknown as typeof fetch;
+
+    const api = new BackhaulApi('http://example.test', null);
+    const result = await api.requestCode('+2348031234567');
+
+    expect(result.ok).toBe(false);
+    if (result.ok || result.failure.kind !== 'refused') throw new Error('expected a refusal');
+    expect(result.failure.code).toBe('too_soon');
+    expect(result.failure.detail).toBe('A code was just sent.');
+  });
+
+  test('and reports a missing code as missing rather than as a guess', async () => {
+    // Not every refusal has a short name worth inventing. Null is the honest
+    // answer, and it is what makes the screen fall back to the server's words.
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'No.' }), {
+        status: 422,
+        headers: { 'content-type': 'application/json' },
+      }),
+    ) as unknown as typeof fetch;
+
+    const api = new BackhaulApi('http://example.test', null);
+    const result = await api.requestCode('+2348031234567');
+
+    if (result.ok || result.failure.kind !== 'refused') throw new Error('expected a refusal');
+    expect(result.failure.code).toBeNull();
+    expect(result.failure.detail).toBe('No.');
+  });
+});

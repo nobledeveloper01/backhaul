@@ -224,6 +224,25 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'refusal_not_a_number'
+  | 'refusal_too_many'
+  | 'refusal_too_soon'
+  | 'refusal_unknown'
+  | 'refusal_expired'
+  | 'refusal_exhausted'
+  | 'refusal_used'
+  | 'refusal_wrong'
+  | 'refusal_no_photos'
+  | 'refusal_no_signature'
+  | 'refusal_no_name'
+  | 'refusal_needs_photo'
+  | 'refusal_not_allowed'
+  | 'refusal_terminal'
+  | 'refusal_out_of_order'
+  | 'refusal_revoked'
+  | 'refusal_link_expired'
+  | 'refusal_unknown_link'
+  | 'refusal_unhandled'
   | 'blocker_too_heavy'
   | 'blocker_wrong_class'
   | 'blocker_expired'
@@ -663,6 +682,25 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  refusal_not_a_number: "That does not look like a Nigerian mobile number.",
+  refusal_too_many: "Too many codes asked for. Try again later.",
+  refusal_too_soon: "A code was just sent. Wait before asking for another.",
+  refusal_unknown: "No code was asked for on this number.",
+  refusal_expired: "That code has expired. Ask for another.",
+  refusal_exhausted: "Too many wrong tries. Ask for a new code.",
+  refusal_used: "That code has already been used.",
+  refusal_wrong: "That code is not right.",
+  refusal_no_photos: "One more photograph is needed.",
+  refusal_no_signature: "A signature is needed.",
+  refusal_no_name: "The name of whoever signed is needed.",
+  refusal_needs_photo: "This kind of report needs a photograph.",
+  refusal_not_allowed: "A trip cannot go that way from where it is.",
+  refusal_terminal: "This trip is finished and cannot change.",
+  refusal_out_of_order: "That is dated before something already recorded.",
+  refusal_revoked: "This link was turned off.",
+  refusal_link_expired: "This link has run out.",
+  refusal_unknown_link: "This is not a link we issued.",
+  refusal_unhandled: "The server said no, and this app does not have words for the reason yet.",
   blocker_too_heavy: "Heavier than your truck carries.",
   blocker_wrong_class: "The shipper asked for a different class of truck.",
   blocker_expired: "This load has expired.",
@@ -1102,6 +1140,25 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  refusal_not_a_number: "Wannan bai yi kama da lambar wayar Najeriya ba.",
+  refusal_too_many: "An nemi lambobi da yawa. Ka sake gwadawa daga baya.",
+  refusal_too_soon: "An aika lamba yanzu-yanzu. Ka jira kafin ka nemi wata.",
+  refusal_unknown: "Ba a nemi lamba a kan wannan lambar waya ba.",
+  refusal_expired: "Wannan lambar ta ƙare. Ka nemi wata.",
+  refusal_exhausted: "An yi kuskure sau da yawa. Ka nemi sabuwar lamba.",
+  refusal_used: "An riga an yi amfani da wannan lambar.",
+  refusal_wrong: "Wannan lambar ba daidai ba ce.",
+  refusal_no_photos: "Ana buƙatar ƙarin hoto ɗaya.",
+  refusal_no_signature: "Ana buƙatar sa hannu.",
+  refusal_no_name: "Ana buƙatar sunan wanda ya sa hannu.",
+  refusal_needs_photo: "Wannan irin rahoton yana buƙatar hoto.",
+  refusal_not_allowed: "Tafiya ba za ta iya tafiya haka daga inda take ba.",
+  refusal_terminal: "An gama wannan tafiya, ba za ta sake canzawa ba.",
+  refusal_out_of_order: "Kwanan watan sa ya gabaci abin da aka riga aka rubuta.",
+  refusal_revoked: "An kashe wannan hanyar bibiya.",
+  refusal_link_expired: "Wannan hanyar bibiya ta ƙare.",
+  refusal_unknown_link: "Wannan ba hanyar bibiya da muka bayar ba ce.",
+  refusal_unhandled: "Uwar garken ta ƙi, wannan manhajar kuma ba ta da kalmomin dalilin tukuna.",
   blocker_too_heavy: "Ya fi nauyin da motarka ke ɗauka.",
   blocker_wrong_class: "Mai kayan ya nemi wani nau’in mota daban.",
   blocker_expired: "Wannan kayan ya wuce lokaci.",
@@ -1546,6 +1603,25 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  refusal_not_a_number: "Èyí kò dà bí nọ́mbà fóònù Nàìjíríà.",
+  refusal_too_many: "A ti béèrè fún kóòdù púpọ̀ jù. Tún gbìyànjú lẹ́yìn náà.",
+  refusal_too_soon: "A ṣẹ̀ṣẹ̀ fi kóòdù ránṣẹ́. Dúró kí o tó béèrè fún òmíràn.",
+  refusal_unknown: "A kò béèrè fún kóòdù lórí nọ́mbà yìí.",
+  refusal_expired: "Kóòdù yẹn ti parí. Béèrè fún òmíràn.",
+  refusal_exhausted: "A ti ṣàṣìṣe lọ́pọ̀ ìgbà. Béèrè fún kóòdù tuntun.",
+  refusal_used: "A ti lo kóòdù yẹn tẹ́lẹ̀.",
+  refusal_wrong: "Kóòdù yẹn kò tọ́.",
+  refusal_no_photos: "A nílò àwòrán kan sí i.",
+  refusal_no_signature: "A nílò ìfọwọ́sí.",
+  refusal_no_name: "A nílò orúkọ ẹni tí ó fọwọ́sí.",
+  refusal_needs_photo: "Irú ìròyìn yìí nílò àwòrán.",
+  refusal_not_allowed: "Ìrìn kò lè lọ bẹ́ẹ̀ láti ibi tí ó wà.",
+  refusal_terminal: "Ìrìn yìí ti parí, kò sì lè yí padà.",
+  refusal_out_of_order: "Ọjọ́ rẹ̀ ṣáájú ohun tí a ti kọ sílẹ̀ tẹ́lẹ̀.",
+  refusal_revoked: "A ti pa ọ̀nà ìtọ́pinpin yìí.",
+  refusal_link_expired: "Ọ̀nà ìtọ́pinpin yìí ti parí.",
+  refusal_unknown_link: "Èyí kì í ṣe ọ̀nà ìtọ́pinpin tí a fúnni.",
+  refusal_unhandled: "Sáfà náà kọ̀, ohun èlò yìí kò sì ní ọ̀rọ̀ fún ìdí rẹ̀ síbẹ̀.",
   blocker_too_heavy: "Ó wúwo ju èyí tí ọkọ̀ rẹ lè gbé lọ.",
   blocker_wrong_class: "Onílẹ̀rù béèrè fún irú ọkọ̀ mìíràn.",
   blocker_expired: "Ẹrù yìí ti kọjá àkókò.",
@@ -1988,6 +2064,25 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  refusal_not_a_number: "Nke a adịghị ka nọmba ekwentị Naịjirịa.",
+  refusal_too_many: "A rịọrọ ọtụtụ koodu. Nwaa ọzọ ma emesịa.",
+  refusal_too_soon: "E zitere koodu ugbu a. Chere tupu ị rịọ nke ọzọ.",
+  refusal_unknown: "A rịọghị koodu na nọmba a.",
+  refusal_expired: "Koodu ahụ agwụla. Rịọ nke ọzọ.",
+  refusal_exhausted: "A mehiere ọtụtụ ugboro. Rịọ koodu ọhụrụ.",
+  refusal_used: "E jirila koodu ahụ mee ihe.",
+  refusal_wrong: "Koodu ahụ ezighị ezi.",
+  refusal_no_photos: "A chọrọ otu foto ọzọ.",
+  refusal_no_signature: "A chọrọ mbinye aka.",
+  refusal_no_name: "A chọrọ aha onye bịanyere aka.",
+  refusal_needs_photo: "Ụdị akụkọ a chọrọ foto.",
+  refusal_not_allowed: "Njem enweghị ike ịga otú ahụ site ebe ọ nọ.",
+  refusal_terminal: "Njem a agwụla, ọ pụghịkwa ịgbanwe.",
+  refusal_out_of_order: "Ụbọchị ya buru ihe e dekọrọ na mbụ ụzọ.",
+  refusal_revoked: "A gbanyụọla njikọ a.",
+  refusal_link_expired: "Njikọ a agwụla.",
+  refusal_unknown_link: "Nke a abụghị njikọ anyị nyere.",
+  refusal_unhandled: "Sava ahụ jụrụ, ngwa a enwebeghịkwa okwu maka ihe kpatara ya.",
   blocker_too_heavy: "Ọ dị arọ karịa ihe ụgbọ gị na-ebu.",
   blocker_wrong_class: "Onye nwe ngwaahịa rịọrọ ụdị ụgbọ dị iche.",
   blocker_expired: "Ibu a agafeela oge.",

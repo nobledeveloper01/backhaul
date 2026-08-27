@@ -28,7 +28,24 @@ export type ApiFailure =
    * does not distinguish, on purpose, because the existence of a trip id is
    * itself information.
    */
-  | { readonly kind: 'refused'; readonly status: number; readonly detail: string };
+  | {
+      readonly kind: 'refused';
+      readonly status: number;
+      readonly detail: string;
+      /**
+       * The server's machine-readable reason, where it gives one.
+       *
+       * `detail` is a sentence written for a person and it is written in
+       * English — one language, because the server has one and the parity
+       * fixtures hold both implementations to the same words. The app is read
+       * in four. So the code is what a screen renders from, and the sentence
+       * is the fallback for a code the app has not seen before.
+       *
+       * Null when the server did not name one, which is not a bug: not every
+       * refusal has a short name worth inventing.
+       */
+      readonly code: string | null;
+    };
 
 export type ApiResult<T> =
   | { readonly ok: true; readonly value: T }
@@ -319,12 +336,14 @@ export class BackhaulApi {
       });
 
       if (!response.ok) {
+        const refusal = await readRefusal(response);
         return {
           ok: false,
           failure: {
             kind: 'refused',
             status: response.status,
-            detail: await readDetail(response),
+            detail: refusal.detail,
+            code: refusal.code,
           },
         };
       }
@@ -354,24 +373,35 @@ export class BackhaulApi {
 }
 
 /**
- * The server's own sentence, where it has one.
+ * The server's reason for saying no: its code and its sentence.
  *
  * A refusal from the trip machine carries wording written to be shown to a
- * driver at a loading bay. Replacing it with "Request failed with status 422"
- * throws away the only useful part of the response.
+ * driver at a loading bay, and replacing it with "Request failed with status
+ * 422" throws away the only useful part of the response. But the wording is
+ * English, so the *code* beside it is what a screen in four languages renders
+ * from — see `ApiFailure`.
  */
-async function readDetail(response: Response): Promise<string> {
+async function readRefusal(
+  response: Response,
+): Promise<{ readonly code: string | null; readonly detail: string }> {
   try {
     const body: unknown = await response.json();
     if (typeof body === 'object' && body !== null) {
       const record = body as Record<string, unknown>;
+
+      const code = record['refusal'] ?? record['reason'];
       const message = record['message'] ?? record['detail'] ?? record['title'];
-      if (typeof message === 'string') return message;
+
+      return {
+        code: typeof code === 'string' ? code : null,
+        detail:
+          typeof message === 'string' ? message : `The server answered ${response.status}.`,
+      };
     }
   } catch {
     // A body that is not JSON is not a reason to lose the status code.
   }
-  return `The server answered ${response.status}.`;
+  return { code: null, detail: `The server answered ${response.status}.` };
 }
 
 interface RawTrip {

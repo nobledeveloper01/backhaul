@@ -345,14 +345,22 @@ function Gate() {
           if (result.ok) return null;
           return result.failure.kind === 'unreachable'
             ? { kind: 'unreachable' }
-            : { kind: 'refused', sentence: result.failure.detail };
+            : {
+                kind: 'refused',
+                code: result.failure.code,
+                sentence: result.failure.detail,
+              };
         }}
         onVerify={async (phone, code) => {
           const result = await api.verifyCode(phone, code);
           if (!result.ok) {
             return result.failure.kind === 'unreachable'
               ? { kind: 'unreachable' }
-              : { kind: 'refused', sentence: result.failure.detail };
+              : {
+                  kind: 'refused',
+                  code: result.failure.code,
+                  sentence: result.failure.detail,
+                };
           }
           signIn(result.value);
           return null;

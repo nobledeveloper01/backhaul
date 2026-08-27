@@ -104,9 +104,22 @@ public sealed class ShareController(
     /// two implementations of one rule drift, and copy is a rule: a holder who
     /// sees one wording in the app and another on the web has found a seam.
     /// </remarks>
+    /// <remarks>
+    /// The codes are namespaced — <c>link_expired</c> rather than
+    /// <c>expired</c> — because a client maps codes to its own wording and a
+    /// sign-in code that expired is a different sentence from a share link that
+    /// ran out. `refusal.ToString().ToLowerInvariant()` would have collided the
+    /// two, and the collision would have shown up as one wrong sentence on one
+    /// screen in one language.
+    /// </remarks>
     private static ShareRefusalResponse Refused(ShareRefusal refusal) => new()
     {
-        Refusal = refusal.ToString().ToLowerInvariant(),
+        Refusal = refusal switch
+        {
+            ShareRefusal.Revoked => "revoked",
+            ShareRefusal.Expired => "link_expired",
+            _ => "unknown_link",
+        },
         Message = refusal switch
         {
             ShareRefusal.Revoked =>

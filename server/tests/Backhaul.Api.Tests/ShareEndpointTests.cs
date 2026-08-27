@@ -117,7 +117,10 @@ public sealed class ShareEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var refusal = (await response.Content.ReadFromJsonAsync<RefusalView>(Json))!;
-        Assert.Equal("unknown", refusal.Refusal);
+        // Namespaced, not "unknown": a client maps codes to its own wording,
+        // and a sign-in code it has never seen is a different sentence from a
+        // share link that was never issued.
+        Assert.Equal("unknown_link", refusal.Refusal);
     }
 
     [Fact]

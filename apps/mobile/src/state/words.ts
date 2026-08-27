@@ -221,3 +221,49 @@ export const BLOCKER_WORDS: Readonly<Record<Blocker, Phrase>> = {
   expired: 'blocker_expired',
   cannot_reach: 'blocker_cannot_reach',
 };
+
+/**
+ * The server's refusal codes, in the reader's words.
+ *
+ * The server sends a code and a sentence. The sentence is English — it is what
+ * an API consumer reads and what the parity fixtures hold both implementations
+ * to, character for character — so a screen renders from the code instead.
+ *
+ * `refusalWords` falls back to the server's own sentence for a code this app
+ * has not seen. That is deliberate and it is the honest failure: English words
+ * that are *true* beat translated words that are a guess, and the fallback is
+ * visible in a way that a silent "something went wrong" would not be.
+ */
+const REFUSAL_WORDS: Readonly<Record<string, Phrase>> = {
+  not_a_number: 'refusal_not_a_number',
+  too_many: 'refusal_too_many',
+  too_soon: 'refusal_too_soon',
+  unknown: 'refusal_unknown',
+  expired: 'refusal_expired',
+  exhausted: 'refusal_exhausted',
+  used: 'refusal_used',
+  wrong: 'refusal_wrong',
+  no_photos: 'refusal_no_photos',
+  no_signature: 'refusal_no_signature',
+  no_name: 'refusal_no_name',
+  needs_photo: 'refusal_needs_photo',
+  not_allowed: 'refusal_not_allowed',
+  terminal: 'refusal_terminal',
+  out_of_order: 'refusal_out_of_order',
+  revoked: 'refusal_revoked',
+  // `expired` is taken by the sign-in code above, and a share link that ran
+  // out is a different sentence from a code that did. The share routes send
+  // `link_expired` for that reason.
+  link_expired: 'refusal_link_expired',
+  unknown_link: 'refusal_unknown_link',
+};
+
+/** What to show when the server says no. */
+export function refusalWords(
+  code: string | null,
+  serverSentence: string,
+  t: Words,
+): string {
+  const phrase = code === null ? undefined : REFUSAL_WORDS[code];
+  return phrase === undefined ? serverSentence : t(phrase);
+}

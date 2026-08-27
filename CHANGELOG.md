@@ -24,6 +24,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **The server's refusals arrived in English.** Every "no" from the API carries
+  a machine-readable code as well as a sentence, and the client was throwing the
+  code away and rendering the sentence. The sentence is English on purpose — it
+  is what an API consumer reads and what the parity fixtures hold both
+  implementations to, character for character — so a screen now renders from the
+  code and keeps the sentence as the fallback for a code it has not seen. True
+  English beats a guess, and it is visible in a way "something went wrong" is
+  not.
+
+  The share routes' codes are namespaced for the same reason: a sign-in code
+  that expired and a share link that ran out were both `expired`, which would
+  have shown one wrong sentence on one screen in one language.
+
 - **Screens were still half in English.** The headings and buttons had been
   translated and the body copy had not, so a Yorùbá reader met four lines of
   Yorùbá and then a paragraph of English underneath. All 138 remaining strings

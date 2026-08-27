@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CODE_LENGTH, RESEND_AFTER_MS, formatPhone, normalisePhone } from '@backhaul/domain';
 
 import { useLanguage } from '../state/language';
+import { refusalWords } from '../state/words';
 
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
@@ -28,7 +29,13 @@ import { useColours } from '../design/theme';
  */
 export type Answer =
   | null
-  | { readonly kind: 'refused'; readonly sentence: string }
+  | {
+      readonly kind: 'refused';
+      /** The server's machine-readable reason, where it named one. */
+      readonly code: string | null;
+      /** Its own sentence — English, and the fallback for an unknown code. */
+      readonly sentence: string;
+    }
   | { readonly kind: 'unreachable' };
 
 interface Props {
@@ -270,11 +277,17 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
         )}
 
         {/*
-          The server's own sentence, verbatim.
+          The server's reason, in the reader's words.
 
           It knows things this screen cannot — how many tries are left, whether
-          the code was already used — and `otp.ts` holds both sides to the same
-          wording through the parity fixtures.
+          the code was already used — and it names each of them with a code as
+          well as a sentence. The code is what this renders from; `otp.ts` holds
+          both implementations to the same *English* sentence through the parity
+          fixtures, and English is one language out of the four this is read in.
+
+          A code the app has not seen falls back to the server's own words. That
+          is English, and it is honest: true words in the wrong language beat a
+          guess, and it is visible in a way "something went wrong" would not be.
 
           The one exception is the case where there is no sentence because
           there was no server. That used to render `error.message`, which put
@@ -286,7 +299,9 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
           <View style={[styles.refusal, { backgroundColor: colours.exceptionWash }]}>
             <Icon name="alert" size="sm" colour={colours.exception} />
             <Text variant="body" tone="exception" style={styles.flex}>
-              {refusal.kind === 'unreachable' ? t('could_not_reach') : refusal.sentence}
+              {refusal.kind === 'unreachable'
+                ? t('could_not_reach')
+                : refusalWords(refusal.code, refusal.sentence, t)}
             </Text>
           </View>
         ) : null}
