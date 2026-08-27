@@ -95,6 +95,21 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**And every load said its shipper was Verified.**
+
+The same shape of defect, found by pulling the thread: a literal `"verified"`
+filled in from two places in the API, each under a comment promising the real
+thing was one line away. It was not one line away. `trust.ts` is
+carrier-shaped — a licence, goods-in-transit cover, punctuality — and none of
+that is what makes a *shipper* worth working for, which is whether they pay.
+That is a different ladder off different evidence and nobody has written it.
+
+So the standing is null, the filter is served, and asking for Trusted shippers
+comes back empty. Backlog F10 says what the decision actually is. **A comment
+saying "one line away" is worth checking**: twice today it has meant "a
+decision nobody took", and both times the placeholder was a claim being made to
+somebody.
+
 **Every carrier was one hundred per cent on time.**
 
 ```csharp

@@ -501,6 +501,15 @@ async function main(): Promise<void> {
     const pairs = await api.pairs('trailer_30t');
     check('pairs read back', pairs.ok, pairs.ok ? '' : pairs.failure.detail);
 
+    // Asking for a standing nobody has yet comes back empty rather than
+    // coming back with the whole board wearing a badge the platform invented.
+    // See `LoadSummary.shipperTier` — there is no shipper ladder.
+    const byTier = await api.loads({ tiers: ['trusted'] });
+    check('a tier filter is served', byTier.ok, byTier.ok ? '' : byTier.failure.detail);
+    if (byTier.ok) {
+      check('and matches nothing, because no shipper has a standing', byTier.value.length === 0);
+    }
+
     const refused = await api.pairRefusals('trailer_30t');
     check('pair refusals read back', refused.ok, refused.ok ? '' : refused.failure.detail);
 

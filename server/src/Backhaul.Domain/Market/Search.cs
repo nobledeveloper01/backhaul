@@ -38,7 +38,14 @@ public sealed record LoadSummary(
     Kobo Offered,
     DateTimeOffset ReadyFrom,
     TruckClass TruckClass,
-    string ShipperTier);
+    // The shipper's standing, or null when nobody has established one.
+    //
+    // Null because this product has no shipper ladder yet. `Trust` is
+    // carrier-shaped — a licence, goods-in-transit cover, punctuality — and
+    // none of that is what makes a shipper worth working for. That is whether
+    // they pay, and on time, which is a different set of requirements nobody
+    // has written. This used to be filled with the literal "verified".
+    string? ShipperTier);
 
 public sealed record LoadFilter(
     string Text,
@@ -171,7 +178,15 @@ public static class Search
 
             if (filter.MinimumOffer is { } floor && load.Offered.Value < floor.Value) return false;
             if (filter.ReadyBefore is { } before && load.ReadyFrom > before) return false;
-            if (filter.Tiers.Count > 0 && !filter.Tiers.Contains(load.ShipperTier)) return false;
+            // An unestablished standing matches no tier filter. Excluded
+            // rather than admitted: a carrier who asked for Trusted shippers
+            // and got everybody has been told something false about all of
+            // them.
+            if (filter.Tiers.Count > 0
+                && (load.ShipperTier is null || !filter.Tiers.Contains(load.ShipperTier)))
+            {
+                return false;
+            }
 
             if (text.Length == 0) return true;
 

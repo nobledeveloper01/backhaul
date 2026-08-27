@@ -145,6 +145,17 @@ describe('filterLoads', () => {
     assert.equal(filterLoads(loads, { ...NO_LOAD_FILTER, tiers: ['trusted'] }).length, 1);
   });
 
+  test('and a shipper with no established standing matches no tier filter', () => {
+    // This product has no shipper ladder — `trust.ts` is carrier-shaped — so
+    // the standing is null until somebody writes one. A carrier who asked for
+    // Trusted shippers and got everybody has been told something false about
+    // all of them, so null is excluded rather than admitted.
+    const unknown = [load({ id: 'u1', shipperTier: null })];
+    assert.equal(filterLoads(unknown, { ...NO_LOAD_FILTER, tiers: ['trusted'] }).length, 0);
+    // And is on the board like anything else when nobody asked about tiers.
+    assert.equal(filterLoads(unknown, NO_LOAD_FILTER).length, 1);
+  });
+
   test('searches the corridor and the cargo', () => {
     assert.equal(filterLoads(loads, { ...NO_LOAD_FILTER, text: 'cement' }).length, 1);
     assert.equal(filterLoads(loads, { ...NO_LOAD_FILTER, text: 'kano' }).length, 3);

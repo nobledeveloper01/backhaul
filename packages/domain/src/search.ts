@@ -164,7 +164,22 @@ export interface LoadSummary {
   readonly offered: Kobo;
   readonly readyFrom: Date;
   readonly truckClass: TruckClass;
-  readonly shipperTier: string;
+  /**
+   * The shipper's standing, or null when nobody has established one.
+   *
+   * **Null, because this product does not have a shipper ladder yet.** `trust.ts`
+   * is carrier-shaped — a driver's licence, goods-in-transit cover, punctuality
+   * — and none of that is what makes a shipper worth working for. That is
+   * whether they pay, and on time, which is a different set of requirements
+   * nobody has written.
+   *
+   * The server used to fill this with the literal `'verified'` on every load,
+   * from two places, each with a comment saying the real thing was one line
+   * away. It was not one line away; it was a decision nobody had taken. Null
+   * says so, and a carrier filtering on tier sees nothing rather than seeing
+   * everything wearing a badge the platform invented.
+   */
+  readonly shipperTier: string | null;
 }
 
 export interface LoadFilter {
@@ -198,7 +213,12 @@ export function filterLoads(
     if (filter.readyBefore !== null && load.readyFrom.getTime() > filter.readyBefore.getTime()) {
       return false;
     }
-    if (filter.tiers.length > 0 && !filter.tiers.includes(load.shipperTier)) return false;
+    // An unestablished standing matches no tier filter. Excluded rather than
+    // admitted: a carrier who asked for Trusted shippers and got everybody
+    // has been told something false about all of them.
+    if (filter.tiers.length > 0) {
+      if (load.shipperTier === null || !filter.tiers.includes(load.shipperTier)) return false;
+    }
 
     if (text.length === 0) return true;
 

@@ -713,11 +713,25 @@ export class BackhaulApi {
     readonly baseLon?: number;
     readonly text?: string;
     readonly minimumOfferKobo?: number;
+    /**
+     * Only loads from shippers at these standings.
+     *
+     * Nothing has a standing yet — this product has no shipper ladder — so
+     * asking for one comes back with an empty board. That is the truthful
+     * answer; the alternative is the whole board wearing a badge nobody
+     * earned.
+     */
+    readonly tiers?: readonly string[];
   }): Promise<ApiResult<readonly RankedLoadView[]>> {
+    const { tiers, ...rest } = options ?? {};
+
     const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(options ?? {})) {
+    for (const [key, value] of Object.entries(rest)) {
       if (value !== undefined && value !== '') query.set(key, String(value));
     }
+    // Repeated rather than joined: ASP.NET binds `?tiers=a&tiers=b` to an
+    // array and `?tiers=a,b` to one string called "a,b".
+    for (const tier of tiers ?? []) query.append('tiers', tier);
     const suffix = query.toString() === '' ? '' : `?${query.toString()}`;
 
     return map(

@@ -1914,6 +1914,20 @@ const searchLoads: readonly LoadSummary[] = [
     truckClass: 'canter',
     shipperTier: 'verified',
   },
+  {
+    // No established standing. This product has no shipper ladder yet, so this
+    // is what most loads look like — and a tier filter must exclude it rather
+    // than admit it wearing a badge the platform invented.
+    id: 'l3',
+    origin: 'Kano',
+    destination: 'Kaduna',
+    cargo: 'Fertiliser',
+    weightKg: 20_000,
+    offered: fromNaira(900_000),
+    readyFrom: new Date('2026-03-07T09:00:00.000Z'),
+    truckClass: 'trailer_30t',
+    shipperTier: null,
+  },
 ];
 
 const NO_LOADS: LoadFilter = {

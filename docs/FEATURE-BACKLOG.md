@@ -91,6 +91,23 @@ when android-37 reaches the stable channel.
 
 ## Blocked on a decision
 
+### F10 — A shipper ladder
+
+`search.ts` can filter the load board by the shipper's standing, and the route
+for it is served — but nothing has a standing, because there is no ladder for a
+shipper to climb.
+
+`trust.ts` is **carrier-shaped**: a driver's licence, goods-in-transit cover,
+completed trips, punctuality. None of that is what makes a shipper worth
+working for. That is whether they pay, and whether they pay on time — a
+different set of requirements, off different evidence, and nobody has decided
+what it is.
+
+Until then `LoadSummary.shipperTier` is null and a tier filter matches nothing.
+That is the truthful answer. It was previously the literal string `"verified"`,
+filled in from two places in the API, each under a comment saying the real
+thing was one line away. It was not one line away; it was this decision.
+
 ### F6 — Multi-drop and multi-leg chaining
 
 The trip state machine is single-origin, single-destination. A three-city

@@ -47,6 +47,12 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
     /// <param name="baseLon">Where the truck is trying to get back to.</param>
     /// <param name="text">Town or cargo. Case-, accent- and space-insensitive.</param>
     /// <param name="minimumOfferKobo">A floor under the price.</param>
+    /// <param name="tiers">
+    /// Only loads from shippers at these standings. Nothing has a standing yet
+    /// — this product has no shipper ladder — so asking for one returns an
+    /// empty board, which is the truthful answer rather than the whole board
+    /// wearing a badge nobody earned. See <c>LoadSummary.ShipperTier</c>.
+    /// </param>
     /// <param name="readyBefore">Only loads ready to collect by then.</param>
     /// <param name="ct">Cancellation.</param>
     [HttpGet]
@@ -61,6 +67,7 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         [FromQuery] string? text = null,
         [FromQuery] long? minimumOfferKobo = null,
         [FromQuery] DateTimeOffset? readyBefore = null,
+        [FromQuery] string[]? tiers = null,
         CancellationToken ct = default)
     {
         var now = clock.GetUtcNow();
@@ -71,14 +78,17 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         // to be thrown away, and — worse — could leave the top of a filtered
         // list holding whatever happened to survive rather than the best fit
         // among what is left.
-        if (text is not null || minimumOfferKobo is not null || readyBefore is not null)
+        if (text is not null
+            || minimumOfferKobo is not null
+            || readyBefore is not null
+            || tiers is { Length: > 0 })
         {
             var filter = new LoadFilter(
                 text ?? string.Empty,
                 truck is null ? [] : [Trucks.FromWire(truck) ?? TruckClass.Trailer30t],
                 minimumOfferKobo is { } floor ? new Kobo(floor) : null,
                 readyBefore,
-                []);
+                tiers ?? []);
 
             var kept = Search
                 .FilterLoads(board.Select(load => ToSummary(load)).ToList(), filter)
@@ -264,9 +274,11 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         new Kobo(row.OfferedKobo ?? 0),
         row.ReadyBy,
         Trucks.FromWire(row.Requires) ?? TruckClass.Trailer30t,
-        // Tier filtering needs the shipper's profile, which this query does
-        // not join. Named rather than omitted so the day it does is one line.
-        "verified");
+        // Null: there is no shipper ladder to read a standing off. This
+        // used to be the literal "verified" on every load, under a comment
+        // saying the real thing was one line away — it was not one line away,
+        // it was a decision nobody had taken. See `LoadSummary.ShipperTier`.
+        null);
 
     private static Load ToDomain(LoadRecord row, DateTimeOffset now) => new(
         row.Id,

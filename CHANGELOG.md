@@ -88,6 +88,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Every load claimed its shipper was Verified.** The API filled the shipper's
+  standing with the literal string `"verified"` from two places, each under a
+  comment saying the real thing was one line away. It was not one line away: it
+  was a decision nobody had taken. `trust.ts` is carrier-shaped — a licence,
+  goods-in-transit cover, punctuality — and none of that is what makes a
+  shipper worth working for, which is whether they pay and whether they pay on
+  time.
+
+  A shipper's standing is null now, the load board's tier filter is served, and
+  asking for Trusted shippers comes back empty. That is the truthful answer;
+  the alternative is a whole board wearing a badge nobody earned. What a
+  shipper ladder would actually require is written down as F10 rather than
+  guessed at.
+
 - **Every carrier was 100% on time.** The server counted a delivered trip as a
   trip delivered on time, because the promised arrival did not exist in the
   schema — and the comment saying so was honest and three lines long and had

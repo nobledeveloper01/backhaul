@@ -3822,6 +3822,17 @@
         "readyFromIso": "2026-03-07T18:00:00.000Z",
         "truckClass": "canter",
         "shipperTier": "verified"
+      },
+      {
+        "id": "l3",
+        "origin": "Kano",
+        "destination": "Kaduna",
+        "cargo": "Fertiliser",
+        "weightKg": 20000,
+        "offeredKobo": 90000000,
+        "readyFromIso": "2026-03-07T09:00:00.000Z",
+        "truckClass": "trailer_30t",
+        "shipperTier": null
       }
     ],
     "loadFilters": [
@@ -3834,7 +3845,8 @@
         "tiers": [],
         "matched": [
           "l1",
-          "l2"
+          "l2",
+          "l3"
         ],
         "whyNothing": "No loads on the board right now."
       },
@@ -3872,7 +3884,8 @@
         "readyBeforeIso": "2026-03-07T20:00:00.000Z",
         "tiers": [],
         "matched": [
-          "l2"
+          "l2",
+          "l3"
         ],
         "whyNothing": "No loads ready by then. Try a later date."
       },
@@ -3898,7 +3911,8 @@
         "readyBeforeIso": null,
         "tiers": [],
         "matched": [
-          "l1"
+          "l1",
+          "l3"
         ],
         "whyNothing": "Nothing matching \"kano\"."
       },

@@ -211,10 +211,9 @@ public sealed class ChainController(MarketRepository market, TimeProvider clock)
         new Kobo(row.OfferedKobo ?? 0),
         row.ReadyBy,
         Trucks.FromWire(row.Requires) ?? TruckClass.Trailer30t,
-        // Tier filtering is `search.ts`'s job and has no route yet. Naming
-        // the field rather than leaving it off the record keeps the two
-        // shapes the same, so the day it is filtered on is a one-line change.
-        "verified",
+        // Null: there is no shipper ladder to read a standing off, and
+        // pairing does not read this field anyway. See `LoadSummary`.
+        null,
         row.OriginLat,
         row.OriginLon,
         row.DestinationLat,

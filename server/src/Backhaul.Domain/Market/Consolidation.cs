@@ -14,7 +14,7 @@ public sealed record PairLoad(
     Kobo Offered,
     DateTimeOffset ReadyFrom,
     TruckClass TruckClass,
-    string ShipperTier,
+    string? ShipperTier,
     double OriginLat,
     double OriginLon,
     double DestinationLat,

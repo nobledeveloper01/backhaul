@@ -671,7 +671,7 @@ public sealed record LoadSummaryRow(
     long OfferedKobo,
     DateTimeOffset ReadyFromIso,
     string TruckClass,
-    string ShipperTier);
+    string? ShipperTier);
 
 public sealed record LoadFilterRow(
     string Name,
