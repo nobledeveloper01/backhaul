@@ -119,3 +119,22 @@ export function useTripData<T>(
     [live, ...deps],
   );
 }
+
+/**
+ * A read that has nothing to fall back on.
+ *
+ * The trip screens can render the walkthrough when the server has no trip.
+ * These cannot: a verification tier, a fleet's papers, a driver's statement
+ * and the alerts are all facts about the person signed in, and there is no
+ * honest walkthrough of somebody's own record. So the screen renders what the
+ * server said, or says it could not read it.
+ *
+ * Thin on purpose — it is `useQuery` with a name that says why there is no
+ * second argument.
+ */
+export function useMine<T>(
+  fetch: () => Promise<ApiResult<T>>,
+  deps: readonly unknown[],
+): { readonly query: Query<T>; readonly refresh: () => void } {
+  return useQuery(fetch, deps);
+}

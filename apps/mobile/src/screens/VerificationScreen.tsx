@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -9,6 +9,7 @@ import {
   onTimeRate,
   tierOf,
   type Documents,
+  type Record_,
   type Tier,
 } from '@backhaul/domain';
 
@@ -20,6 +21,8 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
 import { TIER_WORDS } from '../state/words';
 import { demoNow } from '../state/demo';
 import { DEMO_DOCUMENTS, DEMO_RECORD, demoExpiries } from '../state/product';
@@ -53,11 +56,40 @@ export function VerificationScreen({ onBack }: Props) {
   const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
-  const [documents, setDocuments] = useState<Documents>(DEMO_DOCUMENTS);
+  const { api } = useSession();
 
-  const tier = tierOf(documents, DEMO_RECORD);
-  const step = nextStep(documents, DEMO_RECORD);
-  const rate = onTimeRate(DEMO_RECORD);
+  /*
+    The tier is the server's answer, not this screen's.
+
+    Both sides implement the ladder and the parity fixtures hold them to the
+    same rung — but the *inputs* are a record of completed trips this phone has
+    never seen. Computing it here from `DEMO_RECORD` computed a tier for
+    somebody else.
+  */
+  const { query, refresh } = useMine(() => api.verification(), [api]);
+
+  const held = query.state === 'ready' ? query.value : null;
+
+  const documents: Documents = held === null
+    ? DEMO_DOCUMENTS
+    : {
+        identity: held.hasIdentity,
+        licence: held.hasLicence,
+        registration: held.hasRegistration,
+        insurance: held.hasInsurance,
+      };
+
+  const record: Record_ = held === null
+    ? DEMO_RECORD
+    : {
+        tripsCompleted: held.tripsCompleted,
+        tripsOnTime: held.tripsOnTime,
+        incidents: held.incidents,
+      };
+
+  const tier = tierOf(documents, record);
+  const step = nextStep(documents, record);
+  const rate = onTimeRate(record);
   const soon = expiringSoon(demoExpiries(now), now);
 
   return (
@@ -148,11 +180,19 @@ export function VerificationScreen({ onBack }: Props) {
           return (
             <Press
               key={paper.key}
-              onPress={() =>
-                setDocuments((was) => ({ ...was, [paper.key]: !was[paper.key] }))
-              }
+              /*
+                Records that a paper is held, not that it is genuine.
+
+                Verification is a human step, and a tick that put a Trusted
+                badge on an upload nobody looked at would be the platform
+                vouching for something it has not seen. The server says the
+                same thing in its own documentation.
+              */
+              onPress={() => {
+                void api.recordPaper(paper.key, !held).then(() => refresh());
+              }}
               accessibilityLabel={paper.label}
-              accessibilityHint={held ? 'On file. Tap to remove' : 'Tap to upload'}
+              accessibilityHint={held ? t('on_file_tap_to_remove') : t('tap_to_upload')}
               feedback="opacity"
               style={[
                 styles.paper,

@@ -1,13 +1,7 @@
-import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  due,
-  dueIn,
-  format,
-  isDue,
-  typicalPrice,
-  type Lane,
+  type Cadence,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -18,10 +12,11 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { LaneView } from '../api/client';
 import { whenDue } from '../state/words';
 import { CADENCE_WORDS } from '../state/words';
-import { demoNow } from '../state/demo';
-import { demoLanes } from '../state/product';
 
 interface Props {
   readonly onBack: () => void;
@@ -42,15 +37,30 @@ export function LanesScreen({ onBack, onPost }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const now = useMemo(demoNow, []);
 
-  const lanes = useMemo(() => demoLanes(now), [now]);
+  const { api } = useSession();
+
+  /*
+    The server's rows, not a domain `Lane` rebuilt from them.
+
+    A lane's typical price is the median of its last six runs, and the server
+    sends the median rather than the runs — so rebuilding a `Lane` here would
+    have to invent a history for `typicalPrice` to take a median of, and the
+    honest empty history makes it return null on every lane. The arithmetic is
+    already done, by the same engine, held to the same answer by the parity
+    fixtures. What is left is the ordering, which is presentation.
+  */
+  const { query } = useMine(() => api.lanes(), [api]);
+
+  const lanes = query.state === 'ready' ? query.value : [];
   // `due()` rather than a filter: it sorts most-overdue first, which is what
   // makes the one filled button land on the lane that actually needs posting.
   // Filtering kept the demo's own order and put "due tomorrow" above "five
   // days overdue".
-  const dueNow = due(lanes, now);
-  const rest = lanes.filter((lane) => !isDue(lane, now));
+  const dueNow = [...lanes]
+    .filter((lane) => lane.due)
+    .sort((a, b) => (a.dueInMs ?? 0) - (b.dueInMs ?? 0));
+  const rest = lanes.filter((lane) => !lane.due);
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -73,7 +83,6 @@ export function LanesScreen({ onBack, onPost }: Props) {
               <Row
                 key={lane.id}
                 lane={lane}
-                now={now}
                 onPost={onPost}
                 due
                 lead={index === 0}
@@ -90,7 +99,7 @@ export function LanesScreen({ onBack, onPost }: Props) {
         </Text>
 
         {rest.map((lane) => (
-          <Row key={lane.id} lane={lane} now={now} onPost={onPost} due={false} lead={false} />
+          <Row key={lane.id} lane={lane} onPost={onPost} due={false} lead={false} />
         ))}
       </ScrollView>
     </View>
@@ -99,24 +108,21 @@ export function LanesScreen({ onBack, onPost }: Props) {
 
 function Row({
   lane,
-  now,
   onPost,
   due,
   lead,
 }: {
-  lane: Lane;
-  now: Date;
+  lane: LaneView;
   onPost: () => void;
   due: boolean;
   lead: boolean;
 }) {
   const colours = useColours();
   const { t } = useLanguage();
-  const typical = typicalPrice(lane);
 
   // Overdue is a different fact from due, and reading them in the same colour
   // makes "act now" and "you have a day" look alike.
-  const overdue = (dueIn(lane, now) ?? 0) < 0;
+  const overdue = (lane.dueInMs ?? 0) < 0;
 
   return (
     <Card emphasis={due ? 'accent' : 'raised'}>
@@ -128,14 +134,14 @@ function Row({
           </Text>
         </View>
         <Text variant="label" tone={overdue ? 'stopped' : due ? 'accent' : 'secondary'}>
-          {whenDue(dueIn(lane, now), lane.cadence, t)}
+          {whenDue(lane.dueInMs, lane.cadence as Cadence, t)}
         </Text>
       </View>
 
       <View style={styles.facts}>
         <View style={styles.fact}>
           <Text variant="label" tone="secondary">
-            Usually
+            {t('usually')}
           </Text>
           {/*
             The median of the recent runs, not the average of everything. A
@@ -143,12 +149,12 @@ function Row({
             being true.
           */}
           <Text variant="title" tabular>
-            {typical === null ? '—' : format(typical)}
+            {lane.typicalNaira ?? '—'}
           </Text>
           <Text variant="label" tone="secondary">
-            {typical === null
-              ? 'after three runs'
-              : `from ${lane.history.length} runs`}
+            {lane.typicalKobo === null
+              ? t('after_three_runs')
+              : `${lane.runs} ${t('runs_word')}`}
           </Text>
         </View>
 
@@ -156,13 +162,13 @@ function Row({
           <Text variant="label" tone="secondary">
             {t('how_often')}
           </Text>
-          <Text variant="title">{t(CADENCE_WORDS[lane.cadence])}</Text>
+          <Text variant="title">{t(CADENCE_WORDS[lane.cadence as Cadence])}</Text>
         </View>
       </View>
 
       <Press
         onPress={onPost}
-        accessibilityLabel={`Post ${lane.name}`}
+        accessibilityLabel={`${t('post_lane')} — ${lane.name}`}
         accessibilityHint={t('lane_post_hint')}
         feedback="opacity"
         style={[

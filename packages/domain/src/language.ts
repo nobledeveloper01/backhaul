@@ -224,6 +224,15 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'of_that_is_your_own_money'
+  | 'usually'
+  | 'after_three_runs'
+  | 'runs_word'
+  | 'post_lane'
+  | 'trucks_can_take_work'
+  | 'cannot_be_given_a_trip'
+  | 'on_file_tap_to_remove'
+  | 'tap_to_upload'
   | 'by_a_person'
   | 'sending_the_report'
   | 'report_not_sent'
@@ -691,6 +700,15 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  of_that_is_your_own_money: "of that is your own money, spent on the road.",
+  usually: "Usually",
+  after_three_runs: "after three runs",
+  runs_word: "runs",
+  post_lane: "Post this lane",
+  trucks_can_take_work: "trucks can take work",
+  cannot_be_given_a_trip: "cannot be given a new trip",
+  on_file_tap_to_remove: "On file. Tap to remove",
+  tap_to_upload: "Tap to upload",
   by_a_person: "by a person",
   sending_the_report: "Sending…",
   report_not_sent: "Not sent. It is saved here — try again.",
@@ -1158,6 +1176,15 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  of_that_is_your_own_money: "daga cikin haka kuɗinka ne, da ka kashe a kan hanya.",
+  usually: "Yawanci",
+  after_three_runs: "bayan tafiye-tafiye uku",
+  runs_word: "tafiye-tafiye",
+  post_lane: "Sanya wannan hanya",
+  trucks_can_take_work: "motoci na iya ɗaukar aiki",
+  cannot_be_given_a_trip: "ba za a iya ba su sabuwar tafiya ba",
+  on_file_tap_to_remove: "Yana cikin fayil. Danna don cirewa",
+  tap_to_upload: "Danna don ɗorawa",
   by_a_person: "daga mutum",
   sending_the_report: "Ana aikawa…",
   report_not_sent: "Ba a aika ba. An ajiye shi a nan — ka sake gwadawa.",
@@ -1630,6 +1657,15 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  of_that_is_your_own_money: "nínú ìyẹn jẹ́ owó tìrẹ, tí o ná lójú ọ̀nà.",
+  usually: "Ní gbogbogbò",
+  after_three_runs: "lẹ́yìn ìrìn mẹ́ta",
+  runs_word: "ìrìn",
+  post_lane: "Gbé ọ̀nà yìí kalẹ̀",
+  trucks_can_take_work: "ọkọ̀ lè gba iṣẹ́",
+  cannot_be_given_a_trip: "a kò lè fún wọn ní ìrìn tuntun",
+  on_file_tap_to_remove: "Ó wà nínú fáìlì. Tẹ̀ láti yọ kúrò",
+  tap_to_upload: "Tẹ̀ láti gbé e sókè",
   by_a_person: "láti ọwọ́ ènìyàn",
   sending_the_report: "À ń fi ránṣẹ́…",
   report_not_sent: "A kò fi ránṣẹ́. A tọ́jú rẹ̀ síbí — tún gbìyànjú.",
@@ -2100,6 +2136,15 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  of_that_is_your_own_money: "n’ime nke ahụ bụ ego gị, nke i mefuru n’ụzọ.",
+  usually: "Mgbe niile",
+  after_three_runs: "mgbe njem atọ gasịrị",
+  runs_word: "njem",
+  post_lane: "Bipụta ụzọ a",
+  trucks_can_take_work: "ụgbọ nwere ike ịnara ọrụ",
+  cannot_be_given_a_trip: "a pụghị inye ha njem ọhụrụ",
+  on_file_tap_to_remove: "Ọ dị na faịlụ. Pịa iji wepụ ya",
+  tap_to_upload: "Pịa iji bugoo ya",
   by_a_person: "site n’aka mmadụ",
   sending_the_report: "Na-eziga…",
   report_not_sent: "E zipụghị ya. E chekwara ya ebe a — nwaa ọzọ.",

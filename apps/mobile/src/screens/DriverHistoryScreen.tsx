@@ -4,10 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   format,
   fromNaira,
-  longestWaitMs,
-  perKilometre,
-  statement,
-  unpaid,
   type Kobo,
 } from '@backhaul/domain';
 
@@ -20,8 +16,9 @@ import { agoLabel, humanDuration, plural } from '../components/PositionAge';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
 import { demoNow } from '../state/demo';
-import { demoEarnings } from '../state/product';
 
 interface Props {
   readonly onBack: () => void;
@@ -91,14 +88,24 @@ export function DriverHistoryScreen({ onBack }: Props) {
   );
 
   const now = useMemo(demoNow, []);
-  const earnings = useMemo(() => demoEarnings(now), [now]);
-  const month = useMemo(
-    () => statement(earnings, new Date(now.getTime() - 30 * 86_400_000), now),
-    [earnings, now],
-  );
-  const perKm = perKilometre(month);
-  const owed = unpaid(earnings);
-  const waiting = longestWaitMs(earnings, now);
+  const { api } = useSession();
+
+  /*
+    The window is a parameter, and the server does the arithmetic.
+
+    "This month" is a question about a calendar, and an engine that guesses
+    which month somebody meant is wrong in the first week of every one — so
+    `earnings.ts` takes the window from its caller, and this screen is the
+    caller. Thirty days back from now, which is what "this month" means to a
+    driver rather than what it means to a calendar.
+  */
+  const from = useMemo(() => new Date(now.getTime() - 30 * 86_400_000), [now]);
+  const { query } = useMine(() => api.earnings(from, now), [api, from, now]);
+
+  const month = query.state === 'ready' ? query.value : null;
+  const owed = month?.unpaid ?? [];
+  const perKm = month?.perKilometreKobo ?? null;
+  const waiting = month?.longestWaitMs ?? null;
 
   const totalEarned = trips.reduce((sum, trip) => (sum + trip.earned) as Kobo, 0 as Kobo);
   const totalKm = trips.reduce((sum, trip) => sum + trip.km, 0);
@@ -133,7 +140,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
           <View style={styles.figures}>
             <View style={styles.figure}>
               <Text variant="headline" tabular>
-                {format(month.outstanding)}
+                {month?.outstandingNaira ?? '—'}
               </Text>
               <Text variant="label" tone="secondary">
                 still to come
@@ -141,7 +148,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
             </View>
             <View style={styles.figure}>
               <Text variant="headline" tabular>
-                {perKm === null ? '—' : format(perKm)}
+                {perKm === null ? '—' : format(perKm as Kobo)}
               </Text>
               <Text variant="label" tone="secondary">
                 a kilometre
@@ -149,12 +156,12 @@ export function DriverHistoryScreen({ onBack }: Props) {
             </View>
           </View>
 
-          {month.outOfPocket > 0 ? (
+          {(month?.outOfPocketKobo ?? 0) > 0 ? (
             <View style={[styles.pocket, { borderTopColor: colours.outline }]}>
               <Icon name="alert" size="sm" colour={colours.stopped} />
               <Text variant="bodyDriver" tone="stopped" style={styles.flex}>
-                {format(month.outOfPocket)} of that is your own money, spent on
-                the road beyond what you were advanced.
+                {format((month?.outOfPocketKobo ?? 0) as Kobo)}{' '}
+                {t('of_that_is_your_own_money')}
               </Text>
             </View>
           ) : null}
@@ -190,7 +197,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
                   </Text>
                 </View>
                 <Text variant="bodyDriver" tabular>
-                  {format(earning.pay)}
+                  {earning.payNaira}
                 </Text>
               </View>
             ))}

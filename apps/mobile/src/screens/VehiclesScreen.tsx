@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  byUrgency,
-  mayCarry,
   type Assessment,
+  type Paper,
   type Standing,
+  type TruckClass,
   type Vehicle,
 } from '@backhaul/domain';
 
@@ -16,9 +16,9 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
 import { PAPER_WORDS, STANDING_WORDS, TRUCK_WORDS } from '../state/words';
-import { demoNow } from '../state/demo';
-import { demoVehicles } from '../state/product';
 
 interface Props {
   readonly onBack: () => void;
@@ -35,14 +35,70 @@ interface Props {
  * alphabetically is a list nobody scrolls to the bottom of — and the truck at
  * the bottom is the one with the lapsed certificate.
  */
+/**
+ * Worst first.
+ *
+ * The same order `byUrgency` produces in the domain — a truck that cannot
+ * legally move belongs above one whose insurance lapses in three weeks, and a
+ * retired truck belongs at the bottom rather than in the middle because it is
+ * technically road-legal.
+ */
+const URGENCY: Readonly<Record<Standing, number>> = {
+  lapsed: 0,
+  incomplete: 1,
+  expiring: 2,
+  road_legal: 3,
+  retired: 4,
+};
+
 export function VehiclesScreen({ onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
-  const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
-  const fleet = useMemo(() => byUrgency(demoVehicles(now), now), [now]);
-  const grounded = fleet.filter((entry) => !mayCarry(entry.assessment)).length;
+  const { api } = useSession();
+
+  /*
+    The assessment comes from the server already made.
+
+    Both sides implement `assess` and the parity fixtures hold them to the same
+    standing — but the *inputs* are expiry dates, and the wire carries days
+    rather than dates. Rebuilding a date from a day count and re-assessing
+    would round-trip fine for a lapsed paper and invent one for a paper that is
+    simply in date: the server does not say when, only that it is. Inventing a
+    far-future expiry to satisfy the local engine would be the app making up
+    the one fact this screen exists to show.
+
+    So the standing, the lapsed list and the expiring list are read, and the
+    ordering — the part that is presentation rather than fact — is done here.
+  */
+  const { query } = useMine(() => api.vehicles(), [api]);
+
+  const fleet = useMemo(() => {
+    const rows = query.state === 'ready' ? query.value : [];
+
+    return [...rows]
+      .map((row) => ({
+        vehicle: {
+          id: row.id,
+          plate: row.plate,
+          truck: row.truck as TruckClass,
+          carrierId: '',
+          papers: {},
+          retiredAt: null,
+        } satisfies Vehicle,
+        assessment: {
+          standing: row.standing as Standing,
+          lapsed: row.lapsed.map((entry) => ({ paper: entry.paper as Paper, days: entry.days })),
+          expiring: row.expiring.map((entry) => ({ paper: entry.paper as Paper, days: entry.days })),
+          missing: row.missing.map((paper) => paper as Paper),
+        } satisfies Assessment,
+        mayCarry: row.mayCarry,
+      }))
+      .sort((a, b) => URGENCY[a.assessment.standing] - URGENCY[b.assessment.standing]);
+  }, [query]);
+
+  const grounded = fleet.filter((entry) => !entry.mayCarry).length;
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -68,8 +124,13 @@ export function VehiclesScreen({ onBack }: Props) {
           </Text>
         </View>
 
-        {fleet.map(({ vehicle, assessment }) => (
-          <Row key={vehicle.id} vehicle={vehicle} assessment={assessment} />
+        {fleet.map(({ vehicle, assessment, mayCarry }) => (
+          <Row
+            key={vehicle.id}
+            vehicle={vehicle}
+            assessment={assessment}
+            mayCarry={mayCarry}
+          />
         ))}
 
         <Text variant="label" tone="secondary">
@@ -80,13 +141,22 @@ export function VehiclesScreen({ onBack }: Props) {
   );
 }
 
-function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment }) {
+/** `mayCarry` is the server's answer, passed down rather than recomputed. */
+function Row({
+  vehicle,
+  assessment,
+  mayCarry,
+}: {
+  vehicle: Vehicle;
+  assessment: Assessment;
+  mayCarry: boolean;
+}) {
   const colours = useColours();
   const { t } = useLanguage();
   const tint = tintFor(assessment.standing, colours);
 
   return (
-    <Card emphasis={mayCarry(assessment) ? 'raised' : 'accent'}>
+    <Card emphasis={mayCarry ? 'raised' : 'accent'}>
       <View style={styles.top}>
         <View style={styles.flex}>
           <Text variant="title">{vehicle.plate}</Text>

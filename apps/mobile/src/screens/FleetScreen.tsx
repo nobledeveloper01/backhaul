@@ -3,9 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import {
-  byUrgency,
   format,
-  mayCarry,
   utilisation,
   worthOfOneReturnLeg,
 } from '@backhaul/domain';
@@ -18,8 +16,10 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
-import { demoAlerts, demoLegs, type Alert, type AlertKind } from '../state/fleet';
-import { demoVehicles } from '../state/product';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { AlertView } from '../api/client';
+import { demoLegs } from '../state/fleet';
 import { agoLabel } from '../components/PositionAge';
 
 interface Props {
@@ -48,11 +48,29 @@ export function FleetScreen({
   const now = useMemo(() => new Date(), []);
   const { t } = useLanguage();
 
+  const { api } = useSession();
+
   const legs = useMemo(demoLegs, []);
   const used = useMemo(() => utilisation(legs), [legs]);
-  const alerts = useMemo(() => demoAlerts(now), [now]);
-  const fleet = useMemo(() => byUrgency(demoVehicles(now), now), [now]);
-  const grounded = fleet.filter((entry) => !mayCarry(entry.assessment)).length;
+
+  /*
+    The hour is the reader's, not the server's.
+
+    A shipper in Lagos and a driver in Kano share a timezone today, and
+    assuming that inside the server is how it breaks the first time somebody
+    ships from Accra — so the server takes the hour as a parameter and this
+    screen is the thing that knows it.
+  */
+  const { query: alertQuery } = useMine(
+    () => api.alerts(now.getHours()),
+    [api, now],
+  );
+
+  const alerts = alertQuery.state === 'ready' ? alertQuery.value.alerts : [];
+
+  const { query: fleetQuery } = useMine(() => api.vehicles(), [api]);
+  const trucks = fleetQuery.state === 'ready' ? fleetQuery.value : [];
+  const grounded = trucks.filter((truck) => !truck.mayCarry).length;
 
   const averageLeg =
     legs.reduce((total, leg) => total + leg.metres, 0) / Math.max(1, legs.length);
@@ -159,8 +177,8 @@ export function FleetScreen({
           */}
           <Text variant="label" tone="secondary">
             {grounded === 0
-              ? `All ${fleet.length} trucks can take work`
-              : `${grounded} of ${fleet.length} cannot be given a new trip`}
+              ? `${trucks.length} · ${t('trucks_can_take_work')}`
+              : `${grounded}/${trucks.length} · ${t('cannot_be_given_a_trip')}`}
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />
@@ -199,7 +217,11 @@ export function FleetScreen({
           />
         </Card>
       ) : (
-        alerts.map((alert) => <AlertRow key={alert.id} alert={alert} now={now} />)
+        alerts.map((alert) => (
+          // A trip can have two things wrong with it at once, so the key is
+          // the pair rather than the trip.
+          <AlertRow key={`${alert.tripId}-${alert.kind}`} alert={alert} now={now} />
+        ))
       )}
     </ScrollView>
   );
@@ -257,7 +279,7 @@ function Figure({
   );
 }
 
-function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
+function AlertRow({ alert, now }: { alert: AlertView; now: Date }) {
   const colours = useColours();
   const { t } = useLanguage();
 
@@ -265,11 +287,13 @@ function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
   // infrastructure, not the driver's fault, and colouring it as an alarm
   // trains a fleet owner to distrust drivers for something nobody controls.
   const [icon, colour, wash]: [IconName, string, string] =
-    alert.kind === 'silent'
+    alert.kind === 'signal_lost'
       ? ['signal-off', colours.stale, colours.staleWash]
-      : alert.kind === 'stalled'
+      : alert.kind === 'duress'
         ? ['alert', colours.exception, colours.exceptionWash]
-        : ['clock', colours.stopped, colours.stoppedWash];
+        : alert.kind === 'stalled' || alert.kind === 'incident'
+          ? ['alert', colours.exception, colours.exceptionWash]
+          : ['clock', colours.stopped, colours.stoppedWash];
 
   return (
     <View style={[styles.alert, { backgroundColor: wash, borderColor: colour }]}>
@@ -277,9 +301,9 @@ function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
         <Icon name={icon} size="md" colour={colour} />
       </View>
       <View style={styles.flex}>
-        <Text variant="title">{alert.title}</Text>
+        <Text variant="title">{alert.corridor}</Text>
         <Text variant="body" tone="secondary" style={styles.gap}>
-          {alert.detail}
+          {alert.describe}
         </Text>
         <Text variant="label" tone="secondary" style={styles.gap}>
           {agoLabel(now.getTime() - alert.at.getTime(), t)}
@@ -288,8 +312,6 @@ function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
     </View>
   );
 }
-
-export type { AlertKind };
 
 const styles = StyleSheet.create({
   verify: {
