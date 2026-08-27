@@ -115,11 +115,15 @@ the honest answer to "how far along is this".
 | escrow, cancellation, costs, earnings | |
 | matching, chaining, consolidation | |
 | dispute assembly, deviation, ratings, lanes | |
-| **alerts, search** | |
+| **alerts, search** | **utilisation** *(ADR-0012)* |
 
-**The right-hand column is down to the two that should stay there.** Every
-other engine now has a route, so the answer a screen renders can come from the
-server rather than from `state/demo.ts`.
+**The right-hand column is down to three.** Two of them should stay there, and
+the third should not: `utilisation` is the number this whole product exists to
+move and it has no route, because the server cannot honestly produce the legs
+it takes. Loaded legs are trips and are measured; the *empty* running is the
+gap between two trips, where tracking is off and there is nothing to measure.
+See ADR-0012, and the fleet screen, which renders the walkthrough's figure and
+says so. Every other engine now has a route.
 
 **And the screens are wired to them.** Every screen that should read the server
 does: `useQuery` in `state/server.tsx`, and `emptiness()` returning which of
@@ -127,7 +131,10 @@ does: `useQuery` in `state/server.tsx`, and `emptiness()` returning which of
 *nothing yet* and *nothing matching*. Four of those five are not about the data,
 and rendering them alike tells a shipper their trucks are idle when the phone is
 on a bad cell. The walkthrough survives, shown only when the server answers with
-nothing, and labelled as the walkthrough wherever it appears.
+nothing, and labelled as the walkthrough on every screen a person can reach it
+from directly — the trips list, the driver screen and the fleet figure. The
+screens behind a trip are not labelled again: they are reached from a list that
+already said it.
 
 Four screens stay local and say so in their own source: **alerts** explains the
 notification policy rather than reporting alerts, **follow** is the preview of

@@ -1210,6 +1210,46 @@ public sealed class ParityTests
     }
 
 
+    // --- utilisation ---------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_measure_how_much_of_a_fleet_s_driving_is_paid_for()
+    {
+        // The number the product exists to move, so both sides must agree on
+        // it to the kobo. The cases that earn their place are the degenerate
+        // ones: no legs at all must be 0% rather than NaN, and a fleet that
+        // never runs empty has no return leg to be worth anything — a
+        // projection there would be the pitch inventing its own evidence.
+        Assert.Equal(F.Utilisation.MinimumLegs, Domain.Fleet.Utilisation.MinimumLegs);
+
+        foreach (var row in F.Utilisation.Cases)
+        {
+            var legs = row.Legs
+                .Select(one => new Domain.Fleet.Leg(one.Metres, one.Loaded, new Kobo(one.EarnedKobo)))
+                .ToList();
+
+            var result = Domain.Fleet.Utilisation.Of(legs);
+
+            Assert.Equal(row.LoadedMetres, result.LoadedMetres);
+            Assert.Equal(row.EmptyMetres, result.EmptyMetres);
+            Assert.Equal(row.TotalMetres, result.TotalMetres);
+            Assert.Equal(row.Ratio, result.Ratio);
+            Assert.Equal(row.EarnedKobo, result.Earned.Value);
+            Assert.Equal(row.PerKmDrivenKobo, result.PerKmDriven.Value);
+            Assert.Equal(row.LegCount, result.Legs);
+
+            // The words too. "50% loaded" against "50.0% loaded" is the kind
+            // of difference only a rendered screen shows.
+            Assert.Equal(row.RatioLabel, Domain.Fleet.Utilisation.DescribeRatio(result));
+            Assert.Equal(row.RateLabel, Domain.Fleet.Utilisation.DescribeRate(result));
+
+            Assert.Equal(
+                row.WorthOfOneReturnLegKobo,
+                Domain.Fleet.Utilisation.WorthOfOneReturnLeg(result, row.AverageLegMetres)?.Value);
+        }
+    }
+
+
     // --- lanes -------------------------------------------------------------
 
     [Fact]

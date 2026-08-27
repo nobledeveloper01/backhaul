@@ -91,6 +91,7 @@ public sealed record ParityFixtures(
     DeviationFixtures Deviation,
     RatingFixtures Ratings,
     LaneFixtures Lanes,
+    UtilisationFixtures Utilisation,
     AlertFixtures Alerts,
     SearchFixtures Search,
     DisputeFixtures Dispute);
@@ -572,6 +573,27 @@ public sealed record LaneRow(
     string DescribeCadence,
     bool? UnusualAtHalf,
     bool? UnusualAtTenOver);
+
+public sealed record UtilisationFixtures(
+    int MinimumLegs,
+    IReadOnlyList<UtilisationRow> Cases);
+
+public sealed record UtilisationRow(
+    string Name,
+    IReadOnlyList<UtilisationLegRow> Legs,
+    double AverageLegMetres,
+    double LoadedMetres,
+    double EmptyMetres,
+    double TotalMetres,
+    double Ratio,
+    long EarnedKobo,
+    long PerKmDrivenKobo,
+    int LegCount,
+    string RatioLabel,
+    string RateLabel,
+    long? WorthOfOneReturnLegKobo);
+
+public sealed record UtilisationLegRow(double Metres, bool Loaded, long EarnedKobo);
 
 public sealed record AlertFixtures(
     int QuietFromHour,

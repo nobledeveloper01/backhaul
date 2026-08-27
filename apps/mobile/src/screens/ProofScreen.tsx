@@ -156,7 +156,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
           The refusal, above everything. A driver standing in a market with a
           queue behind them needs the next action, not a status.
         */}
-        <Card emphasis={sealed.ok ? 'raised' : 'accent'} overline="Handover" icon="camera">
+        <Card emphasis={sealed.ok ? 'raised' : 'accent'} overline={t('handover')} icon="camera">
           <View style={styles.state}>
             <Icon
               name={sealed.ok ? 'check' : 'camera'}
@@ -226,7 +226,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
         ) : null}
 
         {delivery.exception !== null ? (
-          <Card overline="Exception" icon="alert">
+          <Card overline={t('what_went_wrong')} icon="alert">
             <Text variant="title">{t(EXCEPTION_WORDS[delivery.exception.kind])}</Text>
             <Text variant="body" tone="secondary" style={styles.gapTop}>
               {delivery.exception.note}

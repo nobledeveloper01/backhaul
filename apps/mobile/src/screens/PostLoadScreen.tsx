@@ -142,7 +142,7 @@ export function PostLoadScreen({ onBack }: Props) {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Card overline="Route" icon="route">
+        <Card overline={t('the_route')} icon="route">
           <View style={styles.chips}>
             {CORRIDORS.map((option, i) => {
               const selected = i === corridorIndex;
@@ -172,7 +172,7 @@ export function PostLoadScreen({ onBack }: Props) {
           </Text>
         </Card>
 
-        <Card overline="Cargo" icon="package">
+        <Card overline={t('the_cargo')} icon="package">
           {/* A visible label, not a placeholder. A placeholder disappears the
               moment somebody types, taking the question with it. */}
           <Text variant="label" tone="secondary">

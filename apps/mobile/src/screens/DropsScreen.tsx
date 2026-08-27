@@ -137,7 +137,7 @@ export function DropsScreen({ trip, onBack }: Props) {
         </Card>
 
         {isComplete(drops) ? (
-          <Card overline="Finished" icon="check" emphasis="plain">
+          <Card overline={t('finished')} icon="check" emphasis="plain">
             <Text variant="body">
               {t('every_drop_signed_note')}
             </Text>

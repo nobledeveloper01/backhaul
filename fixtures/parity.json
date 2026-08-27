@@ -5143,6 +5143,160 @@
       }
     ]
   },
+  "utilisation": {
+    "minimumLegs": 4,
+    "cases": [
+      {
+        "name": "half empty",
+        "legs": [
+          {
+            "metres": 830000,
+            "loaded": true,
+            "earnedKobo": 220000000
+          },
+          {
+            "metres": 830000,
+            "loaded": false,
+            "earnedKobo": 0
+          },
+          {
+            "metres": 760000,
+            "loaded": true,
+            "earnedKobo": 200000000
+          },
+          {
+            "metres": 760000,
+            "loaded": false,
+            "earnedKobo": 0
+          }
+        ],
+        "averageLegMetres": 795000,
+        "loadedMetres": 1590000,
+        "emptyMetres": 1590000,
+        "totalMetres": 3180000,
+        "ratio": 0.5,
+        "earnedKobo": 420000000,
+        "perKmDrivenKobo": 132075,
+        "legCount": 4,
+        "ratioLabel": "50% loaded",
+        "rateLabel": "₦1,321 a kilometre driven",
+        "worthOfOneReturnLegKobo": 210000000
+      },
+      {
+        "name": "always loaded",
+        "legs": [
+          {
+            "metres": 500000,
+            "loaded": true,
+            "earnedKobo": 140000000
+          },
+          {
+            "metres": 500000,
+            "loaded": true,
+            "earnedKobo": 135000000
+          },
+          {
+            "metres": 480000,
+            "loaded": true,
+            "earnedKobo": 130000000
+          },
+          {
+            "metres": 520000,
+            "loaded": true,
+            "earnedKobo": 140000000
+          }
+        ],
+        "averageLegMetres": 500000,
+        "loadedMetres": 2000000,
+        "emptyMetres": 0,
+        "totalMetres": 2000000,
+        "ratio": 1,
+        "earnedKobo": 545000000,
+        "perKmDrivenKobo": 272500,
+        "legCount": 4,
+        "ratioLabel": "100% loaded",
+        "rateLabel": "₦2,725 a kilometre driven",
+        "worthOfOneReturnLegKobo": null
+      },
+      {
+        "name": "too thin to project",
+        "legs": [
+          {
+            "metres": 830000,
+            "loaded": true,
+            "earnedKobo": 220000000
+          },
+          {
+            "metres": 830000,
+            "loaded": false,
+            "earnedKobo": 0
+          }
+        ],
+        "averageLegMetres": 830000,
+        "loadedMetres": 830000,
+        "emptyMetres": 830000,
+        "totalMetres": 1660000,
+        "ratio": 0.5,
+        "earnedKobo": 220000000,
+        "perKmDrivenKobo": 132530,
+        "legCount": 2,
+        "ratioLabel": "50% loaded",
+        "rateLabel": "₦1,325 a kilometre driven",
+        "worthOfOneReturnLegKobo": null
+      },
+      {
+        "name": "no legs",
+        "legs": [],
+        "averageLegMetres": 0,
+        "loadedMetres": 0,
+        "emptyMetres": 0,
+        "totalMetres": 0,
+        "ratio": 0,
+        "earnedKobo": 0,
+        "perKmDrivenKobo": 0,
+        "legCount": 0,
+        "ratioLabel": "0% loaded",
+        "rateLabel": "₦0 a kilometre driven",
+        "worthOfOneReturnLegKobo": null
+      },
+      {
+        "name": "all empty",
+        "legs": [
+          {
+            "metres": 300000,
+            "loaded": false,
+            "earnedKobo": 0
+          },
+          {
+            "metres": 300000,
+            "loaded": false,
+            "earnedKobo": 0
+          },
+          {
+            "metres": 280000,
+            "loaded": false,
+            "earnedKobo": 0
+          },
+          {
+            "metres": 320000,
+            "loaded": false,
+            "earnedKobo": 0
+          }
+        ],
+        "averageLegMetres": 300000,
+        "loadedMetres": 0,
+        "emptyMetres": 1200000,
+        "totalMetres": 1200000,
+        "ratio": 0,
+        "earnedKobo": 0,
+        "perKmDrivenKobo": 0,
+        "legCount": 4,
+        "ratioLabel": "0% loaded",
+        "rateLabel": "₦0 a kilometre driven",
+        "worthOfOneReturnLegKobo": null
+      }
+    ]
+  },
   "lanes": {
     "dueWarningMs": 172800000,
     "recentRuns": 6,

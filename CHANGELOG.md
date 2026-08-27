@@ -24,9 +24,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   tells a shipper their trucks are idle when the phone is simply on a bad cell.
 
   The walkthrough did not go. It is what a driver sees before their first trip
-  exists, and it is **labelled as the walkthrough on every screen that shows
-  it** — a demonstration a person cannot tell from their own data is worse than
-  no demonstration. Four screens stay local on purpose and say so in their own
+  exists, and it is **labelled as the walkthrough on every screen a person
+  reaches it from directly** — the trips list, the driver screen and the fleet
+  figure. A demonstration somebody cannot tell from their own data is worse
+  than no demonstration, and the driver screen had been putting the words
+  "your trip" over somebody else's. Four screens stay local on purpose and say so in their own
   source: the alerts screen explains the notification policy rather than
   reporting alerts, the follow screen is the preview of what a link-holder sees
   and therefore holds no token by design, the language screen is a device
@@ -54,6 +56,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   names the narrowest condition — the useful next action is to relax *that one*.
 
 ### Fixed
+
+- **The fleet screen was showing an invented number as your own.** Utilisation
+  — the fraction of a fleet's kilometres that are paid for, which is the figure
+  this product exists to move — came from the walkthrough's legs on every
+  render, under the heading "Your fleet" and with no mark on it. So did what
+  one more loaded return leg would be worth. A carrier reading either as their
+  own would act on it.
+
+  It says it is the walkthrough now, in their own language. Serving it for real
+  is a decision rather than a task: a loaded leg is a trip and the server can
+  measure it from the cleaned track, but the *empty* running is the gap between
+  two trips, where tracking is off and there is nothing to measure. An estimate
+  there would be a number presented as a measurement, which this product does
+  not do. ADR-0012 has the three ways out and why the route waits.
+
+- **Nineteen strings were still English, and the sweep that checks said zero.**
+  It only saw props holding two words or more and text that sat alone on its
+  line, so `overline="Utilisation"` and `<Text>Your fleet</Text>` both walked
+  past it. Widened, and what it found is translated — including nine
+  `accessibilityLabel`s, which are read aloud and were the only English left on
+  some screens.
 
 - **A token the server had forgotten left the app stuck.** A 401 sat on the
   trips screen showing the server's own English sentence with a Try again button

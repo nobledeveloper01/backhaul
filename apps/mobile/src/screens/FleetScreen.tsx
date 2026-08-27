@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import {
   format,
+  tierOf,
   utilisation,
   worthOfOneReturnLeg,
 } from '@backhaul/domain';
@@ -20,6 +21,7 @@ import { useSession } from '../state/session';
 import { useMine } from '../state/server';
 import type { AlertView } from '../api/client';
 import { demoLegs } from '../state/fleet';
+import { TIER_WORDS } from '../state/words';
 import { agoLabel } from '../components/PositionAge';
 
 interface Props {
@@ -68,6 +70,41 @@ export function FleetScreen({
 
   const alerts = alertQuery.state === 'ready' ? alertQuery.value.alerts : [];
 
+  /*
+    The verification summary, from the server rather than from a sentence
+    somebody typed.
+
+    This line used to read "One document short of Trusted · a licence expires
+    in 18 days", hard-coded, on every fleet in every language — while the
+    screen it opens read the real thing off the API. That is the defect the
+    comment on the trucks row below already warns about: a summary that
+    disagrees with the thing it summarises is worse than no summary. It had
+    been sitting one card above the warning.
+
+    Nothing is rendered until the answer arrives. A tier is a claim about
+    somebody's standing and there is no honest placeholder for it.
+  */
+  const { query: verificationQuery } = useMine(() => api.verification(), [api]);
+
+  const standing =
+    verificationQuery.state === 'ready'
+      ? (() => {
+          const held = verificationQuery.value;
+          const documents = {
+            identity: held.hasIdentity,
+            licence: held.hasLicence,
+            registration: held.hasRegistration,
+            insurance: held.hasInsurance,
+          };
+          const record = {
+            tripsCompleted: held.tripsCompleted,
+            tripsOnTime: held.tripsOnTime,
+            incidents: held.incidents,
+          };
+          return { tier: tierOf(documents, record) };
+        })()
+      : null;
+
   const { query: fleetQuery } = useMine(() => api.vehicles(), [api]);
   const trucks = fleetQuery.state === 'ready' ? fleetQuery.value : [];
   const grounded = trucks.filter((truck) => !truck.mayCarry).length;
@@ -84,9 +121,27 @@ export function FleetScreen({
         { paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xxl },
       ]}
     >
-      <Text variant="headline">Your fleet</Text>
+      <Text variant="headline">{t('your_fleet')}</Text>
 
-      <Card overline="Utilisation" icon="truck" emphasis="accent">
+      {/*
+        The one figure this screen exists for, and it is still the
+        walkthrough's.
+
+        `utilisation.ts` has no route. Serving it needs a decision this screen
+        cannot make: a loaded leg is a trip and the server can measure it from
+        the cleaned track, but the *empty* running is the gap between two
+        trips, where tracking is off and there is nothing to measure — so the
+        only figure available for it is an estimate, and rule 7 says an
+        estimate is never presented as a measurement. See ADR-0012.
+
+        Until that is settled the number is the demonstration's, and it says
+        so. A carrier reading an invented utilisation as their own would act
+        on it — that is what the figure is for.
+      */}
+      <Card overline={t('utilisation')} icon="truck" emphasis="accent">
+        <Text variant="label" tone="stale" style={styles.walkthrough}>
+          {t('walkthrough_figures')}
+        </Text>
         <Text variant="display">{Math.round(used.ratio * 100)}%</Text>
         <Text variant="body" tone="secondary" style={styles.gap}>
           {format(used.perKmDriven)} {t('a_kilometre_driven')} · {used.legs} {t('legs_this_month')}
@@ -100,13 +155,13 @@ export function FleetScreen({
         <View style={styles.split}>
           <Figure
             icon="package"
-            label="Loaded"
+            label={t('km_loaded')}
             value={`${Math.round(used.loadedMetres / 1000)} km`}
             tone="moving"
           />
           <Figure
             icon="route"
-            label="Empty"
+            label={t('km_empty')}
             value={`${Math.round(used.emptyMetres / 1000)} km`}
             tone="stopped"
           />
@@ -150,9 +205,21 @@ export function FleetScreen({
         <Icon name="shield" size="md" colour={colours.textSecondary} />
         <View style={styles.verifyBody}>
           <Text variant="title">{t('verification')}</Text>
-          <Text variant="label" tone="secondary">
-            One document short of Trusted · a licence expires in 18 days
-          </Text>
+          {/*
+            The tier, and only the tier.
+
+            The first version put the count of what is missing beside it —
+            "Unverified · 2 To reach Verified" — which reads as three separate
+            thoughts in English and worse in the other three, because
+            `to_reach` is written as a card heading and carries a capital into
+            the middle of the line. This row's job is "where do I stand"; the
+            screen it opens is where the rest of it lives.
+          */}
+          {standing === null ? null : (
+            <Text variant="label" tone="secondary">
+              {t(TIER_WORDS[standing.tier])}
+            </Text>
+          )}
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
@@ -327,6 +394,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: space.lg, gap: space.md },
   flex: { flex: 1 },
   gap: { marginTop: space.xs },
+  walkthrough: { marginBottom: space.xs },
   bar: { marginTop: space.md },
   split: { flexDirection: 'row', gap: space.xl, marginTop: space.md },
   figure: { gap: 2 },

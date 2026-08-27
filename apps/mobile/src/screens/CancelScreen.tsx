@@ -169,7 +169,7 @@ export function CancelScreen({ trip, onBack }: Props) {
               ) : null}
             </Card>
 
-            <Card overline="Also" icon="shield" emphasis="plain">
+            <Card overline={t('and_also')} icon="shield" emphasis="plain">
               <Line
                 on={outcome.withinGrace}
                 text={`Within ${Math.round(GRACE_MS / 3_600_000)} hours of the bid being accepted`}

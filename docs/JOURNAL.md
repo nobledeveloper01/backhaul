@@ -6,7 +6,7 @@ changelog with worse formatting.
 
 ---
 
-## 2026-08-27 (last) — Every screen reads the server, and four that should not
+## 2026-08-27 (last) — Every screen reads the server, and two that were lying about it
 
 > A note on the dates below this one. The headings from here down run
 > 2026-08-28 to 2026-08-31; every one of those commits was actually made on
@@ -15,7 +15,7 @@ changelog with worse formatting.
 > down here so the next person does not spend ten minutes wondering.
 
 **Did.** Wired the remaining screens to the API. Every screen that should read
-the server now does — trips, the fixes behind the map, messages, incidents,
+the server now does, except one that cannot yet and now says so — trips, the fixes behind the map, messages, incidents,
 waypoints, drops, levies, delivery, the pack, deviation, escrow, cancellation,
 costs, terms, earnings, alerts, verification, vehicles, lanes, records, the
 board, bids, chains, pairs and the quote. `make ci` green; `make round-trip`
@@ -55,6 +55,31 @@ preview holding a token would not be that preview (ADR-0010); the language
 screen is a device preference; sign-in takes its callbacks from `App.tsx`, which
 does call the API. Each now says so in its own source, because the next person
 to run that sweep will otherwise "fix" all four.
+
+**And then the same claim turned out to be false twice over.** Writing "every
+screen that should read the server does" was the thing that made me go and
+check, and two screens did not. The fleet screen renders utilisation — the
+figure this whole product exists to move — from fabricated legs on every
+render, under the heading "Your fleet", with no mark on it. The driver screen
+put the words "your trip" over the walkthrough's trip. Both are the exact
+failure the trips list already had a banner for, and neither had one.
+
+The fleet one does not have a route waiting for it either. A loaded leg is a
+trip and the server can measure it from the cleaned track; the *empty* running
+is the gap between two trips, where tracking is off and there is nothing to
+measure. Estimating it would be a number presented as a measurement, which is
+rule 7. The mirror and five parity cases are written — ADR-0005 wants those
+before an endpoint anyway — and ADR-0012 says why the endpoint waits and what
+would unblock it. It is a product decision: tracking between trips needs the
+driver's consent to be tracked between trips.
+
+**The sweep that reported zero untranslated strings was reporting on the wrong
+thing.** It matched props holding two words or more, and text nodes that sat
+alone on a line. `overline="Utilisation"` is one word; `<Text>Your fleet</Text>`
+is never alone on its line. Nineteen strings were still English, nine of them
+`accessibilityLabel`s — read aloud, and on some screens the only English left.
+The lint that says a job is finished is a claim like any other, and this one had
+never been checked against a screen.
 
 **A trip came back without knowing who was on it.** `TripResponse` carried the
 history and the state and not the three party ids, so a screen deciding whether

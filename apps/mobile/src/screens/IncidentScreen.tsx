@@ -128,7 +128,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
   if (filed && kind !== null) {
     return (
       <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-        <ScreenHeader title="Reported" onBack={onBack} />
+        <ScreenHeader title={t('reported')} onBack={onBack} />
         <View style={styles.done}>
           <View style={[styles.tick, { backgroundColor: colours.movingWash }]}>
             <Icon name="check" size="lg" colour={colours.moving} />
@@ -237,9 +237,9 @@ export function IncidentScreen({ trip, onBack }: Props) {
               <TextInput
                 value={note}
                 onChangeText={setNote}
-                placeholder="Optional"
+                placeholder={t('optional')}
                 placeholderTextColor={colours.textSecondary}
-                accessibilityLabel="Add a note"
+                accessibilityLabel={t('add_a_note')}
                 multiline
                 style={[
                   styles.note,
@@ -262,7 +262,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
               {wantsPhoto ? (
                 <Press
                   onPress={() => setPhotos((was) => was + 1)}
-                  accessibilityLabel="Add a photograph"
+                  accessibilityLabel={t('add_a_photo')}
                   style={[
                     styles.photo,
                     { borderColor: short ? colours.stopped : colours.outline },

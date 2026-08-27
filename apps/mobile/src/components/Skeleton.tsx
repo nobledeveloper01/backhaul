@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native
 
 import { motion, radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 const ENTER = Easing.bezier(...motion.enter);
 
@@ -24,6 +25,7 @@ interface Props {
  */
 export function Skeleton({ lines = 3, style }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const pulse = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function Skeleton({ lines = 3, style }: Props) {
   return (
     <View
       accessibilityRole="progressbar"
-      accessibilityLabel="Loading"
+      accessibilityLabel={t('loading_state')}
       style={[styles.card, { backgroundColor: colours.surfaceRaised, borderColor: colours.outline }, style]}
     >
       {Array.from({ length: lines }, (_, i) => (

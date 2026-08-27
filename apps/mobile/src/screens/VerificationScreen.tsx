@@ -154,7 +154,7 @@ export function VerificationScreen({ onBack }: Props) {
         )}
 
         {soon.length > 0 ? (
-          <Card overline="Expiring" icon="clock" emphasis="plain">
+          <Card overline={t('expiring')} icon="clock" emphasis="plain">
             {soon.map((entry) => (
               <View key={entry.kind} style={styles.missing}>
                 <Icon

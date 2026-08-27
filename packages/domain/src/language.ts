@@ -187,6 +187,18 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'optional'
+  | 'add_a_note'
+  | 'the_route'
+  | 'the_cargo'
+  | 'handover'
+  | 'what_went_wrong'
+  | 'and_also'
+  | 'expiring'
+  | 'your_fleet'
+  | 'walkthrough_figures'
+  | 'km_loaded'
+  | 'km_empty'
   | 'trucks_and_papers'
   | 'verification'
   | 'what_reaches_your_phone'
@@ -605,6 +617,14 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  optional: 'Optional',
+  add_a_note: 'Add a note',
+  the_route: 'Route',
+  the_cargo: 'Cargo',
+  handover: 'Handover',
+  what_went_wrong: 'Exception',
+  and_also: 'Also',
+  expiring: 'Expiring',
   delivery_document: 'Delivery document',
   what_the_record_shows: 'What the record shows',
   call_this_trip_off: 'Call this trip off',
@@ -696,6 +716,10 @@ export const EN: Readonly<Record<Phrase, string>> = {
   post_this_load: 'Post this load',
 
   utilisation: 'How well the trucks are used',
+  your_fleet: 'Your fleet',
+  walkthrough_figures: 'Walkthrough figures. Your own are not worked out yet.',
+  km_loaded: 'Loaded',
+  km_empty: 'Empty',
   trucks_and_papers: 'Trucks and papers',
   verification: 'Verification',
   what_reaches_your_phone: 'What reaches your phone',
@@ -1107,6 +1131,14 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  optional: 'Na zaɓi',
+  add_a_note: 'Ƙara bayani',
+  the_route: 'Hanya',
+  the_cargo: 'Kaya',
+  handover: 'Mika kaya',
+  what_went_wrong: 'Abin da bai yi ba',
+  and_also: 'Haka kuma',
+  expiring: 'Na ƙarewa',
   delivery_document: 'Takardar mikawa',
   what_the_record_shows: 'Abin da tarihin ya nuna',
   call_this_trip_off: 'Soke wannan tafiya',
@@ -1198,6 +1230,10 @@ export const HA: Readonly<Record<Phrase, string>> = {
   post_this_load: 'Sanya wannan kaya',
 
   utilisation: 'Yadda ake amfani da motocin',
+  your_fleet: 'Motocinka',
+  walkthrough_figures: 'Lambobin nuni ne. Ba a lissafa naka ba tukuna.',
+  km_loaded: 'Da kaya',
+  km_empty: 'Babu kaya',
   trucks_and_papers: 'Motoci da takardu',
   verification: 'Tabbatarwa',
   what_reaches_your_phone: 'Abin da ke isa wayarka',
@@ -1613,6 +1649,14 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  optional: 'Kò dandan',
+  add_a_note: 'Fi àkọsílẹ̀ kún un',
+  the_route: 'Ọ̀nà',
+  the_cargo: 'Ẹrù',
+  handover: 'Ìfilélẹ̀ ẹrù',
+  what_went_wrong: 'Ohun tí kò lọ dáadáa',
+  and_also: 'Bákan náà',
+  expiring: 'Ń parí',
   delivery_document: 'Ìwé ìfijíṣẹ́',
   what_the_record_shows: 'Ohun tí àkọsílẹ̀ fihàn',
   call_this_trip_off: 'Fagilé ìrìnàjò yìí',
@@ -1705,6 +1749,10 @@ export const YO: Readonly<Record<Phrase, string>> = {
   post_this_load: 'Gbé ẹrù yìí kalẹ̀',
 
   utilisation: 'Bí a ṣe ń lo àwọn ọkọ̀',
+  your_fleet: 'Àwọn ọkọ̀ rẹ',
+  walkthrough_figures: 'Àwọn nọ́mbà àpẹẹrẹ ni. A kò tí ì ṣírò tìrẹ.',
+  km_loaded: 'Pẹ̀lú ẹrù',
+  km_empty: 'Òfìfo',
   trucks_and_papers: 'Ọkọ̀ àti ìwé',
   verification: 'Ìfẹsẹ̀múlẹ̀',
   what_reaches_your_phone: 'Ohun tí ó dé fóònù rẹ',
@@ -2119,6 +2167,14 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  optional: 'Ọ dịghị mkpa',
+  add_a_note: 'Tinye ihe odide',
+  the_route: 'Ụzọ',
+  the_cargo: 'Ngwaahịa',
+  handover: 'Nnyefe ngwaahịa',
+  what_went_wrong: 'Ihe na-agaghị nke ọma',
+  and_also: 'Ọzọkwa',
+  expiring: 'Na-agwụ',
   delivery_document: 'Akwụkwọ nnyefe',
   what_the_record_shows: 'Ihe ndekọ na-egosi',
   call_this_trip_off: 'Kagbuo njem a',
@@ -2210,6 +2266,10 @@ export const IG: Readonly<Record<Phrase, string>> = {
   post_this_load: 'Bipụta ngwaahịa a',
 
   utilisation: 'Otú e si eji ụgbọ ndị ahụ',
+  your_fleet: 'Ụgbọ gị',
+  walkthrough_figures: 'Ọnụọgụ ihe ngosi. A gbakọbeghị nke gị.',
+  km_loaded: 'Nwere ibu',
+  km_empty: 'Ọ tọgbọrọ chakoo',
   trucks_and_papers: 'Ụgbọ na akwụkwọ',
   verification: 'Nkwenye',
   what_reaches_your_phone: 'Ihe na-eru ekwentị gị',

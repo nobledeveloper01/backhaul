@@ -148,6 +148,18 @@ export function DriverScreen({
     ? { from: walkthrough?.originName ?? '', to: walkthrough?.destinationName ?? '' }
     : { from: live.origin, to: live.destination };
 
+  /*
+    Cargo and plate, joined only across the ones that are there. A trailer with
+    no plate recorded rendered a bare "·" once, which reads as a fault rather
+    than as an absence.
+  */
+  const cargoLine =
+    live !== null
+      ? null
+      : ([walkthrough?.cargo, walkthrough?.plate]
+          .filter((part): part is string => part !== undefined && part.trim().length > 0)
+          .join(' · ') || null);
+
   const kept = walkthrough?.track.kept.length ?? 0;
   const dataUsed = usage(kept, Math.max(1, Math.round(kept / 10)));
   const dataCost = estimateCost(dataUsed);
@@ -211,38 +223,61 @@ export function DriverScreen({
         { paddingTop: insets.top + space.xl, paddingBottom: insets.bottom + space.xxl },
       ]}
     >
-      <View style={styles.route}>
+      {/*
+        The duress alarm lives on the corridor, which is the one line this
+        screen always has.
+
+        A long press on something already there, rather than a second copy of
+        the same words added below it — which is what the first version did,
+        and which put "28 t cement · LSR-482-XA" on the screen twice. The
+        second version moved the press onto a cargo row and then rendered the
+        corridor into it, which put the *corridor* on the screen twice instead.
+
+        Nothing happens visibly. `visibleConfirmation()` returns null and
+        `raiseAlarm` holds it to that: whoever is standing over the driver must
+        not be able to tell.
+      */}
+      <Pressable
+        onLongPress={raiseAlarm}
+        delayLongPress={HOLD_MS}
+        accessibilityRole="button"
+        accessibilityLabel={`${corridor.from} → ${corridor.to}`}
+        style={styles.route}
+      >
         <Text variant="overline" tone="secondary">
           {t('your_trip').toUpperCase()}
         </Text>
+        {/*
+          Labelled when it is not theirs.
+
+          This screen says YOUR TRIP above whatever it is showing, and before
+          a driver's first trip exists that was the walkthrough's — a
+          demonstration a person cannot tell from their own trip is worse than
+          no demonstration, and this one had the words "your trip" over it.
+        */}
+        {live === null ? (
+          <Text variant="label" tone="stale">
+            {t('showing_the_walkthrough')}
+          </Text>
+        ) : null}
         <Text variant="headline">
           {corridor.from} → {corridor.to}
         </Text>
         {/*
-          The duress alarm lives on this line.
-
-          A long press on something already on the screen, rather than a second
-          copy of the same words added below it — which is what the first
-          version did, and which put "28 t cement · LSR-482-XA" on the screen
-          twice.
-
-          Nothing happens visibly. `visibleConfirmation()` returns null and
-          `raiseAlarm` holds it to that: whoever is standing over the driver
-          must not be able to tell.
+          What is on the trailer, when the trip says. A server trip summary
+          does not carry cargo or a plate — the walkthrough does — and a row
+          that falls back to the corridor is the corridor twice. Rendered only
+          when there is something in it that is not already above it.
         */}
-        <Pressable
-          onLongPress={raiseAlarm}
-          delayLongPress={HOLD_MS}
-          accessibilityRole="button"
-          accessibilityLabel={`${corridor.from} → ${corridor.to}`}
-          style={styles.metaRow}
-        >
-          <Icon name="package" size="sm" colour={colours.textSecondary} />
-          <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
-            {corridor.from} → {corridor.to}
-          </Text>
-        </Pressable>
-      </View>
+        {cargoLine === null ? null : (
+          <View style={styles.metaRow}>
+            <Icon name="package" size="sm" colour={colours.textSecondary} />
+            <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
+              {cargoLine}
+            </Text>
+          </View>
+        )}
+      </Pressable>
 
       {/*
         The consent block. Big, first, and it says who can see the driver —
@@ -407,7 +442,7 @@ export function DriverScreen({
       <View style={styles.pair}>
         <Press
           onPress={onReport}
-          accessibilityLabel="Report a problem"
+          accessibilityLabel={t('report_problem')}
           feedback="opacity"
           style={[styles.half, { borderColor: colours.outline }]}
         >

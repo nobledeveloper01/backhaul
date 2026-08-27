@@ -24,7 +24,15 @@ import {
   type TripEvent,
   type TripState,
 } from '../packages/domain/src/trip.ts';
-import { fromNaira, percent, type Kobo } from '../packages/domain/src/money.ts';
+import { fromNaira, percent, ZERO, type Kobo } from '../packages/domain/src/money.ts';
+import {
+  MINIMUM_LEGS,
+  describeRate,
+  describeRatio,
+  utilisation,
+  worthOfOneReturnLeg,
+  type Leg,
+} from '../packages/domain/src/utilisation.ts';
 import {
   COMMISSION_PCT,
   FREE_WAITING_MS,
@@ -1565,6 +1573,61 @@ const reviewableCases = ([0, 1, 7, 8, -1] as const).map((days) => ({
   ),
 }));
 
+// --- utilisation -----------------------------------------------------------
+
+/**
+ * The number the product exists to move, and the projection built on it.
+ *
+ * Fixture material because both sides now compute it: the app renders it on
+ * the fleet screen and the server derives it from the carrier's own trips. The
+ * cases that matter are the degenerate ones — a fleet with no legs at all,
+ * which must be 0% rather than NaN, and a fleet that never runs empty, which
+ * has no return leg to be worth anything.
+ */
+const drivenLeg = (km: number, loaded: boolean, naira: number): Leg => ({
+  metres: km * 1000,
+  loaded,
+  earned: loaded ? fromNaira(naira) : ZERO,
+});
+
+const utilisationCases = (
+  [
+    // The pitch, as a fleet actually runs: out loaded, back empty.
+    ['half empty', [drivenLeg(830, true, 2_200_000), drivenLeg(830, false, 0), drivenLeg(760, true, 2_000_000), drivenLeg(760, false, 0)]],
+    // Never empty. There is no return leg to fill, so the projection refuses.
+    ['always loaded', [drivenLeg(500, true, 1_400_000), drivenLeg(500, true, 1_350_000), drivenLeg(480, true, 1_300_000), drivenLeg(520, true, 1_400_000)]],
+    // Below MINIMUM_LEGS. The ratio is still arithmetic; the projection is not.
+    ['too thin to project', [drivenLeg(830, true, 2_200_000), drivenLeg(830, false, 0)]],
+    // Nothing at all. 0%, not NaN.
+    ['no legs', []],
+    // Every kilometre empty. A ratio of zero, and no loaded rate to project from.
+    ['all empty', [drivenLeg(300, false, 0), drivenLeg(300, false, 0), drivenLeg(280, false, 0), drivenLeg(320, false, 0)]],
+  ] as const
+).map(([name, legs]) => {
+  const result = utilisation(legs);
+  const averageLegMetres =
+    legs.length === 0
+      ? 0
+      : legs.reduce((total, one) => total + one.metres, 0) / legs.length;
+  const worth = worthOfOneReturnLeg(result, averageLegMetres);
+
+  return {
+    name,
+    legs: legs.map((one) => ({ metres: one.metres, loaded: one.loaded, earnedKobo: one.earned })),
+    averageLegMetres,
+    loadedMetres: result.loadedMetres,
+    emptyMetres: result.emptyMetres,
+    totalMetres: result.totalMetres,
+    ratio: result.ratio,
+    earnedKobo: result.earned,
+    perKmDrivenKobo: result.perKmDriven,
+    legCount: result.legs,
+    ratioLabel: describeRatio(result),
+    rateLabel: describeRate(result),
+    worthOfOneReturnLegKobo: worth,
+  };
+});
+
 // --- lanes -----------------------------------------------------------------
 
 /**
@@ -2049,6 +2112,10 @@ const fixtures = {
     decisions: alertDecisions,
     digests: digestCases,
   },
+  utilisation: {
+    minimumLegs: MINIMUM_LEGS,
+    cases: utilisationCases,
+  },
   lanes: {
     dueWarningMs: DUE_WARNING_MS,
     recentRuns: RECENT_RUNS,
@@ -2122,6 +2189,7 @@ process.stdout.write(
       `${deviationCases.length} deviation verdicts`,
       `${ratingCases.length} tallies`,
       `${laneCases.length} lanes`,
+      `${utilisationCases.length} utilisations`,
       `${alertDecisions.length} alert decisions`,
       `${tripFilterCases.length} trip filters`,
       `${loadFilterCases.length} load filters`,

@@ -333,7 +333,7 @@ export function TripDetailScreen({
           in the other order.
         */}
         {openIncident !== null ? (
-          <Card overline="Reported" icon="flag" emphasis="plain">
+          <Card overline={t('reported')} icon="flag" emphasis="plain">
             <Text variant="title">{openIncident.note}</Text>
             <Text variant="body" tone="secondary" style={styles.note}>
               Reported by the {openIncident.reportedBy} · {agoLabel(now.getTime() - openIncident.at.getTime(), t)}
@@ -494,7 +494,7 @@ export function TripDetailScreen({
           </Text>
         </Card>
 
-        <Card overline="History" icon="clock" emphasis="plain">
+        <Card overline={t('history')} icon="clock" emphasis="plain">
           {[...trip.history].reverse().map((event, i) => (
             <View key={`${event.state}-${event.at.toISOString()}`} style={styles.event}>
               <View style={styles.timeline}>
