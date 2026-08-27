@@ -1,11 +1,18 @@
 import {
   DEFAULT_SHARE_DAYS,
   DEFAULT_SEVERITY,
+  assemble,
   canFollow,
   chain,
+  describeKind,
   distance,
+  distanceTravelled,
   fromNaira,
+  margin,
+  pairs,
+  schedule,
   summarise,
+  total,
   visits,
   type ChainLeg,
   type Delivery,
@@ -16,7 +23,18 @@ import {
   type Review,
   type ShareLink,
   type CarrierClaim,
+  type Drop,
+  type Earning,
+  type EscrowConditions,
+  type Evidence,
+  type Lane,
+  type Levy,
+  type LevyKind,
+  type Pack,
+  type PairLoad,
+  type Position,
   type ShipperClaim,
+  type Vehicle,
   type Visit,
   type Waypoint,
 } from '@backhaul/domain';
@@ -349,4 +367,365 @@ export function demoChain(now: Date) {
     /** What the same truck would have earned running home empty. */
     aloneValue: summarise([start]),
   };
+}
+
+// ---------------------------------------------------------------------------
+// The second fifteen. Same rule: the engines produce every figure.
+// ---------------------------------------------------------------------------
+
+/** Papers for the demo fleet, one truck of each standing worth rendering. */
+export function demoVehicles(now: Date): readonly Vehicle[] {
+  const on = (days: number) => daysFrom(now, days);
+
+  return [
+    {
+      id: 'v1',
+      plate: 'LSR-482-XA',
+      truck: 'trailer_30t',
+      carrierId: 'sahel',
+      papers: { licence: on(210), roadworthiness: on(96), insurance: on(18), permit: on(300) },
+      retiredAt: null,
+    },
+    {
+      id: 'v2',
+      plate: 'RVS-119-KJ',
+      truck: 'truck_15t',
+      carrierId: 'sahel',
+      papers: { licence: on(140), roadworthiness: on(-9), insurance: on(120), permit: on(88) },
+      retiredAt: null,
+    },
+    {
+      id: 'v3',
+      plate: 'KJA-771-BR',
+      truck: 'canter',
+      carrierId: 'sahel',
+      papers: { licence: on(260), roadworthiness: on(150), insurance: on(200) },
+      retiredAt: null,
+    },
+    {
+      id: 'v4',
+      plate: 'ABC-004-LA',
+      truck: 'trailer_30t',
+      carrierId: 'sahel',
+      papers: { licence: on(400), roadworthiness: on(380), insurance: on(370), permit: on(390) },
+      retiredAt: null,
+    },
+  ];
+}
+
+/** What the road took on the running trip. */
+export function demoLevies(trip: DemoTrip, now: Date): readonly Levy[] {
+  const entries: readonly [LevyKind, number, number, string][] = [
+    ['union', 12_000, 2_540, 'Loading park, Apapa'],
+    ['police', 2_000, 2_180, ''],
+    ['state_revenue', 7_500, 1_950, 'Ogun state'],
+    ['police', 1_500, 1_640, ''],
+    ['weighbridge', 5_000, 1_380, 'Ibadan'],
+    ['police', 2_000, 900, ''],
+    ['union', 8_000, 420, 'Kaduna park'],
+    ['police', 3_000, 120, ''],
+  ];
+
+  return entries.map(([kind, naira, minutes, note], index) => ({
+    id: `${trip.id}-levy-${index}`,
+    tripId: trip.id,
+    kind,
+    amount: fromNaira(naira),
+    at: minutesAgo(now, minutes),
+    near: null,
+    note,
+    photoId: null,
+  }));
+}
+
+/** Where the money is on the running trip. */
+export function demoEscrow(trip: DemoTrip, now: Date) {
+  const conditions: EscrowConditions = {
+    state: trip.history.at(-1)?.state ?? 'open',
+    movingForMs: 20 * 60 * 60_000,
+    podSealed: false,
+    deliveredAt: null,
+    exceptionRaised: false,
+  };
+
+  return schedule(fromNaira(trip.agreedNaira), conditions, now);
+}
+
+/** What the carrier clears on it, at today's diesel. */
+export function demoMargin(trip: DemoTrip, now: Date) {
+  const laden = distanceTravelled(trip.track);
+  return margin(fromNaira(trip.agreedNaira), {
+    truck: trip.truck,
+    ladenM: laden,
+    // Home again empty, which is the whole reason `chaining.ts` exists.
+    emptyM: laden,
+    dieselPerLitre: fromNaira(1_100),
+    levies: total(demoLevies(trip, now)),
+    other: fromNaira(20_000),
+  });
+}
+
+/** Drops for a multi-drop trip. */
+export function demoDrops(trip: DemoTrip, now: Date): readonly Drop[] {
+  const place = (id: string, name: string, lat: number, lon: number): Waypoint => ({
+    id,
+    name,
+    at: { lat, lon, accuracy: 0, at: trip.origin.at },
+    kind: 'destination',
+    radius: 400,
+  });
+
+  return [
+    {
+      id: 'd1',
+      at: place('d1-w', 'Dawanau market', 12.05, 8.45),
+      consignee: 'Alhaji Bello & Sons',
+      goods: '10 t cement',
+      units: 200,
+      weightKg: 10_000,
+      deliveredAt: minutesAgo(now, 90),
+      exception: null,
+    },
+    {
+      id: 'd2',
+      at: place('d2-w', 'Sabon Gari depot', 12.01, 8.53),
+      consignee: 'Kano Builders',
+      goods: '12 t cement',
+      units: 240,
+      weightKg: 12_000,
+      deliveredAt: null,
+      exception: null,
+    },
+    {
+      id: 'd3',
+      at: place('d3-w', 'Bompai yard', 11.99, 8.56),
+      consignee: 'Northern Blocks',
+      goods: '6 t cement',
+      units: 120,
+      weightKg: 6_000,
+      deliveredAt: null,
+      exception: null,
+    },
+  ];
+}
+
+/** "4 h 20" — for a summary line, not for a duration a person is waiting out. */
+function humanHours(ms: number): string {
+  const minutes = Math.round(ms / 60_000);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest}`;
+}
+
+/** The evidence on a trip, assembled by the real engine. */
+export function demoDispute(trip: DemoTrip, now: Date): Pack {
+  const evidence: Evidence[] = [];
+
+  for (const event of trip.history) {
+    evidence.push({
+      kind: 'trip_event',
+      at: event.at,
+      receivedAt: event.at,
+      summary: `Trip moved to ${event.state.replace(/_/g, ' ')}`,
+      source: event.actor === 'system' ? 'system' : event.actor,
+    });
+  }
+
+  /*
+    Runs of coverage, not individual fixes.
+
+    A pack listing nine hundred identical lines is useless to a human — and the
+    first version, which sampled every twentieth fix, was worse than useless:
+    it invented nine gaps totalling fifty-one hours on a trip whose coverage
+    was continuous apart from one two-hour stretch. The pack said the opposite
+    of what the record held.
+
+    A run is an interval, and `Evidence.until` is what lets the gap finder know
+    that.
+  */
+  const CONTINUOUS_MS = 30 * 60_000;
+  let runFrom: Position | null = null;
+  let runTo: Position | null = null;
+  let runFixes = 0;
+
+  const closeRun = () => {
+    if (runFrom === null || runTo === null) return;
+    evidence.push({
+      kind: 'position',
+      at: runFrom.at,
+      until: runTo.at,
+      receivedAt: null,
+      summary:
+        runFixes === 1
+          ? 'One position recorded'
+          : `${runFixes} positions recorded, ${humanHours(
+              runTo.at.getTime() - runFrom.at.getTime(),
+            )} of continuous coverage`,
+      source: 'system',
+    });
+    runFrom = null;
+    runTo = null;
+    runFixes = 0;
+  };
+
+  for (const fix of trip.track.kept) {
+    if (runTo !== null && fix.at.getTime() - runTo.at.getTime() > CONTINUOUS_MS) {
+      closeRun();
+    }
+    if (runFrom === null) runFrom = fix;
+    runTo = fix;
+    runFixes++;
+  }
+  closeRun();
+
+  for (const dropped of trip.track.dropped) {
+    evidence.push({
+      kind: 'discarded_position',
+      at: dropped.fix.at,
+      receivedAt: null,
+      summary: `Position discarded — ${dropped.problem.replace(/_/g, ' ')}`,
+      source: 'system',
+    });
+  }
+
+  for (const message of demoMessages(trip, now)) {
+    evidence.push({
+      kind: 'message',
+      at: message.at,
+      receivedAt: message.receivedAt,
+      summary: `${message.from}: ${message.body}`,
+      source: message.from,
+    });
+  }
+
+  for (const incident of demoIncidents(trip, now)) {
+    evidence.push({
+      kind: 'incident',
+      at: incident.at,
+      receivedAt: incident.at,
+      summary: `${describeKind(incident.kind)} — ${incident.note}`,
+      source: incident.reportedBy,
+    });
+  }
+
+  for (const visit of demoVisits(trip)) {
+    evidence.push({
+      kind: 'waypoint_visit',
+      at: visit.arrived,
+      receivedAt: null,
+      summary: `Arrived at ${visit.waypoint.name}`,
+      source: 'system',
+    });
+  }
+
+  return assemble(trip.id, evidence, now);
+}
+
+/** A driver's last few months. */
+export function demoEarnings(now: Date): readonly Earning[] {
+  const runs: readonly [string, number, number, number, number, boolean][] = [
+    ['Lagos → Kano', 3, 1_000, 120_000, 50_000, false],
+    ['Kano → Kaduna', 9, 240, 34_000, 20_000, true],
+    ['Kaduna → Lagos', 14, 760, 96_000, 40_000, true],
+    ['Lagos → Onitsha', 22, 460, 62_000, 30_000, true],
+    ['Onitsha → Lagos', 27, 460, 58_000, 25_000, true],
+    ['Lagos → Ibadan', 34, 130, 22_000, 10_000, true],
+    ['Lagos → Kano', 41, 1_000, 118_000, 50_000, false],
+  ];
+
+  return runs.map(([corridor, daysBack, km, pay, advance, paid], index) => ({
+    tripId: `past-${index}`,
+    corridor,
+    deliveredAt: minutesAgo(now, daysBack * 24 * 60),
+    distanceM: km * 1_000,
+    pay: fromNaira(pay),
+    advance: fromNaira(advance),
+    // Roughly what the checkpoint ledger records, and sometimes more than the
+    // advance — which is the case the statement exists to make visible.
+    spent: fromNaira(Math.round(advance * (index % 3 === 0 ? 1.25 : 0.8))),
+    paidAt: paid ? minutesAgo(now, (daysBack - 2) * 24 * 60) : null,
+  }));
+}
+
+/** A shipper's saved lanes. */
+export function demoLanes(now: Date): readonly Lane[] {
+  return [
+    {
+      id: 'lane-1',
+      shipperId: 's1',
+      name: 'Tuesday cement',
+      origin: 'Lagos',
+      destination: 'Kano',
+      cargo: '28 t cement',
+      weightKg: 28_000,
+      truck: 'trailer_30t',
+      cadence: 'weekly',
+      history: [2_180_000, 2_240_000, 2_200_000, 2_260_000, 2_220_000].map(fromNaira),
+      lastRunAt: minutesAgo(now, 6 * 24 * 60),
+    },
+    {
+      id: 'lane-2',
+      shipperId: 's1',
+      name: 'Rice to Abuja',
+      origin: 'Port Harcourt',
+      destination: 'Abuja',
+      cargo: '14 t bagged rice',
+      weightKg: 14_000,
+      truck: 'truck_15t',
+      cadence: 'fortnightly',
+      history: [860_000, 900_000, 880_000].map(fromNaira),
+      lastRunAt: minutesAgo(now, 19 * 24 * 60),
+    },
+    {
+      id: 'lane-3',
+      shipperId: 's1',
+      name: 'Machine parts, when needed',
+      origin: 'Lagos',
+      destination: 'Ibadan',
+      cargo: '4 t machine parts',
+      weightKg: 4_000,
+      truck: 'canter',
+      cadence: 'ad_hoc',
+      history: [160_000, 165_000].map(fromNaira),
+      lastRunAt: minutesAgo(now, 40 * 24 * 60),
+    },
+  ];
+}
+
+/** Part-loads a trailer could take together. */
+export function demoPairs(now: Date) {
+  const at = (lat: number, lon: number) => ({ lat, lon });
+
+  const load = (
+    id: string,
+    cargo: string,
+    weightKg: number,
+    naira: number,
+    origin: string,
+    destination: string,
+    from: { lat: number; lon: number },
+    to: { lat: number; lon: number },
+  ): PairLoad => ({
+    id,
+    origin,
+    destination,
+    cargo,
+    weightKg,
+    offered: fromNaira(naira),
+    readyFrom: now,
+    truckClass: 'trailer_30t',
+    shipperTier: 'business',
+    origin_: from,
+    destination_: to,
+  });
+
+  const board = [
+    load('onions', '14 t onions', 14_000, 1_180_000, 'Kano', 'Lagos', at(12.0022, 8.592), at(6.455, 3.3841)),
+    load('sesame', '13 t sesame', 13_000, 1_240_000, 'Kano', 'Lagos', at(11.98, 8.62), at(6.52, 3.36)),
+    load('hides', '8 t hides', 8_000, 640_000, 'Kano', 'Ibadan', at(12.01, 8.55), at(7.3775, 3.947)),
+    load('millet', '19 t millet', 19_000, 1_520_000, 'Kano', 'Lagos', at(12.03, 8.51), at(6.46, 3.4)),
+  ];
+
+  return { board, found: pairs(board, 'trailer_30t') };
 }

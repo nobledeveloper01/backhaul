@@ -20,16 +20,24 @@ export type Route =
   | { readonly name: 'delivery'; readonly trip: DemoTrip }
   | { readonly name: 'pod'; readonly trip: DemoTrip }
   | { readonly name: 'review'; readonly trip: DemoTrip }
+  | { readonly name: 'dispute'; readonly trip: DemoTrip }
+  | { readonly name: 'cancel'; readonly trip: DemoTrip }
+  | { readonly name: 'drops'; readonly trip: DemoTrip }
   | { readonly name: 'loads' }
   | { readonly name: 'post' }
   | { readonly name: 'chain' }
+  | { readonly name: 'lanes' }
+  | { readonly name: 'pairs' }
   | { readonly name: 'fleet' }
   | { readonly name: 'bids' }
   | { readonly name: 'verification' }
+  | { readonly name: 'vehicles' }
+  | { readonly name: 'alerts' }
   | { readonly name: 'driver' }
   | { readonly name: 'history' }
   | { readonly name: 'driver-report'; readonly trip: DemoTrip }
-  | { readonly name: 'driver-delivery'; readonly trip: DemoTrip };
+  | { readonly name: 'driver-delivery'; readonly trip: DemoTrip }
+  | { readonly name: 'levies'; readonly trip: DemoTrip };
 
 export type Face = 'shipper' | 'loads' | 'fleet' | 'driver';
 

@@ -23,6 +23,8 @@ import { agoLabel } from '../components/PositionAge';
 interface Props {
   readonly onOpenBids: () => void;
   readonly onOpenVerification: () => void;
+  readonly onOpenVehicles: () => void;
+  readonly onOpenAlerts: () => void;
 }
 
 /**
@@ -33,7 +35,12 @@ interface Props {
  * fleet's income, and this is where that claim becomes a figure they can check
  * against their own trucks.
  */
-export function FleetScreen({ onOpenBids, onOpenVerification }: Props) {
+export function FleetScreen({
+  onOpenBids,
+  onOpenVerification,
+  onOpenVehicles,
+  onOpenAlerts,
+}: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
@@ -123,6 +130,46 @@ export function FleetScreen({ onOpenBids, onOpenVerification }: Props) {
           <Text variant="title">Verification</Text>
           <Text variant="label" tone="secondary">
             One document short of Trusted · a licence expires in 18 days
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
+
+      <Press
+        onPress={onOpenVehicles}
+        accessibilityLabel="Trucks and papers"
+        accessibilityHint="Licence, roadworthiness, insurance and permit, per truck"
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="truck" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">Trucks and papers</Text>
+          <Text variant="label" tone="secondary">
+            One truck cannot take work — its roadworthiness lapsed
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
+
+      <Press
+        onPress={onOpenAlerts}
+        accessibilityLabel="What reaches your phone"
+        accessibilityHint="Who is told what, and what is allowed to wake you"
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="signal" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">What reaches your phone</Text>
+          <Text variant="label" tone="secondary">
+            One thing wakes you at 3am. Everything else waits until six.
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />

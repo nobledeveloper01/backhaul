@@ -2,12 +2,21 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  HOLD_MS,
   INTERVAL,
+  LANGUAGES,
   allowedFrom,
   decide,
+  describeCost,
+  describeLanguage,
+  estimateCost,
   isSystemRaised,
+  say,
   shouldTrack,
   transition,
+  usage,
+  visibleConfirmation,
+  type Language,
   type TripEvent,
   type TripState,
 } from '@backhaul/domain';
@@ -39,6 +48,7 @@ interface Props {
   readonly onOpenHistory: () => void;
   readonly onReport: () => void;
   readonly onDeliver: () => void;
+  readonly onLevies: () => void;
 }
 
 export function DriverScreen({
@@ -47,6 +57,7 @@ export function DriverScreen({
   onOpenHistory,
   onReport,
   onDeliver,
+  onLevies,
 }: Props) {
   const colours = useColours();
   const elevation = useElevation();
@@ -56,6 +67,32 @@ export function DriverScreen({
   const base = useMemo(() => demoTrips(now)[0], [now]);
   const [history, setHistory] = useState<readonly TripEvent[]>(base?.history ?? []);
   const [refusal, setRefusal] = useState<string | null>(null);
+
+  /*
+    The driver face is the one surface whose reader had no say in what they are
+    using — a shipper chose this app, a driver was handed a phone. Hausa is the
+    working language of the corridors it is built around.
+
+    A picker rather than the device locale: a phone bought second-hand is set to
+    whatever the last owner had.
+  */
+  const [language, setLanguage] = useState<Language>('en');
+
+  /*
+    In the product this queues a duress signal and switches the tracker to the
+    thirty-second follow cadence regardless of battery policy. Here there is no
+    transport — and, more to the point, there is nothing to render either way.
+    `visibleConfirmation()` returns null, and this function holding its result
+    is what keeps that true when somebody later makes this screen friendlier.
+  */
+  const raiseAlarm = () => {
+    const shown = visibleConfirmation();
+    if (shown !== null) throw new Error('A duress alarm must show nothing.');
+  };
+
+  const kept = base?.track.kept.length ?? 0;
+  const dataUsed = usage(kept, Math.max(1, Math.round(kept / 10)));
+  const dataCost = estimateCost(dataUsed);
 
   if (base === undefined) {
     return null;
@@ -197,6 +234,85 @@ export function DriverScreen({
         above the state buttons — a driver at a roadside should not scroll past
         four cards to report a breakdown.
       */}
+      {/*
+        What the tracking costs in data.
+        
+        The premise was that drivers force-quit trackers because they eat data,
+        so the app should warn about it. The arithmetic says a day of recording
+        is about fifteen kobo — so this is not a warning, it is the answer to
+        the fear, and it sits beside the battery line for the same reason.
+      */}
+      {/*
+        The duress alarm.
+
+        A long press on the truck's own plate — a thing already on the screen,
+        which is the point. It shows nothing, sounds nothing and changes
+        nothing: whoever is standing over the driver must not be able to tell
+        it happened, and `visibleConfirmation()` returns null so that a screen
+        cannot disagree with the domain about it.
+
+        `alarmed` is kept only so the demo can prove the press was received;
+        nothing renders from it.
+      */}
+      <Pressable
+        onLongPress={raiseAlarm}
+        delayLongPress={HOLD_MS}
+        accessibilityRole="button"
+        accessibilityLabel={base.plate}
+        style={styles.plateRow}
+      >
+        <Icon name="truck" size="sm" colour={colours.textSecondary} />
+        <Text variant="body" tone="secondary" style={styles.flex}>
+          {base.plate} · {base.cargo}
+        </Text>
+      </Pressable>
+
+      <View style={styles.languageRow}>
+        {LANGUAGES.map((option) => (
+          <Pressable
+            key={option}
+            onPress={() => setLanguage(option)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: language === option }}
+            accessibilityLabel={describeLanguage(option)}
+            style={[
+              styles.language,
+              {
+                backgroundColor: language === option ? colours.accentWash : 'transparent',
+                borderColor: language === option ? colours.accent : colours.outline,
+              },
+            ]}
+          >
+            <Text
+              variant="label"
+              style={{ color: language === option ? colours.accent : colours.textSecondary }}
+            >
+              {describeLanguage(option)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.dataRow}>
+        <Icon name="signal" size="sm" colour={colours.textSecondary} />
+        <Text variant="body" tone="secondary" style={styles.flex}>
+          {describeCost(dataUsed, dataCost)}
+        </Text>
+      </View>
+
+      <Press
+        onPress={onLevies}
+        accessibilityLabel={say(language, 'money_on_the_road')}
+        feedback="opacity"
+        style={[styles.link, { borderColor: colours.outline }]}
+      >
+        <Icon name="naira" size="sm" colour={colours.textSecondary} />
+        <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
+          {say(language, 'money_on_the_road')}
+        </Text>
+        <Icon name="chevron-right" size="sm" colour={colours.textSecondary} />
+      </Press>
+
       <View style={styles.pair}>
         <Press
           onPress={onReport}
@@ -206,7 +322,7 @@ export function DriverScreen({
         >
           <Icon name="flag" size="lg" colour={colours.textSecondary} />
           <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
-            Report
+            {say(language, 'report_problem')}
           </Text>
         </Press>
 
@@ -218,7 +334,7 @@ export function DriverScreen({
         >
           <Icon name="camera" size="lg" colour={colours.textSecondary} />
           <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
-            Hand over
+            {say(language, 'hand_over')}
           </Text>
         </Press>
       </View>
@@ -231,7 +347,7 @@ export function DriverScreen({
       >
         <Icon name="naira" size="sm" colour={colours.textSecondary} />
         <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
-          Your trips and what they paid
+          {say(language, 'your_trips')}
         </Text>
         <Icon name="chevron-right" size="sm" colour={colours.textSecondary} />
       </Press>
@@ -310,6 +426,15 @@ function actionLabel(state: TripState): string {
 }
 
 const styles = StyleSheet.create({
+  dataRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  plateRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  language: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  languageRow: { flexDirection: 'row', gap: space.sm, alignSelf: 'flex-start' },
   pair: { flexDirection: 'row', gap: space.md },
   half: {
     flex: 1,

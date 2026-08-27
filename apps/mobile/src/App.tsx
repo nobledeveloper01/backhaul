@@ -8,14 +8,21 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { Text } from './components/Text';
 import { ThemeProvider, useColours, useTheme } from './design/theme';
 import { radius, space, target } from './design/tokens';
+import { AlertsScreen } from './screens/AlertsScreen';
 import { BidsScreen } from './screens/BidsScreen';
+import { CancelScreen } from './screens/CancelScreen';
 import { ChainScreen } from './screens/ChainScreen';
+import { DisputeScreen } from './screens/DisputeScreen';
+import { DropsScreen } from './screens/DropsScreen';
 import { DriverScreen } from './screens/DriverScreen';
 import { DriverHistoryScreen } from './screens/DriverHistoryScreen';
 import { FleetScreen } from './screens/FleetScreen';
 import { FollowScreen } from './screens/FollowScreen';
 import { IncidentScreen } from './screens/IncidentScreen';
+import { LanesScreen } from './screens/LanesScreen';
+import { LeviesScreen } from './screens/LeviesScreen';
 import { MessagesScreen } from './screens/MessagesScreen';
+import { PairsScreen } from './screens/PairsScreen';
 import { PostLoadScreen } from './screens/PostLoadScreen';
 import { ProofScreen } from './screens/ProofScreen';
 import { ReturnLoadsScreen } from './screens/ReturnLoadsScreen';
@@ -23,6 +30,7 @@ import { ReviewScreen } from './screens/ReviewScreen';
 import { ShareScreen } from './screens/ShareScreen';
 import { TripDetailScreen } from './screens/TripDetailScreen';
 import { TripsScreen } from './screens/TripsScreen';
+import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
 import { demoNow, demoTrips } from './state/demo';
@@ -98,6 +106,9 @@ function Shell() {
             onMessages={() => push({ name: 'messages', trip: current.trip })}
             onReport={() => push({ name: 'incident', trip: current.trip })}
             onProof={() => push({ name: 'pod', trip: current.trip })}
+            onDispute={() => push({ name: 'dispute', trip: current.trip })}
+            onCancel={() => push({ name: 'cancel', trip: current.trip })}
+            onDrops={() => push({ name: 'drops', trip: current.trip })}
           />
         ) : null}
         {current.name === 'share' ? (
@@ -124,24 +135,37 @@ function Shell() {
           />
         ) : null}
         {current.name === 'review' ? <ReviewScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'dispute' ? <DisputeScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'cancel' ? <CancelScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'drops' ? <DropsScreen trip={current.trip} onBack={pop} /> : null}
 
         {current.name === 'loads' ? (
           <ReturnLoadsScreen
             onPost={() => push({ name: 'post' })}
             onChain={() => push({ name: 'chain' })}
+            onLanes={() => push({ name: 'lanes' })}
+            onPairs={() => push({ name: 'pairs' })}
           />
         ) : null}
         {current.name === 'post' ? <PostLoadScreen onBack={pop} /> : null}
         {current.name === 'chain' ? <ChainScreen onBack={pop} /> : null}
+        {current.name === 'lanes' ? (
+          <LanesScreen onBack={pop} onPost={() => push({ name: 'post' })} />
+        ) : null}
+        {current.name === 'pairs' ? <PairsScreen onBack={pop} /> : null}
 
         {current.name === 'fleet' ? (
           <FleetScreen
             onOpenBids={() => push({ name: 'bids' })}
             onOpenVerification={() => push({ name: 'verification' })}
+            onOpenVehicles={() => push({ name: 'vehicles' })}
+            onOpenAlerts={() => push({ name: 'alerts' })}
           />
         ) : null}
         {current.name === 'bids' ? <BidsScreen onBack={pop} /> : null}
         {current.name === 'verification' ? <VerificationScreen onBack={pop} /> : null}
+        {current.name === 'vehicles' ? <VehiclesScreen onBack={pop} /> : null}
+        {current.name === 'alerts' ? <AlertsScreen onBack={pop} /> : null}
 
         {current.name === 'driver' ? (
           <DriverScreen
@@ -156,6 +180,9 @@ function Shell() {
                 ? push({ name: 'driver-delivery', trip: driverTrip })
                 : undefined
             }
+            onLevies={() =>
+              driverTrip !== undefined ? push({ name: 'levies', trip: driverTrip }) : undefined
+            }
           />
         ) : null}
         {current.name === 'history' ? <DriverHistoryScreen onBack={pop} /> : null}
@@ -165,6 +192,7 @@ function Shell() {
         {current.name === 'driver-delivery' ? (
           <ProofScreen trip={current.trip} onBack={pop} />
         ) : null}
+        {current.name === 'levies' ? <LeviesScreen trip={current.trip} onBack={pop} /> : null}
       </View>
 
       {/*

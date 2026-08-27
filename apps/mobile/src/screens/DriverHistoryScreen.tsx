@@ -1,16 +1,26 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { format, fromNaira, type Kobo } from '@backhaul/domain';
+import {
+  format,
+  fromNaira,
+  longestWaitMs,
+  perKilometre,
+  statement,
+  unpaid,
+  type Kobo,
+} from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Empty } from '../components/Empty';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
-import { plural } from '../components/PositionAge';
+import { agoLabel, humanDuration, plural } from '../components/PositionAge';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { demoNow } from '../state/demo';
+import { demoEarnings } from '../state/product';
 
 interface Props {
   readonly onBack: () => void;
@@ -78,6 +88,16 @@ export function DriverHistoryScreen({ onBack }: Props) {
     [],
   );
 
+  const now = useMemo(demoNow, []);
+  const earnings = useMemo(() => demoEarnings(now), [now]);
+  const month = useMemo(
+    () => statement(earnings, new Date(now.getTime() - 30 * 86_400_000), now),
+    [earnings, now],
+  );
+  const perKm = perKilometre(month);
+  const owed = unpaid(earnings);
+  const waiting = longestWaitMs(earnings, now);
+
   const totalEarned = trips.reduce((sum, trip) => (sum + trip.earned) as Kobo, 0 as Kobo);
   const totalKm = trips.reduce((sum, trip) => sum + trip.km, 0);
   const onTime = trips.filter((trip) => trip.onTime).length;
@@ -98,6 +118,82 @@ export function DriverHistoryScreen({ onBack }: Props) {
             {onTime} of {trips.length} on time
           </Text>
         </Card>
+
+        {/*
+          The statement.
+
+          A driver's relationship with this product is asymmetric: they carry
+          the tracking, they take the risk on the road, and until now the app
+          told them nothing they could use. What a kilometre earned is a figure
+          nobody has ever been able to give them.
+        */}
+        <Card overline="What you are owed" icon="document">
+          <View style={styles.figures}>
+            <View style={styles.figure}>
+              <Text variant="headline" tabular>
+                {format(month.outstanding)}
+              </Text>
+              <Text variant="label" tone="secondary">
+                still to come
+              </Text>
+            </View>
+            <View style={styles.figure}>
+              <Text variant="headline" tabular>
+                {perKm === null ? '—' : format(perKm)}
+              </Text>
+              <Text variant="label" tone="secondary">
+                a kilometre
+              </Text>
+            </View>
+          </View>
+
+          {month.outOfPocket > 0 ? (
+            <View style={[styles.pocket, { borderTopColor: colours.outline }]}>
+              <Icon name="alert" size="sm" colour={colours.stopped} />
+              <Text variant="bodyDriver" tone="stopped" style={styles.flex}>
+                {format(month.outOfPocket)} of that is your own money, spent on
+                the road beyond what you were advanced.
+              </Text>
+            </View>
+          ) : null}
+
+          {waiting !== null ? (
+            <Text variant="label" tone="secondary" style={styles.gap}>
+              The oldest unpaid trip has been waiting {humanDuration(waiting)}.
+              It is at the top of the list below, because that is the one to ask
+              about.
+            </Text>
+          ) : (
+            <Text variant="label" tone="secondary" style={styles.gap}>
+              Every trip has been settled.
+            </Text>
+          )}
+        </Card>
+
+        {owed.length > 0 ? (
+          <>
+            <Text variant="overline" tone="secondary" style={styles.sectionHead}>
+              NOT PAID YET
+            </Text>
+
+            {owed.map((earning) => (
+              <View
+                key={earning.tripId}
+                style={[styles.owedRow, { borderBottomColor: colours.outline }]}
+              >
+                <View style={styles.flex}>
+                  <Text variant="bodyDriver">{earning.corridor}</Text>
+                  <Text variant="label" tone="secondary">
+                    delivered {agoLabel(now.getTime() - earning.deliveredAt.getTime())}
+                  </Text>
+                </View>
+                <Text variant="bodyDriver" tabular>
+                  {format(earning.pay)}
+                </Text>
+              </View>
+            ))}
+          </>
+        ) : null}
 
         {trips.length === 0 ? (
           <Empty
@@ -172,6 +268,24 @@ function PastRow({ trip }: { trip: PastTrip }) {
 }
 
 const styles = StyleSheet.create({
+  figures: { flexDirection: 'row', gap: space.lg },
+  figure: { flex: 1, gap: 2 },
+  pocket: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.sm,
+    marginTop: space.md,
+    paddingTop: space.md,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+  },
+  owedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    paddingVertical: space.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sectionHead: { marginTop: space.md },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   flex: { flex: 1 },

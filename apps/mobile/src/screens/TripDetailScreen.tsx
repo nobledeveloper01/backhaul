@@ -14,7 +14,11 @@ import {
   shouldTrack,
   silentFor,
   chargeableWaiting,
+  describeProgress,
+  deviation,
   headline,
+  nextRelease,
+  released,
   remaining,
   stops,
   timeStopped,
@@ -38,6 +42,8 @@ import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
 import {
+  demoDrops,
+  demoEscrow,
   demoIncidents,
   demoMessages,
   demoVisits,
@@ -53,6 +59,9 @@ interface Props {
   readonly onMessages: () => void;
   readonly onReport: () => void;
   readonly onProof: () => void;
+  readonly onDispute: () => void;
+  readonly onCancel: () => void;
+  readonly onDrops: () => void;
 }
 
 export function TripDetailScreen({
@@ -63,6 +72,9 @@ export function TripDetailScreen({
   onMessages,
   onReport,
   onProof,
+  onDispute,
+  onCancel,
+  onDrops,
 }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
@@ -86,6 +98,13 @@ export function TripDetailScreen({
   const incidents = useMemo(() => demoIncidents(trip, now), [trip, now]);
   const openIncident = headline(incidents);
   const waiting = chargeableWaiting(visited);
+  const course = useMemo(
+    () => deviation(trip.track.kept, trip.destination, now),
+    [trip, now],
+  );
+  const money = useMemo(() => demoEscrow(trip, now), [trip, now]);
+  const drops = useMemo(() => demoDrops(trip, now), [trip, now]);
+  const nextMoney = nextRelease(money);
   const waited = demurrage(trip.truck, trip.waitedMinutes * 60_000);
   const settlement = settle(fromNaira(trip.agreedNaira), waited.amount, fromNaira(trip.advanceNaira));
 
@@ -166,6 +185,24 @@ export function TripDetailScreen({
           </Card>
         ) : null}
 
+        {/*
+          Off course, when it is. Not measured against a straight line between
+          origin and destination — the road is nowhere near it — but against
+          whether the truck has been getting *further away* for long enough.
+        */}
+        {course.kind === 'deviating' ? (
+          <Card overline="Off course" icon="alert" emphasis="plain">
+            <Text variant="title" tone="stopped">
+              {course.detail}
+            </Text>
+            <Text variant="body" tone="secondary" style={styles.note}>
+              Measured as distance to the destination, not as distance from a
+              line. The Lagos–Kano road is up to 90 km off that line for hours,
+              and an alarm on every correct trip is an alarm nobody reads.
+            </Text>
+          </Card>
+        ) : null}
+
         <EtaRange eta={arrival} />
 
         <Card overline="Along the way" icon="pin">
@@ -181,6 +218,23 @@ export function TripDetailScreen({
                 : 'Every point on the route was reached.'}
           </Text>
         </Card>
+
+        <Press
+          onPress={onDrops}
+          accessibilityLabel="Drops on this trip"
+          accessibilityHint={describeProgress(drops)}
+          feedback="opacity"
+          style={[styles.rowLink, { borderColor: colours.outline }]}
+        >
+          <Icon name="package" size="md" colour={colours.textSecondary} />
+          <View style={styles.flex}>
+            <Text variant="title">Drops</Text>
+            <Text variant="label" tone="secondary">
+              {describeProgress(drops)}
+            </Text>
+          </View>
+          <Icon name="chevron-right" size="md" colour={colours.outline} />
+        </Press>
 
         <Card overline="Pace" icon="truck">
           <Sparkline series={paceSeries(trip.track.kept)} />
@@ -238,6 +292,39 @@ export function TripDetailScreen({
           </Card>
         ) : null}
 
+        <Card overline="Money released so far" icon="naira">
+          <Text variant="display" tabular>
+            {format(released(money))}
+          </Text>
+          <Text variant="body" tone="secondary" style={styles.note}>
+            {nextMoney === null
+              ? 'Everything has been released.'
+              : `Next: ${nextMoney.milestone.condition}`}
+          </Text>
+
+          <View style={styles.milestones}>
+            {money.map((release) => (
+              <View key={release.milestone.kind} style={styles.milestone}>
+                <Icon
+                  name={release.met ? 'check' : 'clock'}
+                  size="sm"
+                  colour={release.met ? colours.moving : colours.textSecondary}
+                />
+                <Text
+                  variant="body"
+                  tone={release.met ? 'primary' : 'secondary'}
+                  style={styles.flex}
+                >
+                  {milestoneLabel(release.milestone.kind)} · {release.milestone.pct}%
+                </Text>
+                <Text variant="body" tabular tone={release.met ? 'primary' : 'secondary'}>
+                  {format(release.amount)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+
         <Card overline="What is owed" icon="naira">
           <Line label="Agreed fare" amount={settlement.agreed} />
           <Line label="Demurrage" amount={settlement.demurrage} />
@@ -279,6 +366,31 @@ export function TripDetailScreen({
             Append-only. A correction is a new entry; nothing here is ever edited.
           </Text>
         </Card>
+        <Press
+          onPress={onDispute}
+          accessibilityLabel="What the record shows"
+          accessibilityHint="Everything this trip recorded, in the order it happened"
+          style={[styles.proof, { borderColor: colours.outline }]}
+        >
+          <Icon name="list" size="md" colour={colours.textSecondary} />
+          <Text variant="title" style={styles.flex}>
+            What the record shows
+          </Text>
+          <Icon name="chevron-right" size="md" colour={colours.outline} />
+        </Press>
+
+        <Press
+          onPress={onCancel}
+          accessibilityLabel="Call this trip off"
+          accessibilityHint="Shows what cancelling costs before anything happens"
+          feedback="opacity"
+          style={[styles.cancel, { borderColor: colours.outline }]}
+        >
+          <Text variant="label" tone="secondary">
+            Call this trip off
+          </Text>
+        </Press>
+
         <Press
           onPress={onProof}
           accessibilityLabel="Open the delivery document"
@@ -355,6 +467,26 @@ function Action({
       </Text>
     </Press>
   );
+}
+
+/**
+ * A milestone, in words.
+ *
+ * `in_transit` with the underscore swapped for a space is a state name wearing
+ * a disguise. These are the four things a carrier is waiting to be paid for
+ * and they deserve their own words.
+ */
+function milestoneLabel(kind: 'advance' | 'in_transit' | 'delivered' | 'retention'): string {
+  switch (kind) {
+    case 'advance':
+      return 'On loading';
+    case 'in_transit':
+      return 'On the road';
+    case 'delivered':
+      return 'On delivery';
+    case 'retention':
+      return 'Held back';
+  }
 }
 
 /**
@@ -585,6 +717,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 2,
     marginTop: 6,
+  },
+  rowLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: target.standard,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  milestones: { marginTop: space.md, gap: space.sm },
+  milestone: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  cancel: {
+    alignSelf: 'center',
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderStyle: 'dashed',
   },
   proof: {
     flexDirection: 'row',

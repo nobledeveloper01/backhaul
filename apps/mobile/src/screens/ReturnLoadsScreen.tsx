@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   NO_LOAD_FILTER,
+  advise,
   distance,
   filterLoads,
   format,
@@ -51,9 +52,13 @@ const at = (lat: number, lon: number, when: Date): Position => ({
 export function ReturnLoadsScreen({
   onPost,
   onChain,
+  onLanes,
+  onPairs,
 }: {
   readonly onPost: () => void;
   readonly onChain: () => void;
+  readonly onLanes: () => void;
+  readonly onPairs: () => void;
 }) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
@@ -248,6 +253,21 @@ export function ReturnLoadsScreen({
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
 
+      <View style={styles.shortcuts}>
+        <Shortcut
+          icon="swap"
+          title="Share a trailer"
+          detail="Two part-loads, one run"
+          onPress={onPairs}
+        />
+        <Shortcut
+          icon="route"
+          title="Your lanes"
+          detail="Runs you make again"
+          onPress={onLanes}
+        />
+      </View>
+
       {ranked.length === 0 ? (
         <Empty
           icon="search"
@@ -290,6 +310,42 @@ export function ReturnLoadsScreen({
   );
 }
 
+/** One of the two quiet entries above the board. */
+function Shortcut({
+  icon,
+  title,
+  detail,
+  onPress,
+}: {
+  icon: 'swap' | 'route';
+  title: string;
+  detail: string;
+  onPress: () => void;
+}) {
+  const colours = useColours();
+
+  return (
+    <Press
+      onPress={onPress}
+      accessibilityLabel={title}
+      accessibilityHint={detail}
+      feedback="opacity"
+      style={[
+        styles.shortcut,
+        { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+      ]}
+    >
+      <Icon name={icon} size="md" colour={colours.textSecondary} />
+      <Text variant="title" numberOfLines={1}>
+        {title}
+      </Text>
+      <Text variant="label" tone="secondary" numberOfLines={1}>
+        {detail}
+      </Text>
+    </Press>
+  );
+}
+
 function LoadRow({
   scored,
   route,
@@ -305,6 +361,17 @@ function LoadRow({
 
   const indicative = quote(scored.load.requires, distance(scored.load.origin, scored.load.destination));
   const homeward = scored.progressHome > 50_000;
+
+  const laden = distance(scored.load.origin, scored.load.destination);
+  const verdict = advise(scored.load.offered ?? (0 as never), {
+    truck: scored.load.requires,
+    ladenM: laden,
+    // The empty run to reach it. The whole argument of this screen.
+    emptyM: scored.deadhead,
+    dieselPerLitre: fromNaira(1_100),
+    levies: fromNaira(Math.round((laden / 1_000) * 45)),
+    other: fromNaira(15_000),
+  });
 
   return (
     <Card
@@ -363,6 +430,32 @@ function LoadRow({
           <Text variant="label" tone="secondary">
             Going rate {format(indicative.low)} – {format(indicative.high)} · indicative
           </Text>
+
+          {/*
+            What it leaves *this* carrier, after diesel at today's price, the
+            running cost of the truck and what the road takes. The going rate
+            is what a shipper should pay; this is whether to say yes, and they
+            are different questions.
+          */}
+          <View
+            style={[
+              styles.advice,
+              { borderColor: verdict.take ? colours.moving : colours.stopped },
+            ]}
+          >
+            <Icon
+              name={verdict.take ? 'check' : 'alert'}
+              size="sm"
+              colour={verdict.take ? colours.moving : colours.stopped}
+            />
+            <Text
+              variant="label"
+              tone={verdict.take ? 'moving' : 'stopped'}
+              style={styles.flex}
+            >
+              {verdict.detail}
+            </Text>
+          </View>
         </>
       )}
     </Card>
@@ -370,6 +463,23 @@ function LoadRow({
 }
 
 const styles = StyleSheet.create({
+  shortcuts: { flexDirection: 'row', gap: space.sm },
+  advice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    marginTop: space.md,
+    padding: space.md,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  shortcut: {
+    flex: 1,
+    gap: 2,
+    padding: space.md,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chain: {
     flexDirection: 'row',
