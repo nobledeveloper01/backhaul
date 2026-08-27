@@ -1206,5 +1206,169 @@
         "silentForMs": 60000
       }
     ]
+  },
+  "auth": {
+    "phones": [
+      {
+        "written": "0803 123 4567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "08031234567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "+234 803 123 4567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "+2348031234567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "2348031234567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "8031234567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "0803-123-4567",
+        "normalised": "+2348031234567",
+        "formatted": "0803 123 4567"
+      },
+      {
+        "written": "0803",
+        "normalised": null,
+        "formatted": null
+      },
+      {
+        "written": "+1 415 555 0100",
+        "normalised": null,
+        "formatted": null
+      },
+      {
+        "written": "",
+        "normalised": null,
+        "formatted": null
+      }
+    ],
+    "codes": [
+      {
+        "name": "good",
+        "present": true,
+        "attempts": 0,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": false,
+        "matches": true,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": true,
+        "reason": null,
+        "detail": null
+      },
+      {
+        "name": "unknown",
+        "present": false,
+        "attempts": 0,
+        "expiresAt": null,
+        "consumed": false,
+        "matches": true,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "unknown",
+        "detail": "Ask for a new code — this one is not one we sent."
+      },
+      {
+        "name": "used",
+        "present": true,
+        "attempts": 0,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": true,
+        "matches": true,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "used",
+        "detail": "That code has already been used. Ask for a new one."
+      },
+      {
+        "name": "exhausted",
+        "present": true,
+        "attempts": 5,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": false,
+        "matches": false,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "exhausted",
+        "detail": "Too many tries. Ask for a new code."
+      },
+      {
+        "name": "burned and expired",
+        "present": true,
+        "attempts": 5,
+        "expiresAt": "2026-03-04T08:59:00.000Z",
+        "consumed": false,
+        "matches": true,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "exhausted",
+        "detail": "Too many tries. Ask for a new code."
+      },
+      {
+        "name": "expired",
+        "present": true,
+        "attempts": 0,
+        "expiresAt": "2026-03-04T08:59:00.000Z",
+        "consumed": false,
+        "matches": true,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "expired",
+        "detail": "That code has expired. Ask for a new one."
+      },
+      {
+        "name": "wrong, three left",
+        "present": true,
+        "attempts": 1,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": false,
+        "matches": false,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "wrong",
+        "detail": "That code is wrong. 3 tries left."
+      },
+      {
+        "name": "wrong, one left",
+        "present": true,
+        "attempts": 3,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": false,
+        "matches": false,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "wrong",
+        "detail": "That code is wrong. 1 try left."
+      },
+      {
+        "name": "wrong, last try",
+        "present": true,
+        "attempts": 4,
+        "expiresAt": "2026-03-04T09:09:00.000Z",
+        "consumed": false,
+        "matches": false,
+        "now": "2026-03-04T09:00:00.000Z",
+        "ok": false,
+        "reason": "wrong",
+        "detail": "That code is wrong, and that was the last try. Ask for a new one."
+      }
+    ]
   }
 }

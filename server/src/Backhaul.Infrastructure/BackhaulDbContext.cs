@@ -18,6 +18,10 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<ShareLinkEntity> ShareLinks => Set<ShareLinkEntity>();
 
+    public DbSet<SignInChallengeEntity> SignInChallenges => Set<SignInChallengeEntity>();
+
+    public DbSet<AccountEntity> Accounts => Set<AccountEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -60,6 +64,26 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // no path that finds a token by anything else.
             token.HasKey(t => t.Hash);
             token.HasIndex(t => t.UserId);
+        });
+
+        model.Entity<SignInChallengeEntity>(challenge =>
+        {
+            challenge.HasKey(c => c.Id);
+
+            // Every lookup is "the newest challenge for this number", and the
+            // rate limit counts them per number per hour.
+            challenge.HasIndex(c => new { c.Phone, c.IssuedAt });
+        });
+
+        model.Entity<AccountEntity>(account =>
+        {
+            account.HasKey(a => a.Id);
+
+            // One account per number, enforced by the database rather than by
+            // a check before the insert: two requests for a first-time number
+            // arriving together would otherwise make two accounts for one
+            // driver, and the second one owns none of their trips.
+            account.HasIndex(a => a.Phone).IsUnique();
         });
 
         model.Entity<ShareLinkEntity>(link =>

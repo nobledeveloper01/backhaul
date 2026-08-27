@@ -49,6 +49,30 @@ export interface TripView {
   readonly history: readonly TripEvent[];
 }
 
+export interface RequestedCode {
+  /** The number as it will be shown back: `0803 123 4567`. */
+  readonly phone: string;
+  /** How long until another code may be asked for. */
+  readonly resendInMs: number;
+  /**
+   * Present only when the server has no SMS gateway.
+   *
+   * Development convenience, and the server refuses to run in that mode
+   * against a real database. A client that *relies* on it would break the
+   * moment a gateway exists, which is why nothing does.
+   */
+  readonly developmentCode: string | null;
+}
+
+export interface SignedIn {
+  readonly token: string;
+  readonly userId: string;
+  readonly role: 'driver' | 'carrier' | 'shipper';
+  readonly name: string;
+  /** Whether this number has just been seen for the first time. */
+  readonly isNew: boolean;
+}
+
 /** A link, as its issuer sees it. Never carries the token. */
 export interface ShareLinkView {
   readonly id: string;
@@ -120,6 +144,38 @@ export class BackhaulApi {
    */
   setToken(token: string | null): void {
     this.token = token;
+  }
+
+  /**
+   * Asks for a sign-in code.
+   *
+   * Deliberately says nothing about whether the number is known: telling a
+   * caller which numbers are registered turns this into a way to find out who
+   * uses Backhaul.
+   */
+  async requestCode(phone: string): Promise<ApiResult<RequestedCode>> {
+    return this.request<RequestedCode>('POST', '/v1/auth/request', { phone });
+  }
+
+  /**
+   * Turns a code into a token.
+   *
+   * Sets the token on this client on success, so a caller that verifies is
+   * immediately able to use everything else. The caller still has to persist
+   * it — this object does not outlive the process.
+   */
+  async verifyCode(phone: string, code: string): Promise<ApiResult<SignedIn>> {
+    const result = await this.request<SignedIn>('POST', '/v1/auth/verify', { phone, code });
+    if (result.ok) this.setToken(result.value.token);
+    return result;
+  }
+
+  async me(): Promise<ApiResult<SignedIn>> {
+    return this.request<SignedIn>('GET', '/v1/me');
+  }
+
+  async setName(name: string): Promise<ApiResult<null>> {
+    return this.request<null>('PUT', '/v1/me/name', { name });
   }
 
   async health(): Promise<ApiResult<{ status: string; store: string; durable: boolean }>> {
@@ -236,7 +292,7 @@ export class BackhaulApi {
   }
 
   private async request<T>(
-    method: 'GET' | 'POST' | 'DELETE',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     body?: unknown,
   ): Promise<ApiResult<T>> {

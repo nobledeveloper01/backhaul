@@ -56,6 +56,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   cancellation terms behind it, trucks and papers and the alert policy on the
   fleet, drops and the checkpoint ledger for the driver, lanes and trailer
   sharing on the load board.
+- **The capture loop is real.** An Android foreground service and iOS
+  background location, both writing to a native SQLite queue that survives the
+  app being killed and the phone rebooting. The notification says who can see
+  the driver rather than apologising for existing, and the app reports when the
+  operating system is throttling it instead of quietly recording nothing.
+- **Signing in.** A phone number and a six-digit code — no password, because a
+  password is a thing to forget on a phone two drivers share on alternate
+  weeks. The number is understood however it is written and shown back the way
+  it is said out loud, so `0803 123 4567` and `+2348031234567` are one account.
+  A wrong code says how many tries are left; a used one says so rather than
+  saying "wrong".
 - **Route deviation.** A truck that has been getting further from its
   destination for ninety minutes, while moving, is reported. Not measured
   against a straight line between origin and destination — the road is nowhere

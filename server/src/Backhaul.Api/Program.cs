@@ -45,6 +45,11 @@ builder.Services.AddBackhaulPersistence(connection);
 // knows works.
 var sharePerHour = builder.Configuration.GetValue("RateLimits:PublicSharePerHour", 60);
 
+// Tighter, and for a different reason: every request to `/v1/auth/request`
+// can cost an SMS, and the per-number limit in `Otp` does not stop somebody
+// walking through a range of numbers.
+var authPerHour = builder.Configuration.GetValue("RateLimits:PublicAuthPerHour", 20);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -63,6 +68,16 @@ builder.Services.AddRateLimiter(options =>
                 // No queue. A caller past the limit is told so immediately
                 // rather than held open — a held connection is the resource
                 // the flood was trying to exhaust.
+                QueueLimit = 0,
+            }));
+
+    options.AddPolicy(RateLimits.PublicAuth, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authPerHour,
+                Window = TimeSpan.FromHours(1),
                 QueueLimit = 0,
             }));
 });
@@ -126,6 +141,21 @@ using (var scope = app.Services.CreateScope())
     {
         await db.Database.MigrateAsync();
         app.Logger.LogInformation("using postgres");
+
+        // The logging SMS sender writes sign-in codes to the log. Against a
+        // development store that is a convenience; against a real database it
+        // means anybody who can read the logs can sign in as anybody, and it
+        // is exactly the kind of thing that ships because nobody remembered.
+        //
+        // So it cannot ship: the process refuses to start.
+        if (string.IsNullOrWhiteSpace(app.Configuration["Sms:Provider"]))
+        {
+            app.Logger.LogCritical(
+                "A database is configured but no SMS gateway is. Sign-in codes would be " +
+                "written to the log, where anybody who can read them can sign in as " +
+                "anybody. Set Sms:Provider, or run without a connection string.");
+            return 2;
+        }
     }
 }
 

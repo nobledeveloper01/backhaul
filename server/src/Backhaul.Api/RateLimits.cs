@@ -10,4 +10,14 @@ public static class RateLimits
 {
     /// <summary>The public share route. See ADR-0010.</summary>
     public const string PublicShare = "public-share";
+
+    /// <summary>
+    /// Signing in.
+    /// </summary>
+    /// <remarks>
+    /// Tighter than the share route, and for a different reason: every request
+    /// here can cost an SMS, and the per-number limit in <c>Otp</c> does not
+    /// stop somebody walking through a range of numbers.
+    /// </remarks>
+    public const string PublicAuth = "public-auth";
 }

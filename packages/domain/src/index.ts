@@ -50,6 +50,7 @@ export * from './consolidation.ts';
 export * from './language.ts';
 export * from './earnings.ts';
 export * from './lanes.ts';
+export * from './otp.ts';
 export * from './money.ts';
 export * from './pricing.ts';
 export * from './eta.ts';

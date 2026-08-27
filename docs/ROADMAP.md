@@ -152,9 +152,16 @@ no simulation stands in for either — the risk they exist to catch is OEM
 battery management killing a foreground service, which only happens on the
 device it happens on.
 
-**Built so far:** the queue policy and the upload loop, both pure and tested;
-the TurboModule contract (`apps/mobile/src/native/NativeTracking.ts`).
-**Not built:** the two native implementations behind that contract.
+**Built:** the queue policy and the upload loop, both pure and tested; the
+TurboModule contract; and — as of this session — **both native
+implementations**, in `packages/tracking-native`. An Android foreground service
+with a SQLite queue, a boot receiver and OEM-restriction reporting; iOS
+background location with the same queue and the same contract. Both compile,
+both link through autolinking, and both are driven by the same policy in
+`@backhaul/domain`.
+
+**Not proven:** neither has run on a physical handset, which is exactly what
+gates 2 and 3 are about.
 
 Everything else in this product is ordinary application development. If this
 does not work, nothing else matters, and it is far better to find that out in
@@ -185,8 +192,13 @@ unauthenticated request with a truck's position. Guessing a 32-byte token is
 not a threat; hammering the endpoint is. See
 [ADR-0010](adr/0010-a-share-link-is-a-capability-and-its-endpoint-is-public.md).
 
-**Blocked on auth**, which has no phase of its own and needs one: the ingest
-endpoint currently accepts a batch from anybody who knows a trip id.
+**No longer blocked on auth.** Phone-plus-code sign-in is built —
+`packages/domain/src/otp.ts` for the policy, `/v1/auth/request` and
+`/v1/auth/verify` for the endpoints, and the app is gated behind it. What
+remains is an **SMS gateway**, which is a contract rather than a piece of
+code: the seam is `ISmsSender`, the development implementation writes the code
+to the log, and the server *refuses to start* in that mode against a real
+database.
 
 ---
 

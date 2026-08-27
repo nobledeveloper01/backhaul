@@ -34,6 +34,8 @@ import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
 import { LanguageProvider } from './state/language';
+import { SessionProvider, useSession } from './state/session';
+import { SignInScreen } from './screens/SignInScreen';
 import { demoNow, demoTrips } from './state/demo';
 
 /**
@@ -286,12 +288,56 @@ function Tab({
   );
 }
 
+/**
+ * Signed in, or not.
+ *
+ * `ready` gates both: until storage has been read, showing the sign-in screen
+ * would flash it at somebody who is already signed in, and showing the app
+ * would flash it at somebody who is not. A frame of nothing is the honest
+ * answer while the question is still open.
+ *
+ * The demo screens do not need a session — every figure they show comes from
+ * `state/demo.ts` — so this is deliberately a *gate* rather than a rewiring of
+ * the app: signing in is real, and what it unlocks is still the walkthrough.
+ * The API client behind `useSession` is the one that will replace that, trip
+ * by trip, as each endpoint lands.
+ */
+function Gate() {
+  const { who, ready, api, signIn } = useSession();
+  const colours = useColours();
+
+  if (!ready) {
+    return <View style={[styles.root, { backgroundColor: colours.surface }]} />;
+  }
+
+  if (who === null) {
+    return (
+      <SignInScreen
+        onRequestCode={async (phone) => {
+          const result = await api.requestCode(phone);
+          return result.ok ? null : result.failure.detail;
+        }}
+        onVerify={async (phone, code) => {
+          const result = await api.verifyCode(phone, code);
+          if (!result.ok) return result.failure.detail;
+          signIn(result.value);
+          return null;
+        }}
+      />
+    );
+  }
+
+  return <Shell />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <Shell />
+          <SessionProvider>
+            <Gate />
+          </SessionProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>

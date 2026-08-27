@@ -73,7 +73,8 @@ public sealed record ParityFixtures(
     ParityConstants Constants,
     TripFixtures Trip,
     PricingFixtures Pricing,
-    TrackingFixtures Tracking);
+    TrackingFixtures Tracking,
+    AuthFixtures Auth);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -166,3 +167,21 @@ public sealed record ObservationRow(
     bool AtWaypoint,
     string Observation,
     long? SilentForMs);
+
+public sealed record AuthFixtures(
+    IReadOnlyList<PhoneRow> Phones,
+    IReadOnlyList<CodeRow> Codes);
+
+public sealed record PhoneRow(string Written, string? Normalised, string? Formatted);
+
+public sealed record CodeRow(
+    string Name,
+    bool Present,
+    int Attempts,
+    DateTimeOffset? ExpiresAt,
+    bool Consumed,
+    bool Matches,
+    DateTimeOffset Now,
+    bool Ok,
+    string? Reason,
+    string? Detail);

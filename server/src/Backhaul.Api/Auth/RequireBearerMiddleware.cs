@@ -27,6 +27,12 @@ public sealed class RequireBearerMiddleware(RequestDelegate next)
         // listed here, in an allow-list, precisely so that adding it is a
         // visible line in a diff rather than an omission. See ADR-0010.
         "/v1/share",
+
+        // How a person gets a token in the first place. Public by necessity
+        // rather than by choice, and rate limited for it — every request here
+        // can cost an SMS. `/v1/me` is *not* here: it needs the token this
+        // produces.
+        "/v1/auth",
     ];
 
     public async Task InvokeAsync(HttpContext context)

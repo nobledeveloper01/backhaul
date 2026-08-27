@@ -6,6 +6,84 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (later) — The capture loop, and a way in
+
+**Did.** The two things the roadmap said were missing and that nothing else
+could substitute for.
+
+**The native tracking loop**, as `packages/tracking-native`: an Android
+foreground service writing to a SQLite queue, with a boot receiver and
+OEM-restriction reporting; iOS background location writing to the same schema
+through the same contract. Both compile, both autolink, and both are driven by
+the policy in `@backhaul/domain` — the native side captures, stores and deletes
+what it is told to delete, and decides nothing.
+
+**Sign-in**, phone number and a six-digit code: `otp.ts` for the policy,
+mirrored in C# and held to it by the parity fixtures, wording included;
+`/v1/auth/request` and `/v1/auth/verify`; a session provider and a sign-in
+screen the app is now gated behind.
+
+### What surprised us
+
+**The library had to be a package, not files in the app.** The first instinct
+was a `.mm` beside `AppDelegate.swift` and a Kotlin file beside
+`MainApplication.kt` — and both would have meant hand-editing
+`project.pbxproj` and the app's `build.gradle` to add a source file, plus a
+linker flag for `sqlite3` buried where nobody finds it when somebody else's
+build breaks. Autolinking finds a library by its podspec and its Gradle module.
+Everything about the layout follows from that.
+
+**`s.platforms = { :ios => "16.0" }` failed `pod install` with a sentence about
+CocoaPods.** *"Specs satisfying the dependency were found, but they required a
+higher minimum deployment target."* React Native pins the app at 15.1; a
+library that raises it reads as a CocoaPods problem rather than as a line in
+its own podspec. `min_supported_versions` is the answer and it takes ten
+minutes to find.
+
+**`LocationManager`, not the fused provider.** The Android instinct is Play
+Services. Many Transsion handsets — the ones that dominate the driver segment
+this product is *for* — ship without Play Services at all, and a tracking
+product that silently records nothing on those phones is worse than one that
+never claimed to.
+
+**`pausesLocationUpdatesAutomatically` is the iOS equivalent, and it is on by
+default.** iOS pauses location updates when it decides the device is
+stationary. A stationary truck's *duration* is what a demurrage claim is made
+of. One property, and leaving it alone would have quietly broken the feature
+the product bills for.
+
+**A consumed sign-in code was still blocking the next one.** The sixty-second
+resend cooldown read the newest challenge whether or not it had been used — so
+a number that had recently signed in answered `429` where one that never had
+answered `200`. That is a difference an outsider can measure, and it fell out
+of a test that was trying to assert something else entirely. The cooldown now
+applies only to an *outstanding* code.
+
+**Two tests that fought a rate limit rather than testing anything.** Every test
+in the API suite shares one client address, so the real limits — sixty share
+requests an hour, twenty sign-ins — were spent by the fifteenth test and
+everything after it failed at a distance with a `429` about nothing. The shared
+factory raises them and says why; that the limits *work* is proven by a factory
+of its own that sets them low enough to reach on purpose.
+
+**The logging SMS sender is a hole, so the process refuses to open it.** It
+writes sign-in codes to the log, which is right for a development store and
+means anybody who can read the logs can sign in as anybody. `Program.cs` now
+exits with a critical log line if a database is configured and no gateway is.
+
+### Still open
+
+- **Neither native implementation has run on a physical handset.** Phase 1's
+  gates 2 and 3 — under 4% battery per hour, a 72-hour soak — are unchanged and
+  unmovable without a device, ideally a Tecno or an Infinix.
+- **No SMS gateway.** `ISmsSender` is the seam; Termii and Africa's Talking are
+  the Nigerian options, and picking one is a contract rather than a commit.
+- **The app is gated behind sign-in but still renders the demo.** Signing in is
+  real; what it unlocks is the walkthrough. Replacing that is endpoint by
+  endpoint, and 26 of the 30 features still have no server route.
+
+---
+
 ## 2026-08-28 — Fifteen screens for the fifteen, and a pack that invented holes
 
 **Did.** Surfaces for the second fifteen: trucks and papers, what reaches your

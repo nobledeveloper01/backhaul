@@ -1,3 +1,4 @@
+using Backhaul.Domain.Access;
 using Backhaul.Domain.Money;
 using Backhaul.Domain.Pricing;
 using Backhaul.Domain.Tracking;
@@ -312,6 +313,64 @@ public sealed class ParityTests
             .Select(step => new TripEvent(step.State, t0.AddMinutes(step.Minutes), TripActor.Driver))
             .ToList();
     }
+
+    [Fact]
+    public void Both_sides_normalise_a_phone_number_the_same_way()
+    {
+        // A driver who signs in one way and back another way is two accounts
+        // if the two sides disagree about what their number is.
+        foreach (var row in Fixtures.Parity.Auth.Phones)
+        {
+            Assert.Equal(row.Normalised, Otp.NormalisePhone(row.Written));
+
+            if (row.Normalised is not null)
+            {
+                Assert.Equal(row.Formatted, Otp.FormatPhone(row.Normalised));
+            }
+        }
+    }
+
+    [Fact]
+    public void Both_sides_judge_a_code_the_same_way_and_say_the_same_words()
+    {
+        // The wording is asserted character for character, not just the
+        // outcome: somebody who reads one sentence in the app and a different
+        // one from the API concludes there is something wrong with their
+        // account rather than with their typing.
+        foreach (var row in Fixtures.Parity.Auth.Codes)
+        {
+            var challenge = row.Present
+                ? new Challenge(
+                    "+2348031234567",
+                    row.Now.AddMinutes(-1),
+                    row.ExpiresAt!.Value,
+                    row.Attempts,
+                    row.Consumed ? row.Now.AddMinutes(-1) : null)
+                : null;
+
+            var result = Otp.Check(challenge, row.Matches, row.Now);
+
+            if (row.Ok)
+            {
+                Assert.IsType<CodeCheck.Accepted>(result);
+                continue;
+            }
+
+            var refused = Assert.IsType<CodeCheck.Refused>(result);
+            Assert.Equal(row.Reason, Wire(refused.Reason));
+            Assert.Equal(row.Detail, refused.Detail);
+        }
+    }
+
+    private static string Wire(CodeRefusal reason) => reason switch
+    {
+        CodeRefusal.Unknown => "unknown",
+        CodeRefusal.Expired => "expired",
+        CodeRefusal.Exhausted => "exhausted",
+        CodeRefusal.Used => "used",
+        CodeRefusal.Wrong => "wrong",
+        _ => throw new InvalidOperationException($"unmapped code refusal {reason}"),
+    };
 
     private static string Wire(TransitionRefusal reason) => reason switch
     {

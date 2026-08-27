@@ -52,6 +52,11 @@ import {
   observe,
   silentFor,
 } from '../packages/domain/src/tracking.ts';
+import {
+  checkCode,
+  formatPhone,
+  normalisePhone,
+} from '../packages/domain/src/otp.ts';
 
 const CLASSES: readonly TruckClass[] = [
   'pickup',
@@ -380,6 +385,74 @@ const observations = OBSERVE_CASES.map((testCase) => ({
 
 // --- write -----------------------------------------------------------------
 
+/**
+ * Sign-in.
+ *
+ * The phone shapes matter because a driver who signs in one way and back
+ * another way is two accounts if the two sides normalise differently; the
+ * refusal wording matters because a person who reads one sentence in the app
+ * and another from the API concludes something is wrong with their account.
+ */
+const phones = [
+  '0803 123 4567',
+  '08031234567',
+  '+234 803 123 4567',
+  '+2348031234567',
+  '2348031234567',
+  '8031234567',
+  '0803-123-4567',
+  '0803',
+  '+1 415 555 0100',
+  '',
+].map((written) => ({
+  written,
+  normalised: normalisePhone(written),
+  formatted: normalisePhone(written) === null ? null : formatPhone(normalisePhone(written) as string),
+}));
+
+const CODE_NOW = new Date('2026-03-04T09:00:00Z');
+const codeMinutes = (n: number) => new Date(CODE_NOW.getTime() + n * 60_000);
+
+const codes = (
+  [
+    ['good', { attempts: 0, expiresIn: 9, consumed: false }, true],
+    ['unknown', null, true],
+    ['used', { attempts: 0, expiresIn: 9, consumed: true }, true],
+    ['exhausted', { attempts: 5, expiresIn: 9, consumed: false }, false],
+    ['burned and expired', { attempts: 5, expiresIn: -1, consumed: false }, true],
+    ['expired', { attempts: 0, expiresIn: -1, consumed: false }, true],
+    ['wrong, three left', { attempts: 1, expiresIn: 9, consumed: false }, false],
+    ['wrong, one left', { attempts: 3, expiresIn: 9, consumed: false }, false],
+    ['wrong, last try', { attempts: 4, expiresIn: 9, consumed: false }, false],
+  ] as const
+).map(([name, state, matches]) => {
+  const challenge =
+    state === null
+      ? undefined
+      : {
+          phone: '+2348031234567',
+          issuedAt: codeMinutes(-1),
+          expiresAt: codeMinutes(state.expiresIn),
+          attempts: state.attempts,
+          consumedAt: state.consumed ? codeMinutes(-1) : null,
+        };
+
+  const result = checkCode(challenge, matches, CODE_NOW);
+
+  return {
+    name,
+    present: state !== null,
+    attempts: state?.attempts ?? 0,
+    expiresAt: state === null ? null : iso(codeMinutes(state.expiresIn)),
+    consumed: state?.consumed ?? false,
+    matches,
+    now: iso(CODE_NOW),
+    ok: result.ok,
+    reason: result.ok ? null : result.reason,
+    detail: result.ok ? null : result.detail,
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -402,6 +475,7 @@ const fixtures = {
   trip: { states, transitions, refusals, timeInCases },
   pricing: { quotes, demurrages, settlements, roundings, classing },
   tracking: { distances, tracks, observations },
+  auth: { phones, codes },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -419,6 +493,8 @@ process.stdout.write(
       `${distances.length} distances`,
       `${tracks.length} tracks`,
       `${observations.length} observations`,
+      `${phones.length} phones`,
+      `${codes.length} codes`,
     ].join(', ')
   }\n`,
 );
