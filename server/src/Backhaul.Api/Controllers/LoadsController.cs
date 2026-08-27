@@ -45,6 +45,9 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
     /// <param name="truck">The class of truck being offered.</param>
     /// <param name="baseLat">Where the truck is trying to get back to.</param>
     /// <param name="baseLon">Where the truck is trying to get back to.</param>
+    /// <param name="text">Town or cargo. Case-, accent- and space-insensitive.</param>
+    /// <param name="minimumOfferKobo">A floor under the price.</param>
+    /// <param name="readyBefore">Only loads ready to collect by then.</param>
     /// <param name="ct">Cancellation.</param>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<RankedLoadResponse>>(StatusCodes.Status200OK)]
@@ -55,10 +58,35 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         [FromQuery] string? truck = null,
         [FromQuery] double? baseLat = null,
         [FromQuery] double? baseLon = null,
+        [FromQuery] string? text = null,
+        [FromQuery] long? minimumOfferKobo = null,
+        [FromQuery] DateTimeOffset? readyBefore = null,
         CancellationToken ct = default)
     {
         var now = clock.GetUtcNow();
         var board = await market.BoardAsync(now, ct);
+
+        // Filtered before it is ranked, and by the same engine the app uses.
+        // Ranking first and filtering after would score loads that are about
+        // to be thrown away, and — worse — could leave the top of a filtered
+        // list holding whatever happened to survive rather than the best fit
+        // among what is left.
+        if (text is not null || minimumOfferKobo is not null || readyBefore is not null)
+        {
+            var filter = new LoadFilter(
+                text ?? string.Empty,
+                truck is null ? [] : [Trucks.FromWire(truck) ?? TruckClass.Trailer30t],
+                minimumOfferKobo is { } floor ? new Kobo(floor) : null,
+                readyBefore,
+                []);
+
+            var kept = Search
+                .FilterLoads(board.Select(load => ToSummary(load)).ToList(), filter)
+                .Select(summary => summary.Id)
+                .ToHashSet();
+
+            board = board.Where(load => kept.Contains(load.Id)).ToList();
+        }
 
         if (lat is null || lon is null || truck is null)
         {
@@ -213,6 +241,19 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         var awarded = await market.AwardAsync(loadId, bidId, Caller, clock.GetUtcNow(), ct);
         return awarded ? NoContent() : NotFound("No such bid on a load you can award.");
     }
+
+    private static LoadSummary ToSummary(LoadRecord row) => new(
+        row.Id,
+        row.OriginName,
+        row.DestinationName,
+        row.Cargo,
+        row.WeightTonnes * 1_000,
+        new Kobo(row.OfferedKobo ?? 0),
+        row.ReadyBy,
+        Trucks.FromWire(row.Requires) ?? TruckClass.Trailer30t,
+        // Tier filtering needs the shipper's profile, which this query does
+        // not join. Named rather than omitted so the day it does is one line.
+        "verified");
 
     private static Load ToDomain(LoadRecord row, DateTimeOffset now) => new(
         row.Id,

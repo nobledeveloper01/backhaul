@@ -1292,4 +1292,172 @@ public sealed class ParityTests
             lastRun);
     }
 
+
+    // --- alerts ------------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_hold_the_same_notification_policy()
+    {
+        // The whole table, not a sample of it. Two servers with different
+        // ideas of who hears about a duress alarm is the worst disagreement
+        // this product could have.
+        Assert.Equal(F.Alerts.QuietFromHour, Alerts.QuietFromHour);
+        Assert.Equal(F.Alerts.QuietToHour, Alerts.QuietToHour);
+
+        foreach (var row in F.Alerts.Policy)
+        {
+            var kind = Alerts.FromWire(row.Kind)
+                       ?? throw new InvalidOperationException($"unknown alert '{row.Kind}'");
+            var policy = Alerts.Policy[kind];
+
+            Assert.Equal(row.To, policy.To.Select(Alerts.AudienceWire));
+            Assert.Equal(row.Urgency, Alerts.UrgencyWire(policy.Urgency));
+            Assert.Equal(row.RepeatAfterMs, policy.RepeatAfterMs);
+            Assert.Equal(row.Describe, Alerts.Describe(kind));
+        }
+
+        // Every kind on both sides, not merely every kind the fixture happens
+        // to list — a mirror that quietly dropped one would still pass above.
+        Assert.Equal(F.Alerts.Policy.Count, Alerts.Policy.Count);
+    }
+
+    [Fact]
+    public void And_agree_on_every_hour_of_the_night()
+    {
+        foreach (var row in F.Alerts.QuietHours)
+        {
+            Assert.Equal(row.Quiet, Alerts.IsQuietHour(row.Hour));
+        }
+    }
+
+    [Fact]
+    public void And_decide_the_same_way_for_every_kind_audience_and_hour()
+    {
+        foreach (var row in F.Alerts.Decisions)
+        {
+            var kind = Alerts.FromWire(row.Kind)!.Value;
+            var to = row.To switch
+            {
+                "shipper" => Audience.Shipper,
+                "carrier" => Audience.Carrier,
+                _ => Audience.Driver,
+            };
+
+            DateTimeOffset? lastSent = row.SentMinutesAgo is { } minutes
+                ? F.Alerts.NowIso.AddMinutes(-minutes)
+                : null;
+
+            var decision = Alerts.Decide(kind, to, row.LocalHour, lastSent, F.Alerts.NowIso);
+
+            switch (decision)
+            {
+                case Decision.Send send:
+                    Assert.True(row.Send, $"{row.Kind}/{row.To}/{row.When}");
+                    Assert.Equal(row.Urgency, Alerts.UrgencyWire(send.Urgency));
+                    break;
+
+                case Decision.Hold hold:
+                    Assert.False(row.Send, $"{row.Kind}/{row.To}/{row.When}");
+                    Assert.Equal(row.Reason, hold.Reason);
+                    break;
+            }
+        }
+    }
+
+    [Fact]
+    public void And_write_the_same_overnight_summary()
+    {
+        // Four buzzes in a minute at 06:00 reads as a malfunction rather than
+        // as a summary. One sentence, and both sides write it the same way.
+        foreach (var row in F.Alerts.Digests)
+        {
+            var held = row.Held.Select(wire => Alerts.FromWire(wire)!.Value).ToList();
+            Assert.Equal(row.Digest, Alerts.Digest(held));
+        }
+    }
+
+
+    // --- search ------------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_find_the_same_trip_from_the_same_typing()
+    {
+        // The flattening is the whole engine. Three people write the same
+        // plate as `T-12345`, `T 12345` and `t12345`, and a search that finds
+        // none of them is a search nobody uses twice.
+        var trips = F.Search.Trips
+            .Select(row => new TripSummary(
+                Guid.Empty,
+                row.Reference,
+                TripMachine.FromWire(row.State)!.Value,
+                row.Origin,
+                row.Destination,
+                row.Cargo,
+                row.TruckPlate,
+                row.DriverName,
+                row.StartedAtIso,
+                row.HasOpenIncident,
+                row.IsLate))
+            .ToList();
+
+        var names = F.Search.Trips.Select(row => row.Id).ToList();
+
+        foreach (var row in F.Search.TripFilters)
+        {
+            var filter = new TripFilter(
+                row.Text,
+                row.States.Select(wire => TripMachine.FromWire(wire)!.Value).ToList(),
+                row.OnlyLate,
+                row.OnlyWithIncidents,
+                row.SinceIso,
+                row.UntilIso);
+
+            var matched = Search.FilterTrips(trips, filter);
+
+            Assert.Equal(row.Matched, matched.Select(t => names[trips.IndexOf(t)]));
+            Assert.Equal(row.Filtering, Search.IsFiltering(filter));
+
+            // The sentence, character for character. It is what a shipper
+            // reads above a list that is not all of their trips.
+            Assert.Equal(row.Describe, Search.DescribeTripFilter(filter));
+        }
+    }
+
+    [Fact]
+    public void And_the_same_loads_from_the_same_filter()
+    {
+        var loads = F.Search.Loads
+            .Select(row => new LoadSummary(
+                Guid.Empty,
+                row.Origin,
+                row.Destination,
+                row.Cargo,
+                row.WeightKg,
+                new Kobo(row.OfferedKobo),
+                row.ReadyFromIso,
+                Truck(row.TruckClass),
+                row.ShipperTier))
+            .ToList();
+
+        var names = F.Search.Loads.Select(row => row.Id).ToList();
+
+        foreach (var row in F.Search.LoadFilters)
+        {
+            var filter = new LoadFilter(
+                row.Text,
+                row.TruckClasses.Select(Truck).ToList(),
+                row.MinimumOfferKobo is { } kobo ? new Kobo(kobo) : null,
+                row.ReadyBeforeIso,
+                row.Tiers);
+
+            var matched = Search.FilterLoads(loads, filter);
+
+            Assert.Equal(row.Matched, matched.Select(l => names[loads.IndexOf(l)]));
+
+            // Names the narrowest condition rather than saying "no results":
+            // the useful next action is to relax *that one*.
+            Assert.Equal(row.WhyNothing, Search.WhyNothing(filter));
+        }
+    }
+
 }

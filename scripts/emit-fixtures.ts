@@ -107,6 +107,28 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  describeTripFilter,
+  filterLoads,
+  filterTrips,
+  isFiltering,
+  whyNothing,
+  type LoadFilter,
+  type LoadSummary,
+  type TripFilter,
+  type TripSummary,
+} from '../packages/domain/src/search.ts';
+import {
+  POLICY,
+  QUIET_FROM_HOUR,
+  QUIET_TO_HOUR,
+  decideAlert,
+  describeAlert,
+  digest,
+  isQuietHour,
+  type AlertKind,
+  type Audience,
+} from '../packages/domain/src/alerts.ts';
+import {
   DUE_WARNING_MS,
   MINIMUM_RUNS_FOR_TYPICAL,
   RECENT_RUNS,
@@ -1607,6 +1629,239 @@ const laneCases = (
   };
 });
 
+// --- alerts ----------------------------------------------------------------
+
+/**
+ * Who hears about what, how loudly, and how often.
+ *
+ * The whole policy table is emitted, not a sample of it: it is the thing
+ * anybody arguing about notifications reads, and two servers with different
+ * ideas of who hears about a duress alarm is the worst possible disagreement
+ * in this product.
+ */
+const ALERT_NOW = new Date('2026-03-08T23:30:00.000Z');
+const ALERT_KINDS = Object.keys(POLICY) as AlertKind[];
+const AUDIENCES: readonly Audience[] = ['shipper', 'carrier', 'driver'];
+
+const alertPolicy = ALERT_KINDS.map((kind) => ({
+  kind,
+  to: POLICY[kind].to,
+  urgency: POLICY[kind].urgency,
+  repeatAfterMs: POLICY[kind].repeatAfterMs,
+  describe: describeAlert(kind),
+}));
+
+const quietHours = Array.from({ length: 24 }, (_, hour) => ({
+  hour,
+  quiet: isQuietHour(hour),
+}));
+
+const alertDecisions = ALERT_KINDS.flatMap((kind) =>
+  AUDIENCES.flatMap((to) =>
+    (
+      [
+        ['never sent, daytime', 12, null],
+        ['never sent, midnight', 0, null],
+        ['sent a minute ago', 12, 1],
+        ['sent a day ago', 12, 24 * 60],
+      ] as const
+    ).map(([when, localHour, sentMinutesAgo]) => {
+      const decision = decideAlert({
+        kind,
+        to,
+        localHour,
+        lastSentAt:
+          sentMinutesAgo === null
+            ? null
+            : new Date(ALERT_NOW.getTime() - sentMinutesAgo * 60_000),
+        now: ALERT_NOW,
+      });
+
+      return {
+        kind,
+        to,
+        when,
+        localHour,
+        sentMinutesAgo,
+        send: decision.send,
+        urgency: decision.send ? decision.urgency : null,
+        reason: decision.send ? null : decision.reason,
+      };
+    }),
+  ),
+);
+
+const digestCases = (
+  [
+    [[], null],
+    [['stalled'], null],
+    [['stalled', 'stalled'], null],
+    [['stalled', 'late'], null],
+    [['stalled', 'late', 'stalled', 'incident'], null],
+  ] as const
+).map(([held]) => ({
+  held,
+  digest: digest(held as readonly AlertKind[]),
+}));
+
+// --- search ----------------------------------------------------------------
+
+/**
+ * The flattening is the whole engine.
+ *
+ * Three people write the same plate as `T-12345`, `T 12345` and `t12345`, and
+ * a search that finds none of them is a search nobody uses twice. These cases
+ * pin the flattening, and the sentence that is shown when a filter finds
+ * nothing — an empty state that does not say what to relax is a dead end.
+ */
+const SEARCH_NOW = new Date('2026-03-07T09:00:00.000Z');
+
+const searchTrips: readonly TripSummary[] = [
+  {
+    id: 't1',
+    reference: 'BH-2026-0041',
+    state: 'in_transit',
+    origin: 'Lagos',
+    destination: 'Kano',
+    cargo: 'Cement',
+    truckPlate: 'LSR-482-XA',
+    driverName: 'Musa Danjuma',
+    startedAt: new Date('2026-03-05T06:00:00.000Z'),
+    hasOpenIncident: false,
+    isLate: true,
+  },
+  {
+    id: 't2',
+    reference: 'BH-2026-0042',
+    state: 'delivered',
+    origin: 'Port Harcourt',
+    destination: 'Abuja',
+    cargo: 'Bagged rice',
+    truckPlate: 'RVS-119-KJ',
+    driverName: 'Chinedu Okafor',
+    startedAt: new Date('2026-03-01T06:00:00.000Z'),
+    hasOpenIncident: true,
+    isLate: false,
+  },
+  {
+    id: 't3',
+    reference: 'BH-2026-0043',
+    state: 'open',
+    origin: 'Lagos',
+    destination: 'Ibadan',
+    cargo: 'Machine parts',
+    truckPlate: 'KJA-771-BR',
+    driverName: 'Tunde Adéyẹmí',
+    startedAt: new Date('2026-03-06T06:00:00.000Z'),
+    hasOpenIncident: false,
+    isLate: false,
+  },
+];
+
+const NO_TRIPS: TripFilter = {
+  text: '',
+  states: [],
+  onlyLate: false,
+  onlyWithIncidents: false,
+  since: null,
+  until: null,
+};
+
+const tripFilterCases = (
+  [
+    ['nothing set', NO_TRIPS],
+    ['a plate written with a dash', { ...NO_TRIPS, text: 'LSR-482-XA' }],
+    ['the same plate with a space', { ...NO_TRIPS, text: 'lsr 482 xa' }],
+    ['the same plate run together in lower case', { ...NO_TRIPS, text: 'lsr482xa' }],
+    // Accents stripped both ways: somebody typing without a keyboard for them
+    // still finds the driver whose name has them.
+    ['a name with its accents', { ...NO_TRIPS, text: 'Adéyẹmí' }],
+    ['the same name without them', { ...NO_TRIPS, text: 'adeyemi' }],
+    ['a town', { ...NO_TRIPS, text: 'lagos' }],
+    ['one state', { ...NO_TRIPS, states: ['in_transit'] }],
+    ['only late', { ...NO_TRIPS, onlyLate: true }],
+    ['only with an open incident', { ...NO_TRIPS, onlyWithIncidents: true }],
+    ['since the fourth', { ...NO_TRIPS, since: new Date('2026-03-04T00:00:00.000Z') }],
+    ['nothing matches', { ...NO_TRIPS, text: 'zzz' }],
+  ] as const
+).map(([name, raw]) => {
+  const filter: TripFilter = raw;
+
+  return {
+    name,
+    // The filter itself, not only its name. The C# side builds the same
+    // object from this rather than reconstructing it from the case name —
+    // a fixture whose inputs have to be inferred is a fixture that drifts.
+    text: filter.text,
+    states: filter.states,
+    onlyLate: filter.onlyLate,
+    onlyWithIncidents: filter.onlyWithIncidents,
+    sinceIso: filter.since === null ? null : iso(filter.since),
+    untilIso: filter.until === null ? null : iso(filter.until),
+    matched: filterTrips(searchTrips, filter).map((trip) => trip.id),
+    filtering: isFiltering(filter),
+    describe: describeTripFilter(filter),
+  };
+});
+
+const searchLoads: readonly LoadSummary[] = [
+  {
+    id: 'l1',
+    origin: 'Lagos',
+    destination: 'Kano',
+    cargo: 'Cement',
+    weightKg: 28_000,
+    offered: fromNaira(2_240_000),
+    readyFrom: new Date('2026-03-08T06:00:00.000Z'),
+    truckClass: 'trailer_30t',
+    shipperTier: 'trusted',
+  },
+  {
+    id: 'l2',
+    origin: 'Ibadan',
+    destination: 'Lagos',
+    cargo: 'Yams',
+    weightKg: 6_000,
+    offered: fromNaira(240_000),
+    readyFrom: new Date('2026-03-07T18:00:00.000Z'),
+    truckClass: 'canter',
+    shipperTier: 'verified',
+  },
+];
+
+const NO_LOADS: LoadFilter = {
+  text: '',
+  truckClasses: [],
+  minimumOffer: null,
+  readyBefore: null,
+  tiers: [],
+};
+
+const loadFilterCases = (
+  [
+    ['nothing set', NO_LOADS],
+    ['one class', { ...NO_LOADS, truckClasses: ['canter'] }],
+    ['a floor under the price', { ...NO_LOADS, minimumOffer: fromNaira(1_000_000) }],
+    ['ready before this evening', { ...NO_LOADS, readyBefore: new Date('2026-03-07T20:00:00.000Z') }],
+    ['trusted shippers only', { ...NO_LOADS, tiers: ['trusted'] }],
+    ['a town', { ...NO_LOADS, text: 'kano' }],
+    ['nothing matches', { ...NO_LOADS, text: 'zzz' }],
+  ] as const
+).map(([name, raw]) => {
+  const filter: LoadFilter = raw;
+
+  return {
+    name,
+    text: filter.text,
+    truckClasses: filter.truckClasses,
+    minimumOfferKobo: filter.minimumOffer,
+    readyBeforeIso: filter.readyBefore === null ? null : iso(filter.readyBefore),
+    tiers: filter.tiers,
+    matched: filterLoads(searchLoads, filter).map((load) => load.id),
+    whyNothing: whyNothing(filter),
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1756,6 +2011,44 @@ const fixtures = {
     verdicts: shareCases,
     pairs: pairingCases,
   },
+  search: {
+    nowIso: iso(SEARCH_NOW),
+    trips: searchTrips.map((trip) => ({
+      id: trip.id,
+      reference: trip.reference,
+      state: trip.state,
+      origin: trip.origin,
+      destination: trip.destination,
+      cargo: trip.cargo,
+      truckPlate: trip.truckPlate,
+      driverName: trip.driverName,
+      startedAtIso: iso(trip.startedAt),
+      hasOpenIncident: trip.hasOpenIncident,
+      isLate: trip.isLate,
+    })),
+    tripFilters: tripFilterCases,
+    loads: searchLoads.map((load) => ({
+      id: load.id,
+      origin: load.origin,
+      destination: load.destination,
+      cargo: load.cargo,
+      weightKg: load.weightKg,
+      offeredKobo: load.offered,
+      readyFromIso: iso(load.readyFrom),
+      truckClass: load.truckClass,
+      shipperTier: load.shipperTier,
+    })),
+    loadFilters: loadFilterCases,
+  },
+  alerts: {
+    quietFromHour: QUIET_FROM_HOUR,
+    quietToHour: QUIET_TO_HOUR,
+    nowIso: iso(ALERT_NOW),
+    policy: alertPolicy,
+    quietHours,
+    decisions: alertDecisions,
+    digests: digestCases,
+  },
   lanes: {
     dueWarningMs: DUE_WARNING_MS,
     recentRuns: RECENT_RUNS,
@@ -1829,6 +2122,9 @@ process.stdout.write(
       `${deviationCases.length} deviation verdicts`,
       `${ratingCases.length} tallies`,
       `${laneCases.length} lanes`,
+      `${alertDecisions.length} alert decisions`,
+      `${tripFilterCases.length} trip filters`,
+      `${loadFilterCases.length} load filters`,
     ].join(', ')
   }\n`,
 );

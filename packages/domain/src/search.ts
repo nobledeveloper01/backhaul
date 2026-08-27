@@ -127,8 +127,31 @@ export function describeTripFilter(filter: TripFilter): string {
   if (filter.states.length > 0) parts.push(filter.states.join(', ').replace(/_/g, ' '));
   if (filter.onlyLate) parts.push('running late');
   if (filter.onlyWithIncidents) parts.push('with an open incident');
+
+  /*
+    The dates were missing from this sentence and present in `isFiltering`.
+
+    A shipper who narrowed to "since Monday" saw "All trips" above a list that
+    was plainly not all of them — which is precisely the ten minutes of
+    confusion the sentence exists to prevent. Found by reading the fixture
+    output, not by a failing test: both halves were internally consistent and
+    disagreed with each other.
+
+    Written as a day and a month rather than a full date, because it sits in a
+    line beside a count and a full ISO date would be the longest thing on it.
+  */
+  if (filter.since !== null) parts.push(`from ${dayAndMonth(filter.since)}`);
+  if (filter.until !== null) parts.push(`up to ${dayAndMonth(filter.until)}`);
+
   if (parts.length === 0) return 'All trips';
   return `Trips ${parts.join(', ')}`;
+}
+
+/** "04/03". Figures rather than a month name: this app is read in four languages. */
+function dayAndMonth(when: Date): string {
+  const day = String(when.getUTCDate()).padStart(2, '0');
+  const month = String(when.getUTCMonth() + 1).padStart(2, '0');
+  return `${day}/${month}`;
 }
 
 /** What a load looks like on the board. */

@@ -9,6 +9,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Alerts, and search that finds the thing.** What reaches a phone is decided
+  by one policy table both sides hold: exactly one kind is urgent — a driver in
+  trouble — and a push inside quiet hours is *held* and summarised in one
+  sentence at dawn rather than dropped, because the condition is still true in
+  the morning. Alerts are derived on every read, never stored: a stored alert
+  is a stored copy of a condition, and a copy that drifts tells a shipper a
+  truck is stalled while they watch it move.
+
+  Searching is case-, accent- and punctuation-insensitive, because three people
+  write the same plate as `LSR-482-XA`, `lsr 482 xa` and `lsr482xa`. The load
+  board filters before it ranks. And when a filter finds nothing, the sentence
+  names the narrowest condition — the useful next action is to relax *that one*.
+
+### Fixed
+
+- **A filtered trip list said "All trips".** `isFiltering` counted a date range
+  and the sentence above the results did not, so a shipper who narrowed to
+  "since Monday" read "All trips" above a list that was plainly not all of
+  them — the exact ten minutes of confusion that sentence exists to prevent.
+  The dates are in it now.
+
 - **Lanes: the runs a shipper makes again.** A named route with a cadence, and
   the price history behind it. What it typically goes for is the **median of
   the last six** — never the average of everything, because a lane's price

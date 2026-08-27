@@ -70,6 +70,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DisputeRepository>();
         services.AddScoped<ReviewRepository>();
         services.AddScoped<LaneRepository>();
+        services.AddScoped<AlertRepository>();
         services.AddScoped<DeliveryRepository>();
         services.AddScoped<IdentityRepository>();
 

@@ -6,6 +6,43 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-30 (later) — The last two engines, and a sentence that lied
+
+**Did.** `alerts.ts` and `search.ts` mirrored, 127 new parity cases between
+them, an `AlertRepository` that derives every open condition on every read, and
+server-side filtering on the load board. 134 parity cases, 155 endpoint tests.
+
+**Every engine that should have a route now has one.** The two left in the
+right-hand column of the roadmap's gap table belong there: `budget` answers what
+tracking is costing in data, which is a question about the phone in the
+driver's hand, and `language` is chosen and stored on the device.
+
+### What surprised us
+
+**A sentence disagreed with the function beside it, and only the fixture output
+showed it.** `isFiltering` counted `since` and `until`; `describeTripFilter`
+did not — so a shipper who narrowed to "since Monday" saw **"All trips"** above
+a list that was plainly not all of them. Both halves were internally consistent
+and each was individually defensible; what was wrong was the pair. It was found
+by reading the generated fixture table, which is the fourth time in this
+project that rendering the answer has caught what asserting on it did not.
+
+**Alerts had to be derived rather than stored, and that was the design.** The
+tempting shape is an `alerts` table written when a condition becomes true.
+Every one of those rows is a copy of something the trip already knows, and a
+copy that drifts tells a shipper a truck is stalled while they watch it move on
+the same screen. `AlertRepository` reads the trip's state, the unresolved
+incidents, the duress signals and the sealed deliveries, every time.
+
+`LastSentAt` is threaded through as null throughout, because there is no push
+transport yet. Passing it now means the repeat policy is already being applied
+on the day one arrives, rather than being discovered then.
+
+**"Wrong audience" is not "held".** A driver does not hear that their own
+signal dropped — they can see that out of the window — and putting it in their
+overnight digest would be the server telling them anyway, six hours later. The
+controller drops those before the digest is built rather than after.
+
 ## 2026-08-30 — Lanes, and rebuilding a fixture's inputs on the far side
 
 **Did.** `lanes.ts` mirrored, eight parity cases, a `LaneEntity`, and four

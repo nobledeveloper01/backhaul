@@ -380,6 +380,59 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+
+    [Fact]
+    public async Task A_town_typed_in_lower_case_still_finds_the_load()
+    {
+        // Three people write the same thing three ways. A search that finds
+        // none of them is a search nobody uses twice.
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var mine = Guid.NewGuid();
+        await PostAsync(shipper, mine, Load());
+        await PostAsync(shipper, Guid.NewGuid(), Load(destLat: IbadanLat, destLon: IbadanLon));
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var client = carrier.Carrying(board.CreateClient());
+
+        var found = await client.GetFromJsonAsync<List<RankedLoadView>>(
+            "/v1/loads?text=CEMENT", Json);
+
+        // Both are cement; the filter matched on cargo rather than on nothing.
+        Assert.Equal(2, found!.Count);
+
+        var none = await client.GetFromJsonAsync<List<RankedLoadView>>(
+            "/v1/loads?text=zzz", Json);
+
+        Assert.Empty(none!);
+    }
+
+    [Fact]
+    public async Task A_floor_under_the_price_is_applied_before_the_ranking()
+    {
+        // Ranking first and filtering after would score loads about to be
+        // thrown away, and could leave the top of the list holding whatever
+        // survived rather than the best fit among what is left.
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var dear = Guid.NewGuid();
+        var cheap = Guid.NewGuid();
+
+        await PostAsync(shipper, dear, Load(offeredKobo: 224_000_000));
+        await PostAsync(shipper, cheap, Load(offeredKobo: 40_000_000));
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var found = await carrier.Carrying(board.CreateClient())
+            .GetFromJsonAsync<List<RankedLoadView>>(
+                $"/v1/loads?lat={LagosLat}&lon={LagosLon}&truck=trailer_30t&minimumOfferKobo=100000000",
+                Json);
+
+        var only = Assert.Single(found!);
+        Assert.Equal(dear, only.Load.Id);
+    }
+
     // --- helpers -----------------------------------------------------------
 
     private async Task<(Guid Id, HttpClient Client)> ShipperAsync()

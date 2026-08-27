@@ -91,6 +91,8 @@ public sealed record ParityFixtures(
     DeviationFixtures Deviation,
     RatingFixtures Ratings,
     LaneFixtures Lanes,
+    AlertFixtures Alerts,
+    SearchFixtures Search,
     DisputeFixtures Dispute);
 
 public sealed record ParityConstants(
@@ -570,3 +572,86 @@ public sealed record LaneRow(
     string DescribeCadence,
     bool? UnusualAtHalf,
     bool? UnusualAtTenOver);
+
+public sealed record AlertFixtures(
+    int QuietFromHour,
+    int QuietToHour,
+    DateTimeOffset NowIso,
+    IReadOnlyList<AlertPolicyRow> Policy,
+    IReadOnlyList<QuietHourRow> QuietHours,
+    IReadOnlyList<AlertDecisionRow> Decisions,
+    IReadOnlyList<DigestRow> Digests);
+
+public sealed record AlertPolicyRow(
+    string Kind,
+    IReadOnlyList<string> To,
+    string Urgency,
+    long RepeatAfterMs,
+    string Describe);
+
+public sealed record QuietHourRow(int Hour, bool Quiet);
+
+public sealed record AlertDecisionRow(
+    string Kind,
+    string To,
+    string When,
+    int LocalHour,
+    int? SentMinutesAgo,
+    bool Send,
+    string? Urgency,
+    string? Reason);
+
+public sealed record DigestRow(IReadOnlyList<string> Held, string? Digest);
+
+public sealed record SearchFixtures(
+    DateTimeOffset NowIso,
+    IReadOnlyList<TripSummaryRow> Trips,
+    IReadOnlyList<TripFilterRow> TripFilters,
+    IReadOnlyList<LoadSummaryRow> Loads,
+    IReadOnlyList<LoadFilterRow> LoadFilters);
+
+public sealed record TripSummaryRow(
+    string Id,
+    string Reference,
+    string State,
+    string Origin,
+    string Destination,
+    string Cargo,
+    string TruckPlate,
+    string DriverName,
+    DateTimeOffset StartedAtIso,
+    bool HasOpenIncident,
+    bool IsLate);
+
+public sealed record TripFilterRow(
+    string Name,
+    string Text,
+    IReadOnlyList<string> States,
+    bool OnlyLate,
+    bool OnlyWithIncidents,
+    DateTimeOffset? SinceIso,
+    DateTimeOffset? UntilIso,
+    IReadOnlyList<string> Matched,
+    bool Filtering,
+    string Describe);
+
+public sealed record LoadSummaryRow(
+    string Id,
+    string Origin,
+    string Destination,
+    string Cargo,
+    double WeightKg,
+    long OfferedKobo,
+    DateTimeOffset ReadyFromIso,
+    string TruckClass,
+    string ShipperTier);
+
+public sealed record LoadFilterRow(
+    string Name,
+    string Text,
+    IReadOnlyList<string> TruckClasses,
+    long? MinimumOfferKobo,
+    DateTimeOffset? ReadyBeforeIso,
+    IReadOnlyList<string> Tiers,
+    IReadOnlyList<string> Matched,
+    string WhyNothing);

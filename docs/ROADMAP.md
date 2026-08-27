@@ -106,23 +106,24 @@ the honest answer to "how far along is this".
 
 | Served, with parity where a rule is shared | Engine only — no route yet |
 |---|---|
-| trips, tracking, pricing | search, alerts |
-| share links (ADR-0010) | |
-| sign-in (`otp`) | budget *(on-device by design)* |
-| messages, incidents, waypoints | language *(client-side by design)* |
+| trips, tracking, pricing | budget *(on-device by design)* |
+| share links (ADR-0010) | language *(client-side by design)* |
+| sign-in (`otp`) | |
+| messages, incidents, waypoints | |
 | proof of delivery, drops, levies | |
 | verification, vehicles, duress | |
 | escrow, cancellation, costs, earnings | |
 | matching, chaining, consolidation | |
-| **dispute assembly, deviation, ratings, lanes** | |
+| dispute assembly, deviation, ratings, lanes | |
+| **alerts, search** | |
 
-Everything in the right-hand column has a tested engine and a screen; what it
-does not have is a place to put the answer. The app renders those from
-`state/demo.ts`, which is why signing in is real and what it unlocks is still
-a walkthrough.
+**The right-hand column is down to the two that should stay there.** Every
+other engine now has a route, so the answer a screen renders can come from the
+server rather than from `state/demo.ts`. Wiring the app's screens to those
+routes is the work that remains, and it is a different job from building them.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
-exists on both sides gets a parity case before it gets an endpoint. Twenty-eight
+exists on both sides gets a parity case before it gets an endpoint. Thirty-two
 of them do now — the trip machine, pricing, demurrage, settlement, fix
 cleaning, stall detection, sign-in wording, waypoint visits, incident severity,
 delivery sealing, drop fees, the trust ladder, vehicle standing, the escrow
@@ -130,7 +131,7 @@ schedule, cancellation fees and their wording, the cost model, driver
 statements, the load ranking, the bid
 ranking, chain fits, load pairing, the dispute
 pack, course deviation, the review
-tallies and lane pricing.
+tallies, lane pricing, the notification policy and the search flattening.
 
 `budget.ts` has no route and should not have one: it answers "what is this
 tracking costing me in data", which is a question about the phone in the

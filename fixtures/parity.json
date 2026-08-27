@@ -3502,6 +3502,1647 @@
       }
     ]
   },
+  "search": {
+    "nowIso": "2026-03-07T09:00:00.000Z",
+    "trips": [
+      {
+        "id": "t1",
+        "reference": "BH-2026-0041",
+        "state": "in_transit",
+        "origin": "Lagos",
+        "destination": "Kano",
+        "cargo": "Cement",
+        "truckPlate": "LSR-482-XA",
+        "driverName": "Musa Danjuma",
+        "startedAtIso": "2026-03-05T06:00:00.000Z",
+        "hasOpenIncident": false,
+        "isLate": true
+      },
+      {
+        "id": "t2",
+        "reference": "BH-2026-0042",
+        "state": "delivered",
+        "origin": "Port Harcourt",
+        "destination": "Abuja",
+        "cargo": "Bagged rice",
+        "truckPlate": "RVS-119-KJ",
+        "driverName": "Chinedu Okafor",
+        "startedAtIso": "2026-03-01T06:00:00.000Z",
+        "hasOpenIncident": true,
+        "isLate": false
+      },
+      {
+        "id": "t3",
+        "reference": "BH-2026-0043",
+        "state": "open",
+        "origin": "Lagos",
+        "destination": "Ibadan",
+        "cargo": "Machine parts",
+        "truckPlate": "KJA-771-BR",
+        "driverName": "Tunde Adéyẹmí",
+        "startedAtIso": "2026-03-06T06:00:00.000Z",
+        "hasOpenIncident": false,
+        "isLate": false
+      }
+    ],
+    "tripFilters": [
+      {
+        "name": "nothing set",
+        "text": "",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "filtering": false,
+        "describe": "All trips"
+      },
+      {
+        "name": "a plate written with a dash",
+        "text": "LSR-482-XA",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"LSR-482-XA\""
+      },
+      {
+        "name": "the same plate with a space",
+        "text": "lsr 482 xa",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"lsr 482 xa\""
+      },
+      {
+        "name": "the same plate run together in lower case",
+        "text": "lsr482xa",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"lsr482xa\""
+      },
+      {
+        "name": "a name with its accents",
+        "text": "Adéyẹmí",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t3"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"Adéyẹmí\""
+      },
+      {
+        "name": "the same name without them",
+        "text": "adeyemi",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t3"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"adeyemi\""
+      },
+      {
+        "name": "a town",
+        "text": "lagos",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1",
+          "t3"
+        ],
+        "filtering": true,
+        "describe": "Trips matching \"lagos\""
+      },
+      {
+        "name": "one state",
+        "text": "",
+        "states": [
+          "in_transit"
+        ],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1"
+        ],
+        "filtering": true,
+        "describe": "Trips in transit"
+      },
+      {
+        "name": "only late",
+        "text": "",
+        "states": [],
+        "onlyLate": true,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t1"
+        ],
+        "filtering": true,
+        "describe": "Trips running late"
+      },
+      {
+        "name": "only with an open incident",
+        "text": "",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": true,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [
+          "t2"
+        ],
+        "filtering": true,
+        "describe": "Trips with an open incident"
+      },
+      {
+        "name": "since the fourth",
+        "text": "",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": "2026-03-04T00:00:00.000Z",
+        "untilIso": null,
+        "matched": [
+          "t1",
+          "t3"
+        ],
+        "filtering": true,
+        "describe": "Trips from 04/03"
+      },
+      {
+        "name": "nothing matches",
+        "text": "zzz",
+        "states": [],
+        "onlyLate": false,
+        "onlyWithIncidents": false,
+        "sinceIso": null,
+        "untilIso": null,
+        "matched": [],
+        "filtering": true,
+        "describe": "Trips matching \"zzz\""
+      }
+    ],
+    "loads": [
+      {
+        "id": "l1",
+        "origin": "Lagos",
+        "destination": "Kano",
+        "cargo": "Cement",
+        "weightKg": 28000,
+        "offeredKobo": 224000000,
+        "readyFromIso": "2026-03-08T06:00:00.000Z",
+        "truckClass": "trailer_30t",
+        "shipperTier": "trusted"
+      },
+      {
+        "id": "l2",
+        "origin": "Ibadan",
+        "destination": "Lagos",
+        "cargo": "Yams",
+        "weightKg": 6000,
+        "offeredKobo": 24000000,
+        "readyFromIso": "2026-03-07T18:00:00.000Z",
+        "truckClass": "canter",
+        "shipperTier": "verified"
+      }
+    ],
+    "loadFilters": [
+      {
+        "name": "nothing set",
+        "text": "",
+        "truckClasses": [],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": null,
+        "tiers": [],
+        "matched": [
+          "l1",
+          "l2"
+        ],
+        "whyNothing": "No loads on the board right now."
+      },
+      {
+        "name": "one class",
+        "text": "",
+        "truckClasses": [
+          "canter"
+        ],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": null,
+        "tiers": [],
+        "matched": [
+          "l2"
+        ],
+        "whyNothing": "No loads for that truck. Try another class."
+      },
+      {
+        "name": "a floor under the price",
+        "text": "",
+        "truckClasses": [],
+        "minimumOfferKobo": 100000000,
+        "readyBeforeIso": null,
+        "tiers": [],
+        "matched": [
+          "l1"
+        ],
+        "whyNothing": "No loads at that price. Try a lower figure."
+      },
+      {
+        "name": "ready before this evening",
+        "text": "",
+        "truckClasses": [],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": "2026-03-07T20:00:00.000Z",
+        "tiers": [],
+        "matched": [
+          "l2"
+        ],
+        "whyNothing": "No loads ready by then. Try a later date."
+      },
+      {
+        "name": "trusted shippers only",
+        "text": "",
+        "truckClasses": [],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": null,
+        "tiers": [
+          "trusted"
+        ],
+        "matched": [
+          "l1"
+        ],
+        "whyNothing": "No loads from shippers at that level yet."
+      },
+      {
+        "name": "a town",
+        "text": "kano",
+        "truckClasses": [],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": null,
+        "tiers": [],
+        "matched": [
+          "l1"
+        ],
+        "whyNothing": "Nothing matching \"kano\"."
+      },
+      {
+        "name": "nothing matches",
+        "text": "zzz",
+        "truckClasses": [],
+        "minimumOfferKobo": null,
+        "readyBeforeIso": null,
+        "tiers": [],
+        "matched": [],
+        "whyNothing": "Nothing matching \"zzz\"."
+      }
+    ]
+  },
+  "alerts": {
+    "quietFromHour": 22,
+    "quietToHour": 6,
+    "nowIso": "2026-03-08T23:30:00.000Z",
+    "policy": [
+      {
+        "kind": "signal_lost",
+        "to": [
+          "shipper",
+          "carrier"
+        ],
+        "urgency": "quiet",
+        "repeatAfterMs": 21600000,
+        "describe": "no signal"
+      },
+      {
+        "kind": "stalled",
+        "to": [
+          "shipper",
+          "carrier"
+        ],
+        "urgency": "push",
+        "repeatAfterMs": 14400000,
+        "describe": "a truck not moving"
+      },
+      {
+        "kind": "deviating",
+        "to": [
+          "shipper",
+          "carrier"
+        ],
+        "urgency": "push",
+        "repeatAfterMs": 7200000,
+        "describe": "a truck off course"
+      },
+      {
+        "kind": "late",
+        "to": [
+          "shipper"
+        ],
+        "urgency": "push",
+        "repeatAfterMs": 86400000,
+        "describe": "a delivery running late"
+      },
+      {
+        "kind": "incident",
+        "to": [
+          "shipper",
+          "carrier"
+        ],
+        "urgency": "push",
+        "repeatAfterMs": 3600000,
+        "describe": "a problem reported"
+      },
+      {
+        "kind": "duress",
+        "to": [
+          "shipper",
+          "carrier",
+          "driver"
+        ],
+        "urgency": "urgent",
+        "repeatAfterMs": 300000,
+        "describe": "a driver in trouble"
+      },
+      {
+        "kind": "delivered",
+        "to": [
+          "shipper",
+          "carrier"
+        ],
+        "urgency": "push",
+        "repeatAfterMs": 86400000,
+        "describe": "a delivery signed for"
+      },
+      {
+        "kind": "bid_received",
+        "to": [
+          "shipper"
+        ],
+        "urgency": "quiet",
+        "repeatAfterMs": 1800000,
+        "describe": "a new bid"
+      },
+      {
+        "kind": "link_expiring",
+        "to": [
+          "shipper"
+        ],
+        "urgency": "quiet",
+        "repeatAfterMs": 86400000,
+        "describe": "a tracking link about to expire"
+      }
+    ],
+    "quietHours": [
+      {
+        "hour": 0,
+        "quiet": true
+      },
+      {
+        "hour": 1,
+        "quiet": true
+      },
+      {
+        "hour": 2,
+        "quiet": true
+      },
+      {
+        "hour": 3,
+        "quiet": true
+      },
+      {
+        "hour": 4,
+        "quiet": true
+      },
+      {
+        "hour": 5,
+        "quiet": true
+      },
+      {
+        "hour": 6,
+        "quiet": false
+      },
+      {
+        "hour": 7,
+        "quiet": false
+      },
+      {
+        "hour": 8,
+        "quiet": false
+      },
+      {
+        "hour": 9,
+        "quiet": false
+      },
+      {
+        "hour": 10,
+        "quiet": false
+      },
+      {
+        "hour": 11,
+        "quiet": false
+      },
+      {
+        "hour": 12,
+        "quiet": false
+      },
+      {
+        "hour": 13,
+        "quiet": false
+      },
+      {
+        "hour": 14,
+        "quiet": false
+      },
+      {
+        "hour": 15,
+        "quiet": false
+      },
+      {
+        "hour": 16,
+        "quiet": false
+      },
+      {
+        "hour": 17,
+        "quiet": false
+      },
+      {
+        "hour": 18,
+        "quiet": false
+      },
+      {
+        "hour": 19,
+        "quiet": false
+      },
+      {
+        "hour": 20,
+        "quiet": false
+      },
+      {
+        "hour": 21,
+        "quiet": false
+      },
+      {
+        "hour": 22,
+        "quiet": true
+      },
+      {
+        "hour": 23,
+        "quiet": true
+      }
+    ],
+    "decisions": [
+      {
+        "kind": "signal_lost",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "signal_lost",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "signal_lost",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "signal_lost",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "signal_lost",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "signal_lost",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "signal_lost",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "stalled",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "stalled",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "stalled",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "stalled",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "stalled",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "stalled",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "stalled",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "stalled",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "stalled",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "stalled",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "stalled",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "stalled",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "deviating",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "deviating",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "deviating",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "deviating",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "deviating",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "deviating",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "deviating",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "deviating",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "deviating",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "deviating",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "deviating",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "deviating",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "late",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "late",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "late",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "late",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "late",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "incident",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "incident",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "incident",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "incident",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "incident",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "incident",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "incident",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "incident",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "incident",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "incident",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "incident",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "incident",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "duress",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "duress",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "duress",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "duress",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "duress",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "urgent",
+        "reason": null
+      },
+      {
+        "kind": "delivered",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "delivered",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "delivered",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "delivered",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "delivered",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "delivered",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "quiet_hours"
+      },
+      {
+        "kind": "delivered",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "delivered",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "push",
+        "reason": null
+      },
+      {
+        "kind": "delivered",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "delivered",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "delivered",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "delivered",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "bid_received",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "bid_received",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "bid_received",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "bid_received",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "bid_received",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "shipper",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "link_expiring",
+        "to": "shipper",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "link_expiring",
+        "to": "shipper",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "too_soon"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "shipper",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": true,
+        "urgency": "quiet",
+        "reason": null
+      },
+      {
+        "kind": "link_expiring",
+        "to": "carrier",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "carrier",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "carrier",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "carrier",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "driver",
+        "when": "never sent, daytime",
+        "localHour": 12,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "driver",
+        "when": "never sent, midnight",
+        "localHour": 0,
+        "sentMinutesAgo": null,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "driver",
+        "when": "sent a minute ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      },
+      {
+        "kind": "link_expiring",
+        "to": "driver",
+        "when": "sent a day ago",
+        "localHour": 12,
+        "sentMinutesAgo": 1440,
+        "send": false,
+        "urgency": null,
+        "reason": "wrong_audience"
+      }
+    ],
+    "digests": [
+      {
+        "held": [],
+        "digest": null
+      },
+      {
+        "held": [
+          "stalled"
+        ],
+        "digest": "Overnight: a truck not moving."
+      },
+      {
+        "held": [
+          "stalled",
+          "stalled"
+        ],
+        "digest": "Overnight: a truck not moving (2)."
+      },
+      {
+        "held": [
+          "stalled",
+          "late"
+        ],
+        "digest": "Overnight: a truck not moving and a delivery running late."
+      },
+      {
+        "held": [
+          "stalled",
+          "late",
+          "stalled",
+          "incident"
+        ],
+        "digest": "Overnight: a truck not moving (2), a delivery running late and a problem reported."
+      }
+    ]
+  },
   "lanes": {
     "dueWarningMs": 172800000,
     "recentRuns": 6,
