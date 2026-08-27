@@ -161,8 +161,12 @@ function Half({ load, pays }: { load: PairLoad; pays: number }) {
     <View style={[styles.half, { borderColor: colours.outline }]}>
       <View style={styles.flex}>
         <Text variant="body">{load.cargo}</Text>
+        {/*
+          No tonnage here: the cargo line above already says "14 t onions",
+          and "· 14 t" after the corridor was the same fact twice in two lines.
+        */}
         <Text variant="label" tone="secondary">
-          {load.origin} → {load.destination} · {Math.round(load.weightKg / 1_000)} t
+          {load.origin} → {load.destination}
         </Text>
       </View>
       <View style={styles.pays}>

@@ -6,6 +6,81 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 — Fifteen screens for the fifteen, and a pack that invented holes
+
+**Did.** Surfaces for the second fifteen: trucks and papers, what reaches your
+phone, the dispute pack, cancellation terms, drops, the checkpoint ledger, your
+lanes, sharing a trailer — plus deviation and payment milestones on the trip,
+the data cost and Hausa on the driver's screen, and the earnings statement on
+their history.
+
+### What surprised us
+
+**The dispute pack reported fifty-one hours of missing evidence on a trip with
+continuous coverage.** It was assembled from every twentieth position fix, so
+consecutive items sat hours apart and the gap finder — which measured from one
+item's instant to the next — read each of those as a hole. The pack said the
+opposite of what the record held, on the one screen whose entire job is to be
+trusted in an argument.
+
+Three fixes, each found by looking at the render again:
+
+1. **A run of fixes is an interval, not an instant.** `Evidence.until` now
+   exists and the gap finder measures from where coverage *ended*. 51 hours
+   became 35.
+2. **A gap before the tracker started is not a gap.** A trip is open for a day
+   before a truck loads — bids, messages, nothing moving. Counting that as
+   missing evidence tells a shipper the record has holes when what it has is a
+   beginning. 35 hours became 16.
+3. **A `signal_lost` event is measured but is not coverage.** Bounding the
+   window by "measured" items started the clock at the first signal loss,
+   sixteen hours before any position existed. 16 hours became none — which is
+   correct: the demo trip's real gap is two hours, under the three-hour
+   threshold.
+
+**And then `isThin` was measuring the wrong thing.** Once positions were
+assembled into runs, a well-covered trip had *fewer* items than a badly covered
+one, so counting items called two unbroken runs "not much here". It now
+measures **covered time**, which is what the question was always about.
+
+**`Press` swallowed layout styles — again, in a new way.** Last session's fix
+lifted flex and width onto the `Pressable`. This session found the same class
+of bug in the *content*: driver-face buttons truncating to "Ba da rahoton m…"
+and "Police check…" because a single line was assumed. Hausa is longer than
+English and "Police checkpoint" is longer than "Union".
+
+**A summary that disagreed with the screen it opened.** The fleet entry said
+"One truck cannot take work"; the screen it led to said two of four. It was
+written by hand rather than counted.
+
+**Two lanes, two filled buttons, and the wrong one leading.** The lanes screen
+filtered rather than using `due()`, so "due tomorrow" sat above "five days
+overdue" — and both had a primary button, which is a screen with none.
+
+**"at most once every 0 h"** beside the duress alarm, whose repeat window is
+five minutes. Everything was being rounded to hours.
+
+**Hausa was a token gesture until it covered the tracking card.** The first
+pass translated the buttons and left "Recording your location", "Signal is
+good" and the battery sentence in English — which is to say, it translated
+everything except the three lines a driver actually reads. The phrase table
+grew by six; the carrier's *name* is deliberately dropped from the Hausa
+sentence rather than interpolated, because word order differs and a template
+with a hole in it assumes it does not.
+
+### Still open
+
+- **The data-cost sentence is English only.** `describeCost` builds it in the
+  domain and there is no Hausa for it. Half-translating it would be worse than
+  leaving it, and doing it properly means the phrase table learning about
+  numbers, which is the thing `language.ts` deliberately refuses.
+- The two overlines on the driver screen — "YOUR TRIP", "BATTERY" — are still
+  English. Small, and the test that caps the phrase table at 25 is doing its
+  job of making that a decision rather than a drift.
+- Nobody who speaks Hausa has read any of it.
+
+---
+
 ## 2026-08-27 (very late) — Fifteen more, and three that argued back
 
 **Did.** Fifteen further features, phased across 2–6 in

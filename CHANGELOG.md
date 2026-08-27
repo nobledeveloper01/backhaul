@@ -51,6 +51,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   connection the truck could not physically make. The loads it passed over are
   shown too, each with the reason — a proposal you cannot argue with is a
   proposal nobody acts on.
+- **Every one of the fifteen above now has a screen**, on the face that needs
+  it: deviation and payment milestones on the trip, the dispute pack and
+  cancellation terms behind it, trucks and papers and the alert policy on the
+  fleet, drops and the checkpoint ledger for the driver, lanes and trailer
+  sharing on the load board.
 - **Route deviation.** A truck that has been getting further from its
   destination for ninety minutes, while moving, is reported. Not measured
   against a straight line between origin and destination — the road is nowhere
@@ -233,6 +238,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   name printed twice.
 - The chain proposal explained a rejected load against the wrong leg of the
   chain, refusing a load in the town the truck was standing in.
+- The dispute pack reported fifty-one hours of missing evidence on a trip whose
+  coverage was continuous. It was reading each position sample as an instant
+  rather than a run, counting the quiet before the truck loaded as a hole, and
+  treating a signal-loss event as though it were coverage.
+- The fleet screen said "one truck cannot take work" above a list of two.
+- A saved lane due tomorrow was listed above one five days overdue, and both
+  carried the same call to action.
+- The driver's buttons truncated in Hausa — "Ba da rahoton m…" — and the
+  checkpoint buttons truncated in English.
 - Revoking a share link reported a failure on a revoke that had succeeded: the
   client could not parse the empty body of a `204`, and would have told
   somebody their link was turned off twice.

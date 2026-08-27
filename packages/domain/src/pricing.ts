@@ -78,6 +78,27 @@ export const MINIMUM_FARE: Readonly<Record<TruckClass, Kobo>> = {
 };
 
 /** Whether a load fits the truck it is being offered to. */
+/**
+ * A truck class, as a haulier would say it.
+ *
+ * `truck.replace(/_/g, ' ')` gives "truck 15t" and "trailer 30t", which is a
+ * database column wearing a coat. These are the words on a load board.
+ */
+export function describeTruckClass(truck: TruckClass): string {
+  switch (truck) {
+    case 'pickup':
+      return 'Pickup';
+    case 'canter':
+      return 'Canter';
+    case 'truck_15t':
+      return '15 t truck';
+    case 'trailer_30t':
+      return '30 t trailer';
+    case 'lowbed':
+      return 'Lowbed';
+  }
+}
+
 export function fits(truck: TruckClass, weight: Tonnes): boolean {
   return weight <= CAPACITY[truck];
 }

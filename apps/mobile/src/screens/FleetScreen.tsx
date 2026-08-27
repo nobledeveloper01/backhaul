@@ -3,9 +3,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import {
+  byUrgency,
   describeRate,
   describeRatio,
   format,
+  mayCarry,
   utilisation,
   worthOfOneReturnLeg,
 } from '@backhaul/domain';
@@ -18,6 +20,7 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { demoAlerts, demoLegs, type Alert, type AlertKind } from '../state/fleet';
+import { demoVehicles } from '../state/product';
 import { agoLabel } from '../components/PositionAge';
 
 interface Props {
@@ -48,6 +51,8 @@ export function FleetScreen({
   const legs = useMemo(demoLegs, []);
   const used = useMemo(() => utilisation(legs), [legs]);
   const alerts = useMemo(() => demoAlerts(now), [now]);
+  const fleet = useMemo(() => byUrgency(demoVehicles(now), now), [now]);
+  const grounded = fleet.filter((entry) => !mayCarry(entry.assessment)).length;
 
   const averageLeg =
     legs.reduce((total, leg) => total + leg.metres, 0) / Math.max(1, legs.length);
@@ -148,8 +153,15 @@ export function FleetScreen({
         <Icon name="truck" size="md" colour={colours.textSecondary} />
         <View style={styles.verifyBody}>
           <Text variant="title">Trucks and papers</Text>
+          {/*
+            Counted, not written. The hard-coded version said "one truck"
+            while the screen it opened said two — a summary that disagrees
+            with the thing it summarises is worse than no summary.
+          */}
           <Text variant="label" tone="secondary">
-            One truck cannot take work — its roadworthiness lapsed
+            {grounded === 0
+              ? `All ${fleet.length} trucks can take work`
+              : `${grounded} of ${fleet.length} cannot be given a new trip`}
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />

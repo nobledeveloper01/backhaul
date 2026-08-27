@@ -125,7 +125,12 @@ export function LeviesScreen({ trip, onBack }: Props) {
               <Text variant="bodyDriver" tabular>
                 ₦{(option.naira / 1_000).toFixed(option.naira % 1_000 === 0 ? 0 : 1)}k
               </Text>
-              <Text variant="label" tone="secondary" numberOfLines={1}>
+              {/*
+                Two lines. "Police checkpoint" is the longest of the six and
+                came out as "Police check…" on a button whose only job is to
+                say what the money went to.
+              */}
+              <Text variant="label" tone="secondary" numberOfLines={2} style={styles.centred}>
                 {describeLevy(option.kind)}
               </Text>
             </Press>
@@ -204,6 +209,7 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     borderTopWidth: StyleSheet.hairlineWidth * 2,
   },
+  centred: { textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tile: {
     width: '31%',

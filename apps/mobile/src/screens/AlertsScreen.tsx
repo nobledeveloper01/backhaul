@@ -102,7 +102,7 @@ export function AlertsScreen({ onBack }: Props) {
               <Text variant="body">{sentenceCase(describeAlert(kind))}</Text>
               <Text variant="label" tone="secondary">
                 {POLICY[kind].to.join(', ')} · at most once every{' '}
-                {Math.round(POLICY[kind].repeatAfterMs / 3_600_000)} h
+                {every(POLICY[kind].repeatAfterMs)}
               </Text>
             </View>
 
@@ -160,6 +160,18 @@ function Outcome({
 }
 
 const sentenceCase = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
+
+/**
+ * "5 min", "4 h".
+ *
+ * Rounding everything to hours printed "at most once every 0 h" beside the
+ * duress alarm, whose window is five minutes — a repeat limit of zero, which
+ * is the opposite of what it says.
+ */
+function every(ms: number): string {
+  const minutes = Math.round(ms / 60_000);
+  return minutes < 60 ? `${minutes} min` : `${Math.round(minutes / 60)} h`;
+}
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

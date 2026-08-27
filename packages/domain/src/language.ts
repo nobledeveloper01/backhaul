@@ -38,7 +38,13 @@ export type Phrase =
   | 'what_it_paid'
   | 'money_on_the_road'
   | 'back_to_trip'
-  | 'help_is_coming';
+  | 'help_is_coming'
+  | 'shared_until_trip_ends'
+  | 'nothing_shared_yet'
+  | 'recording_stopped'
+  | 'signal_good'
+  | 'checking_moving'
+  | 'checking_stopped';
 
 /**
  * English, and the source of truth for meaning.
@@ -65,6 +71,12 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_on_the_road: 'Money paid on the road',
   back_to_trip: 'Back to the trip',
   help_is_coming: 'Stay calm. Your carrier has been told.',
+  shared_until_trip_ends: 'Shared with your carrier and the cargo owner, until this trip ends.',
+  nothing_shared_yet: 'Nothing is being shared. Recording starts when you begin loading.',
+  recording_stopped: 'Recording has stopped. Nothing more is being shared.',
+  signal_good: 'Signal is good',
+  checking_moving: 'Checking your position every minute — on the move.',
+  checking_stopped: 'Checking every five minutes — the truck is not moving.',
 } as const;
 
 /**
@@ -94,6 +106,12 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_on_the_road: 'Kuɗin da aka biya a kan hanya',
   back_to_trip: 'Koma ga tafiya',
   help_is_coming: 'Ka kwantar da hankalinka. An sanar da mai motar.',
+  shared_until_trip_ends: 'Ana raba da mai motar da mai kaya, har sai tafiyar ta ƙare.',
+  nothing_shared_yet: 'Ba a raba komai. Rikodi zai fara sa\'ad da ka fara loda.',
+  recording_stopped: 'An dakatar da rikodi. Ba a ƙara raba komai.',
+  signal_good: 'Siginar tana da kyau',
+  checking_moving: 'Ana duba inda kake kowane minti — kana tafiya.',
+  checking_stopped: 'Ana duba kowane minti biyar — motar ba ta tafiya.',
 } as const;
 
 const TABLES: Readonly<Record<Language, Readonly<Record<Phrase, string>>>> = {

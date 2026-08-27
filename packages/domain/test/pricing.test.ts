@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { format, fromNaira, kobo, subtract, ZERO } from '../src/money.ts';
 import {
+  describeTruckClass,
   COMMISSION_PCT,
   FREE_WAITING_MS,
   INDICATIVE_STEP,
@@ -232,5 +233,18 @@ describe('indicative figures are not falsely precise', () => {
       const q = quote(truck, 512_345);
       assert.ok(q.low <= q.mid && q.mid <= q.high);
     }
+  });
+});
+
+describe('describeTruckClass', () => {
+  test('every class reads as a haulier would say it', () => {
+    // `truck.replace(/_/g, ' ')` gave "truck 15t" and "trailer 30t" on the
+    // fleet screen, which is a database column wearing a coat.
+    for (const truck of ['pickup', 'canter', 'truck_15t', 'trailer_30t', 'lowbed'] as const) {
+      const said = describeTruckClass(truck);
+      assert.doesNotMatch(said, /_/);
+      assert.doesNotMatch(said, /\d+t\b/);
+    }
+    assert.equal(describeTruckClass('trailer_30t'), '30 t trailer');
   });
 });

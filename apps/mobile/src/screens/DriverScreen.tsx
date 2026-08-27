@@ -7,8 +7,11 @@ import {
   LANGUAGES,
   allowedFrom,
   decide,
+  UPLOAD_EVERY_MS,
+  dailyCost,
   describeCost,
   describeLanguage,
+  describeMonthly,
   estimateCost,
   isSystemRaised,
   say,
@@ -94,6 +97,10 @@ export function DriverScreen({
   const dataUsed = usage(kept, Math.max(1, Math.round(kept / 10)));
   const dataCost = estimateCost(dataUsed);
 
+  // The trip figure is too small to be legible — twenty-odd kilobytes reads as
+  // nothing at all. The month is the number that answers the question.
+  const dailyData = dailyCost({ interval: INTERVAL.moving, uploadEveryMs: UPLOAD_EVERY_MS });
+
   if (base === undefined) {
     return null;
   }
@@ -140,12 +147,30 @@ export function DriverScreen({
         <Text variant="headline">
           {base.originName} → {base.destinationName}
         </Text>
-        <View style={styles.metaRow}>
+        {/*
+          The duress alarm lives on this line.
+
+          A long press on something already on the screen, rather than a second
+          copy of the same words added below it — which is what the first
+          version did, and which put "28 t cement · LSR-482-XA" on the screen
+          twice.
+
+          Nothing happens visibly. `visibleConfirmation()` returns null and
+          `raiseAlarm` holds it to that: whoever is standing over the driver
+          must not be able to tell.
+        */}
+        <Pressable
+          onLongPress={raiseAlarm}
+          delayLongPress={HOLD_MS}
+          accessibilityRole="button"
+          accessibilityLabel={`${base.cargo}, ${base.plate}`}
+          style={styles.metaRow}
+        >
           <Icon name="package" size="sm" colour={colours.textSecondary} />
           <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
             {base.cargo} · {base.plate}
           </Text>
-        </View>
+        </Pressable>
       </View>
 
       {/*
@@ -170,7 +195,7 @@ export function DriverScreen({
             colour={tracking ? colours.moving : colours.textSecondary}
           />
           <Text variant="title" tone={tracking ? 'moving' : 'secondary'} style={styles.flex}>
-            {tracking ? 'Recording your location' : 'Not recording'}
+            {say(language, tracking ? 'tracking_on' : 'tracking_off')}
           </Text>
         </View>
         <Text variant="bodyDriver" tone="secondary">
@@ -180,11 +205,19 @@ export function DriverScreen({
             arrived, and one that is over. "Recording starts when you begin
             loading" is true of the first and nonsense on the other two.
           */}
+          {/*
+            The carrier's name is dropped in Hausa rather than interpolated
+            into a translated sentence: word order differs between these two
+            languages and a template with a hole in it assumes it does not.
+            `language.ts` has no interpolation for exactly that reason.
+          */}
           {tracking
-            ? `Shared with ${base.carrier} and the cargo owner, until this trip ends.`
+            ? language === 'en'
+              ? `Shared with ${base.carrier} and the cargo owner, until this trip ends.`
+              : say(language, 'shared_until_trip_ends')
             : state === 'open' || state === 'assigned'
-              ? 'Nothing is being shared. Recording starts when you begin loading.'
-              : 'Recording has stopped. Nothing more is being shared.'}
+              ? say(language, 'nothing_shared_yet')
+              : say(language, 'recording_stopped')}
         </Text>
       </View>
 
@@ -201,14 +234,27 @@ export function DriverScreen({
       >
         <Icon name={online ? 'signal' : 'signal-off'} size="sm" colour={colours.textSecondary} />
         <Text variant="label" tone="secondary" style={styles.flex}>
-          {online ? 'Signal is good — tap to simulate losing it' : 'Offline — tap to restore signal'}
+          {online
+            ? `${say(language, 'signal_good')}${language === 'en' ? ' — tap to simulate losing it' : ''}`
+            : `${say(language, 'no_signal')}${language === 'en' ? ' — tap to restore signal' : ''}`}
         </Text>
       </Press>
 
       {tracking ? (
         <Card overline="Battery" icon="battery">
+          {/*
+            Two fixed sentences rather than one with the interval poured into
+            it. The cadence ladder has four rungs and Hausa does not put the
+            number where English does; a template would have produced a
+            sentence no Hausa speaker would say.
+          */}
           <Text variant="bodyDriver">
-            Checking your position {cadence(plan.sampleIn)} — {plan.because}.
+            {language === 'en'
+              ? `Checking your position ${cadence(plan.sampleIn)} — ${plan.because}.`
+              : say(
+                  language,
+                  plan.sampleIn <= INTERVAL.moving ? 'checking_moving' : 'checking_stopped',
+                )}
           </Text>
           {plan.sampleIn >= INTERVAL.conserving ? (
             <Text variant="bodyDriver" tone="stopped" style={styles.gap}>
@@ -242,31 +288,6 @@ export function DriverScreen({
         is about fifteen kobo — so this is not a warning, it is the answer to
         the fear, and it sits beside the battery line for the same reason.
       */}
-      {/*
-        The duress alarm.
-
-        A long press on the truck's own plate — a thing already on the screen,
-        which is the point. It shows nothing, sounds nothing and changes
-        nothing: whoever is standing over the driver must not be able to tell
-        it happened, and `visibleConfirmation()` returns null so that a screen
-        cannot disagree with the domain about it.
-
-        `alarmed` is kept only so the demo can prove the press was received;
-        nothing renders from it.
-      */}
-      <Pressable
-        onLongPress={raiseAlarm}
-        delayLongPress={HOLD_MS}
-        accessibilityRole="button"
-        accessibilityLabel={base.plate}
-        style={styles.plateRow}
-      >
-        <Icon name="truck" size="sm" colour={colours.textSecondary} />
-        <Text variant="body" tone="secondary" style={styles.flex}>
-          {base.plate} · {base.cargo}
-        </Text>
-      </Pressable>
-
       <View style={styles.languageRow}>
         {LANGUAGES.map((option) => (
           <Pressable
@@ -296,7 +317,7 @@ export function DriverScreen({
       <View style={styles.dataRow}>
         <Icon name="signal" size="sm" colour={colours.textSecondary} />
         <Text variant="body" tone="secondary" style={styles.flex}>
-          {describeCost(dataUsed, dataCost)}
+          {describeCost(dataUsed, dataCost)} {describeMonthly(dailyData.cost)}
         </Text>
       </View>
 
@@ -321,7 +342,12 @@ export function DriverScreen({
           style={[styles.half, { borderColor: colours.outline }]}
         >
           <Icon name="flag" size="lg" colour={colours.textSecondary} />
-          <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
+          {/*
+            Two lines. Hausa's "Ba da rahoton matsala" is longer than "Report",
+            and at one line it came out as "Ba da rahoton m…" — a button that no
+            longer said what it did.
+          */}
+          <Text variant="bodyDriver" tone="secondary" numberOfLines={2} style={styles.centred}>
             {say(language, 'report_problem')}
           </Text>
         </Press>
@@ -333,7 +359,7 @@ export function DriverScreen({
           style={[styles.half, { borderColor: colours.outline }]}
         >
           <Icon name="camera" size="lg" colour={colours.textSecondary} />
-          <Text variant="bodyDriver" tone="secondary" numberOfLines={1}>
+          <Text variant="bodyDriver" tone="secondary" numberOfLines={2} style={styles.centred}>
             {say(language, 'hand_over')}
           </Text>
         </Press>
@@ -427,6 +453,7 @@ function actionLabel(state: TripState): string {
 
 const styles = StyleSheet.create({
   dataRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  centred: { textAlign: 'center' },
   plateRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
   language: {
     paddingHorizontal: space.md,

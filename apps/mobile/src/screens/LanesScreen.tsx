@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   describeCadence,
   describeDue,
+  due,
+  dueIn,
   format,
   isDue,
   typicalPrice,
@@ -41,7 +43,11 @@ export function LanesScreen({ onBack, onPost }: Props) {
   const now = useMemo(demoNow, []);
 
   const lanes = useMemo(() => demoLanes(now), [now]);
-  const dueNow = lanes.filter((lane) => isDue(lane, now));
+  // `due()` rather than a filter: it sorts most-overdue first, which is what
+  // makes the one filled button land on the lane that actually needs posting.
+  // Filtering kept the demo's own order and put "due tomorrow" above "five
+  // days overdue".
+  const dueNow = due(lanes, now);
   const rest = lanes.filter((lane) => !isDue(lane, now));
 
   return (
@@ -56,8 +62,20 @@ export function LanesScreen({ onBack, onPost }: Props) {
             <Text variant="overline" tone="secondary">
               COMING ROUND AGAIN
             </Text>
-            {dueNow.map((lane) => (
-              <Row key={lane.id} lane={lane} now={now} onPost={onPost} due />
+            {/*
+              Only the first due lane gets a filled button. Two of them side by
+              side is a screen with two primaries, which is a screen with none —
+              and the one that is overdue should be the one being pointed at.
+            */}
+            {dueNow.map((lane, index) => (
+              <Row
+                key={lane.id}
+                lane={lane}
+                now={now}
+                onPost={onPost}
+                due
+                lead={index === 0}
+              />
             ))}
             <Text variant="label" tone="secondary">
               Two days of warning, so a load is posted before the day rather than
@@ -72,7 +90,7 @@ export function LanesScreen({ onBack, onPost }: Props) {
         </Text>
 
         {rest.map((lane) => (
-          <Row key={lane.id} lane={lane} now={now} onPost={onPost} due={false} />
+          <Row key={lane.id} lane={lane} now={now} onPost={onPost} due={false} lead={false} />
         ))}
       </ScrollView>
     </View>
@@ -84,14 +102,20 @@ function Row({
   now,
   onPost,
   due,
+  lead,
 }: {
   lane: Lane;
   now: Date;
   onPost: () => void;
   due: boolean;
+  lead: boolean;
 }) {
   const colours = useColours();
   const typical = typicalPrice(lane);
+
+  // Overdue is a different fact from due, and reading them in the same colour
+  // makes "act now" and "you have a day" look alike.
+  const overdue = (dueIn(lane, now) ?? 0) < 0;
 
   return (
     <Card emphasis={due ? 'accent' : 'raised'}>
@@ -102,7 +126,7 @@ function Row({
             {lane.origin} → {lane.destination} · {lane.cargo}
           </Text>
         </View>
-        <Text variant="label" tone={due ? 'accent' : 'secondary'}>
+        <Text variant="label" tone={overdue ? 'stopped' : due ? 'accent' : 'secondary'}>
           {describeDue(lane, now)}
         </Text>
       </View>
@@ -143,15 +167,15 @@ function Row({
         style={[
           styles.post,
           {
-            backgroundColor: due ? colours.accent : 'transparent',
-            borderColor: due ? colours.accent : colours.outline,
+            backgroundColor: lead ? colours.accent : 'transparent',
+            borderColor: lead ? colours.accent : colours.outline,
           },
         ]}
       >
-        <Icon name="plus" size="sm" colour={due ? colours.onAccent : colours.textSecondary} />
+        <Icon name="plus" size="sm" colour={lead ? colours.onAccent : colours.textSecondary} />
         <Text
           variant="label"
-          style={{ color: due ? colours.onAccent : colours.textSecondary }}
+          style={{ color: lead ? colours.onAccent : colours.textSecondary }}
         >
           Post this run
         </Text>

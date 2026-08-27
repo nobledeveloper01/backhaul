@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   byUrgency,
   describePaper,
+  describeTruckClass,
   describeStanding,
   mayCarry,
   type Assessment,
@@ -91,7 +92,7 @@ function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment
         <View style={styles.flex}>
           <Text variant="title">{vehicle.plate}</Text>
           <Text variant="label" tone="secondary">
-            {vehicle.truck.replace(/_/g, ' ')}
+            {describeTruckClass(vehicle.truck)}
           </Text>
         </View>
         <View style={[styles.badge, { borderColor: tint }]}>
