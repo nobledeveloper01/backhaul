@@ -136,4 +136,35 @@ public sealed class PositionRepository(BackhaulDbContext db)
 
         return [.. rows.Select(r => new Position(r.Lat, r.Lon, r.Accuracy, r.At, r.Speed, r.Battery))];
     }
+
+    /// <summary>
+    /// Positions for a trip a <b>share link</b> resolved to.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is the only unfiltered path to a position row, and it exists on
+    /// purpose.</b> ADR-0008 says no other query path returns positions; the
+    /// holder of a share link has no principal to filter against, because
+    /// having an account is exactly the friction the wedge exists to avoid.
+    /// See ADR-0010.
+    /// </para>
+    /// <para>
+    /// It takes a <see cref="ResolvedShare"/> rather than a bare
+    /// <see cref="Guid"/>, so it cannot be called without something a
+    /// <see cref="ShareRepository"/> lookup produced. A trip id on its own does
+    /// not open this door.
+    /// </para>
+    /// </remarks>
+    public async Task<IReadOnlyList<Position>> ForSharedTripAsync(
+        ResolvedShare share,
+        CancellationToken ct = default)
+    {
+        var rows = await db.Positions
+            .Where(p => p.TripId == share.TripId)
+            .OrderBy(p => p.At)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        return [.. rows.Select(r => new Position(r.Lat, r.Lon, r.Accuracy, r.At, r.Speed, r.Battery))];
+    }
 }

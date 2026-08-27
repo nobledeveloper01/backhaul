@@ -6,6 +6,63 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 (late) — The one route with no token on it
+
+**Did.** Served the share link. `GET /v1/share/{token}` is the first and only
+unauthenticated route in the product, and everything about why — why the token
+*is* the authorisation, why the scope is stored rather than requested, why
+contact details and money are typed `false` rather than filtered — is in
+[ADR-0010](adr/0010-a-share-link-is-a-capability-and-its-endpoint-is-public.md).
+
+Issuing and revoking stay authenticated, behind the same filter that decides
+who may read the trip. Eleven endpoint tests, and the round-trip script now
+follows a real link over HTTP with no credentials at all.
+
+Trips gained an origin and a destination on the way. The share page needed to
+say what the trip *was*, and the server could not: it held three party ids, a
+state machine and a pile of coordinates, and nothing that named a road.
+
+### What surprised us
+
+**This route bends ADR-0008 and had to say so.** That ADR returns 404 for an
+unauthorised read, because the existence of a trip id is information and a 403
+confirms it. A share token is 32 bytes of randomness, so anybody holding one
+that parses already has the capability the answer would confirm — and telling
+them *why* it stopped working is the difference between "your link ran out" and
+"somebody cut you off", which are different phone calls to a haulier who did
+nothing wrong. **410 for revoked and expired, 404 for a token nobody issued.**
+Writing the ADR was what turned that from an inconsistency into a decision.
+
+**There is now exactly one unfiltered path to a position row, and it takes a
+`ResolvedShare` rather than a `Guid`.** A trip id on its own cannot open that
+door; only something a share lookup produced can. Same for the corridor
+lookup. It is a small thing and it is the difference between an exception and
+a hole.
+
+**A revoke that worked reported failure.** `204 No Content` has no body, and
+`response.json()` on an empty one throws *"Unexpected end of JSON input"* — so
+the client's one generic success path turned a successful revoke into an
+`unreachable` failure. A successful call reporting failure is worse than the
+reverse: the caller retries something that already happened, and here that
+means telling somebody their link was turned off, twice. Caught by the
+round-trip script, not by a unit test, because every unit test had a body.
+
+**The refusal wording is now asserted character-for-character in three
+places** — the domain's tests, the endpoint tests and the round trip. Copy is
+a rule like any other, and a holder who reads one sentence in the app and a
+different one on the web has found a seam.
+
+### Still open
+
+- **Rate limiting.** Guessing a 32-byte token is not a threat; hammering an
+  unauthenticated endpoint is. This route must not ship without it, and it is
+  now a named item on phase 2's gate rather than a thought.
+- The mobile app's share screen still reads from `state/product.ts` rather
+  than the API. Wiring it is a phase 2 task and needs auth on the device
+  first.
+
+---
+
 ## 2026-08-27 (night) — Fifteen screens, and what looking at them found
 
 **Did.** Gave the fifteen features their surfaces: share links with scope,

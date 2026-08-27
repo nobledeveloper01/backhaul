@@ -51,6 +51,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   connection the truck could not physically make. The loads it passed over are
   shown too, each with the reason — a proposal you cannot argue with is a
   proposal nobody acts on.
+- **The share link is served.** `GET /v1/share/{token}` needs no account and no
+  token of its own — that is the point — and answers with exactly what the
+  link's stored scope allows. Issuing and revoking are authenticated and open
+  only to somebody already on the trip. A link that was turned off says so; one
+  that lapsed says that instead; one nobody issued is simply not found.
+- **A trip now carries its corridor.** Origin and destination as names, so the
+  API can say what a trip *is* rather than only where its truck has been.
 - **Every one of the above now has a screen**, on the face that needs it: the
   shipper shares and reads the thread, the carrier sees verification and the
   chain, the driver reports and hands over. Switching tabs keeps your place, and
@@ -169,6 +176,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   name printed twice.
 - The chain proposal explained a rejected load against the wrong leg of the
   chain, refusing a load in the town the truck was standing in.
+- Revoking a share link reported a failure on a revoke that had succeeded: the
+  client could not parse the empty body of a `204`, and would have told
+  somebody their link was turned off twice.
 - At the largest accessibility text size the trip header lost its destination
   to an ellipsis, the three trip actions read "Sh…", "M…" and "Re…", and the
   corridor's own labels broke across three lines.

@@ -65,6 +65,7 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
 
         var record = await trips.CreateAsync(
             tripId,
+            new Corridor(body.Origin, body.Destination),
             parties,
             accepted.Event,
             clock.GetUtcNow(),
@@ -142,6 +143,7 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
         var updated = await trips.AppendAsync(
             tripId,
             Caller,
+            record.Corridor,
             record.Parties,
             record.History,
             accepted.Event,
@@ -157,6 +159,8 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
         return new TripResponse
         {
             Id = record.Id,
+            Origin = record.Corridor.Origin,
+            Destination = record.Corridor.Destination,
             State = TripMachine.ToWire(state),
             Tracking = TripMachine.ShouldTrack(state),
             AllowedNext = [.. TripMachine.AllowedFrom(state).Select(TripMachine.ToWire)],

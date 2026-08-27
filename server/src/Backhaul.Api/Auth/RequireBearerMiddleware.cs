@@ -22,6 +22,11 @@ public sealed class RequireBearerMiddleware(RequestDelegate next)
         "/healthz",
         "/swagger",
         "/favicon.ico",
+
+        // The one public route that returns somebody's truck's position. It is
+        // listed here, in an allow-list, precisely so that adding it is a
+        // visible line in a diff rather than an omission. See ADR-0010.
+        "/v1/share",
     ];
 
     public async Task InvokeAsync(HttpContext context)

@@ -32,6 +32,8 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
                 driverId = driver.UserId,
                 carrierId = Guid.NewGuid(),
                 shipperId = Guid.NewGuid(),
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });

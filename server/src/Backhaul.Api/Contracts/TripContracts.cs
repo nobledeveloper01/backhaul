@@ -22,6 +22,18 @@ public sealed class OpenTripRequest
     [Required]
     public Guid ShipperId { get; set; }
 
+    /// <summary>Where it loads. "Lagos", not a coordinate.</summary>
+    /// <example>Lagos</example>
+    [Required]
+    [MaxLength(80)]
+    public string Origin { get; set; } = string.Empty;
+
+    /// <summary>Where it unloads.</summary>
+    /// <example>Kano</example>
+    [Required]
+    [MaxLength(80)]
+    public string Destination { get; set; } = string.Empty;
+
     [Required]
     public DateTimeOffset At { get; set; }
 
@@ -75,6 +87,10 @@ public sealed class TripEventResponse
 public sealed class TripResponse
 {
     public Guid Id { get; set; }
+
+    public string Origin { get; set; } = string.Empty;
+
+    public string Destination { get; set; } = string.Empty;
 
     public string State { get; set; } = string.Empty;
 

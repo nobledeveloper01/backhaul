@@ -16,6 +16,20 @@ public sealed class TripEntity
     /// <summary>Who owns the goods.</summary>
     public Guid ShipperId { get; set; }
 
+    /// <summary>Where it loads, as a person would say it: "Lagos".</summary>
+    /// <remarks>
+    /// A name, not a coordinate. The corridor's endpoints are what a screen
+    /// renders and what a share link's recipient reads; the positions that
+    /// prove the trip live in their own table. Added when the share page
+    /// needed to say what the trip *was* and the server could not.
+    /// </remarks>
+    [MaxLength(80)]
+    public string Origin { get; set; } = string.Empty;
+
+    /// <summary>Where it unloads.</summary>
+    [MaxLength(80)]
+    public string Destination { get; set; } = string.Empty;
+
     /// <summary>
     /// Denormalised current state, for the ingest path.
     /// </summary>

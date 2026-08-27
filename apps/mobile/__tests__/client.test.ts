@@ -180,3 +180,23 @@ describe('the bearer token', () => {
     expect(lastHeaders()['authorization']).toBe('Bearer second');
   });
 });
+
+describe('a response with no body', () => {
+  test('204 succeeds rather than failing to parse nothing', async () => {
+    // Revoking a share link answers 204. Calling `json()` on an empty body
+    // throws "Unexpected end of JSON input", and the revoke — which had in
+    // fact succeeded — was reported as a failure. A successful call reporting
+    // failure is worse than the reverse: the caller retries something that
+    // already happened, and here that means telling somebody their link was
+    // turned off twice.
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+    });
+
+    const result = await new BackhaulApi().revokeShare('a-trip', 'a-link');
+
+    expect(result.ok).toBe(true);
+  });
+});

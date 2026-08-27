@@ -52,6 +52,8 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
                 driverId = Guid.NewGuid(),
                 carrierId = Guid.NewGuid(),
                 shipperId = Guid.NewGuid(),
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });
@@ -176,6 +178,8 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
                 driverId = driver.UserId,
                 carrierId = Guid.NewGuid(),
                 shipperId = Guid.NewGuid(),
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });

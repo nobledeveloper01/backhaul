@@ -108,6 +108,7 @@ async function main(): Promise<void> {
   const opened = await api.openTrip(
     tripId,
     parties,
+    { origin: 'Lagos', destination: 'Kano' },
     at(0),
     'driver',
     'Cement, Lagos to Kano',
@@ -197,6 +198,59 @@ async function main(): Promise<void> {
       'and on what the truck is doing',
       localObservation === track.value.observation,
       `local ${localObservation}, server ${track.value.observation}`,
+    );
+  }
+
+  // --- the share link, and the one route with no token on it --------------
+
+  const issued = await api.issueShare(tripId, 'position', 'Alhaji Bello');
+  check('a share link is issued', issued.ok, issued.ok ? '' : issued.failure.detail);
+
+  if (issued.ok) {
+    const token = issued.value.token;
+
+    // Deliberately *not* through `BackhaulApi`: the whole claim is that this
+    // works with no credentials at all, and the client always carries one.
+    const followed = await fetch(`${BASE}/v1/share/${token}`);
+    check('a stranger with no token can follow it', followed.status === 200, String(followed.status));
+
+    const view = (await followed.json()) as {
+      origin: string;
+      destination: string;
+      track?: unknown;
+      quality?: unknown;
+    };
+    check('and sees the corridor', view.origin === 'Lagos' && view.destination === 'Kano');
+
+    // `position` scope. The absence of these is the product decision, not an
+    // implementation detail, so it is asserted rather than assumed.
+    check('a position link carries no track', view.track === null || view.track === undefined);
+    check('and no fix quality', view.quality === null || view.quality === undefined);
+
+    const raw = JSON.stringify(view);
+    check(
+      'and nothing about money or the parties',
+      !/naira|kobo|fare|price|driverId|shipperId/i.test(raw),
+      raw.slice(0, 120),
+    );
+
+    const revoked = await api.revokeShare(tripId, issued.value.id);
+    check('the link revokes', revoked.ok, revoked.ok ? '' : revoked.failure.detail);
+
+    const after = await fetch(`${BASE}/v1/share/${token}`);
+    check('a revoked link is gone, not merely absent', after.status === 410, String(after.status));
+
+    const refusal = (await after.json()) as { refusal: string; message: string };
+    // Character-for-character the sentence in `packages/domain/src/sharing.ts`.
+    // The parity fixtures exist because two implementations of one rule drift,
+    // and copy is a rule: a holder who reads one wording in the app and
+    // another on the web has found a seam.
+    check(
+      'and says it was turned off, in the same words the app uses',
+      refusal.refusal === 'revoked' &&
+        refusal.message ===
+          'This link was turned off. Ask whoever sent it for a new one.',
+      refusal.message,
     );
   }
 

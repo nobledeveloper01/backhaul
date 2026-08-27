@@ -145,6 +145,8 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
                 driverId = Guid.NewGuid(),
                 carrierId = Guid.NewGuid(),
                 shipperId = Guid.NewGuid(),
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });
@@ -169,6 +171,8 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
                 driverId = Guid.NewGuid(),
                 carrierId = Guid.NewGuid(),
                 shipperId = stranger.UserId,
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });
@@ -192,6 +196,8 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
                 driverId = driver.UserId,
                 carrierId = carrier.UserId,
                 shipperId = shipper.UserId,
+                origin = "Lagos",
+                destination = "Kano",
                 at = T0,
                 actor = "shipper",
             });

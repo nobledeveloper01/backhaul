@@ -127,8 +127,14 @@ Carries features **1–5** of the fifteen. All five engines are written and
 tested; none has a screen yet.
 
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
-both platforms. First external pilot users onboard here — before any
-marketplace exists.
+both platforms, **and the public share route is rate limited**. First external
+pilot users onboard here — before any marketplace exists.
+
+The rate limit is on the gate rather than in the backlog because
+`GET /v1/share/{token}` is the only route in the product that answers an
+unauthenticated request with a truck's position. Guessing a 32-byte token is
+not a threat; hammering the endpoint is. See
+[ADR-0010](adr/0010-a-share-link-is-a-capability-and-its-endpoint-is-public.md).
 
 **Blocked on auth**, which has no phase of its own and needs one: the ingest
 endpoint currently accepts a batch from anybody who knows a trip id.

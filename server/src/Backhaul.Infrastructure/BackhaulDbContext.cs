@@ -16,6 +16,8 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<AccessTokenEntity> AccessTokens => Set<AccessTokenEntity>();
 
+    public DbSet<ShareLinkEntity> ShareLinks => Set<ShareLinkEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -58,6 +60,19 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // no path that finds a token by anything else.
             token.HasKey(t => t.Hash);
             token.HasIndex(t => t.UserId);
+        });
+
+        model.Entity<ShareLinkEntity>(link =>
+        {
+            // Same shape as a token, for the same reason: the public route
+            // looks a link up by hash and by nothing else.
+            link.HasKey(l => l.Hash);
+
+            // The owner's side works from the id, which is safe to show. The
+            // uniqueness constraint is what makes "revoke this one" a single
+            // row rather than a filter.
+            link.HasIndex(l => l.Id).IsUnique();
+            link.HasIndex(l => l.TripId);
         });
     }
 }

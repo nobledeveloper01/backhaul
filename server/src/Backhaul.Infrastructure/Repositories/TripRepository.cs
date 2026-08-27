@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backhaul.Infrastructure.Repositories;
 
-public sealed record TripRecord(Guid Id, TripParties Parties, IReadOnlyList<TripEvent> History);
+public sealed record Corridor(string Origin, string Destination);
+
+public sealed record TripRecord(
+    Guid Id,
+    Corridor Corridor,
+    TripParties Parties,
+    IReadOnlyList<TripEvent> History);
 
 /// <summary>
 /// Trips, and who may see them.
@@ -44,7 +50,7 @@ public sealed class TripRepository(BackhaulDbContext db)
     {
         var trip = await Visible(principal)
             .Where(t => t.Id == id)
-            .Select(t => new { t.DriverId, t.CarrierId, t.ShipperId })
+            .Select(t => new { t.DriverId, t.CarrierId, t.ShipperId, t.Origin, t.Destination })
             .AsNoTracking()
             .FirstOrDefaultAsync(ct);
 
@@ -63,6 +69,7 @@ public sealed class TripRepository(BackhaulDbContext db)
             ? null
             : new TripRecord(
                 id,
+                new Corridor(trip.Origin, trip.Destination),
                 new TripParties(trip.DriverId, trip.CarrierId, trip.ShipperId),
                 [.. events.Select(ToDomain)]);
     }
@@ -118,6 +125,7 @@ public sealed class TripRepository(BackhaulDbContext db)
 
     public async Task<TripRecord> CreateAsync(
         Guid id,
+        Corridor corridor,
         TripParties parties,
         TripEvent first,
         DateTimeOffset recordedAt,
@@ -130,10 +138,12 @@ public sealed class TripRepository(BackhaulDbContext db)
             DriverId = parties.DriverId,
             CarrierId = parties.CarrierId,
             ShipperId = parties.ShipperId,
+            Origin = corridor.Origin,
+            Destination = corridor.Destination,
         });
         db.TripEvents.Add(ToEntity(id, 0, first, recordedAt));
         await db.SaveChangesAsync(ct);
-        return new TripRecord(id, parties, [first]);
+        return new TripRecord(id, corridor, parties, [first]);
     }
 
     /// <summary>Appends an event and moves the denormalised state with it.</summary>
@@ -146,6 +156,7 @@ public sealed class TripRepository(BackhaulDbContext db)
     public async Task<TripRecord> AppendAsync(
         Guid id,
         Principal principal,
+        Corridor corridor,
         TripParties parties,
         IReadOnlyList<TripEvent> history,
         TripEvent added,
@@ -161,8 +172,25 @@ public sealed class TripRepository(BackhaulDbContext db)
         db.TripEvents.Add(ToEntity(id, history.Count, added, recordedAt));
         await db.SaveChangesAsync(ct);
 
-        return new TripRecord(id, parties, [.. history, added]);
+        return new TripRecord(id, corridor, parties, [.. history, added]);
     }
+
+    /// <summary>
+    /// The corridor of a trip a <b>share link</b> resolved to.
+    /// </summary>
+    /// <remarks>
+    /// Unfiltered, and takes a <see cref="ResolvedShare"/> rather than a bare
+    /// id so it cannot be reached without a link that a lookup produced. Same
+    /// reasoning as <c>PositionRepository.ForSharedTripAsync</c>; see ADR-0010.
+    /// </remarks>
+    public async Task<Corridor?> CorridorForSharedAsync(
+        ResolvedShare share,
+        CancellationToken ct = default) =>
+        await db.Trips
+            .Where(t => t.Id == share.TripId)
+            .Select(t => new Corridor(t.Origin, t.Destination))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
 
     private static TripEventEntity ToEntity(
         Guid tripId,

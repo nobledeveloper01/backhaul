@@ -1,4 +1,5 @@
-import type { Position, TripEvent, TripState } from '@backhaul/domain';
+import { DEFAULT_SHARE_DAYS } from '@backhaul/domain';
+import type { Position, ShareScope, TripEvent, TripState } from '@backhaul/domain';
 
 /**
  * The API client.
@@ -46,6 +47,21 @@ export interface TripView {
   readonly tracking: boolean;
   readonly allowedNext: readonly TripState[];
   readonly history: readonly TripEvent[];
+}
+
+/** A link, as its issuer sees it. Never carries the token. */
+export interface ShareLinkView {
+  readonly id: string;
+  readonly scope: ShareScope;
+  readonly label: string;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+  readonly revokedAt: string | null;
+}
+
+export interface IssuedShareView extends ShareLinkView {
+  /** Shown once and never retrievable. */
+  readonly token: string;
 }
 
 export interface TrackView {
@@ -120,6 +136,7 @@ export class BackhaulApi {
   async openTrip(
     id: string,
     parties: TripParties,
+    corridor: { readonly origin: string; readonly destination: string },
     at: Date,
     actor: TripEvent['actor'],
     note?: string,
@@ -128,6 +145,8 @@ export class BackhaulApi {
       driverId: parties.driverId,
       carrierId: parties.carrierId,
       shipperId: parties.shipperId,
+      origin: corridor.origin,
+      destination: corridor.destination,
       at: at.toISOString(),
       actor,
       ...(note === undefined ? {} : { note }),
@@ -188,8 +207,36 @@ export class BackhaulApi {
     return this.request<TrackView>('GET', `/v1/tracking/trip/${tripId}/track`);
   }
 
+  /**
+   * Issues a share link, and returns the token **once**.
+   *
+   * The server stores only a hash, so this response is the only time the token
+   * exists in readable form anywhere. A caller that discards it cannot get it
+   * back and has to issue another. See ADR-0010.
+   */
+  async issueShare(
+    tripId: string,
+    scope: ShareScope,
+    label: string,
+    days = DEFAULT_SHARE_DAYS,
+  ): Promise<ApiResult<IssuedShareView>> {
+    return this.request<IssuedShareView>('POST', `/v1/trips/${tripId}/share`, {
+      scope,
+      label,
+      days,
+    });
+  }
+
+  async shareLinks(tripId: string): Promise<ApiResult<readonly ShareLinkView[]>> {
+    return this.request<readonly ShareLinkView[]>('GET', `/v1/trips/${tripId}/share`);
+  }
+
+  async revokeShare(tripId: string, linkId: string): Promise<ApiResult<null>> {
+    return this.request<null>('DELETE', `/v1/trips/${tripId}/share/${linkId}`);
+  }
+
   private async request<T>(
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'DELETE',
     path: string,
     body?: unknown,
   ): Promise<ApiResult<T>> {
@@ -224,6 +271,15 @@ export class BackhaulApi {
             detail: await readDetail(response),
           },
         };
+      }
+
+      // 204 has no body, and `json()` on an empty one throws
+      // "Unexpected end of JSON input" — which surfaced as a *failed* revoke
+      // on a revoke that had in fact succeeded. A successful call reporting
+      // failure is worse than the reverse: the caller retries something that
+      // already happened.
+      if (response.status === 204) {
+        return { ok: true, value: null as T };
       }
 
       return { ok: true, value: (await response.json()) as T };
