@@ -52,6 +52,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   with the record shown beside the price so the shipper can overrule the order.
   A new carrier ranks as unknown, not as bad.
 
+### Added
+
+- **Store-and-forward for positions.** A fix leaves the phone only when the
+  server has acknowledged that exact fix — not when a batch was sent, not when
+  a response arrived, and not when a batch containing it was acknowledged in
+  part. A driver offline for four hours loses nothing.
+
 ### Security
 
 - **Every endpoint except `/healthz` now needs a bearer token**, and a trip is

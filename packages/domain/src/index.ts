@@ -14,6 +14,7 @@
 export * from './trip.ts';
 export * from './geo.ts';
 export * from './tracking.ts';
+export * from './queue.ts';
 export * from './money.ts';
 export * from './pricing.ts';
 export * from './eta.ts';

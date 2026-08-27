@@ -51,12 +51,20 @@ The policy those loops follow is already written and tested
 
 **Exit gate — all three are hard**
 
-1. **Zero position loss** across a simulated 1,000 km airplane-mode trip,
-   verified for order and for duplicates.
-2. **Under 4% battery per hour**, screen off, measured on real hardware on both
-   platforms.
-3. **72-hour soak survival** on physical devices including Tecno and Infinix
-   handsets.
+| | |
+|---|---|
+| 1. **Zero position loss** across a simulated 1,000 km airplane-mode trip, verified for order and for duplicates | **green in software** — `packages/domain/test/queue.test.ts`, and re-checked against the native queue in `apps/mobile/__tests__/tracker.test.ts`. See ADR-0009 |
+| 2. **Under 4% battery per hour**, screen off, on real hardware, both platforms | blocked on a device |
+| 3. **72-hour soak survival** on physical devices including Tecno and Infinix | blocked on a device |
+
+Gate 1 is about correctness and is met. Gates 2 and 3 are about a handset and
+no simulation stands in for either — the risk they exist to catch is OEM
+battery management killing a foreground service, which only happens on the
+device it happens on.
+
+**Built so far:** the queue policy and the upload loop, both pure and tested;
+the TurboModule contract (`apps/mobile/src/native/NativeTracking.ts`).
+**Not built:** the two native implementations behind that contract.
 
 Everything else in this product is ordinary application development. If this
 does not work, nothing else matters, and it is far better to find that out in

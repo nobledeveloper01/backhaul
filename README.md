@@ -50,15 +50,17 @@ importable by consumers that are not React Native, the boundary rule is proven
 to fire, both platforms build in CI on every push, and the app has been walked
 through on a device — which is where most of the defects in §8 were found.
 
-**Phase 1 is next, and it is the long pole**: the native tracking loop, with
-three hard gates measured on real hardware.
+**Phase 1 is under way, and it is the long pole**: the native tracking loop.
+Its first exit gate — *zero position loss across a simulated 1,000 km
+airplane-mode trip* — is **met in software** (ADR-0009). The other two need a
+physical Transsion handset and no simulation stands in for them.
 
 | | |
 |---|---|
-| Domain tests | **140** passing |
+| Domain tests | **157** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
-| App tests | **21** passing |
+| App tests | **32** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Screens | shipper, carrier and driver faces, both themes, iOS and Android |
 | Authentication | bearer tokens; authorisation filtered at the query layer |
