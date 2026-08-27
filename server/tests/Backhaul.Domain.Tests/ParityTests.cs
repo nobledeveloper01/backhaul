@@ -1209,4 +1209,87 @@ public sealed class ParityTests
         }
     }
 
+
+    // --- lanes -------------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_price_a_lane_from_its_last_six_runs_and_say_the_same_words()
+    {
+        // The median is the whole reason this engine exists — a mean over two
+        // years anchors a shipper to a number that stopped being true, and one
+        // panic-priced trip during a fuel shortage would drag it for a year.
+        // The sentence is asserted too: "Due tomorrow" against "Due in 1 days"
+        // is the kind of difference only a rendered screen shows.
+        Assert.Equal(F.Lanes.DueWarningMs, Lanes.DueWarningMs);
+        Assert.Equal(F.Lanes.RecentRuns, Lanes.RecentRuns);
+        Assert.Equal(F.Lanes.MinimumRunsForTypical, Lanes.MinimumRunsForTypical);
+        Assert.Equal(F.Lanes.UnusualFraction, Lanes.UnusualFraction);
+
+        var now = F.Lanes.NowIso;
+
+        foreach (var row in F.Lanes.Cases)
+        {
+            var lane = LaneFor(row, now);
+
+            Assert.Equal(row.DueInMs, Lanes.DueIn(lane, now));
+            Assert.Equal(row.Due, Lanes.IsDue(lane, now));
+            Assert.Equal(row.TypicalKobo, Lanes.TypicalPrice(lane)?.Value);
+            Assert.Equal(row.DescribeDue, Lanes.DescribeDue(lane, now));
+            Assert.Equal(row.DescribeCadence, Lanes.DescribeCadence(lane.Cadence));
+
+            if (Lanes.TypicalPrice(lane) is not { } typical) continue;
+
+            Assert.Equal(
+                row.UnusualAtHalf,
+                Lanes.IsUnusual(lane, new Kobo((long)Math.Floor(typical.Value * 0.5 + 0.5))));
+
+            // Ten per cent over is inside the quarter either way, and stays
+            // inside it: a shipper with a reason is not blocked or nagged.
+            Assert.Equal(
+                row.UnusualAtTenOver,
+                Lanes.IsUnusual(lane, new Kobo((long)Math.Floor(typical.Value * 1.1 + 0.5))));
+        }
+    }
+
+    private static Lane LaneFor(LaneRow row, DateTimeOffset now)
+    {
+        // The fixture stores the shape of the history rather than its values,
+        // so the amounts are rebuilt here in the same order the emitter used.
+        var history = row.Runs switch
+        {
+            0 => new List<Kobo>(),
+            2 => [Kobo.FromNaira(2_200_000), Kobo.FromNaira(2_240_000)],
+            8 =>
+            [
+                Kobo.FromNaira(9_000_000), Kobo.FromNaira(9_000_000),
+                Kobo.FromNaira(2_000_000), Kobo.FromNaira(2_100_000),
+                Kobo.FromNaira(2_200_000), Kobo.FromNaira(2_300_000),
+                Kobo.FromNaira(2_400_000), Kobo.FromNaira(2_500_000),
+            ],
+            _ =>
+            [
+                Kobo.FromNaira(2_200_000), Kobo.FromNaira(2_240_000), Kobo.FromNaira(2_100_000),
+            ],
+        };
+
+        // Derived from the answer the fixture already holds, so the two sides
+        // are given the same last-run date without restating it.
+        DateTimeOffset? lastRun = row.DueInMs is { } dueIn
+            ? now.AddMilliseconds(dueIn - Lanes.CadenceMs[Lanes.FromWire(row.Cadence)!.Value])
+            : row.Cadence == "ad_hoc" ? now.AddDays(-40) : null;
+
+        return new Lane(
+            Guid.Empty,
+            Guid.Empty,
+            "Apapa to Kano",
+            "Lagos",
+            "Kano",
+            "Cement",
+            28_000,
+            TruckClass.Trailer30t,
+            Lanes.FromWire(row.Cadence)!.Value,
+            history,
+            lastRun);
+    }
+
 }

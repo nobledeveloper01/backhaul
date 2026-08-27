@@ -9,6 +9,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Lanes: the runs a shipper makes again.** A named route with a cadence, and
+  the price history behind it. What it typically goes for is the **median of
+  the last six** — never the average of everything, because a lane's price
+  drifts and one panic-priced trip during a fuel shortage would drag a mean for
+  a year. Below three runs there is no typical price at all.
+
+  A lane that is coming round sorts to the top with two days of warning, so a
+  shipper posts before the day rather than on it. Ad-hoc lanes never appear
+  there: a list that prompts about something with no schedule is a list that
+  prompts about everything. A price a quarter either way of the usual one gets a
+  sentence rather than a refusal.
+
 - **Records, not stars.** After a delivery is proved, the shipper and the
   carrier each answer four yes-or-no questions about the other, and what a
   stranger reads is how often each was true — with the denominator, because

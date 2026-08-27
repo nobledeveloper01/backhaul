@@ -107,6 +107,20 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  DUE_WARNING_MS,
+  MINIMUM_RUNS_FOR_TYPICAL,
+  RECENT_RUNS,
+  UNUSUAL_FRACTION,
+  describeCadence,
+  describeDue,
+  dueIn,
+  isDue,
+  isUnusual,
+  typicalPrice,
+  type Cadence,
+  type Lane,
+} from '../packages/domain/src/lanes.ts';
+import {
   CARRIER_CLAIMS,
   MINIMUM_ANSWERS,
   REVIEW_WINDOW_DAYS,
@@ -1529,6 +1543,70 @@ const reviewableCases = ([0, 1, 7, 8, -1] as const).map((days) => ({
   ),
 }));
 
+// --- lanes -----------------------------------------------------------------
+
+/**
+ * The median of the last six, and the sentence a shipper reads.
+ *
+ * Both are fixture material. The median is the whole reason this engine exists
+ * — a mean over two years anchors a shipper to a number that stopped being
+ * true — and "Due tomorrow" against "Due in 1 days" is the kind of difference
+ * only a rendered screen shows.
+ */
+const LANE_NOW = new Date('2026-03-10T09:00:00.000Z');
+const laneDaysAgo = (days: number) => new Date(LANE_NOW.getTime() - days * 86_400_000);
+
+const lane = (
+  cadence: Cadence,
+  historyNaira: readonly number[],
+  lastRunDaysAgo: number | null,
+): Lane => ({
+  id: 'l1',
+  shipperId: 's1',
+  name: 'Apapa to Kano',
+  origin: 'Lagos',
+  destination: 'Kano',
+  cargo: 'Cement',
+  weightKg: 28_000,
+  truck: 'trailer_30t',
+  cadence,
+  history: historyNaira.map((naira) => fromNaira(naira)),
+  lastRunAt: lastRunDaysAgo === null ? null : laneDaysAgo(lastRunDaysAgo),
+});
+
+const laneCases = (
+  [
+    ['weekly, run five days ago', lane('weekly', [2_200_000, 2_240_000, 2_100_000], 5)],
+    ['weekly, run eight days ago', lane('weekly', [2_200_000, 2_240_000, 2_100_000], 8)],
+    ['weekly, run today', lane('weekly', [2_200_000, 2_240_000, 2_100_000], 0)],
+    ['weekly, run six days ago', lane('weekly', [2_200_000, 2_240_000, 2_100_000], 6)],
+    ['monthly, never run', lane('monthly', [], null)],
+    ['ad hoc never comes due', lane('ad_hoc', [2_200_000, 2_240_000, 2_100_000], 40)],
+    // Two runs is not a history: below three there is no typical price at all.
+    ['two runs is not a history', lane('weekly', [2_200_000, 2_240_000], 5)],
+    // An even count takes the mean of the middle two.
+    [
+      'eight runs, only the last six count',
+      lane('weekly', [9_000_000, 9_000_000, 2_000_000, 2_100_000, 2_200_000, 2_300_000, 2_400_000, 2_500_000], 5),
+    ],
+  ] as const
+).map(([name, each]) => {
+  const typical = typicalPrice(each);
+
+  return {
+    name,
+    cadence: each.cadence,
+    runs: each.history.length,
+    dueInMs: dueIn(each, LANE_NOW),
+    due: isDue(each, LANE_NOW),
+    typicalKobo: typical,
+    describeDue: describeDue(each, LANE_NOW),
+    describeCadence: describeCadence(each.cadence),
+    unusualAtHalf: typical === null ? null : isUnusual(each, Math.round(typical * 0.5) as Kobo),
+    unusualAtTenOver: typical === null ? null : isUnusual(each, Math.round(typical * 1.1) as Kobo),
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1678,6 +1756,14 @@ const fixtures = {
     verdicts: shareCases,
     pairs: pairingCases,
   },
+  lanes: {
+    dueWarningMs: DUE_WARNING_MS,
+    recentRuns: RECENT_RUNS,
+    minimumRunsForTypical: MINIMUM_RUNS_FOR_TYPICAL,
+    unusualFraction: UNUSUAL_FRACTION,
+    nowIso: iso(LANE_NOW),
+    cases: laneCases,
+  },
   ratings: {
     reviewWindowDays: REVIEW_WINDOW_DAYS,
     minimumAnswers: MINIMUM_ANSWERS,
@@ -1742,6 +1828,7 @@ process.stdout.write(
       `${packCases.length} dispute packs`,
       `${deviationCases.length} deviation verdicts`,
       `${ratingCases.length} tallies`,
+      `${laneCases.length} lanes`,
     ].join(', ')
   }\n`,
 );

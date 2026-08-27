@@ -6,6 +6,27 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-30 — Lanes, and rebuilding a fixture's inputs on the far side
+
+**Did.** `lanes.ts` mirrored, eight parity cases, a `LaneEntity`, and four
+routes. 128 parity cases, 147 endpoint tests.
+
+### What surprised us
+
+**The lane fixtures pin an answer whose input the C# side has to reconstruct.**
+Most parity groups emit their inputs alongside their outputs. This one emits
+`dueInMs` and the shape of the history, and the test rebuilds a last-run date
+by subtracting the cadence from the answer. That works and the comment says
+what it is doing — but it is a step further from "the fixture is the input"
+than the other groups, and it is the kind of cleverness that reads fine today
+and confuses somebody in six months. Worth watching if a ninth case is added.
+
+**`Math.round` on a negative half, again.** A lane half a day overdue is -0.5
+days. JavaScript rounds that to -0, which renders "Due today"; .NET's
+away-from-zero gives -1, which renders "1 days overdue". Third time this
+family of differences has surfaced — matching, costs, and now lanes — and every
+time it was inside a sentence rather than inside a number.
+
 ## 2026-08-29 (night) — Records, and the third state that had to survive storage
 
 **Did.** `ratings.ts` mirrored, six parity cases, a `ReviewEntity`, and two

@@ -90,6 +90,7 @@ public sealed record ParityFixtures(
     ConsolidationFixtures Consolidation,
     DeviationFixtures Deviation,
     RatingFixtures Ratings,
+    LaneFixtures Lanes,
     DisputeFixtures Dispute);
 
 public sealed record ParityConstants(
@@ -549,3 +550,23 @@ public sealed record ReviewRow(string TripId, Dictionary<string, bool> Answers);
 public sealed record TallyRow(string Claim, int Yes, int Asked, bool WorthShowing, string Label);
 
 public sealed record ReviewWindowRow(int Days, bool Reviewable);
+
+public sealed record LaneFixtures(
+    long DueWarningMs,
+    int RecentRuns,
+    int MinimumRunsForTypical,
+    double UnusualFraction,
+    DateTimeOffset NowIso,
+    IReadOnlyList<LaneRow> Cases);
+
+public sealed record LaneRow(
+    string Name,
+    string Cadence,
+    int Runs,
+    long? DueInMs,
+    bool Due,
+    long? TypicalKobo,
+    string DescribeDue,
+    string DescribeCadence,
+    bool? UnusualAtHalf,
+    bool? UnusualAtTenOver);

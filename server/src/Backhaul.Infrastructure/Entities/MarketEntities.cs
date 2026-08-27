@@ -113,3 +113,46 @@ public sealed class ReviewEntity
 
     public DateTimeOffset At { get; set; }
 }
+
+/// <summary>
+/// A run a shipper makes again and again.
+/// </summary>
+/// <remarks>
+/// The price history is a comma-separated list of kobo rather than a table of
+/// its own. It is read whole, always, by an engine that takes the median of the
+/// last six — there is no query that wants one run — and a join per lane on the
+/// shipper's list would buy nothing.
+/// </remarks>
+public sealed class LaneEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid ShipperId { get; set; }
+
+    [MaxLength(80)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(80)]
+    public string Origin { get; set; } = string.Empty;
+
+    [MaxLength(80)]
+    public string Destination { get; set; } = string.Empty;
+
+    [MaxLength(120)]
+    public string Cargo { get; set; } = string.Empty;
+
+    public double WeightKg { get; set; }
+
+    [MaxLength(16)]
+    public string Truck { get; set; } = "trailer_30t";
+
+    /// <summary>weekly, fortnightly, monthly or ad_hoc.</summary>
+    [MaxLength(12)]
+    public string Cadence { get; set; } = "ad_hoc";
+
+    /// <summary>What the last runs went for, oldest first, in kobo.</summary>
+    [MaxLength(400)]
+    public string History { get; set; } = string.Empty;
+
+    public DateTimeOffset? LastRunAt { get; set; }
+}

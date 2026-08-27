@@ -106,15 +106,15 @@ the honest answer to "how far along is this".
 
 | Served, with parity where a rule is shared | Engine only — no route yet |
 |---|---|
-| trips, tracking, pricing | search, lanes |
-| share links (ADR-0010) | alerts |
+| trips, tracking, pricing | search, alerts |
+| share links (ADR-0010) | |
 | sign-in (`otp`) | budget *(on-device by design)* |
 | messages, incidents, waypoints | language *(client-side by design)* |
 | proof of delivery, drops, levies | |
 | verification, vehicles, duress | |
 | escrow, cancellation, costs, earnings | |
 | matching, chaining, consolidation | |
-| **dispute assembly, deviation, ratings** | |
+| **dispute assembly, deviation, ratings, lanes** | |
 
 Everything in the right-hand column has a tested engine and a screen; what it
 does not have is a place to put the answer. The app renders those from
@@ -122,14 +122,15 @@ does not have is a place to put the answer. The app renders those from
 a walkthrough.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
-exists on both sides gets a parity case before it gets an endpoint. Twenty-six
+exists on both sides gets a parity case before it gets an endpoint. Twenty-eight
 of them do now — the trip machine, pricing, demurrage, settlement, fix
 cleaning, stall detection, sign-in wording, waypoint visits, incident severity,
 delivery sealing, drop fees, the trust ladder, vehicle standing, the escrow
 schedule, cancellation fees and their wording, the cost model, driver
 statements, the load ranking, the bid
 ranking, chain fits, load pairing, the dispute
-pack, course deviation and the review tallies.
+pack, course deviation, the review
+tallies and lane pricing.
 
 `budget.ts` has no route and should not have one: it answers "what is this
 tracking costing me in data", which is a question about the phone in the

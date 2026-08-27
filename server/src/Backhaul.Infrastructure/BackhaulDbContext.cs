@@ -52,6 +52,9 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
     /// <summary>What each side said about the other after a trip.</summary>
     public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
 
+    /// <summary>The runs a shipper makes again.</summary>
+    public DbSet<LaneEntity> Lanes => Set<LaneEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -197,6 +200,14 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // One review per side per trip. A second would let somebody
             // answer the same question twice and have both counted.
             review.HasIndex(r => new { r.TripId, r.By }).IsUnique();
+        });
+
+        model.Entity<LaneEntity>(lane =>
+        {
+            lane.HasKey(l => l.Id);
+
+            // The only query: one shipper's lanes.
+            lane.HasIndex(l => l.ShipperId);
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

@@ -3502,6 +3502,111 @@
       }
     ]
   },
+  "lanes": {
+    "dueWarningMs": 172800000,
+    "recentRuns": 6,
+    "minimumRunsForTypical": 3,
+    "unusualFraction": 0.25,
+    "nowIso": "2026-03-10T09:00:00.000Z",
+    "cases": [
+      {
+        "name": "weekly, run five days ago",
+        "cadence": "weekly",
+        "runs": 3,
+        "dueInMs": 172800000,
+        "due": true,
+        "typicalKobo": 220000000,
+        "describeDue": "Due in 2 days",
+        "describeCadence": "Every week",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      },
+      {
+        "name": "weekly, run eight days ago",
+        "cadence": "weekly",
+        "runs": 3,
+        "dueInMs": -86400000,
+        "due": true,
+        "typicalKobo": 220000000,
+        "describeDue": "1 days overdue",
+        "describeCadence": "Every week",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      },
+      {
+        "name": "weekly, run today",
+        "cadence": "weekly",
+        "runs": 3,
+        "dueInMs": 604800000,
+        "due": false,
+        "typicalKobo": 220000000,
+        "describeDue": "Due in 7 days",
+        "describeCadence": "Every week",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      },
+      {
+        "name": "weekly, run six days ago",
+        "cadence": "weekly",
+        "runs": 3,
+        "dueInMs": 86400000,
+        "due": true,
+        "typicalKobo": 220000000,
+        "describeDue": "Due tomorrow",
+        "describeCadence": "Every week",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      },
+      {
+        "name": "monthly, never run",
+        "cadence": "monthly",
+        "runs": 0,
+        "dueInMs": null,
+        "due": false,
+        "typicalKobo": null,
+        "describeDue": "Every month",
+        "describeCadence": "Every month",
+        "unusualAtHalf": null,
+        "unusualAtTenOver": null
+      },
+      {
+        "name": "ad hoc never comes due",
+        "cadence": "ad_hoc",
+        "runs": 3,
+        "dueInMs": null,
+        "due": false,
+        "typicalKobo": 220000000,
+        "describeDue": "When needed",
+        "describeCadence": "When needed",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      },
+      {
+        "name": "two runs is not a history",
+        "cadence": "weekly",
+        "runs": 2,
+        "dueInMs": 172800000,
+        "due": true,
+        "typicalKobo": null,
+        "describeDue": "Due in 2 days",
+        "describeCadence": "Every week",
+        "unusualAtHalf": null,
+        "unusualAtTenOver": null
+      },
+      {
+        "name": "eight runs, only the last six count",
+        "cadence": "weekly",
+        "runs": 8,
+        "dueInMs": 172800000,
+        "due": true,
+        "typicalKobo": 225000000,
+        "describeDue": "Due in 2 days",
+        "describeCadence": "Every week",
+        "unusualAtHalf": true,
+        "unusualAtTenOver": false
+      }
+    ]
+  },
   "ratings": {
     "reviewWindowDays": 7,
     "minimumAnswers": 3,
