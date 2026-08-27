@@ -99,6 +99,33 @@ design, and the contradiction is the feature:
 
 ---
 
+## What the server actually serves
+
+The domain has 35 engines. The API has routes for some of them, and the gap is
+the honest answer to "how far along is this".
+
+| Served, with parity where a rule is shared | Engine only — no route yet |
+|---|---|
+| trips, tracking, pricing | matching, chaining, consolidation |
+| share links (ADR-0010) | search, lanes, escrow, costs |
+| sign-in (`otp`) | ratings, cancellation, dispute assembly |
+| messages, incidents, waypoints | earnings, budget, alerts, deviation |
+| proof of delivery, drops, levies | language *(client-side by design)* |
+| verification, vehicles, duress | |
+
+Everything in the right-hand column has a tested engine and a screen; what it
+does not have is a place to put the answer. The app renders those from
+`state/demo.ts`, which is why signing in is real and what it unlocks is still
+a walkthrough.
+
+**The rule for closing that gap** is the one ADR-0005 already sets: a rule that
+exists on both sides gets a parity case before it gets an endpoint. Eight of
+them do now — the trip machine, pricing, demurrage, settlement, fix cleaning,
+stall detection, sign-in wording, waypoint visits, incident severity, delivery
+sealing, drop fees, the trust ladder and vehicle standing.
+
+---
+
 ## Phase 0 — Foundation · **complete**
 
 Monorepo, the pure domain package and the lint boundary that keeps it pure, RN
