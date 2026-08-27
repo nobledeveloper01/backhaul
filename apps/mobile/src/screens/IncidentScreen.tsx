@@ -25,6 +25,8 @@ import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { newId } from '../state/ids';
 import { INCIDENT_WORDS } from '../state/words';
 
 interface Props {
@@ -69,10 +71,53 @@ export function IncidentScreen({ trip, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
 
+  const { api } = useSession();
+
   const [kind, setKind] = useState<IncidentKind | null>(null);
   const [note, setNote] = useState('');
   const [photos, setPhotos] = useState(0);
   const [filed, setFiled] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  /*
+    Filed only once the server has it.
+
+    Showing "Reported" the moment the button is pressed is the version a driver
+    trusts and should not: they walk away from a broken truck believing
+    somebody knows, and nobody does. The screen waits, says so while it waits,
+    and says so if it fails — with the text still in the box.
+  */
+  const file = () => {
+    if (kind === null || sending) return;
+
+    // The last fix the tracker has, if it has one. A report with no position
+    // is still a report — the driver does not have to type where they are.
+    const fix = trip.track.kept.at(-1);
+
+    if (!trip.live) {
+      setFiled(true);
+      return;
+    }
+
+    setSending(true);
+    setFailed(false);
+
+    void api
+      .reportIncident(trip.id, {
+        kind,
+        at: new Date(),
+        note,
+        reportedBy: 'driver',
+        photoIds: Array.from({ length: photos }, () => newId()),
+        ...(fix === undefined ? {} : { lat: fix.lat, lon: fix.lon }),
+      })
+      .then((result) => {
+        setSending(false);
+        if (result.ok) setFiled(true);
+        else setFailed(true);
+      });
+  };
 
   const severity: Severity | null = kind === null ? null : DEFAULT_SEVERITY[kind];
   const wantsPhoto = kind !== null && needsPhoto(kind);
@@ -237,14 +282,20 @@ export function IncidentScreen({ trip, onBack }: Props) {
               ) : null}
             </Card>
 
+            {failed ? (
+              <Text variant="label" tone="exception">
+                {t('report_not_sent')}
+              </Text>
+            ) : null}
+
             <Press
-              onPress={() => setFiled(true)}
-              disabled={short}
+              onPress={file}
+              disabled={short || sending}
               accessibilityLabel={t('send_the_report')}
               style={[styles.send, { backgroundColor: colours.accent }]}
             >
               <Text variant="title" style={{ color: colours.onAccent }}>
-                {t('send_the_report')}
+                {sending ? t('sending_the_report') : t('send_the_report')}
               </Text>
             </Press>
           </>

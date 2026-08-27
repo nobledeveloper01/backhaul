@@ -83,6 +83,7 @@ function fromServer(row: TripSummaryView): DemoTrip {
 
   return {
     id: row.id,
+    live: true,
     cargo: '',
     originName: row.origin,
     destinationName: row.destination,

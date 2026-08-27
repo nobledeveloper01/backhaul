@@ -13,6 +13,7 @@ import {
 
 import type { BackhaulApi } from '../api/client';
 import { NativeTracking, type NativeFix, type Spec } from '@backhaul/tracking-native';
+import { newId as newId_ } from '../state/ids';
 
 /**
  * The upload loop.
@@ -63,7 +64,7 @@ export class Tracker {
     // `Spec | null | undefined` to the type system. Normalised here so every
     // caller sees one shape.
     native: TrackingModule = NativeTracking ?? null,
-    newId: () => string = defaultId,
+    newId: () => string = newId_,
   ) {
     this.api = api;
     this.native = native;
@@ -200,13 +201,4 @@ function batteryOf(queue: readonly QueuedSample[]): number | null {
  * weaker than it looks and is fine here — a batch id is an idempotency key, not
  * a secret, and a collision costs one replayed batch.
  */
-function defaultId(): string {
-  const maybeCrypto = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
-  if (typeof maybeCrypto?.randomUUID === 'function') {
-    return maybeCrypto.randomUUID();
-  }
-  const rand = Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
-  return `b${Date.now().toString(16)}-${rand}`;
-}
-
 export type { Position };

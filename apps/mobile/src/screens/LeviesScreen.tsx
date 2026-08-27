@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -21,6 +21,10 @@ import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { newId } from '../state/ids';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { LEVY_WORDS } from '../state/words';
 import { demoLevies } from '../state/product';
 
@@ -56,26 +60,57 @@ export function LeviesScreen({ trip, onBack }: Props) {
   const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
-  const [levies, setLevies] = useState<readonly Levy[]>(() => demoLevies(trip, now));
-
+  const { api } = useSession();
   const advance = fromNaira(trip.advanceNaira);
+
+  /*
+    The advance goes to the server rather than coming from it.
+
+    It lives with the trip's terms and only for trips that have them, so the
+    ledger route takes it as a parameter and hands back a balance computed from
+    it. Passing it here keeps one arithmetic, on the server, rather than a
+    second one on the phone that agrees until it does not.
+  */
+  const { query, refresh } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.levies(trip.id, advance), (view) =>
+        view.levies.map<Levy>((row) => ({
+          id: row.id,
+          tripId: trip.id,
+          kind: row.kind as LevyKind,
+          amount: row.amountKobo as Levy['amount'],
+          at: row.at,
+          near: null,
+          note: row.note,
+          photoId: row.photoId,
+        })),
+      ),
+    () => demoLevies(trip, now),
+    [api, trip.id, advance, now],
+  );
+
+  const levies = query.state === 'ready' ? query.value : [];
   const { spent, balance, owedToDriver } = reconcile(advance, levies);
   const grouped = byKind(levies);
 
   const add = (kind: LevyKind, naira: number) => {
-    setLevies((was) => [
-      ...was,
-      {
-        id: `${trip.id}-levy-${was.length}`,
-        tripId: trip.id,
+    if (!trip.live) {
+      refresh();
+      return;
+    }
+
+    void api
+      .recordLevy(trip.id, {
+        // Generated here, so a retry from a roadside with one bar of signal is
+        // a no-op rather than a second entry in somebody's ledger.
+        id: newId(),
         kind,
-        amount: fromNaira(naira),
-        at: now,
-        near: null,
+        amountKobo: fromNaira(naira),
+        at: new Date(),
         note: '',
-        photoId: null,
-      },
-    ]);
+      })
+      .then(() => refresh());
   };
 
   return (

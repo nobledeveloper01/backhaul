@@ -224,6 +224,10 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'sending_the_report'
+  | 'report_not_sent'
+  | 'could_not_load'
+  | 'not_sent_yet'
   | 'cannot_reach_the_server'
   | 'your_trips_are_still_there'
   | 'loading_your_trips'
@@ -686,6 +690,10 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  sending_the_report: "Sending…",
+  report_not_sent: "Not sent. It is saved here — try again.",
+  could_not_load: "Could not load this",
+  not_sent_yet: "Not sent. Try again.",
   cannot_reach_the_server: "Cannot reach Backhaul",
   your_trips_are_still_there: "Your trips are still there. This phone cannot see them right now.",
   loading_your_trips: "Loading your trips…",
@@ -1148,6 +1156,10 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  sending_the_report: "Ana aikawa…",
+  report_not_sent: "Ba a aika ba. An ajiye shi a nan — ka sake gwadawa.",
+  could_not_load: "Ba a iya ɗauko wannan ba",
+  not_sent_yet: "Ba a aika ba. Ka sake gwadawa.",
   cannot_reach_the_server: "Ba a iya kaiwa ga Backhaul ba",
   your_trips_are_still_there: "Tafiye-tafiyenka na nan. Wannan wayar ba ta iya ganin su a yanzu ba.",
   loading_your_trips: "Ana ɗauko tafiye-tafiyenka…",
@@ -1615,6 +1627,10 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  sending_the_report: "À ń fi ránṣẹ́…",
+  report_not_sent: "A kò fi ránṣẹ́. A tọ́jú rẹ̀ síbí — tún gbìyànjú.",
+  could_not_load: "A kò lè mú èyí wá",
+  not_sent_yet: "A kò fi ránṣẹ́. Tún gbìyànjú.",
   cannot_reach_the_server: "A kò lè dé ọ̀dọ̀ Backhaul",
   your_trips_are_still_there: "Àwọn ìrìn rẹ ṣì wà. Fóònù yìí kò lè rí wọn báyìí.",
   loading_your_trips: "À ń mú àwọn ìrìn rẹ wá…",
@@ -2080,6 +2096,10 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  sending_the_report: "Na-eziga…",
+  report_not_sent: "E zipụghị ya. E chekwara ya ebe a — nwaa ọzọ.",
+  could_not_load: "Enweghị ike ibubata nke a",
+  not_sent_yet: "E zipụghị ya. Nwaa ọzọ.",
   cannot_reach_the_server: "Enweghị ike iru Backhaul",
   your_trips_are_still_there: "Njem gị ka dị. Ekwentị a apụghị ịhụ ha ugbu a.",
   loading_your_trips: "A na-ebubata njem gị…",

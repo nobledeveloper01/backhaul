@@ -25,6 +25,10 @@ import { agoLabel, humanDuration } from '../components/PositionAge';
 import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { refusalWords } from '../state/words';
+import { map } from '../api/client';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoMessages } from '../state/product';
 
@@ -54,9 +58,30 @@ export function MessagesScreen({ trip, onBack }: Props) {
   const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
-  const [messages, setMessages] = useState<readonly Message[]>(() => demoMessages(trip, now));
-  const [draft, setDraft] = useState('');
+  const { api } = useSession();
 
+  const { query, refresh } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.messages(trip.id), (rows) =>
+        rows.map<Message>((row) => ({
+          id: row.id,
+          tripId: trip.id,
+          from: row.from as Party,
+          body: row.body,
+          at: row.at,
+          receivedAt: row.receivedAt,
+          readBy: row.readBy as readonly Party[],
+        })),
+      ),
+    () => demoMessages(trip, now),
+    [api, trip.id, now],
+  );
+
+  const [draft, setDraft] = useState('');
+  const [failed, setFailed] = useState(false);
+
+  const messages = query.state === 'ready' ? query.value : [];
   const ordered = useMemo(() => thread(messages), [messages]);
 
   const attempt = compose({
@@ -69,10 +94,36 @@ export function MessagesScreen({ trip, onBack }: Props) {
     tripFinished: false,
   });
 
+  /*
+    Cleared on the way out, not on the way back.
+
+    A driver who has just typed a message on a bad connection should see it
+    leave the box; leaving the text in place until the server answers reads as
+    the app having ignored them, and they type it again. If the send fails the
+    thread reloads without it and the failure is said out loud.
+  */
   const send = () => {
     if (!attempt.ok) return;
-    setMessages((was) => [...was, attempt.message]);
+
     setDraft('');
+    setFailed(false);
+
+    if (!trip.live) {
+      refresh();
+      return;
+    }
+
+    void api
+      .sendMessage(trip.id, {
+        id: attempt.message.id,
+        from: attempt.message.from,
+        body: attempt.message.body,
+        at: attempt.message.at,
+      })
+      .then((result) => {
+        if (result.ok) refresh();
+        else setFailed(true);
+      });
   };
 
   const over = draft.trim().length - MAX_MESSAGE_CHARS;
@@ -89,6 +140,28 @@ export function MessagesScreen({ trip, onBack }: Props) {
           {t('everyone_sees_these')}
         </Text>
 
+        {/*
+          Four answers, not two. A thread that cannot be loaded is not an empty
+          thread — the messages are there and this phone cannot see them.
+        */}
+        {query.state === 'loading' ? (
+          <Text variant="body" tone="secondary">
+            {t('loading_state')}
+          </Text>
+        ) : query.state === 'unreachable' ? (
+          <Text variant="body" tone="stale">
+            {t('cannot_reach_the_server')}
+          </Text>
+        ) : query.state === 'refused' ? (
+          <Text variant="body" tone="stale">
+            {refusalWords(
+              query.failure.kind === 'refused' ? query.failure.code : null,
+              query.failure.detail,
+              t,
+            )}
+          </Text>
+        ) : null}
+
         {ordered.map((message) => (
           <Bubble key={message.id} message={message} now={now} />
         ))}
@@ -104,6 +177,12 @@ export function MessagesScreen({ trip, onBack }: Props) {
           },
         ]}
       >
+        {failed ? (
+          <Text variant="label" tone="exception">
+            {t('not_sent_yet')}
+          </Text>
+        ) : null}
+
         {over > 0 ? (
           <Text variant="label" tone="exception">
             {over} over — keep it short, or call.

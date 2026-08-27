@@ -25,6 +25,18 @@ import {
 
 export interface DemoTrip {
   readonly id: string;
+  /**
+   * Whether this came from the server.
+   *
+   * Stated rather than inferred. Sniffing the id — "a GUID is real, `t1` is
+   * not" — works today and breaks the first time a walkthrough id looks like a
+   * GUID, and it breaks silently: the screen fetches, gets a 404, and shows an
+   * error about a trip that was never meant to exist.
+   *
+   * Every sub-screen reads this to decide whether to call the server or render
+   * the walkthrough, and the trips list says which it is showing.
+   */
+  readonly live: boolean;
   readonly cargo: string;
   readonly originName: string;
   readonly destinationName: string;
@@ -216,6 +228,7 @@ export function demoTrips(now: Date): DemoTrip[] {
   return [
     {
       id: 'a1f0c2e4-0000-4000-8000-000000000001',
+      live: false,
       cargo: '28 t cement',
       originName: 'Lagos',
       destinationName: 'Kano',
@@ -241,6 +254,7 @@ export function demoTrips(now: Date): DemoTrip[] {
     },
     {
       id: 'a1f0c2e4-0000-4000-8000-000000000002',
+      live: false,
       cargo: '14 t bagged rice',
       originName: 'Port Harcourt',
       destinationName: 'Abuja',
@@ -264,6 +278,7 @@ export function demoTrips(now: Date): DemoTrip[] {
     },
     {
       id: 'a1f0c2e4-0000-4000-8000-000000000003',
+      live: false,
       cargo: '4 t machine parts',
       originName: 'Lagos',
       destinationName: 'Ibadan',

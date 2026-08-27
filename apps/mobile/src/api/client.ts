@@ -1665,6 +1665,13 @@ export interface QuoteView {
   readonly display: string;
 }
 
-function map<A, B>(result: ApiResult<A>, f: (value: A) => B): ApiResult<B> {
+/**
+ * Transforms a successful result and leaves a failure alone.
+ *
+ * Exported because screens map server rows into the shapes their engines take,
+ * and doing that inside a `.then` means writing the failure branch again at
+ * every call site — which is where a failure gets dropped.
+ */
+export function map<A, B>(result: ApiResult<A>, f: (value: A) => B): ApiResult<B> {
   return result.ok ? { ok: true, value: f(result.value) } : result;
 }

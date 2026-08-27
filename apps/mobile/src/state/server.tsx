@@ -94,3 +94,28 @@ export function emptiness<T>(
   if (shown > 0) return null;
   return filtering ? 'filtered' : 'none';
 }
+
+/**
+ * Server when the trip is real, walkthrough when it is not.
+ *
+ * Every screen behind a trip needs the same three lines: fetch when there is
+ * something to fetch, render the walkthrough when there is not, and never
+ * confuse the two. Written once here rather than twenty times, because the
+ * version that gets written twenty times is the version where three of them
+ * quietly render demo data as though it were a shipper's own.
+ *
+ * `live` is a field on the trip rather than a guess from its id. See `DemoTrip`.
+ */
+export function useTripData<T>(
+  live: boolean,
+  fetch: () => Promise<ApiResult<T>>,
+  walkthrough: () => T,
+  deps: readonly unknown[],
+): { readonly query: Query<T>; readonly refresh: () => void } {
+  return useQuery(
+    // Wrapped rather than branched at the call site, so a screen cannot get
+    // half of this right.
+    () => (live ? fetch() : Promise.resolve<ApiResult<T>>({ ok: true, value: walkthrough() })),
+    [live, ...deps],
+  );
+}

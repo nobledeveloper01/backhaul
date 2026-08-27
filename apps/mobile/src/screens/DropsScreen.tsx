@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -10,6 +10,7 @@ import {
   weightAboard,
   type Drop,
   completed,
+  MINIMUM_RADIUS_M,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -21,6 +22,9 @@ import { agoLabel } from '../components/PositionAge';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { whereTheDropsAre } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDrops } from '../state/product';
@@ -48,16 +52,53 @@ export function DropsScreen({ trip, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
-  const [drops, setDrops] = useState<readonly Drop[]>(() => demoDrops(trip, now));
+  const { api } = useSession();
+
+  /*
+    The server sends a consignee, a sequence and a weight; it does not send a
+    fence. A drop's `at` is a waypoint with its own radius, and the waypoints
+    live on their own route — so what is built here is the drop *as the drops
+    engine needs it*, with a fence of the domain's own minimum radius rather
+    than an invented one. A fence this screen never draws is a fence it must
+    not pretend to know.
+  */
+  const { query, refresh } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.drops(trip.id), (view) =>
+        view.drops.map<Drop>((row) => ({
+          id: row.id,
+          at: {
+            id: row.id,
+            name: row.consignee,
+            kind: 'destination',
+            at: { lat: 0, lon: 0, accuracy: 0, at: now },
+            radius: MINIMUM_RADIUS_M,
+          },
+          consignee: row.consignee,
+          goods: row.goods,
+          units: row.units,
+          weightKg: row.weightKg,
+          deliveredAt: row.deliveredAt,
+          exception: row.exception,
+        })),
+      ),
+    () => demoDrops(trip, now),
+    [api, trip.id, now],
+  );
+
+  const drops = query.state === 'ready' ? query.value : [];
 
   const next = nextDrop(drops);
   const aboard = weightAboard(drops);
   const late = outOfOrder(drops);
 
   const sign = (id: string) => {
-    setDrops((was) =>
-      was.map((drop) => (drop.id === id ? { ...drop, deliveredAt: now } : drop)),
-    );
+    if (!trip.live) {
+      refresh();
+      return;
+    }
+    void api.signDrop(trip.id, id, new Date()).then(() => refresh());
   };
 
   return (
