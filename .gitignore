@@ -33,6 +33,9 @@ android/app/build/
 .env
 .env.local
 
+# CI is tracked; the `docs/*` allow-list above does not reach it.
+!.github/
+
 # Build output and task cache
 dist/
 .turbo/
