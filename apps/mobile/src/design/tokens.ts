@@ -159,3 +159,44 @@ export const elevation: Readonly<Record<'light' | 'dark', Elevation>> = {
  * wearing gloves, the phone may be mounted, and the cab is moving.
  */
 export const target = { standard: 48, driver: 64 } as const;
+
+/**
+ * Motion.
+ *
+ * One set of durations and one easing family, so everything in the product
+ * moves at the same rhythm. Mixed timings are the same tell as mixed stroke
+ * widths: they read as an interface assembled from parts rather than designed.
+ *
+ * Exits are shorter than entrances — around 70% — because a thing leaving
+ * should get out of the way, and a slow exit feels like the app hesitating.
+ */
+export const motion = {
+  /** A press, a tint, a chip appearing. */
+  fast: 140,
+  /** The default: a card expanding, a sheet arriving. */
+  base: 220,
+  /** A screen transition, and nothing longer. */
+  slow: 320,
+  /** Per-item delay when a list arrives. Beyond ~50ms it reads as slow. */
+  stagger: 40,
+  /**
+   * How far a pressable shrinks.
+   *
+   * Applied only to things with room around them. A list row uses opacity
+   * instead: a scaling row nudges its neighbours and the whole list twitches
+   * under the thumb.
+   */
+  pressScale: 0.97,
+
+  /**
+   * The two curves, as bezier control points.
+   *
+   * `enter` decelerates into place — fast at first, settling. `exit` does the
+   * opposite. Written as points rather than `Easing.out(Easing.quad)` because
+   * that passes an unbound method reference around, and because naming the
+   * curve is the point: everything in the product should move on these two and
+   * nothing else.
+   */
+  enter: [0.2, 0, 0, 1] as const,
+  exit: [0.4, 0, 1, 1] as const,
+} as const;

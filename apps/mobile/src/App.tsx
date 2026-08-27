@@ -7,7 +7,9 @@ import { Icon, type IconName } from './components/Icon';
 import { Text } from './components/Text';
 import { ThemeProvider, useColours, useTheme } from './design/theme';
 import { radius, space, target } from './design/tokens';
+import { BidsScreen } from './screens/BidsScreen';
 import { DriverScreen } from './screens/DriverScreen';
+import { FleetScreen } from './screens/FleetScreen';
 import { ReturnLoadsScreen } from './screens/ReturnLoadsScreen';
 import { TripDetailScreen } from './screens/TripDetailScreen';
 import { TripsScreen } from './screens/TripsScreen';
@@ -21,7 +23,7 @@ import { demoNow, type DemoTrip } from './state/demo';
  * shipper never sees the driver's screen, and the two are different apps
  * wearing the same icon.
  */
-type Face = 'shipper' | 'driver' | 'loads';
+type Face = 'shipper' | 'loads' | 'fleet' | 'driver';
 
 function Shell() {
   const colours = useColours();
@@ -31,6 +33,7 @@ function Shell() {
   const insets = useSafeAreaInsets();
   const [face, setFace] = useState<Face>('shipper');
   const [open, setOpen] = useState<DemoTrip | null>(null);
+  const [bidsOpen, setBidsOpen] = useState(false);
 
   return (
     <View style={[styles.root, { backgroundColor: colours.surface }]}>
@@ -60,8 +63,15 @@ function Shell() {
             <TripDetailScreen trip={open} now={now} onBack={() => setOpen(null)} />
           )
         ) : null}
-        {face === 'driver' ? <DriverScreen /> : null}
         {face === 'loads' ? <ReturnLoadsScreen /> : null}
+        {face === 'fleet' ? (
+          bidsOpen ? (
+            <BidsScreen onBack={() => setBidsOpen(false)} />
+          ) : (
+            <FleetScreen onOpenBids={() => setBidsOpen(true)} />
+          )
+        ) : null}
+        {face === 'driver' ? <DriverScreen /> : null}
       </View>
 
       <View
@@ -77,7 +87,8 @@ function Shell() {
         {(
           [
             ['shipper', 'Trips', 'list'],
-            ['loads', 'Return loads', 'swap'],
+            ['loads', 'Loads', 'swap'],
+            ['fleet', 'Fleet', 'truck'],
             ['driver', 'Driver', 'wheel'],
           ] as const
         ).map(([value, label, icon]) => (
@@ -89,6 +100,7 @@ function Shell() {
             onPress={() => {
               setFace(value);
               setOpen(null);
+              setBidsOpen(false);
             }}
           />
         ))}

@@ -61,10 +61,10 @@ export function PositionAge({ silentForMs, compact = false }: Props) {
       {compact ? <Icon name="clock" size="sm" colour={colours.textSecondary} /> : null}
       <Text variant="label" tone={stale ? 'stale' : 'secondary'} numberOfLines={1}>
         {compact
-          ? `${humanDuration(silentForMs)} ago`
+          ? agoLabel(silentForMs)
           : stale
             ? `No signal for ${humanDuration(silentForMs)}`
-            : `Updated ${humanDuration(silentForMs)} ago`}
+            : `Updated ${agoLabel(silentForMs)}`}
       </Text>
     </View>
   );
@@ -96,6 +96,31 @@ export function humanDuration(ms: number): string {
   }
   const days = Math.floor(hours / 24);
   return days === 1 ? '1 day' : `${days} days`;
+}
+
+/**
+ * "12 min ago", "just now".
+ *
+ * `humanDuration` returns a *duration*; most of them take "ago", and "just
+ * now" does not — "just now ago" appeared on the fleet screen. One helper so
+ * every caller gets it right.
+ */
+/**
+ * "1 hour", "3 hours", "45 minutes".
+ *
+ * Pluralisation has now been got wrong three times in this app — "every 1
+ * minutes", "1 completed trip", "1 hours stopped" — always by writing the
+ * number and the noun in the same template literal. One helper.
+ */
+export function plural(count: number, singular: string, plural_?: string): string {
+  const rounded = Math.round(count * 10) / 10;
+  const word = rounded === 1 ? singular : (plural_ ?? `${singular}s`);
+  return `${rounded % 1 === 0 ? rounded : rounded.toFixed(1)} ${word}`;
+}
+
+export function agoLabel(ms: number): string {
+  const duration = humanDuration(ms);
+  return duration === 'just now' ? duration : `${duration} ago`;
 }
 
 const styles = StyleSheet.create({

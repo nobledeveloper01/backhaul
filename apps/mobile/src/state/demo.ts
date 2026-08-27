@@ -117,6 +117,24 @@ function interpolate(
  */
 const CADENCE_MIN = 15;
 
+/** A run of fixes in one place — a depot wait, a checkpoint, a night stop. */
+function parkedAt(
+  place: { lat: number; lon: number },
+  startMinutesAgo: number,
+  endMinutesAgo: number,
+  now: Date,
+): Position[] {
+  const out: Position[] = [];
+  for (let m = startMinutesAgo; m >= endMinutesAgo; m -= CADENCE_MIN) {
+    out.push(place2(place, minutesAgo(now, m)));
+  }
+  return out;
+}
+
+function place2(at: { lat: number; lon: number }, when: Date): Position {
+  return place(at.lat, at.lon, when);
+}
+
 /** Samples a leg into fixes at a cadence the tracking policy would actually produce. */
 function leg(
   from: { lat: number; lon: number },
@@ -141,17 +159,32 @@ function leg(
 export function demoTrips(now: Date): DemoTrip[] {
   // --- 1. On the road, with a coverage gap behind it ----------------------
   const gapStart = interpolate(ILORIN, KADUNA, 0.4);
-  const gapEnd = interpolate(ILORIN, KADUNA, 0.75);
+  const gapEnd = interpolate(ILORIN, KADUNA, 0.65);
+  const nearKano = interpolate(KADUNA, KANO, 0.55);
 
+  // Timings are chosen so every leg works out at 45–55 km/h door to door,
+  // which is what a loaded trailer actually makes on this corridor.
+  //
+  // The first version was not: the last leg spanned twenty-six hours for two
+  // hundred kilometres, so the pace chart honestly reported five km/h and
+  // looked broken. The chart was right and the data was wrong — which is the
+  // whole reason for drawing pace at all.
   const running: Position[] = [
-    ...leg(LAGOS, IBADAN, 2600, 2330, now),
-    ...leg(IBADAN, ILORIN, 2330, 2050, now),
-    ...leg(ILORIN, gapStart, 2050, 1900, now),
+    ...leg(LAGOS, IBADAN, 1055, 905, now),
+    // An hour at the Ibadan depot: the trip needs a stop for the stops card to
+    // have anything true to show.
+    ...parkedAt(IBADAN, 905, 845, now),
+    ...leg(IBADAN, ILORIN, 845, 605, now),
+    ...leg(ILORIN, gapStart, 605, 425, now),
     // Two hours of nothing on the Kaduna approach. One gap, deliberately, and
     // it is the reason the silence threshold is twenty minutes rather than
     // five — this stretch of road has no coverage as a matter of course.
-    ...leg(gapEnd, KADUNA, 1780, 1600, now),
-    ...leg(KADUNA, interpolate(KADUNA, KANO, 0.55), 1600, 45, now),
+    // 105 minutes, not 110: `leg` divides the span into whole steps, and a
+    // span that is not a multiple of the cadence produces 15.7-minute gaps —
+    // which the cadence test rightly rejects as something the tracking policy
+    // would never emit.
+    ...leg(gapEnd, KADUNA, 300, 195, now),
+    ...leg(KADUNA, nearKano, 195, 45, now),
   ];
 
   // --- 2. Nearly there, but one fix is a cell tower ------------------------

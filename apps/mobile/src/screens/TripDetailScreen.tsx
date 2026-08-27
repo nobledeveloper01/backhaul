@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   demurrage,
+  distance,
   distanceTravelled,
   eta,
   fixQuality,
@@ -12,15 +13,20 @@ import {
   settle,
   shouldTrack,
   silentFor,
+  stops,
+  timeStopped,
   type Kobo,
+  type Position,
+  type Stop,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Corridor } from '../components/Corridor';
 import { EtaRange } from '../components/EtaRange';
 import { Icon } from '../components/Icon';
-import { PositionAge, humanDuration } from '../components/PositionAge';
+import { PositionAge, agoLabel, plural } from '../components/PositionAge';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Sparkline } from '../components/Sparkline';
 import { StatusChip } from '../components/StatusChip';
 import { Text } from '../components/Text';
 import { space } from '../design/tokens';
@@ -48,6 +54,7 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
   const observation = observe(trip.track.kept, now);
   const silence = silentFor(trip.track.kept, now);
 
+  const tripStops = useMemo(() => stops(trip.track.kept), [trip]);
   const waited = demurrage(trip.truck, trip.waitedMinutes * 60_000);
   const settlement = settle(fromNaira(trip.agreedNaira), waited.amount, fromNaira(trip.advanceNaira));
 
@@ -93,6 +100,16 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
 
         <EtaRange eta={arrival} />
 
+        <Card overline="Pace" icon="truck">
+          <Sparkline series={paceSeries(trip.track.kept)} />
+          <Text variant="body" tone="secondary" style={styles.note}>
+            Door to door, including every stop. Not the speedometer — a trailer
+            that cruises at 80 and spends nine hours at checkpoints makes about
+            35 over the day, and it is the second number an arrival is built
+            from.
+          </Text>
+        </Card>
+
         {/*
           Distance never appears without the share of fixes it was computed
           from. A figure derived from 60% of the track is not wrong, but nobody
@@ -127,6 +144,18 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
           ) : null}
         </Card>
 
+        {tripStops.length > 0 ? (
+          <Card overline={`Stops · ${tripStops.length}`} icon="pin">
+            <Text variant="body" tone="secondary" style={styles.stopsLede}>
+              {plural(timeStopped(tripStops) / 3_600_000, 'hour')} stopped in
+              total. This is what a demurrage claim is made of.
+            </Text>
+            {tripStops.map((stop, i) => (
+              <StopRow key={stop.from.toISOString()} stop={stop} index={i + 1} />
+            ))}
+          </Card>
+        ) : null}
+
         <Card overline="What is owed" icon="naira">
           <Line label="Agreed fare" amount={settlement.agreed} />
           <Line label="Demurrage" amount={settlement.demurrage} />
@@ -159,7 +188,7 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
               <View style={styles.eventBody}>
                 <Text variant="body">{event.state.replace(/_/g, ' ')}</Text>
                 <Text variant="label" tone="secondary">
-                  {humanDuration(now.getTime() - event.at.getTime())} ago · {event.actor}
+                  {agoLabel(now.getTime() - event.at.getTime())} · {event.actor}
                 </Text>
               </View>
             </View>
@@ -180,6 +209,68 @@ export function TripDetailScreen({ trip, now, onBack }: Props) {
  * branded `Kobo` at the call site is the thing the brand exists to prevent —
  * and a deduction is a fact about the line, not a property of the number.
  */
+/**
+ * Pace between consecutive fixes, in km/h.
+ *
+ * A null wherever the gap between fixes is longer than the silence threshold:
+ * the truck's average across a two-hour outage is arithmetically computable and
+ * means nothing, and drawing it would put a confident line through the part of
+ * the trip nobody can account for.
+ */
+function paceSeries(track: readonly Position[]) {
+  const values: (number | null)[] = [];
+
+  for (let i = 1; i < track.length; i++) {
+    const from = track[i - 1];
+    const to = track[i];
+    if (from === undefined || to === undefined) continue;
+
+    const seconds = (to.at.getTime() - from.at.getTime()) / 1000;
+    if (seconds <= 0 || seconds > 20 * 60) {
+      values.push(null);
+      continue;
+    }
+    values.push((distance(from, to) / seconds) * 3.6);
+  }
+
+  return { values, label: 'Pace over the trip', unit: 'km/h' };
+}
+
+function StopRow({ stop, index }: { stop: Stop; index: number }) {
+  const colours = useColours();
+  const hours = stop.durationMs / 3_600_000;
+
+  return (
+    <View style={styles.stop}>
+      <View style={[styles.stopIndex, { borderColor: colours.outline }]}>
+        <Text variant="label" tone="secondary" tabular>
+          {index}
+        </Text>
+      </View>
+      <View style={styles.flex}>
+        <Text variant="body">
+          {hours >= 1
+            ? plural(hours, 'hour')
+            : plural(Math.round(stop.durationMs / 60_000), 'minute')}
+          {stop.openEnded ? ' so far' : ''}
+        </Text>
+        <Text variant="label" tone="secondary" tabular>
+          {clockOf(stop.from)} – {stop.openEnded ? 'now' : clockOf(stop.to)} ·{' '}
+          {stop.fixes} positions
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function clockOf(when: Date): string {
+  return when.toLocaleTimeString('en-NG', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
 function Line({
   label,
   amount,
@@ -257,4 +348,19 @@ const styles = StyleSheet.create({
   eventDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, marginTop: 5 },
   eventLine: { width: 2, flex: 1, marginVertical: 2 },
   eventBody: { flex: 1, gap: 2, paddingBottom: space.md },
+  stopsLede: { marginBottom: space.md },
+  stop: {
+    flexDirection: 'row',
+    gap: space.md,
+    alignItems: 'flex-start',
+    marginBottom: space.md,
+  },
+  stopIndex: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
