@@ -187,6 +187,90 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'told_and_under_dispute'
+  | 'told_keep_driving'
+  | 'eta_stops_showing'
+  | 'eta_stays_delay_visible'
+  | 'recorded_against_the_trip'
+  | 'late'
+  | 'alert_held'
+  | 'alert_not_sent'
+  | 'alert_wakes_you'
+  | 'alert_notifies'
+  | 'alert_in_the_app'
+  | 'simulate_losing_signal'
+  | 'simulate_regaining_signal'
+  | 'link_turned_off'
+  | 'link_expired'
+  | 'ask_for_a_new_one'
+  | 'links_stop_working'
+  | 'signature'
+  | 'still_settles_note'
+  | 'nothing_owed_for_handover'
+  | 'selected_tap_to_remove'
+  | 'tap_to_filter_by_this'
+  | 'on_file'
+  | 'not_uploaded'
+  | 'document_identity'
+  | 'document_licence'
+  | 'document_registration'
+  | 'document_insurance'
+  | 'more_completed_trips'
+  | 'on_time_delivery'
+  | 'still_aboard'
+  | 'added_for_extra_stops'
+  | 'first_drop_is_delivery'
+  | 'delivered_out_of_order'
+  | 'hand_over_at'
+  | 'km_by_road'
+  | 'too_heavy_for_any_truck'
+  | 'smallest_truck_that_carries_it'
+  | 'trips_completed'
+  | 'too_few_for_on_time'
+  | 'on_time'
+  | 'days_ago_expired'
+  | 'expires_in_days'
+  | 'warned_days_ahead'
+  | 'nothing_is_owed'
+  | 'is_owed_and_both_can_see'
+  | 'as_the_shipper'
+  | 'as_the_carrier'
+  | 'hours_of_the_bid_being_accepted'
+  | 'one_sms_and_it_says_who'
+  | 'days_unless_you_turn_it_off'
+  | 'under_a_day_left'
+  | 'one_day_left'
+  | 'does_not_expire'
+  | 'turned_off'
+  | 'expired'
+  | 'position_and_full_track'
+  | 'position_only'
+  | 'turn_off_the_link_for'
+  | 'km_of_empty_repositioning'
+  | 'of_the_trip_is_covered'
+  | 'between'
+  | 'and'
+  | 'asks_what_it_was_for'
+  | 'over_keep_it_short'
+  | 'written_in_a_dead_zone'
+  | 'of_the_truck_is_refused'
+  | 'km_from_the_destination'
+  | 'metres_out'
+  | 'at_the_destination'
+  | 'the_destination'
+  | 'all_trucks_can_take_work'
+  | 'cannot_be_given_a_new_trip'
+  | 'no_signal_still_recording'
+  | 'positions_saved_waiting'
+  | 'quiet_between'
+  | 'held_is_not_dropped'
+  | 'still_to_come'
+  | 'demo_showing_link'
+  | 'of_count'
+  | 'add_a_photo_this_one_needs_it'
+  | 'photos_added'
+  | 'under_answers'
+  | 'answers'
   | 'optional'
   | 'add_a_note'
   | 'the_route'
@@ -617,6 +701,90 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  told_and_under_dispute: "The shipper and the carrier have been told, and the trip is now under dispute.",
+  told_keep_driving: "The shipper and the carrier have been told. Keep driving when you can.",
+  eta_stops_showing: "The arrival estimate stops showing until this clears — an estimate beside a stopped truck is a contradiction.",
+  eta_stays_delay_visible: "The arrival estimate stays, and the delay is on the trip for everyone to see.",
+  recorded_against_the_trip: "Recorded against the trip, where everyone on it can see it.",
+  late: "Late",
+  alert_held: "Held",
+  alert_not_sent: "Not sent",
+  alert_wakes_you: "Wakes you",
+  alert_notifies: "Notifies",
+  alert_in_the_app: "In the app",
+  simulate_losing_signal: "Pretend the signal is gone",
+  simulate_regaining_signal: "Pretend the signal is back",
+  link_turned_off: "This link was turned off",
+  link_expired: "This link has expired",
+  ask_for_a_new_one: "Ask whoever sent it for a new one.",
+  links_stop_working: "Links stop working after a couple of weeks, so a truck’s position does not stay public for ever. Ask whoever sent it for a new one.",
+  signature: "Signature",
+  still_settles_note: "This trip still settles. A shortage is argued separately — holding the whole payment punishes the carrier for a discrepancy that is usually the loading end’s.",
+  nothing_owed_for_handover: "Nothing was handed over, so nothing is owed for the handover.",
+  selected_tap_to_remove: "Selected. Tap to remove",
+  tap_to_filter_by_this: "Tap to filter by this",
+  on_file: 'On file',
+  not_uploaded: 'Not uploaded',
+  document_identity: 'Government ID',
+  document_licence: "Driver's licence",
+  document_registration: 'Company registration',
+  document_insurance: 'Goods-in-transit cover',
+  more_completed_trips: 'more completed trips',
+  on_time_delivery: 'on-time delivery',
+  still_aboard: 'still aboard',
+  added_for_extra_stops: 'added for the extra stops',
+  first_drop_is_delivery: 'The first drop is the delivery; each one after it is a detour, a wait and a second set of papers.',
+  delivered_out_of_order: 'was delivered while an earlier drop was still aboard.',
+  hand_over_at: 'Hand over at',
+  km_by_road: 'km by road',
+  too_heavy_for_any_truck: 'tonnes is the most any truck here carries in one load. Split it, or post it as two.',
+  smallest_truck_that_carries_it: 'is the smallest truck that carries it.',
+  trips_completed: 'trips completed',
+  too_few_for_on_time: 'too few for an on-time figure',
+  on_time: 'on time',
+  days_ago_expired: 'days since it expired',
+  expires_in_days: 'days until it expires',
+  warned_days_ahead: 'days of warning rather than a message on the morning it lapses — losing a tier mid-trip loses work already committed to.',
+  nothing_is_owed: 'Nothing is owed either way.',
+  is_owed_and_both_can_see: 'is owed, and both sides can see why.',
+  as_the_shipper: 'As the shipper',
+  as_the_carrier: 'As the carrier',
+  hours_of_the_bid_being_accepted: 'hours of the bid being accepted',
+  one_sms_and_it_says_who: 'characters — one SMS, and it says who it is from. A bare link from an unknown number gets deleted.',
+  days_unless_you_turn_it_off: 'days, unless you turn it off sooner.',
+  under_a_day_left: 'Under a day left',
+  one_day_left: '1 day left',
+  does_not_expire: 'Does not expire',
+  turned_off: 'Turned off',
+  expired: 'Expired',
+  position_and_full_track: 'Position and full track',
+  position_only: 'Position only',
+  turn_off_the_link_for: 'Turn off the link for',
+  km_of_empty_repositioning: 'km of empty repositioning is the most that is ever proposed. Past that the fuel and the day are rarely covered by the leg they are spent reaching.',
+  of_the_trip_is_covered: 'of the trip is covered by tracking.',
+  between: 'between',
+  and: 'and',
+  asks_what_it_was_for: 'asks what it was for — not to question it, but because that is the entry the office queries a week later.',
+  over_keep_it_short: 'over — keep it short, or call.',
+  written_in_a_dead_zone: 'Written in a dead zone · arrived',
+  of_the_truck_is_refused: 'of the truck is refused even when it would physically fit: two shippers, two sets of paperwork and two chances of a delay, for a trailer that is still mostly air.',
+  km_from_the_destination: 'km from where it was going. Recorded on the document.',
+  metres_out: 'm out',
+  at_the_destination: 'At',
+  the_destination: 'the destination',
+  all_trucks_can_take_work: 'trucks, and every one can take work',
+  cannot_be_given_a_new_trip: 'cannot be given a new trip',
+  no_signal_still_recording: 'No signal. Your position is still being recorded.',
+  positions_saved_waiting: 'positions saved, waiting to send.',
+  quiet_between: 'Quiet between',
+  held_is_not_dropped: 'Anything held is not dropped — it arrives in the morning as one line.',
+  still_to_come: 'still to come',
+  demo_showing_link: 'Walkthrough · showing link',
+  of_count: 'of',
+  add_a_photo_this_one_needs_it: 'Add a photo — this one needs it',
+  photos_added: 'added',
+  under_answers: 'Under',
+  answers: 'answers',
   optional: 'Optional',
   add_a_note: 'Add a note',
   the_route: 'Route',
@@ -1131,6 +1299,90 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  told_and_under_dispute: "An sanar da mai kaya da mai mota, kuma yanzu ana jayayya kan tafiyar.",
+  told_keep_driving: "An sanar da mai kaya da mai mota. Ka ci gaba da tuƙi idan za ka iya.",
+  eta_stops_showing: "Ba za a nuna hasashen lokacin isowa ba sai wannan ya wuce — hasashe kusa da mota da ta tsaya ya saɓa wa juna.",
+  eta_stays_delay_visible: "Hasashen lokacin isowa na nan, kuma jinkirin na kan tafiyar don kowa ya gani.",
+  recorded_against_the_trip: "An rubuta shi a kan tafiyar, inda duk wanda ke cikinta ke iya ganinsa.",
+  late: "Ya makara",
+  alert_held: "An riƙe",
+  alert_not_sent: "Ba a aika ba",
+  alert_wakes_you: "Yana tayar da kai",
+  alert_notifies: "Yana sanarwa",
+  alert_in_the_app: "A cikin manhajar",
+  simulate_losing_signal: "Yi kamar siginar ta ɓace",
+  simulate_regaining_signal: "Yi kamar siginar ta dawo",
+  link_turned_off: "An kashe wannan hanyar haɗi",
+  link_expired: "Wannan hanyar haɗi ta ƙare",
+  ask_for_a_new_one: "Ka tambayi wanda ya aiko da shi sabo.",
+  links_stop_working: "Hanyoyin haɗi na daina aiki bayan makonni biyu, don kada wurin mota ya kasance a bayyane har abada. Ka tambayi wanda ya aiko da shi sabo.",
+  signature: "Sa hannu",
+  still_settles_note: "Har yanzu za a biya wannan tafiyar. Ana jayayya kan ƙarancin kaya daban — riƙe dukan kuɗin na hukunta mai mota kan bambancin da yawanci na wurin lodin ne.",
+  nothing_owed_for_handover: "Ba a mika komai ba, don haka ba a bin kowa komai kan mikawar.",
+  selected_tap_to_remove: "An zaɓa. Danna don cirewa",
+  tap_to_filter_by_this: "Danna don tace da wannan",
+  on_file: 'Yana nan',
+  not_uploaded: 'Ba a saka ba',
+  document_identity: 'Katin shaida na gwamnati',
+  document_licence: 'Lasisin tuƙi',
+  document_registration: 'Rajistar kamfani',
+  document_insurance: 'Inshorar kaya kan hanya',
+  more_completed_trips: 'ƙarin tafiye-tafiyen da aka kammala',
+  on_time_delivery: 'isar da kaya a kan lokaci',
+  still_aboard: 'na nan a mota',
+  added_for_extra_stops: 'an ƙara don ƙarin tsayawa',
+  first_drop_is_delivery: 'Sauka ta farko ita ce isar da kaya; kowace bayanta karkata ce, jira da wasu takardu na biyu.',
+  delivered_out_of_order: 'an isar da shi alhali wata sauka ta farko na nan a mota.',
+  hand_over_at: 'Mika kaya a',
+  km_by_road: 'kilomita ta hanya',
+  too_heavy_for_any_truck: 'tan ne mafi yawa da kowace mota a nan ke ɗauka a lodi ɗaya. Ka raba shi, ko ka sanya shi biyu.',
+  smallest_truck_that_carries_it: 'ita ce mota mafi ƙanƙanta da ke ɗaukarsa.',
+  trips_completed: 'tafiye-tafiyen da aka kammala',
+  too_few_for_on_time: 'sun yi kaɗan don a nuna lokacin isowa',
+  on_time: 'a kan lokaci',
+  days_ago_expired: 'kwanaki tun da ya ƙare',
+  expires_in_days: 'kwanaki kafin ya ƙare',
+  warned_days_ahead: 'kwanakin gargaɗi maimakon saƙo a safiyar ranar da ya ƙare — rasa matsayi tsakiyar tafiya na rasa aikin da aka riga aka amince da shi.',
+  nothing_is_owed: 'Ba wanda ke bin kowa.',
+  is_owed_and_both_can_see: 'ake bin, kuma bangarorin biyu na iya ganin dalili.',
+  as_the_shipper: 'A matsayin mai kaya',
+  as_the_carrier: 'A matsayin mai mota',
+  hours_of_the_bid_being_accepted: 'awanni na karɓar tayin',
+  one_sms_and_it_says_who: 'haruffa — SMS ɗaya, kuma yana faɗin wanda ya aiko. Hanyar da babu bayani daga lambar da ba a sani ba ana gogewa.',
+  days_unless_you_turn_it_off: 'kwanaki, sai dai idan ka kashe shi da wuri.',
+  under_a_day_left: 'Bai kai rana ɗaya ba',
+  one_day_left: 'Rana 1 ce ta rage',
+  does_not_expire: 'Ba ya ƙarewa',
+  turned_off: 'An kashe',
+  expired: 'Ya ƙare',
+  position_and_full_track: 'Wuri da duk hanyar da aka bi',
+  position_only: 'Wuri kaɗai',
+  turn_off_the_link_for: 'Kashe hanyar haɗi ta',
+  km_of_empty_repositioning: 'kilomita na tafiya babu kaya shi ne mafi yawa da ake taɓa bayarwa. Sama da haka, man fetur da ranar da aka kashe ba safai tafiyar ke biyansu ba.',
+  of_the_trip_is_covered: 'na tafiyar ne aka rufe da bin diddigi.',
+  between: 'tsakanin',
+  and: 'da',
+  asks_what_it_was_for: 'ana tambayar abin da aka yi shi — ba don a shakketa ba, sai don shi ne shigarwar da ofishi ke tambaya bayan mako guda.',
+  over_keep_it_short: 'sun wuce — ka taƙaita, ko ka kira.',
+  written_in_a_dead_zone: 'An rubuta inda babu siginar · ya iso',
+  of_the_truck_is_refused: 'na motar ana ƙin sa ko da zai shiga: masu kaya biyu, takardu iri biyu da damar jinkiri biyu, don tirela da yawancinta iska ce.',
+  km_from_the_destination: 'kilomita daga inda za a je. An rubuta shi a takardar.',
+  metres_out: 'm nesa',
+  at_the_destination: 'A',
+  the_destination: 'inda za a je',
+  all_trucks_can_take_work: 'motoci, kuma kowacce na iya karɓar aiki',
+  cannot_be_given_a_new_trip: 'ba za a iya ba su sabuwar tafiya ba',
+  no_signal_still_recording: 'Babu siginar. Ana ci gaba da rubuta wurin da kake.',
+  positions_saved_waiting: 'wuraren da aka ajiye, suna jiran a aika.',
+  quiet_between: 'Shiru tsakanin',
+  held_is_not_dropped: 'Duk abin da aka riƙe ba a jefar da shi — yana zuwa da safe a matsayin layi ɗaya.',
+  still_to_come: 'sauran zuwa',
+  demo_showing_link: 'Nuni · ana nuna hanyar haɗi',
+  of_count: 'daga cikin',
+  add_a_photo_this_one_needs_it: 'Ƙara hoto — wannan na buƙatarsa',
+  photos_added: 'an ƙara',
+  under_answers: 'Ƙasa da',
+  answers: 'amsoshi',
   optional: 'Na zaɓi',
   add_a_note: 'Ƙara bayani',
   the_route: 'Hanya',
@@ -1649,6 +1901,90 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  told_and_under_dispute: "A ti sọ fún olówó ẹrù àti olówó ọkọ̀, ìjà sì ti wà lórí ìrìn náà.",
+  told_keep_driving: "A ti sọ fún olówó ẹrù àti olówó ọkọ̀. Máa wakọ̀ nígbà tí o bá lè ṣe.",
+  eta_stops_showing: "A kò ní fi àkókò ìdé tí a fojú bù hàn títí èyí yóò fi kúrò — àfojúbù lẹ́gbẹ̀ẹ́ ọkọ̀ tí ó dúró jẹ́ ìtakora.",
+  eta_stays_delay_visible: "Àkókò ìdé tí a fojú bù ṣì wà, ìdádúró náà sì wà lórí ìrìn fún gbogbo ènìyàn láti rí.",
+  recorded_against_the_trip: "A kọ ọ́ sí ìrìn náà, níbi tí gbogbo ẹni tí ó wà nínú rẹ̀ lè rí i.",
+  late: "Ó pẹ́",
+  alert_held: "A dá a dúró",
+  alert_not_sent: "A kò fi ránṣẹ́",
+  alert_wakes_you: "Ó jí ọ",
+  alert_notifies: "Ó ń kìlọ̀",
+  alert_in_the_app: "Nínú áàpù náà",
+  simulate_losing_signal: "Ṣe bí ẹni pé sìgnál kò sí",
+  simulate_regaining_signal: "Ṣe bí ẹni pé sìgnál ti padà",
+  link_turned_off: "A ti pa ọ̀nà asopọ̀ yìí",
+  link_expired: "Ọ̀nà asopọ̀ yìí ti parí",
+  ask_for_a_new_one: "Béèrè lọ́wọ́ ẹni tí ó fi ránṣẹ́ fún ọ̀kan tuntun.",
+  links_stop_working: "Àwọn ọ̀nà asopọ̀ ń dá iṣẹ́ dúró lẹ́yìn ọ̀sẹ̀ díẹ̀, kí ibi tí ọkọ̀ wà má bàa wà ní gbangba títí láé. Béèrè lọ́wọ́ ẹni tí ó fi ránṣẹ́ fún ọ̀kan tuntun.",
+  signature: "Ìfọwọ́sí",
+  still_settles_note: "A ó ṣì san owó ìrìn yìí. A ó jiyàn nípa àìtó ẹrù lọ́tọ̀ — dídá gbogbo owó dúró ń jẹ olówó ọkọ̀ níyà fún ìyàtọ̀ tí ó sábà máa ń jẹ́ ti ibi ìkó ẹrù.",
+  nothing_owed_for_handover: "A kò fi ohunkóhun lélẹ̀, nítorí náà kò sí owó tí a jẹ lórí ìfilélẹ̀ náà.",
+  selected_tap_to_remove: "A ti yàn án. Tẹ̀ ẹ́ láti yọ ọ́ kúrò",
+  tap_to_filter_by_this: "Tẹ̀ ẹ́ láti ṣàyẹ̀wò pẹ̀lú èyí",
+  on_file: 'Ó wà nínú ìwé',
+  not_uploaded: 'A kò tí ì fi sí i',
+  document_identity: 'Ìwé ìdánimọ̀ ìjọba',
+  document_licence: 'Ìwé àṣẹ awakọ̀',
+  document_registration: 'Ìforúkọsílẹ̀ ilé-iṣẹ́',
+  document_insurance: 'Ìdábòbò ẹrù lójú ọ̀nà',
+  more_completed_trips: 'ìrìn tí a parí sí i',
+  on_time_delivery: 'ìfilélẹ̀ ẹrù ní àkókò',
+  still_aboard: 'ó ṣì wà nínú ọkọ̀',
+  added_for_extra_stops: 'a fi kún un fún àwọn ìdúró àfikún',
+  first_drop_is_delivery: 'Ìdúró àkọ́kọ́ ni ìfilélẹ̀ ẹrù; olúkúlùkù tí ó tẹ̀lé e jẹ́ ìyapa ọ̀nà, ìdúró àti ìwé mìíràn.',
+  delivered_out_of_order: 'ni a fi lélẹ̀ nígbà tí ìdúró àkọ́kọ́ ṣì wà nínú ọkọ̀.',
+  hand_over_at: 'Fi ẹrù lélẹ̀ ní',
+  km_by_road: 'kílómítà ní ojú ọ̀nà',
+  too_heavy_for_any_truck: 'tọ́ọ̀nù ni ẹrù tí ó pọ̀ jùlọ tí ọkọ̀ kankan níbí lè gbé lẹ́ẹ̀kan. Pín in, tàbí gbé e kalẹ̀ bí méjì.',
+  smallest_truck_that_carries_it: 'ni ọkọ̀ tí ó kéré jùlọ tí ó lè gbé e.',
+  trips_completed: 'ìrìn tí a ti parí',
+  too_few_for_on_time: 'wọ́n kéré jù láti fi hàn bí àkókò ṣe rí',
+  on_time: 'ní àkókò',
+  days_ago_expired: 'ọjọ́ láti ìgbà tí ó ti parí',
+  expires_in_days: 'ọjọ́ kí ó tó parí',
+  warned_days_ahead: 'ọjọ́ ìkìlọ̀ dípò ìránṣẹ́ ní òwúrọ̀ ọjọ́ tí ó parí — pípàdánù ipò láàrin ìrìn ń pàdánù iṣẹ́ tí a ti gbà tẹ́lẹ̀.',
+  nothing_is_owed: 'Kò sí owó tí ẹnikẹ́ni jẹ.',
+  is_owed_and_both_can_see: 'ni a jẹ, àwọn ẹgbẹ́ méjèèjì sì lè rí ìdí rẹ̀.',
+  as_the_shipper: 'Bí olówó ẹrù',
+  as_the_carrier: 'Bí olówó ọkọ̀',
+  hours_of_the_bid_being_accepted: 'wákàtí tí a gba ìdíyelé',
+  one_sms_and_it_says_who: 'àwọn lẹ́tà — SMS kan, ó sì sọ ẹni tí ó ti wá. Ọ̀nà asopọ̀ tí kò ní àlàyé láti ọ̀dọ̀ nọ́mbà àìmọ̀ ni a ń pa rẹ́.',
+  days_unless_you_turn_it_off: 'ọjọ́, àyàfi tí o bá pa á ṣáájú.',
+  under_a_day_left: 'Kò tó ọjọ́ kan',
+  one_day_left: 'Ọjọ́ 1 ló kù',
+  does_not_expire: 'Kò ní parí',
+  turned_off: 'A ti pa á',
+  expired: 'Ó ti parí',
+  position_and_full_track: 'Ibi tí ó wà àti gbogbo ọ̀nà tí ó gbà',
+  position_only: 'Ibi tí ó wà nìkan',
+  turn_off_the_link_for: 'Pa ọ̀nà asopọ̀ fún',
+  km_of_empty_repositioning: 'kílómítà ìrìn òfìfo ni èyí tí ó pọ̀ jùlọ tí a ń dábàá rí. Ju bẹ́ẹ̀ lọ, epo àti ọjọ́ tí a ná kì í sábà bá owó ìrìn náà mu.',
+  of_the_trip_is_covered: 'nínú ìrìn náà ni àtẹ̀lé fi bò.',
+  between: 'láàrin',
+  and: 'àti',
+  asks_what_it_was_for: 'ni a ó béèrè ohun tí ó jẹ́ fún — kì í ṣe láti ṣiyèméjì, ṣùgbọ́n nítorí pé èyí ni àkọsílẹ̀ tí ọ́fíìsì ń béèrè lẹ́yìn ọ̀sẹ̀ kan.',
+  over_keep_it_short: 'ó ju bẹ́ẹ̀ lọ — sọ ọ́ ní ṣókí, tàbí pè.',
+  written_in_a_dead_zone: 'A kọ ọ́ níbi tí kò sí sìgnál · ó dé',
+  of_the_truck_is_refused: 'nínú ọkọ̀ ni a ń kọ̀ bí ó tilẹ̀ jẹ́ pé yóò bá a mu: olówó ẹrù méjì, ìwé méjì àti àǹfààní ìdádúró méjì, fún tirela tí ó ṣì jẹ́ afẹ́fẹ́ púpọ̀ jùlọ.',
+  km_from_the_destination: 'kílómítà sí ibi tí ó ń lọ. A kọ ọ́ sínú ìwé náà.',
+  metres_out: 'm sí i',
+  at_the_destination: 'Ní',
+  the_destination: 'ibi tí ó ń lọ',
+  all_trucks_can_take_work: 'ọkọ̀, olúkúlùkù sì lè gba iṣẹ́',
+  cannot_be_given_a_new_trip: 'ni a kò lè fún ní ìrìn tuntun',
+  no_signal_still_recording: 'Kò sí sìgnál. À ń kọ ibi tí o wà síbẹ̀.',
+  positions_saved_waiting: 'àwọn ibi tí a fi pamọ́, wọ́n ń dúró láti fi ránṣẹ́.',
+  quiet_between: 'Ìdákẹ́ láàrin',
+  held_is_not_dropped: 'Ohunkóhun tí a dá dúró ni a kò sọnù — ó dé ní òwúrọ̀ gẹ́gẹ́ bí ìlà kan.',
+  still_to_come: 'ó ṣì ń bọ̀',
+  demo_showing_link: 'Àpẹẹrẹ · à ń fi ọ̀nà asopọ̀ hàn',
+  of_count: 'nínú',
+  add_a_photo_this_one_needs_it: 'Fi fọ́tò kún un — èyí nílò rẹ̀',
+  photos_added: 'a fi kún un',
+  under_answers: 'Kò tó',
+  answers: 'ìdáhùn',
   optional: 'Kò dandan',
   add_a_note: 'Fi àkọsílẹ̀ kún un',
   the_route: 'Ọ̀nà',
@@ -2167,6 +2503,90 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  told_and_under_dispute: "A gwara onye nwe ngwaahịa na onye na-ebu ibu, esemokwu adịkwala na njem ahụ.",
+  told_keep_driving: "A gwara onye nwe ngwaahịa na onye na-ebu ibu. Nọgide na-anya ụgbọ mgbe ị nwere ike.",
+  eta_stops_showing: "Agaghị egosi oge nrute a tụrụ anya ya ruo mgbe nke a gafere — atụmatụ n’akụkụ ụgbọ kwụsịrị bụ nkwenye na-emegiderịta onwe ya.",
+  eta_stays_delay_visible: "Oge nrute a tụrụ anya ya ka dị, igbu oge ahụ dịkwa na njem ka onye ọ bụla hụ.",
+  recorded_against_the_trip: "E dekọrọ ya na njem ahụ, ebe onye ọ bụla nọ na ya nwere ike ịhụ ya.",
+  late: "Ọ bịara n’oge ọjọọ",
+  alert_held: "E jidere ya",
+  alert_not_sent: "Ezigaghị ya",
+  alert_wakes_you: "Ọ na-akpọte gị",
+  alert_notifies: "Ọ na-akọ gị",
+  alert_in_the_app: "N’ime ngwa ahụ",
+  simulate_losing_signal: "Mee ka a ga-asị na mgbama efuola",
+  simulate_regaining_signal: "Mee ka a ga-asị na mgbama alọghachila",
+  link_turned_off: "Agbanyụọla njikọ a",
+  link_expired: "Njikọ a agwụla",
+  ask_for_a_new_one: "Jụọ onye zitere ya maka nke ọhụrụ.",
+  links_stop_working: "Njikọ na-akwụsị ịrụ ọrụ mgbe izu ole na ole gasịrị, ka ebe ụgbọ nọ ghara ịdị n’ihu ọha ruo mgbe ebighị ebi. Jụọ onye zitere ya maka nke ọhụrụ.",
+  signature: "Mbinye aka",
+  still_settles_note: "A ga-akwụ ụgwọ njem a. A ga-arụrịta ụka banyere ụkọ iche — ijide ụgwọ ahụ dum na-ata onye na-ebu ibu ahụhụ maka ọdịiche nke na-abụkarị nke ebe a na-ebu ibu.",
+  nothing_owed_for_handover: "E nyefeghị ihe ọ bụla, ya mere ọ dịghị ụgwọ a ji maka nnyefe ahụ.",
+  selected_tap_to_remove: "A họrọla ya. Pịa iji wepụ ya",
+  tap_to_filter_by_this: "Pịa iji nyochaa site na nke a",
+  on_file: 'Ọ dị na faịlụ',
+  not_uploaded: 'Ebugoghị ya',
+  document_identity: 'Njirimara gọọmentị',
+  document_licence: 'Ikike ọkwọ ụgbọala',
+  document_registration: 'Ndebanye aha ụlọ ọrụ',
+  document_insurance: 'Mkpuchi ngwongwo n’ụzọ',
+  more_completed_trips: 'njem emechara ọzọ',
+  on_time_delivery: 'nnyefe n’oge',
+  still_aboard: 'ka nọ n’ime ụgbọ',
+  added_for_extra_stops: 'agbakwunyere maka nkwụsị ndị ọzọ',
+  first_drop_is_delivery: 'Nkwụsị mbụ bụ nnyefe ngwaahịa; nke ọ bụla na-esote ya bụ mgbagharị ụzọ, nchere na akwụkwọ ọzọ.',
+  delivered_out_of_order: 'e nyefere ya mgbe nkwụsị mbụ ka nọ n’ime ụgbọ.',
+  hand_over_at: 'Nyefee na',
+  km_by_road: 'kilomita n’okporo ụzọ',
+  too_heavy_for_any_truck: 'tọn bụ ihe kachasị nke ụgbọ ọ bụla ebe a na-ebu n’otu ibu. Kewaa ya, ma ọ bụ bipụta ya dịka abụọ.',
+  smallest_truck_that_carries_it: 'bụ ụgbọ kachasị nta nke na-ebu ya.',
+  trips_completed: 'njem emechara',
+  too_few_for_on_time: 'ha dị ole na ole maka ọnụọgụ oge',
+  on_time: 'n’oge',
+  days_ago_expired: 'ụbọchị kemgbe ọ gwụrụ',
+  expires_in_days: 'ụbọchị tupu ọ gwụ',
+  warned_days_ahead: 'ụbọchị ịdọ ndụ na ntị kama ozi n’ụtụtụ ụbọchị ọ gwụrụ — ịtụfu ọkwa n’etiti njem na-atụfu ọrụ e kwerelarị.',
+  nothing_is_owed: 'Ọ dịghị onye ji ibe ya ụgwọ.',
+  is_owed_and_both_can_see: 'ka ji ụgwọ, akụkụ abụọ ahụ nwekwara ike ịhụ ihe kpatara ya.',
+  as_the_shipper: 'Dịka onye nwe ngwaahịa',
+  as_the_carrier: 'Dịka onye na-ebu ibu',
+  hours_of_the_bid_being_accepted: 'awa nke a nabatara ọnụahịa',
+  one_sms_and_it_says_who: 'mkpụrụedemede — otu SMS, ọ na-ekwukwa onye o si n’aka ya. Njikọ na-enweghị nkọwa sitere na nọmba a na-amaghị ka a na-ehichapụ.',
+  days_unless_you_turn_it_off: 'ụbọchị, ma ọ bụrụ na ị gbanyụọ ya n’oge.',
+  under_a_day_left: 'Erughị otu ụbọchị',
+  one_day_left: 'Otu ụbọchị fọdụrụ',
+  does_not_expire: 'Ọ naghị agwụ',
+  turned_off: 'Agbanyụọla ya',
+  expired: 'Ọ gwụla',
+  position_and_full_track: 'Ebe ọ nọ na ụzọ ahụ dum',
+  position_only: 'Naanị ebe ọ nọ',
+  turn_off_the_link_for: 'Gbanyụọ njikọ maka',
+  km_of_empty_repositioning: 'kilomita nke njem tọgbọrọ chakoo bụ ihe kachasị a na-atụ aro. Karịa nke ahụ, mmanụ na ụbọchị e mefuru anaghị adịkarị ka ụgwọ njem ahụ.',
+  of_the_trip_is_covered: 'nke njem ahụ ka nsochi kpuchiri.',
+  between: 'n’etiti',
+  and: 'na',
+  asks_what_it_was_for: 'ka a na-ajụ ihe ọ bụ maka ya — ọ bụghị iji nyoo ya anya, kama n’ihi na nke ahụ bụ ihe ndekọ ọfịs na-ajụ mgbe otu izu gasịrị.',
+  over_keep_it_short: 'karịrị — mee ya mkpirikpi, ma ọ bụ kpọọ.',
+  written_in_a_dead_zone: 'E dere ya ebe enweghị mgbama · o rutere',
+  of_the_truck_is_refused: 'nke ụgbọ ka a na-ajụ ọbụna mgbe ọ ga-abanye: ndị nwe ngwaahịa abụọ, akwụkwọ ụzọ abụọ na ohere igbu oge abụọ, maka trela nke ka bụ ikuku.',
+  km_from_the_destination: 'kilomita site n’ebe ọ na-aga. E dekọrọ ya n’akwụkwọ ahụ.',
+  metres_out: 'm pụọ',
+  at_the_destination: 'Na',
+  the_destination: 'ebe ọ na-aga',
+  all_trucks_can_take_work: 'ụgbọ, nke ọ bụla nwekwara ike ịnara ọrụ',
+  cannot_be_given_a_new_trip: 'enweghị ike inye njem ọhụrụ',
+  no_signal_still_recording: 'Enweghị mgbama. Ka na-edekọ ebe ị nọ.',
+  positions_saved_waiting: 'ebe e chekwara, na-echere iziga.',
+  quiet_between: 'Ịdị jụụ n’etiti',
+  held_is_not_dropped: 'Ihe ọ bụla e jidere adịghị efu — ọ na-abịa n’ụtụtụ dịka otu ahịrị.',
+  still_to_come: 'ka na-abịa',
+  demo_showing_link: 'Ihe ngosi · na-egosi njikọ',
+  of_count: 'n’ime',
+  add_a_photo_this_one_needs_it: 'Tinye foto — nke a chọrọ ya',
+  photos_added: 'agbakwunyere',
+  under_answers: 'N’okpuru',
+  answers: 'azịza',
   optional: 'Ọ dịghị mkpa',
   add_a_note: 'Tinye ihe odide',
   the_route: 'Ụzọ',

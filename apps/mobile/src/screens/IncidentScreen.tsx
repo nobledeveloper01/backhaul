@@ -41,17 +41,13 @@ interface Props {
  * right above a trip and two lines long in a box the width of a thumb, leaving
  * one tile in each row taller than its neighbour. The tile gets its own word.
  */
-const KINDS: readonly {
-  readonly kind: IncidentKind;
-  readonly icon: IconName;
-  readonly label: string;
-}[] = [
-  { kind: 'breakdown', icon: 'truck', label: 'Broken down' },
-  { kind: 'detained', icon: 'clock', label: 'Held up' },
-  { kind: 'road', icon: 'route', label: 'Road blocked' },
-  { kind: 'accident', icon: 'alert', label: 'Accident' },
-  { kind: 'cargo', icon: 'package', label: 'The load' },
-  { kind: 'security', icon: 'shield', label: 'Security' },
+const KINDS: readonly { readonly kind: IncidentKind; readonly icon: IconName }[] = [
+  { kind: 'breakdown', icon: 'truck' },
+  { kind: 'detained', icon: 'clock' },
+  { kind: 'road', icon: 'route' },
+  { kind: 'accident', icon: 'alert' },
+  { kind: 'cargo', icon: 'package' },
+  { kind: 'security', icon: 'shield' },
 ];
 
 /**
@@ -138,9 +134,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
             reported
           </Text>
           <Text variant="bodyDriver" tone="secondary" style={styles.centred}>
-            {raisesDispute(kind)
-              ? 'The shipper and the carrier have been told, and the trip is now under dispute.'
-              : 'The shipper and the carrier have been told. Keep driving when you can.'}
+            {t(raisesDispute(kind) ? 'told_and_under_dispute' : 'told_keep_driving')}
           </Text>
 
           {/*
@@ -200,7 +194,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
                 numberOfLines={2}
                 style={{ color: kind === option.kind ? colours.accent : colours.textPrimary }}
               >
-                {option.label}
+                {t(INCIDENT_WORDS[option.kind])}
               </Text>
             </Press>
           ))}
@@ -215,11 +209,13 @@ export function IncidentScreen({ trip, onBack }: Props) {
                 trip under dispute, read as "nothing else changes".
               */}
               <Text variant="body">
-                {severity === 'blocking'
-                  ? 'The arrival estimate stops showing until this clears — an estimate beside a stopped truck is a contradiction.'
-                  : severity === 'delaying'
-                    ? 'The arrival estimate stays, and the delay is on the trip for everyone to see.'
-                    : 'Recorded against the trip, where everyone on it can see it.'}
+                {t(
+                  severity === 'blocking'
+                    ? 'eta_stops_showing'
+                    : severity === 'delaying'
+                      ? 'eta_stays_delay_visible'
+                      : 'recorded_against_the_trip',
+                )}
               </Text>
               {raisesDispute(kind) ? (
                 <Text variant="body" tone="stopped" style={styles.gapTop}>
@@ -275,8 +271,8 @@ export function IncidentScreen({ trip, onBack }: Props) {
                   />
                   <Text variant="bodyDriver" tone={short ? 'stopped' : 'secondary'}>
                     {photos === 0
-                      ? 'Add a photo — this one needs it'
-                      : `${photos} photo${photos === 1 ? '' : 's'} added`}
+                      ? t('add_a_photo_this_one_needs_it')
+                      : `${photos} ${t('add_a_photo')} · ${t('photos_added')}`}
                   </Text>
                 </Press>
               ) : null}

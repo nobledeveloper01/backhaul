@@ -147,7 +147,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {humanDuration(pack.coveredMs, t)} of the trip is covered by tracking.
+            {humanDuration(pack.coveredMs, t)} {t('of_the_trip_is_covered')}
           </Text>
 
           {isThin(pack) ? (
@@ -162,7 +162,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
             {pack.gaps.map((gap) => (
               <View key={gap.from.toISOString()} style={styles.line}>
                 <Text variant="body" style={styles.flex}>
-                  {humanDuration(gap.ms, t)} between {clock(gap.from)} and {clock(gap.to)}
+                  {humanDuration(gap.ms, t)} · {clock(gap.from)} – {clock(gap.to)}
                 </Text>
               </View>
             ))}

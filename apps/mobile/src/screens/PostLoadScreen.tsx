@@ -17,6 +17,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { TRUCK_WORDS } from '../state/words';
 import { useSession } from '../state/session';
 import { newId } from '../state/ids';
 
@@ -69,7 +70,12 @@ export function PostLoadScreen({ onBack }: Props) {
 
   const [corridorIndex, setCorridorIndex] = useState(2);
   const [weightText, setWeightText] = useState('26');
-  const [cargo, setCargo] = useState('Cement');
+  // Empty, not "Cement".
+  //
+  // It was prefilled, which put an English word on a Yorùbá screen and — worse
+  // — meant a shipper who did not notice posted a cement load. The Post button
+  // already refuses an empty cargo, so the field asks rather than assumes.
+  const [cargo, setCargo] = useState('');
 
   const corridor = CORRIDORS[corridorIndex] ?? CORRIDORS[0];
 
@@ -168,7 +174,7 @@ export function PostLoadScreen({ onBack }: Props) {
             })}
           </View>
           <Text variant="label" tone="secondary" style={styles.gap}>
-            {Math.round((corridor?.metres ?? 0) / 1000)} km by road
+            {Math.round((corridor?.metres ?? 0) / 1000)} {t('km_by_road')}
           </Text>
         </Card>
 
@@ -212,16 +218,14 @@ export function PostLoadScreen({ onBack }: Props) {
             <View style={styles.errorRow}>
               <Icon name="alert" size="sm" colour={colours.exception} />
               <Text variant="body" tone="exception" style={styles.flex}>
-                Nothing on Backhaul carries more than {CAPACITY.lowbed} tonnes in
-                one load. Split it, or post it as two.
+                {CAPACITY.lowbed} {t('too_heavy_for_any_truck')}
               </Text>
             </View>
           ) : truck !== null ? (
             <View style={styles.errorRow}>
               <Icon name="truck" size="sm" colour={colours.textSecondary} />
               <Text variant="body" tone="secondary" style={styles.flex}>
-                Needs a {truck.replace(/_/g, ' ')} — the smallest truck that
-                carries it.
+                {t(TRUCK_WORDS[truck])} {t('smallest_truck_that_carries_it')}
               </Text>
             </View>
           ) : null}

@@ -204,9 +204,7 @@ export function ChainScreen({ onBack }: Props) {
             ))}
 
             <Text variant="label" tone="secondary">
-              Nothing is proposed that needs more than {km(MAX_REPOSITION_M)} km
-              of empty repositioning. Past that the fuel and the day are rarely
-              covered by the leg they are spent reaching.
+              {km(MAX_REPOSITION_M)} {t('km_of_empty_repositioning')}
             </Text>
           </>
         ) : null}

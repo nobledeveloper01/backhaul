@@ -4,6 +4,7 @@ import type {
   Cadence,
   LoadFilter,
   CarrierClaim,
+  Documents,
   ExceptionKind,
   IncidentKind,
   LevyKind,
@@ -46,6 +47,21 @@ export const PAPER_WORDS: Readonly<Record<Paper, Phrase>> = {
   roadworthiness: 'paper_roadworthiness',
   insurance: 'paper_insurance',
   permit: 'paper_permit',
+};
+
+/**
+ * The four documents a carrier proves themselves with.
+ *
+ * Keyed off `Documents` rather than `Paper`: those are two different sets —
+ * a carrier proves an identity and a company registration, a *truck* carries
+ * roadworthiness and a permit — and one map covering both would be wrong for
+ * whichever it was not written for.
+ */
+export const DOCUMENT_WORDS: Readonly<Record<keyof Documents, Phrase>> = {
+  identity: 'document_identity',
+  licence: 'document_licence',
+  registration: 'document_registration',
+  insurance: 'document_insurance',
 };
 
 export const TIER_WORDS: Readonly<Record<Tier, Phrase>> = {

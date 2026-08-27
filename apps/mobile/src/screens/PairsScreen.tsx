@@ -138,10 +138,7 @@ export function PairsScreen({ onBack }: Props) {
             ))}
 
             <Text variant="label" tone="secondary">
-              A pair that fills less than {Math.round(MINIMUM_FILL * 100)}% of the
-              truck is refused even when it would physically fit: two shippers,
-              two sets of paperwork and two chances of a delay, for a trailer
-              that is still mostly air.
+              {Math.round(MINIMUM_FILL * 100)}% {t('of_the_truck_is_refused')}
             </Text>
           </>
         ) : null}

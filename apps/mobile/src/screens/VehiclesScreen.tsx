@@ -119,8 +119,8 @@ export function VehiclesScreen({ onBack }: Props) {
             style={styles.flex}
           >
             {grounded === 0
-              ? `All ${fleet.length} trucks can take work`
-              : `${grounded} of ${fleet.length} cannot be given a new trip`}
+              ? `${fleet.length} ${t('all_trucks_can_take_work')}`
+              : `${grounded} ${t('of_count')} ${fleet.length} ${t('cannot_be_given_a_new_trip')}`}
           </Text>
         </View>
 

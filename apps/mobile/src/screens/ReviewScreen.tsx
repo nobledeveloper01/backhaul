@@ -177,7 +177,7 @@ export function ReviewScreen({ trip, onBack }: Props) {
                 </Text>
               ) : (
                 <Text variant="label" tone="secondary">
-                  Under {MINIMUM_ANSWERS} answers
+                  {t('under_answers')} {MINIMUM_ANSWERS} {t('answers')}
                 </Text>
               )}
             </View>

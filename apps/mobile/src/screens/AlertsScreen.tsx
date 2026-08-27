@@ -87,8 +87,8 @@ export function AlertsScreen({ onBack }: Props) {
             ))}
           </View>
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            Quiet between {QUIET_FROM_HOUR}:00 and 0{QUIET_TO_HOUR}:00. Anything
-            held is not dropped — it arrives in the morning as one line.
+            {t('quiet_between')} {QUIET_FROM_HOUR}:00 – 0{QUIET_TO_HOUR}:00 ·{' '}
+            {t('held_is_not_dropped')}
           </Text>
         </Card>
 
@@ -136,16 +136,17 @@ function Outcome({
   reason: string | null;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   const [label, tint, icon] = !send
     ? reason === 'quiet_hours'
-      ? (['Held', colours.stale, 'moon'] as const)
-      : (['Not sent', colours.textSecondary, 'close'] as const)
+      ? ([t('alert_held'), colours.stale, 'moon'] as const)
+      : ([t('alert_not_sent'), colours.textSecondary, 'close'] as const)
     : urgency === 'urgent'
-      ? (['Wakes you', colours.exception, 'alert'] as const)
+      ? ([t('alert_wakes_you'), colours.exception, 'alert'] as const)
       : urgency === 'push'
-        ? (['Notifies', colours.accent, 'signal'] as const)
-        : (['In the app', colours.textSecondary, 'list'] as const);
+        ? ([t('alert_notifies'), colours.accent, 'signal'] as const)
+        : ([t('alert_in_the_app'), colours.textSecondary, 'list'] as const);
 
   return (
     <View style={[styles.outcome, { borderColor: tint }]}>

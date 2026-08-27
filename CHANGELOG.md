@@ -71,12 +71,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   there would be a number presented as a measurement, which this product does
   not do. ADR-0012 has the three ways out and why the route waits.
 
-- **Nineteen strings were still English, and the sweep that checks said zero.**
-  It only saw props holding two words or more and text that sat alone on its
-  line, so `overline="Utilisation"` and `<Text>Your fleet</Text>` both walked
-  past it. Widened, and what it found is translated — including nine
-  `accessibilityLabel`s, which are read aloud and were the only English left on
-  some screens.
+- **The sweep said zero untranslated strings three times, and was wrong three
+  times.** Each gap was the *shape* of the text rather than the text. It saw
+  strings alone on a line and props holding two words or more — so
+  `overline="Utilisation"` walked past it, and so did `<Text>Your fleet</Text>`,
+  which is never alone on its line. Then `{count} trips completed`, where the
+  string is not the line. Then `{held ? 'On file' : 'Not uploaded'}`, where the
+  braces get blanked before anything looks inside them. And the middot, which
+  this product separates every fact with and which was missing from the
+  character class.
+
+  Roughly a hundred strings across twenty-one screens were still English on
+  every language, including thirty-odd `accessibilityLabel`s — read aloud, and
+  on some screens the only English left. All of them are translated. Numbers
+  and names sit beside their phrase rather than inside it, which is what the
+  four tables have required from the start and what a template with a hole in
+  it quietly assumes away.
+
+  The domain was writing prose too. `nextStep()` returns "a government ID" and
+  "5 more completed trips" because that is what the server says and what the
+  parity fixtures pin — the verification screen now renders those from the
+  enum and the count, the way the levy kinds and paper names already were.
+
+  Proper nouns are listed in the sweep, because Lagos is Lagos in all four
+  languages, and the one branch that is English on purpose carries a comment
+  saying why rather than being silently exempt.
+
+- **The verification badge came from the server and the evidence under it came
+  from a fixture.** The tier was read from the API; the trip counts beside it
+  were the walkthrough's, on every render. Two facts about the same carrier,
+  from two places, either able to be right while the other was wrong. And the
+  fleet screen summarised the same thing in a hard-coded English sentence —
+  "One document short of Trusted · a licence expires in 18 days" — one card
+  above a comment warning that a summary which disagrees with the thing it
+  summarises is worse than no summary.
+
+- **A shipper posting a load started with "Cement" already in the box.** English
+  on a Yorùbá screen, and a shipper who did not notice posted a cement load.
+  The field is empty and the Post button already refuses an empty cargo.
 
 - **A token the server had forgotten left the app stuck.** A 401 sat on the
   trips screen showing the server's own English sentence with a Try again button

@@ -5,6 +5,7 @@ import { Press } from './Press';
 import { Text } from './Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly label: string;
@@ -27,12 +28,13 @@ interface Props {
  */
 export function Chip({ label, selected, onPress, icon }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   return (
     <Press
       onPress={onPress}
       accessibilityLabel={label}
-      accessibilityHint={selected ? 'Selected. Tap to remove' : 'Tap to filter by this'}
+      accessibilityHint={t(selected ? 'selected_tap_to_remove' : 'tap_to_filter_by_this')}
       feedback="scale"
       hitSlop={space.sm}
       style={[

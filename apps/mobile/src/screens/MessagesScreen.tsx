@@ -185,7 +185,7 @@ export function MessagesScreen({ trip, onBack }: Props) {
 
         {over > 0 ? (
           <Text variant="label" tone="exception">
-            {over} over — keep it short, or call.
+            {over} {t('over_keep_it_short')}
           </Text>
         ) : null}
 
@@ -275,7 +275,7 @@ function Bubble({ message, now }: { message: Message; now: Date }) {
         */}
         {held !== null ? (
           <Text variant="label" tone="secondary" style={styles.held}>
-            Written in a dead zone · arrived {humanDuration(held, t)} later
+            {t('written_in_a_dead_zone')} {humanDuration(held, t)} {t('later')}
           </Text>
         ) : null}
       </View>

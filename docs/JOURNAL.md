@@ -74,12 +74,34 @@ would unblock it. It is a product decision: tracking between trips needs the
 driver's consent to be tracked between trips.
 
 **The sweep that reported zero untranslated strings was reporting on the wrong
-thing.** It matched props holding two words or more, and text nodes that sat
-alone on a line. `overline="Utilisation"` is one word; `<Text>Your fleet</Text>`
-is never alone on its line. Nineteen strings were still English, nine of them
-`accessibilityLabel`s — read aloud, and on some screens the only English left.
-The lint that says a job is finished is a claim like any other, and this one had
-never been checked against a screen.
+thing, and then did it twice more.** Each round I widened it, it printed zero
+again, and each zero was a different blind spot rather than a finished job.
+
+| Round | What it could not see | Found |
+|---|---|---|
+| 1 | props with one word; text sharing a line with its tags | 19 |
+| 2 | prose beside an expression — `{count} trips completed` | 46 |
+| 3 | a literal inside a JSX expression; the middot | 54 |
+
+Roughly a hundred strings across twenty-one screens, thirty-odd of them
+`accessibilityLabel`s. **The lint that says a job is finished is a claim like
+any other**, and the only thing that ever falsified this one was widening it and
+looking again — never a test, never a screen I happened to open.
+
+The domain was writing prose too, which is the deeper half. `nextStep()`
+returns "a government ID" and "5 more completed trips" — English, correctly,
+because that is what the server says and what the parity fixtures pin. Rendering
+it straight put those words under a Yorùbá heading. The enum crosses the
+boundary and the words do not; that rule already existed for levy kinds and
+paper names, and this screen had simply never been held to it.
+
+**And the verification badge disagreed with the evidence under it.** The tier
+came from the API. The trip counts on the next line came from `DEMO_RECORD`, on
+every render, including when the server had already answered. Two facts about
+one carrier from two places, each able to be right while the other was wrong.
+One card above it on the fleet screen, the same summary was a hard-coded
+English sentence — sitting directly above a comment warning that a summary
+which disagrees with the thing it summarises is worse than no summary.
 
 **A trip came back without knowing who was on it.** `TripResponse` carried the
 history and the state and not the three party ids, so a screen deciding whether

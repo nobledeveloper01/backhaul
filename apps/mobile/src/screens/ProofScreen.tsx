@@ -193,7 +193,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                 colour={delivery.signature === null ? colours.textSecondary : colours.moving}
               />
               <Text variant="body" tone="secondary" numberOfLines={1}>
-                {delivery.signature?.name ?? 'Signature'}
+                {delivery.signature?.name ?? t('signature')}
               </Text>
             </Press>
           </View>
@@ -218,8 +218,8 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
               />
               <Text variant="body" style={styles.flex}>
                 {far
-                  ? `${Math.round(away / 100) / 10} km from ${destination?.name ?? 'the destination'}. Recorded on the document.`
-                  : `At ${destination?.name ?? 'the destination'} — ${Math.round(away)} m out.`}
+                  ? `${Math.round(away / 100) / 10} ${t('km_from_the_destination')}`
+                  : `${t('at_the_destination')} ${destination?.name ?? t('the_destination')} — ${Math.round(away)} ${t('metres_out')}`}
               </Text>
             </View>
           </Card>
@@ -232,9 +232,11 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
               {delivery.exception.note}
             </Text>
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {settlesDespite(delivery.exception)
-                ? 'This trip still settles. A shortage is argued separately — holding the whole payment punishes the carrier for a discrepancy that is usually the loading end’s.'
-                : 'Nothing was handed over, so nothing is owed for the handover.'}
+              {t(
+                settlesDespite(delivery.exception)
+                  ? 'still_settles_note'
+                  : 'nothing_owed_for_handover',
+              )}
             </Text>
           </Card>
         ) : null}

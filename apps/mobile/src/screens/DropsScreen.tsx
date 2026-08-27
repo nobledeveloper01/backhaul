@@ -117,7 +117,7 @@ export function DropsScreen({ trip, onBack }: Props) {
                 {Math.round(aboard / 1_000)} t
               </Text>
               <Text variant="label" tone="secondary">
-                still aboard
+                {t('still_aboard')}
               </Text>
             </View>
             <View style={styles.fact}>
@@ -125,14 +125,13 @@ export function DropsScreen({ trip, onBack }: Props) {
                 {format(dropFee(drops))}
               </Text>
               <Text variant="label" tone="secondary">
-                added for the extra stops
+                {t('added_for_extra_stops')}
               </Text>
             </View>
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            The first drop is the delivery; each one after it is a detour, a
-            wait and a second set of papers.
+            {t('first_drop_is_delivery')}
           </Text>
         </Card>
 
@@ -148,7 +147,7 @@ export function DropsScreen({ trip, onBack }: Props) {
           <Card overline={t('out_of_order_card')} icon="swap" emphasis="plain">
             {late.map((drop) => (
               <Text key={drop.id} variant="body">
-                {drop.at.name} was delivered with an earlier drop still aboard.
+                {drop.at.name} {t('delivered_out_of_order')}
               </Text>
             ))}
             <Text variant="label" tone="secondary" style={styles.gapTop}>
@@ -212,7 +211,7 @@ export function DropsScreen({ trip, onBack }: Props) {
               ) : (
                 <Press
                   onPress={() => sign(drop.id)}
-                  accessibilityLabel={`Hand over at ${drop.at.name}`}
+                  accessibilityLabel={`${t('hand_over_at')} ${drop.at.name}`}
                   style={[
                     styles.sign,
                     {

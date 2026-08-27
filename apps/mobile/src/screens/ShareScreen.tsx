@@ -153,8 +153,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
             <Text variant="body">{message}</Text>
           </View>
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {message.length} characters — one SMS, and it says who it is from. A bare link
-            from an unknown number gets deleted.
+            {message.length} {t('one_sms_and_it_says_who')}
           </Text>
 
           <View style={styles.actions}>
@@ -173,7 +172,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            Expires in {DEFAULT_SHARE_DAYS} days unless you turn it off sooner.
+            {DEFAULT_SHARE_DAYS} {t('days_unless_you_turn_it_off')}
           </Text>
         </Card>
 
@@ -280,15 +279,15 @@ function LinkRow({
   */
   const [label, tint] = state.ok
     ? left === 0
-      ? (['Under a day left', colours.stopped] as const)
+      ? ([t('under_a_day_left'), colours.stopped] as const)
       : left === 1
-        ? (['1 day left', colours.stopped] as const)
+        ? ([t('one_day_left'), colours.stopped] as const)
         : left === null
-          ? (['Does not expire', colours.exception] as const)
-          : ([`${left} days left`, colours.moving] as const)
+          ? ([t('does_not_expire'), colours.exception] as const)
+          : ([`${left} ${t('days_left')}`, colours.moving] as const)
     : state.reason === 'revoked'
-      ? (['Turned off', colours.textSecondary] as const)
-      : (['Expired', colours.textSecondary] as const);
+      ? ([t('turned_off'), colours.textSecondary] as const)
+      : ([t('expired'), colours.textSecondary] as const);
 
   return (
     <Card emphasis="plain">
@@ -307,12 +306,12 @@ function LinkRow({
 
       <View style={styles.linkFooter}>
         <Text variant="label" tone="secondary" style={styles.flex}>
-          {link.scope === 'evidence' ? 'Position and full track' : 'Position only'}
+          {t(link.scope === 'evidence' ? 'position_and_full_track' : 'position_only')}
         </Text>
         {state.ok ? (
           <Press
             onPress={onRevoke}
-            accessibilityLabel={`Turn off the link for ${link.label}`}
+            accessibilityLabel={`${t('turn_off_the_link_for')} ${link.label}`}
             accessibilityHint={t('they_stop_seeing_it')}
             feedback="opacity"
             hitSlop={space.sm}

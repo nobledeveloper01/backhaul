@@ -143,7 +143,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
                 {month?.outstandingNaira ?? '—'}
               </Text>
               <Text variant="label" tone="secondary">
-                still to come
+                {t('still_to_come')}
               </Text>
             </View>
             <View style={styles.figure}>
@@ -224,6 +224,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
 
 function PastRow({ trip }: { trip: PastTrip }) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   return (
     <Card>
@@ -251,7 +252,7 @@ function PastRow({ trip }: { trip: PastTrip }) {
             variant="label"
             style={{ color: trip.onTime ? colours.moving : colours.stopped }}
           >
-            {trip.onTime ? 'On time' : 'Late'}
+            {t(trip.onTime ? 'on_time' : 'late')}
           </Text>
         </View>
       </View>

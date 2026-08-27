@@ -334,7 +334,7 @@ export function DriverScreen({
       */}
       <Press
         onPress={onToggleConnection}
-        accessibilityLabel={online ? 'Simulate losing signal' : 'Simulate regaining signal'}
+        accessibilityLabel={t(online ? 'simulate_losing_signal' : 'simulate_regaining_signal')}
         feedback="opacity"
         style={[styles.link, { borderColor: colours.outline }]}
       >
@@ -521,6 +521,11 @@ export function DriverScreen({
  *
  * "every 1 minutes" is what the arithmetic produces and it is not a sentence.
  */
+// untranslated-check: this function is English on purpose. It is only reached
+// from the `language === 'en'` branch above, where the reader gets the engine's
+// own reason with the interval poured into it; the other three languages get
+// two fixed sentences, because the cadence ladder has four rungs and Hausa
+// does not put the number where English does.
 function cadence(seconds: number): string {
   if (seconds < 60) {
     return `every ${seconds} seconds`;

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  REQUIREMENTS,
   EXPIRY_WARNING_DAYS,
   MINIMUM_TRIPS_FOR_RATE,
   expiringSoon,
@@ -23,7 +24,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useMine } from '../state/server';
-import { TIER_WORDS } from '../state/words';
+import { DOCUMENT_WORDS, TIER_WORDS } from '../state/words';
 import { demoNow } from '../state/demo';
 import { DEMO_DOCUMENTS, DEMO_RECORD, demoExpiries } from '../state/product';
 
@@ -31,11 +32,18 @@ interface Props {
   readonly onBack: () => void;
 }
 
-const PAPERS: readonly { readonly key: keyof Documents; readonly label: string }[] = [
-  { key: 'identity', label: 'Government ID' },
-  { key: 'licence', label: "Driver's licence" },
-  { key: 'registration', label: 'Company registration' },
-  { key: 'insurance', label: 'Goods-in-transit cover' },
+/**
+ * The four, in the order they are earned.
+ *
+ * The names come from `DOCUMENT_WORDS` rather than sitting here in English.
+ * They used to sit here, and the label a carrier read was the same four words
+ * whichever of the four languages the rest of the screen was in.
+ */
+const PAPERS: readonly (keyof Documents)[] = [
+  'identity',
+  'licence',
+  'registration',
+  'insurance',
 ];
 
 /**
@@ -114,11 +122,20 @@ export function VerificationScreen({ onBack }: Props) {
             </View>
             <View style={styles.flex}>
               <Text variant="headline">{t(TIER_WORDS[tier])}</Text>
+              {/*
+                `record`, not `DEMO_RECORD`.
+
+                This line read the walkthrough's trip counts on every render,
+                including when the server had already answered with the real
+                ones — so a carrier's badge came from the API and the evidence
+                under it came from a fixture, and the two could disagree
+                without either looking wrong.
+              */}
               <Text variant="body" tone="secondary">
-                {DEMO_RECORD.tripsCompleted} trips completed
+                {record.tripsCompleted} {t('trips_completed')}
                 {rate === null
-                  ? ` · too few for an on-time figure`
-                  : ` · ${DEMO_RECORD.tripsOnTime} of ${DEMO_RECORD.tripsCompleted} on time`}
+                  ? ` · ${t('too_few_for_on_time')}`
+                  : ` · ${record.tripsOnTime} ${t('of_count')} ${record.tripsCompleted} ${t('on_time')}`}
               </Text>
             </View>
           </View>
@@ -129,21 +146,54 @@ export function VerificationScreen({ onBack }: Props) {
           */}
           {rate === null ? (
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              On-time delivery is shown from {MINIMUM_TRIPS_FOR_RATE} trips.
+              {t('under_answers')} {MINIMUM_TRIPS_FOR_RATE} {t('trips_completed')}
             </Text>
           ) : null}
         </Card>
 
         {step !== null ? (
           <Card overline={`${t('to_reach')} ${t(TIER_WORDS[step.tier])}`} icon="route">
-            {step.missing.map((missing) => (
-              <View key={missing} style={styles.missing}>
+            {/*
+              The documents, from the enum rather than from the sentence.
+
+              `nextStep().missing` is a list of English phrases — the domain
+              writes them because that is what the server says and what the
+              parity fixtures pin, and rendering them straight put "a
+              government ID" under a Yorùbá heading. The enum crosses the
+              boundary; the words do not.
+            */}
+            {REQUIREMENTS[step.tier].docs
+              .filter((doc) => !documents[doc])
+              .map((doc) => (
+                <View key={doc} style={styles.missing}>
+                  <Icon name="plus" size="sm" colour={colours.accent} />
+                  <Text variant="body" style={styles.flex}>
+                    {t(DOCUMENT_WORDS[doc])}
+                  </Text>
+                </View>
+              ))}
+            {/*
+              And the two that are counts rather than documents, each with its
+              number beside the phrase rather than inside it.
+            */}
+            {record.tripsCompleted < REQUIREMENTS[step.tier].trips ? (
+              <View style={styles.missing}>
                 <Icon name="plus" size="sm" colour={colours.accent} />
                 <Text variant="body" style={styles.flex}>
-                  {missing}
+                  {REQUIREMENTS[step.tier].trips - record.tripsCompleted}{' '}
+                  {t('more_completed_trips')}
                 </Text>
               </View>
-            ))}
+            ) : null}
+            {REQUIREMENTS[step.tier].onTime > 0 && record.tripsCompleted > 0 ? (
+              <View style={styles.missing}>
+                <Icon name="plus" size="sm" colour={colours.accent} />
+                <Text variant="body" style={styles.flex}>
+                  {Math.round(REQUIREMENTS[step.tier].onTime * 100)}%{' '}
+                  {t('on_time_delivery')}
+                </Text>
+              </View>
+            ) : null}
           </Card>
         ) : (
           <Card overline={t('top_of_the_ladder')} icon="check">
@@ -153,8 +203,22 @@ export function VerificationScreen({ onBack }: Props) {
           </Card>
         )}
 
+        {/*
+          Expiry dates are the walkthrough's, and the card says so.
+
+          `VerificationView` carries four booleans and no dates: the server
+          knows a licence is on file and not when it stops being valid. The
+          expiry a truck's papers have lives on the vehicle and is served —
+          this card is about the *carrier's* four documents, which is a
+          different set and has nowhere to read a date from. Labelled rather
+          than dropped, because the warning window is the thing worth
+          explaining and the rule behind it is real.
+        */}
         {soon.length > 0 ? (
           <Card overline={t('expiring')} icon="clock" emphasis="plain">
+            <Text variant="label" tone="stale" style={styles.gapBottom}>
+              {t('walkthrough_figures')}
+            </Text>
             {soon.map((entry) => (
               <View key={entry.kind} style={styles.missing}>
                 <Icon
@@ -163,29 +227,28 @@ export function VerificationScreen({ onBack }: Props) {
                   colour={entry.days < 0 ? colours.exception : colours.stopped}
                 />
                 <Text variant="body" style={styles.flex}>
-                  {PAPERS.find((paper) => paper.key === entry.kind)?.label ?? entry.kind}
+                  {t(DOCUMENT_WORDS[entry.kind])}
                   {entry.days < 0
-                    ? ` expired ${Math.abs(entry.days)} days ago`
-                    : ` expires in ${entry.days} days`}
+                    ? ` · ${Math.abs(entry.days)} ${t('days_ago_expired')}`
+                    : ` · ${entry.days} ${t('expires_in_days')}`}
                 </Text>
               </View>
             ))}
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              Warned {EXPIRY_WARNING_DAYS} days ahead rather than on the morning
-              it lapses — losing a tier mid-trip loses work already committed to.
+              {EXPIRY_WARNING_DAYS} {t('warned_days_ahead')}
             </Text>
           </Card>
         ) : null}
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          PAPERS
+          {t('trucks_and_papers').toUpperCase()}
         </Text>
 
         {PAPERS.map((paper) => {
-          const held = documents[paper.key];
+          const held = documents[paper];
           return (
             <Press
-              key={paper.key}
+              key={paper}
               /*
                 Records that a paper is held, not that it is genuine.
 
@@ -195,9 +258,9 @@ export function VerificationScreen({ onBack }: Props) {
                 same thing in its own documentation.
               */
               onPress={() => {
-                void api.recordPaper(paper.key, !held).then(() => refresh());
+                void api.recordPaper(paper, !held).then(() => refresh());
               }}
-              accessibilityLabel={paper.label}
+              accessibilityLabel={t(DOCUMENT_WORDS[paper])}
               accessibilityHint={held ? t('on_file_tap_to_remove') : t('tap_to_upload')}
               feedback="opacity"
               style={[
@@ -217,9 +280,9 @@ export function VerificationScreen({ onBack }: Props) {
                 colour={held ? colours.moving : colours.textSecondary}
               />
               <View style={styles.flex}>
-                <Text variant="body">{paper.label}</Text>
+                <Text variant="body">{t(DOCUMENT_WORDS[paper])}</Text>
                 <Text variant="label" tone="secondary">
-                  {held ? 'On file' : 'Not uploaded'}
+                  {t(held ? 'on_file' : 'not_uploaded')}
                 </Text>
               </View>
               <Icon name="chevron-right" size="md" colour={colours.outline} />
@@ -266,6 +329,7 @@ const styles = StyleSheet.create({
   body: { padding: space.lg, gap: space.md },
   flex: { flex: 1 },
   heading: { marginTop: space.md },
+  gapBottom: { marginBottom: space.xs },
   gapTop: { marginTop: space.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   badge: {

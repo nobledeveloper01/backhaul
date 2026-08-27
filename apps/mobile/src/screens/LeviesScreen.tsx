@@ -179,9 +179,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
         </View>
 
         <Text variant="label" tone="secondary">
-          Anything over {format(fromNaira(20_000))} asks what it was for — not to
-          question it, but because that is the entry the office queries a week
-          later.
+          {format(fromNaira(20_000))} {t('asks_what_it_was_for')}
         </Text>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>

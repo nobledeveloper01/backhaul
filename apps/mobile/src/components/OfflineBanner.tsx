@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { Text } from './Text';
 import { motion, radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 const ENTER = Easing.bezier(...motion.enter);
 
@@ -26,6 +27,7 @@ interface Props {
  */
 export function OfflineBanner({ online, queued }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const height = useRef(new Animated.Value(online ? 0 : 1)).current;
 
   useEffect(() => {
@@ -58,8 +60,8 @@ export function OfflineBanner({ online, queued }: Props) {
       <View style={styles.body}>
         <Text variant="label" tone="stale">
           {queued === 0
-            ? 'No signal. Your position is still being recorded.'
-            : `No signal. ${queued} positions saved, waiting to send.`}
+            ? t('no_signal_still_recording')
+            : `${queued} ${t('positions_saved_waiting')}`}
         </Text>
       </View>
     </Animated.View>

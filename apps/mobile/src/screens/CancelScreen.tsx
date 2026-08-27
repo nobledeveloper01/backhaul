@@ -98,8 +98,8 @@ export function CancelScreen({ trip, onBack }: Props) {
           </Text>
           <Text variant="body" tone="secondary" style={styles.centred}>
             {outcome.fee === 0
-              ? 'Nothing is owed either way.'
-              : `${format(outcome.fee)} is owed, and both sides can see why.`}
+              ? t('nothing_is_owed')
+              : `${format(outcome.fee)} ${t('is_owed_and_both_can_see')}`}
           </Text>
         </View>
       </View>
@@ -122,7 +122,7 @@ export function CancelScreen({ trip, onBack }: Props) {
             <Press
               key={side}
               onPress={() => setBy(side)}
-              accessibilityLabel={`As the ${side}`}
+              accessibilityLabel={t(side === 'shipper' ? 'as_the_shipper' : 'as_the_carrier')}
               feedback="opacity"
               style={[
                 styles.side,
@@ -136,7 +136,7 @@ export function CancelScreen({ trip, onBack }: Props) {
                 variant="label"
                 style={{ color: by === side ? colours.accent : colours.textSecondary }}
               >
-                As the {side}
+                {t(side === 'shipper' ? 'as_the_shipper' : 'as_the_carrier')}
               </Text>
             </Press>
           ))}
@@ -172,7 +172,7 @@ export function CancelScreen({ trip, onBack }: Props) {
             <Card overline={t('and_also')} icon="shield" emphasis="plain">
               <Line
                 on={outcome.withinGrace}
-                text={`Within ${Math.round(GRACE_MS / 3_600_000)} hours of the bid being accepted`}
+                text={`${Math.round(GRACE_MS / 3_600_000)} ${t('hours_of_the_bid_being_accepted')}`}
               />
               <Line
                 on={countsAgainstRecord(by, state)}

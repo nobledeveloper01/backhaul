@@ -110,7 +110,8 @@ export function FollowScreen({ trip, onBack }: Props) {
         >
           <Icon name="swap" size="sm" colour={colours.textSecondary} />
           <Text variant="label" tone="secondary">
-            Demo · showing link {(index % links.length) + 1} of {links.length}
+            {t('demo_showing_link')} {(index % links.length) + 1} {t('of_count')}{' '}
+            {links.length}
           </Text>
         </Press>
 
@@ -124,12 +125,8 @@ export function FollowScreen({ trip, onBack }: Props) {
         {!state.ok ? (
           <Empty
             icon="link"
-            title={state.reason === 'revoked' ? 'This link was turned off' : 'This link has expired'}
-            detail={
-              state.reason === 'revoked'
-                ? 'Ask whoever sent it for a new one.'
-                : 'Links stop working after a couple of weeks, so a truck’s position does not stay public for ever. Ask whoever sent it for a new one.'
-            }
+            title={t(state.reason === 'revoked' ? 'link_turned_off' : 'link_expired')}
+            detail={t(state.reason === 'revoked' ? 'ask_for_a_new_one' : 'links_stop_working')}
           />
         ) : (
           <>
