@@ -87,7 +87,8 @@ public sealed record ParityFixtures(
     EarningsFixtures Earnings,
     MatchingFixtures Matching,
     ChainingFixtures Chaining,
-    ConsolidationFixtures Consolidation);
+    ConsolidationFixtures Consolidation,
+    DisputeFixtures Dispute);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -483,3 +484,31 @@ public sealed record PairingRow(
     long PaysAKobo,
     long PaysBKobo,
     long CarrierGetsKobo);
+
+public sealed record DisputeFixtures(
+    long LateAfterMs,
+    long GapMs,
+    long MinimumCoveredMs,
+    DateTimeOffset AssembledAtIso,
+    IReadOnlyList<PackRow> Cases);
+
+public sealed record PackRow(
+    string Name,
+    IReadOnlyList<EvidenceRow> Items,
+    int ItemCount,
+    IReadOnlyList<string> Weights,
+    Dictionary<string, int> Counts,
+    long CoveredMs,
+    IReadOnlyList<GapRow> Gaps,
+    string Describe,
+    bool Thin);
+
+public sealed record GapRow(DateTimeOffset FromIso, DateTimeOffset ToIso, long Ms);
+
+public sealed record EvidenceRow(
+    string Kind,
+    DateTimeOffset AtIso,
+    DateTimeOffset? UntilIso,
+    DateTimeOffset? ReceivedAtIso,
+    string Summary,
+    string Source);

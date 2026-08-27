@@ -1018,4 +1018,90 @@ public sealed class ParityTests
         _ => throw new InvalidOperationException($"unmapped refusal {reason}"),
     };
 
+
+    // --- the dispute pack --------------------------------------------------
+
+    [Fact]
+    public void Both_sides_assemble_the_same_evidence_into_the_same_pack()
+    {
+        // These cases exist because a rendered pack was read, not because a
+        // test failed: a continuously covered trip reported nine holes
+        // totalling fifty-one hours. Two rules came out of that, and both are
+        // pinned here — a run of fixes covers the time it spans, and only
+        // positions constitute coverage.
+        Assert.Equal(F.Dispute.LateAfterMs, Dispute.LateAfterMs);
+        Assert.Equal(F.Dispute.GapMs, Dispute.GapMs);
+        Assert.Equal(F.Dispute.MinimumCoveredMs, Dispute.MinimumCoveredMs);
+
+        foreach (var row in F.Dispute.Cases)
+        {
+            var pack = Dispute.Assemble(
+                Guid.Empty,
+                row.Items.Select(ToEvidence).ToList(),
+                F.Dispute.AssembledAtIso);
+
+            Assert.Equal(row.ItemCount, pack.Items.Count);
+            Assert.Equal(row.Weights, pack.Items.Select(i => WeightWire(i.Weight)));
+            Assert.Equal(row.CoveredMs, pack.CoveredMs);
+            Assert.Equal(row.Describe, Dispute.Describe(pack));
+            Assert.Equal(row.Thin, Dispute.IsThin(pack));
+
+            Assert.Equal(
+                row.Gaps.Select(g => (g.FromIso, g.ToIso, g.Ms)),
+                pack.Gaps.Select(g => (g.From, g.To, g.Ms)));
+
+            foreach (var (wire, count) in row.Counts)
+            {
+                Assert.Equal(count, pack.Counts[WeightFromWire(wire)]);
+            }
+        }
+    }
+
+    private static Evidence ToEvidence(EvidenceRow row) => new(
+        KindFromWire(row.Kind),
+        row.AtIso,
+        row.UntilIso,
+        row.ReceivedAtIso,
+        row.Summary,
+        SourceFromWire(row.Source));
+
+    private static EvidenceKind KindFromWire(string wire) => wire switch
+    {
+        "trip_event" => EvidenceKind.TripEvent,
+        "position" => EvidenceKind.Position,
+        "discarded_position" => EvidenceKind.DiscardedPosition,
+        "message" => EvidenceKind.Message,
+        "incident" => EvidenceKind.Incident,
+        "photo" => EvidenceKind.Photo,
+        "signature" => EvidenceKind.Signature,
+        "waypoint_visit" => EvidenceKind.WaypointVisit,
+        "share_link" => EvidenceKind.ShareLink,
+        _ => throw new InvalidOperationException($"unknown evidence kind '{wire}'"),
+    };
+
+    private static EvidenceSource SourceFromWire(string wire) => wire switch
+    {
+        "shipper" => EvidenceSource.Shipper,
+        "carrier" => EvidenceSource.Carrier,
+        "driver" => EvidenceSource.Driver,
+        "system" => EvidenceSource.System,
+        _ => throw new InvalidOperationException($"unknown source '{wire}'"),
+    };
+
+    private static string WeightWire(Weight weight) => weight switch
+    {
+        Weight.Measured => "measured",
+        Weight.Attested => "attested",
+        Weight.LateAttested => "late_attested",
+        _ => throw new InvalidOperationException($"unmapped weight {weight}"),
+    };
+
+    private static Weight WeightFromWire(string wire) => wire switch
+    {
+        "measured" => Weight.Measured,
+        "attested" => Weight.Attested,
+        "late_attested" => Weight.LateAttested,
+        _ => throw new InvalidOperationException($"unknown weight '{wire}'"),
+    };
+
 }

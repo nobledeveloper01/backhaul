@@ -9,6 +9,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **The dispute pack, assembled by the server.** Everything the product has
+  been careful about, in one document in time order: the append-only history,
+  the position runs and the intervals they cover, the message written in a dead
+  zone and delivered eleven hours later, the sealed proof, the share links.
+
+  It adds nothing and it decides nothing. There is no verdict and no adjective
+  — the counts and the hours are the whole of it, because a platform that
+  adjudicates its own disputes is a platform both sides stop trusting. It does
+  say when there is too little tracked time to argue from at all, which is a
+  different statement and an honest one.
+
+  Thousands of fixes become a handful of runs, broken where the tracker itself
+  would call the trip silent, so the pack's idea of a gap and the tracker's are
+  the same number.
+
 - **Chaining and sharing a trailer, from the same board.** Three loads instead
   of one, chosen greedily by what each adds per kilometre *driven* — empty ones
   included, because a better-paid leg reached by 100 km of empty running is not

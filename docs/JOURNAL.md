@@ -6,6 +6,33 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-29 (later) — The pack, served
+
+**Did.** `dispute.ts` has a C# mirror, five parity cases and a route. The
+repository reads six tables and turns each row into one piece of evidence;
+`Dispute.Assemble` orders them and weighs them; nothing anywhere summarises or
+judges. 124 parity cases, 128 endpoint tests.
+
+The parity cases are written from the bug rather than from the specification:
+"a continuously covered trip has no holes in it", "a signal-loss event does not
+start the clock". Both of those were found by reading a rendered pack, and a
+case named after the failure is a case somebody will not delete by accident.
+
+### What surprised us
+
+**Positions are the only row that is not one row per item.** A Lagos–Kano trip
+is a couple of thousand fixes, and a pack with two thousand lines is a pack
+nobody reads. Consecutive fixes are collapsed into runs — and the run has to
+break at the same threshold the tracker uses to call a trip silent, or the
+pack's idea of a gap and the tracker's would be two different numbers on the
+same screen. `Tracker.SignalLostAfter` is the number in both places.
+
+**`budget.ts` is on the list of engines with no route and should stay there.**
+It answers "what is this tracking costing me in data", which is a question
+about the phone in the driver's hand: the server does not know their tariff and
+has no business guessing at it. That is now written into the roadmap as a
+decision rather than sitting there looking like a gap.
+
 ## 2026-08-29 — Chains, shared trailers, and a database everybody was sharing
 
 **Did.** `chaining.ts` and `consolidation.ts` have C# mirrors, parity cases and

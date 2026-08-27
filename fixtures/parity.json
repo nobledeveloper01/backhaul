@@ -3501,5 +3501,237 @@
         "carrierGetsKobo": 182000000
       }
     ]
+  },
+  "dispute": {
+    "lateAfterMs": 7200000,
+    "gapMs": 10800000,
+    "minimumCoveredMs": 7200000,
+    "assembledAtIso": "2026-03-06T20:00:00.000Z",
+    "cases": [
+      {
+        "name": "a continuously covered trip has no holes in it",
+        "items": [
+          {
+            "kind": "trip_event",
+            "atIso": "2026-03-06T00:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": null,
+            "summary": "open",
+            "source": "system"
+          },
+          {
+            "kind": "message",
+            "atIso": "2026-03-06T01:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": "2026-03-06T01:00:00.000Z",
+            "summary": "Confirmed for tomorrow",
+            "source": "shipper"
+          },
+          {
+            "kind": "trip_event",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": null,
+            "summary": "in_transit",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": "2026-03-06T13:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "42 fixes",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T13:00:00.000Z",
+            "untilIso": "2026-03-06T19:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "38 fixes",
+            "source": "system"
+          },
+          {
+            "kind": "signature",
+            "atIso": "2026-03-06T19:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": "2026-03-06T19:00:00.000Z",
+            "summary": "Signed by the storekeeper",
+            "source": "driver"
+          }
+        ],
+        "itemCount": 6,
+        "weights": [
+          "measured",
+          "attested",
+          "measured",
+          "measured",
+          "measured",
+          "attested"
+        ],
+        "counts": {
+          "measured": 4,
+          "attested": 2,
+          "late_attested": 0
+        },
+        "coveredMs": 46800000,
+        "gaps": [],
+        "describe": "6 items, 4 of them measured by the tracker.",
+        "thin": false
+      },
+      {
+        "name": "a real hole in the middle is named",
+        "items": [
+          {
+            "kind": "trip_event",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": null,
+            "summary": "in_transit",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": "2026-03-06T09:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "18 fixes",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T15:00:00.000Z",
+            "untilIso": "2026-03-06T19:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "24 fixes",
+            "source": "system"
+          }
+        ],
+        "itemCount": 3,
+        "weights": [
+          "measured",
+          "measured",
+          "measured"
+        ],
+        "counts": {
+          "measured": 3,
+          "attested": 0,
+          "late_attested": 0
+        },
+        "coveredMs": 25200000,
+        "gaps": [
+          {
+            "fromIso": "2026-03-06T09:00:00.000Z",
+            "toIso": "2026-03-06T15:00:00.000Z",
+            "ms": 21600000
+          }
+        ],
+        "describe": "3 items, 3 of them measured by the tracker; 6 hours with nothing recorded.",
+        "thin": true
+      },
+      {
+        "name": "a signal-loss event does not start the clock",
+        "items": [
+          {
+            "kind": "trip_event",
+            "atIso": "2026-03-06T00:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": null,
+            "summary": "signal_lost",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T16:00:00.000Z",
+            "untilIso": "2026-03-06T19:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "20 fixes",
+            "source": "system"
+          }
+        ],
+        "itemCount": 2,
+        "weights": [
+          "measured",
+          "measured"
+        ],
+        "counts": {
+          "measured": 2,
+          "attested": 0,
+          "late_attested": 0
+        },
+        "coveredMs": 10800000,
+        "gaps": [],
+        "describe": "2 items, 2 of them measured by the tracker.",
+        "thin": true
+      },
+      {
+        "name": "a message written in a dead zone is attested late",
+        "items": [
+          {
+            "kind": "trip_event",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": null,
+            "summary": "in_transit",
+            "source": "system"
+          },
+          {
+            "kind": "position",
+            "atIso": "2026-03-06T06:00:00.000Z",
+            "untilIso": "2026-03-06T19:00:00.000Z",
+            "receivedAtIso": null,
+            "summary": "80 fixes",
+            "source": "system"
+          },
+          {
+            "kind": "message",
+            "atIso": "2026-03-06T08:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": "2026-03-06T19:00:00.000Z",
+            "summary": "Held at the checkpoint",
+            "source": "driver"
+          },
+          {
+            "kind": "incident",
+            "atIso": "2026-03-06T09:00:00.000Z",
+            "untilIso": null,
+            "receivedAtIso": "2026-03-06T09:00:00.000Z",
+            "summary": "Detained",
+            "source": "driver"
+          }
+        ],
+        "itemCount": 4,
+        "weights": [
+          "measured",
+          "measured",
+          "late_attested",
+          "attested"
+        ],
+        "counts": {
+          "measured": 2,
+          "attested": 1,
+          "late_attested": 1
+        },
+        "coveredMs": 46800000,
+        "gaps": [],
+        "describe": "4 items, 2 of them measured by the tracker; 1 reported late.",
+        "thin": true
+      },
+      {
+        "name": "nothing recorded at all",
+        "items": [],
+        "itemCount": 0,
+        "weights": [],
+        "counts": {
+          "measured": 0,
+          "attested": 0,
+          "late_attested": 0
+        },
+        "coveredMs": 0,
+        "gaps": [],
+        "describe": "Nothing recorded on this trip.",
+        "thin": true
+      }
+    ]
   }
 }

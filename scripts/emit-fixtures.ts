@@ -107,6 +107,15 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  GAP_MS,
+  LATE_AFTER_MS,
+  MINIMUM_COVERED_MS,
+  assemble,
+  describePack,
+  isThin,
+  type Evidence,
+} from '../packages/domain/src/dispute.ts';
+import {
   CONNECTION_SLACK_MS,
   MAX_CHAIN_LEGS,
   MAX_REPOSITION_M,
@@ -1288,6 +1297,101 @@ const pairingCases = pairs(pairLoads, 'trailer_30t').map((pairing) => ({
   carrierGetsKobo: pairing.carrierGets,
 }));
 
+// --- the dispute pack ------------------------------------------------------
+
+/**
+ * The assembler that invented fifty-one hours of missing evidence.
+ *
+ * These cases exist because a rendered pack was read, not because a test
+ * failed: a continuously covered trip reported nine holes. The fixtures pin
+ * the two rules that came out of it — a run of fixes covers the time it spans,
+ * and only positions constitute coverage.
+ */
+const PACK_ASSEMBLED = new Date('2026-03-06T20:00:00.000Z');
+const packAt = (hours: number) => new Date(PACK_ASSEMBLED.getTime() - (20 - hours) * 3_600_000);
+
+const evidence = (
+  kind: Evidence['kind'],
+  atHours: number,
+  untilHours: number | null,
+  receivedHours: number | null,
+  source: Evidence['source'],
+  summary: string,
+): Evidence => ({
+  kind,
+  at: packAt(atHours),
+  ...(untilHours === null ? {} : { until: packAt(untilHours) }),
+  receivedAt: receivedHours === null ? null : packAt(receivedHours),
+  summary,
+  source,
+});
+
+const packCases = (
+  [
+    [
+      'a continuously covered trip has no holes in it',
+      [
+        evidence('trip_event', 0, null, null, 'system', 'open'),
+        // Six hours before the tracker starts. A trip is open while a bid is
+        // accepted and nothing is moving; that is a beginning, not a hole.
+        evidence('message', 1, null, 1, 'shipper', 'Confirmed for tomorrow'),
+        evidence('trip_event', 6, null, null, 'system', 'in_transit'),
+        evidence('position', 6, 13, null, 'system', '42 fixes'),
+        evidence('position', 13, 19, null, 'system', '38 fixes'),
+        evidence('signature', 19, null, 19, 'driver', 'Signed by the storekeeper'),
+      ],
+    ],
+    [
+      'a real hole in the middle is named',
+      [
+        evidence('trip_event', 6, null, null, 'system', 'in_transit'),
+        evidence('position', 6, 9, null, 'system', '18 fixes'),
+        evidence('position', 15, 19, null, 'system', '24 fixes'),
+      ],
+    ],
+    [
+      'a signal-loss event does not start the clock',
+      [
+        // Sixteen hours before any position exists. `signal_lost` is measured
+        // — the tracker raised it — and it is the absence of coverage.
+        evidence('trip_event', 0, null, null, 'system', 'signal_lost'),
+        evidence('position', 16, 19, null, 'system', '20 fixes'),
+      ],
+    ],
+    [
+      'a message written in a dead zone is attested late',
+      [
+        evidence('trip_event', 6, null, null, 'system', 'in_transit'),
+        evidence('position', 6, 19, null, 'system', '80 fixes'),
+        evidence('message', 8, null, 19, 'driver', 'Held at the checkpoint'),
+        evidence('incident', 9, null, 9, 'driver', 'Detained'),
+      ],
+    ],
+    ['nothing recorded at all', []],
+  ] as const
+).map(([name, items]) => {
+  const pack = assemble('t1', items as readonly Evidence[], PACK_ASSEMBLED);
+
+  return {
+    name,
+    items: (items as readonly Evidence[]).map((item) => ({
+      kind: item.kind,
+      atIso: iso(item.at),
+      untilIso: item.until === undefined ? null : iso(item.until),
+      receivedAtIso: item.receivedAt === null ? null : iso(item.receivedAt),
+      summary: item.summary,
+      source: item.source,
+    })),
+    itemCount: pack.items.length,
+    weights: pack.items.map((item) => item.weight),
+    counts: pack.counts,
+    coveredMs: pack.coveredMs,
+    gaps: pack.gaps.map((gap) => ({ fromIso: iso(gap.from), toIso: iso(gap.to), ms: gap.ms })),
+    describe: describePack(pack),
+    thin: isThin(pack),
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1437,6 +1541,13 @@ const fixtures = {
     verdicts: shareCases,
     pairs: pairingCases,
   },
+  dispute: {
+    lateAfterMs: LATE_AFTER_MS,
+    gapMs: GAP_MS,
+    minimumCoveredMs: MINIMUM_COVERED_MS,
+    assembledAtIso: iso(PACK_ASSEMBLED),
+    cases: packCases,
+  },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -1470,6 +1581,7 @@ process.stdout.write(
       `${bidCases.length} bids`,
       `${fitCases.length} chain fits`,
       `${shareCases.length} pair verdicts`,
+      `${packCases.length} dispute packs`,
     ].join(', ')
   }\n`,
 );
