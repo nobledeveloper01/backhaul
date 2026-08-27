@@ -103,6 +103,19 @@ Both are plans. The difference is that a half-unloaded trailer is a physical
 fact — the last drop is at the front of the box — so reordering it is not a
 plan change, it is a mistake.
 
+**Flooring a negative overstated how long ago a paper lapsed.** Both sides
+computed days as `floor((expiry − now) / a day)`, which is right for a date in
+the future — 18.9 days left is "18 days left", the conservative way round — and
+wrong for one in the past: a certificate that expired nine days and one second
+ago floored to −10, and the screen said *"10 days out of date"*. Truncating
+toward zero is right at both ends. Found by an endpoint test that pinned the
+exact number and disagreed with itself by a millisecond.
+
+**A duress endpoint that answers with a body is a duress endpoint with a
+tell.** `204`, empty, whether or not anything was recorded — because a response
+is a thing a screen can render, and the whole feature is that there is nothing
+to render. The test asserts the body is zero bytes.
+
 ### Still open
 
 - **Neither native implementation has run on a physical handset.** Phase 1's

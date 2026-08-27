@@ -80,7 +80,15 @@ export function assess(vehicle: Vehicle, now: Date): Assessment {
       continue;
     }
 
-    const days = Math.floor((on.getTime() - now.getTime()) / 86_400_000);
+    // Truncated toward zero, not floored.
+    //
+    // Flooring is right for a date in the future — 18.9 days left is "18 days
+    // left", which is the conservative way round. It is wrong for one in the
+    // past: a certificate that lapsed nine days and one second ago floors to
+    // −10 and the screen says "10 days out of date". Truncating gets both
+    // ends right, and the difference is a whole day in a sentence somebody
+    // may act on.
+    const days = Math.trunc((on.getTime() - now.getTime()) / 86_400_000);
     if (days < 0) lapsed.push({ paper, days });
     else if (days <= EXPIRY_WARNING_DAYS) expiring.push({ paper, days });
   }

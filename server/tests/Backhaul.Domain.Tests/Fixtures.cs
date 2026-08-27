@@ -78,7 +78,9 @@ public sealed record ParityFixtures(
     WaypointFixtures Waypoints,
     IReadOnlyList<IncidentRow> Incidents,
     PodFixtures Pod,
-    DropFixtures Drops);
+    DropFixtures Drops,
+    TrustFixtures Trust,
+    IReadOnlyList<VehicleRow> Vehicles);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -218,6 +220,38 @@ public sealed record ExceptionRow(string Kind, bool Settles);
 public sealed record DropFixtures(long PerDropKobo, IReadOnlyList<DropFeeRow> Fees);
 
 public sealed record DropFeeRow(int Drops, long FeeKobo);
+
+public sealed record TrustFixtures(
+    int ExpiryWarningDays,
+    int MinimumTripsForRate,
+    IReadOnlyList<TrustRow> Cases);
+
+public sealed record TrustRow(
+    string Name,
+    DocumentsRow Documents,
+    RecordRow Record,
+    string Tier,
+    double? OnTimeRate);
+
+public sealed record DocumentsRow(
+    bool Identity,
+    bool Licence,
+    bool Registration,
+    bool Insurance);
+
+public sealed record RecordRow(int TripsCompleted, int TripsOnTime, int Incidents);
+
+public sealed record VehicleRow(
+    string Name,
+    Dictionary<string, int> Days,
+    DateTimeOffset Now,
+    string Standing,
+    IReadOnlyList<PaperDaysRow> Lapsed,
+    IReadOnlyList<PaperDaysRow> Expiring,
+    IReadOnlyList<string> Missing,
+    bool MayCarry);
+
+public sealed record PaperDaysRow(string Paper, int Days);
 
 public sealed record CodeRow(
     string Name,

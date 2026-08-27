@@ -34,6 +34,12 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<LevyEntity> Levies => Set<LevyEntity>();
 
+    public DbSet<CarrierProfileEntity> CarrierProfiles => Set<CarrierProfileEntity>();
+
+    public DbSet<VehicleEntity> Vehicles => Set<VehicleEntity>();
+
+    public DbSet<DuressEntity> DuressSignals => Set<DuressEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -120,6 +126,27 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // checkpoint with no signal does not pay twice on paper.
             levy.HasKey(l => l.Id);
             levy.HasIndex(l => new { l.TripId, l.At });
+        });
+
+        model.Entity<CarrierProfileEntity>(profile => profile.HasKey(p => p.UserId));
+
+        model.Entity<VehicleEntity>(vehicle =>
+        {
+            vehicle.HasKey(v => v.Id);
+            vehicle.HasIndex(v => v.CarrierId);
+
+            // One plate per carrier. The same truck registered twice is two
+            // sets of papers that can disagree about the same vehicle.
+            vehicle.HasIndex(v => new { v.CarrierId, v.Plate }).IsUnique();
+        });
+
+        model.Entity<DuressEntity>(duress =>
+        {
+            duress.HasKey(d => d.Id);
+
+            // Every read is "is anything open on this trip", and the answer
+            // has to be instant.
+            duress.HasIndex(d => new { d.TripId, d.At });
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

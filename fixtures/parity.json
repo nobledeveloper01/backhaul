@@ -1872,5 +1872,270 @@
         "feeKobo": 7500000
       }
     ]
-  }
+  },
+  "trust": {
+    "expiryWarningDays": 30,
+    "minimumTripsForRate": 5,
+    "cases": [
+      {
+        "name": "nothing at all",
+        "documents": {
+          "identity": false,
+          "licence": false,
+          "registration": false,
+          "insurance": false
+        },
+        "record": {
+          "tripsCompleted": 0,
+          "tripsOnTime": 0,
+          "incidents": 0
+        },
+        "tier": "unverified",
+        "onTimeRate": null
+      },
+      {
+        "name": "id and licence only",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": false,
+          "insurance": false
+        },
+        "record": {
+          "tripsCompleted": 0,
+          "tripsOnTime": 0,
+          "incidents": 0
+        },
+        "tier": "verified",
+        "onTimeRate": null
+      },
+      {
+        "name": "business, just",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": false
+        },
+        "record": {
+          "tripsCompleted": 5,
+          "tripsOnTime": 4,
+          "incidents": 0
+        },
+        "tier": "business",
+        "onTimeRate": 0.8
+      },
+      {
+        "name": "business, one trip short",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": false
+        },
+        "record": {
+          "tripsCompleted": 4,
+          "tripsOnTime": 4,
+          "incidents": 0
+        },
+        "tier": "verified",
+        "onTimeRate": null
+      },
+      {
+        "name": "business, on-time too low",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": false
+        },
+        "record": {
+          "tripsCompleted": 5,
+          "tripsOnTime": 3,
+          "incidents": 0
+        },
+        "tier": "verified",
+        "onTimeRate": 0.6
+      },
+      {
+        "name": "trusted",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsOnTime": 18,
+          "incidents": 0
+        },
+        "tier": "trusted",
+        "onTimeRate": 0.9
+      },
+      {
+        "name": "trusted, one point short",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsOnTime": 17,
+          "incidents": 0
+        },
+        "tier": "business",
+        "onTimeRate": 0.85
+      },
+      {
+        "name": "trusted with one incident",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsOnTime": 19,
+          "incidents": 1
+        },
+        "tier": "business",
+        "onTimeRate": 0.95
+      },
+      {
+        "name": "trusted with two",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsOnTime": 19,
+          "incidents": 2
+        },
+        "tier": "verified",
+        "onTimeRate": 0.95
+      },
+      {
+        "name": "floors rather than falling off",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsOnTime": 19,
+          "incidents": 9
+        },
+        "tier": "unverified",
+        "onTimeRate": 0.95
+      }
+    ]
+  },
+  "vehicles": [
+    {
+      "name": "everything in date",
+      "days": {
+        "licence": 210,
+        "roadworthiness": 96,
+        "insurance": 90,
+        "permit": 300
+      },
+      "now": "2026-03-04T06:00:00.000Z",
+      "standing": "road_legal",
+      "lapsed": [],
+      "expiring": [],
+      "missing": [],
+      "mayCarry": true
+    },
+    {
+      "name": "insurance expiring",
+      "days": {
+        "licence": 210,
+        "roadworthiness": 96,
+        "insurance": 18,
+        "permit": 300
+      },
+      "now": "2026-03-04T06:00:00.000Z",
+      "standing": "expiring",
+      "lapsed": [],
+      "expiring": [
+        {
+          "paper": "insurance",
+          "days": 18
+        }
+      ],
+      "missing": [],
+      "mayCarry": true
+    },
+    {
+      "name": "roadworthiness lapsed",
+      "days": {
+        "licence": 210,
+        "roadworthiness": -9,
+        "insurance": 90,
+        "permit": 300
+      },
+      "now": "2026-03-04T06:00:00.000Z",
+      "standing": "lapsed",
+      "lapsed": [
+        {
+          "paper": "roadworthiness",
+          "days": -9
+        }
+      ],
+      "expiring": [],
+      "missing": [],
+      "mayCarry": false
+    },
+    {
+      "name": "no permit at all",
+      "days": {
+        "licence": 210,
+        "roadworthiness": 96,
+        "insurance": 90
+      },
+      "now": "2026-03-04T06:00:00.000Z",
+      "standing": "incomplete",
+      "lapsed": [],
+      "expiring": [],
+      "missing": [
+        "permit"
+      ],
+      "mayCarry": false
+    },
+    {
+      "name": "lapsed beats missing",
+      "days": {
+        "licence": -1,
+        "roadworthiness": 5
+      },
+      "now": "2026-03-04T06:00:00.000Z",
+      "standing": "lapsed",
+      "lapsed": [
+        {
+          "paper": "licence",
+          "days": -1
+        }
+      ],
+      "expiring": [
+        {
+          "paper": "roadworthiness",
+          "days": 5
+        }
+      ],
+      "missing": [
+        "insurance",
+        "permit"
+      ],
+      "mayCarry": false
+    }
+  ]
 }

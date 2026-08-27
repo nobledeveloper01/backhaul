@@ -76,6 +76,15 @@ import {
   type Delivery,
 } from '../packages/domain/src/pod.ts';
 import { PER_DROP, dropFee } from '../packages/domain/src/drops.ts';
+import {
+  EXPIRY_WARNING_DAYS,
+  MINIMUM_TRIPS_FOR_RATE,
+  onTimeRate,
+  tierOf,
+  type Documents,
+  type Record_,
+} from '../packages/domain/src/trust.ts';
+import { assess, mayCarry, type Vehicle } from '../packages/domain/src/vehicles.ts';
 
 const CLASSES: readonly TruckClass[] = [
   'pickup',
@@ -657,6 +666,90 @@ const dropFeeCases = [0, 1, 2, 3, 4].map((drops) => ({
   }))),
 }));
 
+/**
+ * The trust ladder.
+ *
+ * A tier decides which loads a carrier may bid on, so an app and a server that
+ * disagree about it hand somebody work they cannot legally take — or refuse
+ * work they can.
+ */
+const trustCases = (
+  [
+    ['nothing at all', [false, false, false, false], [0, 0, 0]],
+    ['id and licence only', [true, true, false, false], [0, 0, 0]],
+    ['business, just', [true, true, true, false], [5, 4, 0]],
+    ['business, one trip short', [true, true, true, false], [4, 4, 0]],
+    ['business, on-time too low', [true, true, true, false], [5, 3, 0]],
+    ['trusted', [true, true, true, true], [20, 18, 0]],
+    ['trusted, one point short', [true, true, true, true], [20, 17, 0]],
+    ['trusted with one incident', [true, true, true, true], [20, 19, 1]],
+    ['trusted with two', [true, true, true, true], [20, 19, 2]],
+    ['floors rather than falling off', [true, true, true, true], [20, 19, 9]],
+  ] as const
+).map(([name, docs, record]) => {
+  const documents: Documents = {
+    identity: docs[0],
+    licence: docs[1],
+    registration: docs[2],
+    insurance: docs[3],
+  };
+  const held: Record_ = {
+    tripsCompleted: record[0],
+    tripsOnTime: record[1],
+    incidents: record[2],
+  };
+
+  return {
+    name,
+    documents,
+    record: held,
+    tier: tierOf(documents, held),
+    onTimeRate: onTimeRate(held),
+  };
+});
+
+/** A truck's papers, and whether it may take work. */
+const VEHICLE_NOW = new Date('2026-03-04T06:00:00Z');
+const vehicleDays = (n: number) => new Date(VEHICLE_NOW.getTime() + n * 86_400_000);
+
+const vehicleCases = (
+  [
+    ['everything in date', { licence: 210, roadworthiness: 96, insurance: 90, permit: 300 }],
+    ['insurance expiring', { licence: 210, roadworthiness: 96, insurance: 18, permit: 300 }],
+    ['roadworthiness lapsed', { licence: 210, roadworthiness: -9, insurance: 90, permit: 300 }],
+    ['no permit at all', { licence: 210, roadworthiness: 96, insurance: 90 }],
+    ['lapsed beats missing', { licence: -1, roadworthiness: 5 }],
+  ] as const
+).map(([name, days]) => {
+  // Built in one go rather than mutated: `Vehicle['papers']` is readonly, and
+  // the whole point of that is that a set of papers is a fact about a day.
+  const papers: Vehicle['papers'] = Object.fromEntries(
+    Object.entries(days).map(([paper, offset]) => [paper, vehicleDays(offset)]),
+  );
+
+  const vehicle: Vehicle = {
+    id: 'v1',
+    plate: 'LSR-482-XA',
+    truck: 'trailer_30t',
+    carrierId: 'c1',
+    papers,
+    retiredAt: null,
+  };
+
+  const assessment = assess(vehicle, VEHICLE_NOW);
+
+  return {
+    name,
+    days,
+    now: iso(VEHICLE_NOW),
+    standing: assessment.standing,
+    lapsed: assessment.lapsed,
+    expiring: assessment.expiring,
+    missing: [...assessment.missing].sort(),
+    mayCarry: mayCarry(assessment),
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -688,6 +781,12 @@ const fixtures = {
     exceptions: exceptionCases,
   },
   drops: { perDropKobo: PER_DROP, fees: dropFeeCases },
+  trust: {
+    expiryWarningDays: EXPIRY_WARNING_DAYS,
+    minimumTripsForRate: MINIMUM_TRIPS_FOR_RATE,
+    cases: trustCases,
+  },
+  vehicles: vehicleCases,
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -711,6 +810,8 @@ process.stdout.write(
       `${incidentCases.length} incident kinds`,
       `${podCases.length} deliveries`,
       `${dropFeeCases.length} drop fees`,
+      `${trustCases.length} tiers`,
+      `${vehicleCases.length} vehicles`,
     ].join(', ')
   }\n`,
 );

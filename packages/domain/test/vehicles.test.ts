@@ -146,3 +146,24 @@ describe('wording', () => {
     }
   });
 });
+
+describe('counting days', () => {
+  test('a paper that lapsed nine days and a second ago is nine days out, not ten', () => {
+    // Flooring a negative moves it away from zero, so the screen said "10 days
+    // out of date" about a certificate that expired nine days ago. It is a
+    // whole day in a sentence somebody may act on.
+    const justOver = new Date(NOW.getTime() - 9 * 86_400_000 - 1_000);
+    const stale = vehicle({ papers: { ...vehicle().papers, roadworthiness: justOver } });
+
+    assert.deepEqual(assess(stale, NOW).lapsed, [{ paper: 'roadworthiness', days: -9 }]);
+  });
+
+  test('and one with eighteen and a half days left has eighteen', () => {
+    // The conservative way round for a future date: never promise a day that
+    // is only half there.
+    const soon = new Date(NOW.getTime() + 18.5 * 86_400_000);
+    const expiring = vehicle({ papers: { ...vehicle().papers, insurance: soon } });
+
+    assert.deepEqual(assess(expiring, NOW).expiring, [{ paper: 'insurance', days: 18 }]);
+  });
+});

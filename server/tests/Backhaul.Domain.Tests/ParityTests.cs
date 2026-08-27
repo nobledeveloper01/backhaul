@@ -477,6 +477,58 @@ public sealed class ParityTests
         }
     }
 
+    [Fact]
+    public void Both_sides_put_a_carrier_on_the_same_rung()
+    {
+        // A tier decides which loads a carrier may bid on, so two sides that
+        // disagree hand somebody work they cannot take — or refuse work they
+        // can.
+        foreach (var row in Fixtures.Parity.Trust.Cases)
+        {
+            var papers = new Papers(
+                row.Documents.Identity,
+                row.Documents.Licence,
+                row.Documents.Registration,
+                row.Documents.Insurance);
+
+            var record = new TrackRecord(
+                row.Record.TripsCompleted,
+                row.Record.TripsOnTime,
+                row.Record.Incidents);
+
+            Assert.Equal(row.Tier, Trust.ToWire(Trust.TierOf(papers, record)));
+            Assert.Equal(row.OnTimeRate, Trust.OnTimeRate(record));
+        }
+    }
+
+    [Fact]
+    public void Both_sides_assess_a_truck_the_same_way()
+    {
+        foreach (var row in Fixtures.Parity.Vehicles)
+        {
+            var expiries = row.Days.ToDictionary(
+                entry => Vehicles.PaperFromWire(entry.Key)!.Value,
+                entry => row.Now.AddDays(entry.Value));
+
+            var assessment = Vehicles.Assess(expiries, null, row.Now);
+
+            Assert.Equal(row.Standing, Vehicles.ToWire(assessment.Standing));
+            Assert.Equal(row.MayCarry, Vehicles.MayCarry(assessment));
+
+            Assert.Equal(
+                row.Lapsed.Select(l => (l.Paper, l.Days)),
+                assessment.Lapsed.Select(l => (Vehicles.ToWire(l.Paper), l.Days)));
+
+            Assert.Equal(
+                row.Expiring.Select(e => (e.Paper, e.Days)),
+                assessment.Expiring.Select(e => (Vehicles.ToWire(e.Paper), e.Days)));
+
+            Assert.Equal(
+                row.Missing,
+                assessment.Missing.Select(Vehicles.ToWire).OrderBy(p => p, StringComparer.Ordinal));
+        }
+    }
+
     private static string Wire(CodeRefusal reason) => reason switch
     {
         CodeRefusal.Unknown => "unknown",

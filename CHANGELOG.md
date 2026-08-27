@@ -61,6 +61,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   app being killed and the phone rebooting. The notification says who can see
   the driver rather than apologising for existing, and the app reports when the
   operating system is throttling it instead of quietly recording nothing.
+- **Verification, the truck registry and the duress alarm are served.** A tier
+  is computed on every read and never stored, so a carrier is the same thing on
+  their own screen and on a shipper's. The fleet lists the worst truck first. An
+  alarm answers with nothing at all — no body, no status anybody can read —
+  because whoever is standing over the driver must not be able to tell.
 - **Proof of delivery, drops and the checkpoint ledger are served.** A
   delivery is a draft while a driver is filling it in at a gate and evidence
   the moment it is sealed — and the seal runs the same rule the app runs, so
@@ -263,6 +268,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   name printed twice.
 - The chain proposal explained a rejected load against the wrong leg of the
   chain, refusing a load in the town the truck was standing in.
+- A vehicle document that expired nine days ago was reported as ten days out of
+  date.
 - The dispute pack reported fifty-one hours of missing evidence on a trip whose
   coverage was continuous. It was reading each position sample as an instant
   rather than a run, counting the quiet before the truck loaded as a hole, and
