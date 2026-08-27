@@ -236,7 +236,7 @@ describe('a refusal', () => {
     `readDetail` returned only the message and the code went in the bin.
   */
   test('carries the code as well as the sentence', async () => {
-    global.fetch = jest.fn().mockResolvedValue(
+    globalThis.fetch = jest.fn().mockResolvedValue(
       new Response(
         JSON.stringify({ refusal: 'too_soon', message: 'A code was just sent.' }),
         { status: 429, headers: { 'content-type': 'application/json' } },
@@ -255,7 +255,7 @@ describe('a refusal', () => {
   test('and reports a missing code as missing rather than as a guess', async () => {
     // Not every refusal has a short name worth inventing. Null is the honest
     // answer, and it is what makes the screen fall back to the server's words.
-    global.fetch = jest.fn().mockResolvedValue(
+    globalThis.fetch = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ message: 'No.' }), {
         status: 422,
         headers: { 'content-type': 'application/json' },
