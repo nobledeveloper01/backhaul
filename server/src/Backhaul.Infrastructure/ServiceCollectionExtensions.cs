@@ -30,14 +30,28 @@ public static class ServiceCollectionExtensions
     /// nothing uses.
     /// </para>
     /// </remarks>
+    /// <param name="services">The container.</param>
+    /// <param name="connectionString">A relational database, or null for memory.</param>
+    /// <param name="inMemoryName">
+    /// Which in-memory store to use.
+    /// <para>
+    /// The name is a parameter because it is the *identity* of the store: EF's
+    /// in-memory provider shares one database between every context that names
+    /// it, process-wide. Two applications booted in one test run therefore
+    /// shared a load board, and a test that asserted on "everything on the
+    /// board" passed or failed depending on which test ran first. Naming it
+    /// makes isolation possible; leaving it a constant made it impossible.
+    /// </para>
+    /// </param>
     public static IServiceCollection AddBackhaulPersistence(
         this IServiceCollection services,
-        string? connectionString)
+        string? connectionString,
+        string inMemoryName = "backhaul")
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             services.AddDbContext<BackhaulDbContext>(options =>
-                options.UseInMemoryDatabase("backhaul"));
+                options.UseInMemoryDatabase(inMemoryName));
         }
         else
         {

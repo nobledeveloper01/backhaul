@@ -6,6 +6,43 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-29 — Chains, shared trailers, and a database everybody was sharing
+
+**Did.** `chaining.ts` and `consolidation.ts` have C# mirrors, parity cases and
+routes: the best three-leg chain from a load and what is on the board, the
+loads that could not join with the reason, and every pair of part-loads that
+could share one truck. 123 parity cases, 122 endpoint tests.
+
+### What surprised us
+
+**Every `ApiFactory` in the process was talking to the same database.** EF's
+in-memory provider keys a store by its *name*, and the name was the constant
+`"backhaul"` — so booting a second application to get a clean load board gave
+back the first one's loads. The chain test failed with two legs it had never
+posted, from a test that had run before it.
+
+That was two bugs wearing one coat. The obvious one is the test. The one worth
+writing down is that the store's identity was a hard-coded string in
+`AddBackhaulPersistence`, which made isolation impossible rather than merely
+inconvenient; it is a parameter now, `ApiFactory` exposes it, and the three
+tests whose subject is *a ranking over everything on the board* each ask for a
+name of their own. Everything else keeps the cheap shared one — a fresh
+database per test costs a boot each, and most tests do not care.
+
+**A test that passes alone and fails in its class has not been fixed by being
+run alone.** The first attempt scoped the assertions to the ids the test
+posted, which is the right move for a *board listing* and the wrong one for a
+*chain*: the chain's whole job is to pick from everything available, so
+constraining what it may return would have tested a different function. The
+isolation had to be real.
+
+**`PairLoad` needed a field neither route uses yet.** `search.ts` filters loads
+by the shipper's trust tier, and `LoadSummary` — which `PairLoad` extends —
+carries `shipperTier`. Rather than drop it from the mirror, both sides name it
+and the controller passes a constant with a comment saying which route will
+fill it in. The two shapes stay identical, so the day tier filtering lands it
+is a one-line change rather than a schema argument.
+
 ## 2026-08-28 (late) — The board, and an integer division that changed the winner
 
 **Did.** `matching.ts` has a C# mirror, parity cases and a route. A shipper

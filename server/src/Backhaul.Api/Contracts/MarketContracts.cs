@@ -95,3 +95,36 @@ public sealed record RankedBidResponse(
     int? ReliabilityPct,
     int KmToPickup,
     string Because);
+
+public sealed record ChainLegResponse(
+    Guid LoadId,
+    string FromName,
+    string ToName,
+    DateTimeOffset ReadyFrom,
+    DateTimeOffset? DeliverBy,
+    long PaysKobo,
+    string PaysNaira,
+    int DistanceKm);
+
+/// <summary>Three loads instead of one, and the empty legs between them.</summary>
+public sealed record ChainResponse(
+    IReadOnlyList<ChainLegResponse> Legs,
+    int DeadheadKm,
+    int LadenKm,
+    long PaysKobo,
+    string PaysNaira,
+    int LadenPct);
+
+/// <summary>A load that could not join the chain, and which of the two things is wrong.</summary>
+public sealed record ChainRefusalResponse(Guid LoadId, string Reason, string Detail);
+
+public sealed record PairingResponse(
+    LoadResponse A,
+    LoadResponse B,
+    int FillPct,
+    long PaysAKobo,
+    string PaysANaira,
+    long PaysBKobo,
+    string PaysBNaira,
+    long CarrierGetsKobo,
+    string CarrierGetsNaira);

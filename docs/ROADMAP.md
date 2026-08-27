@@ -106,14 +106,14 @@ the honest answer to "how far along is this".
 
 | Served, with parity where a rule is shared | Engine only — no route yet |
 |---|---|
-| trips, tracking, pricing | chaining, consolidation |
-| share links (ADR-0010) | search, lanes |
-| sign-in (`otp`) | ratings, dispute assembly |
-| messages, incidents, waypoints | budget, alerts, deviation |
-| proof of delivery, drops, levies | language *(client-side by design)* |
+| trips, tracking, pricing | search, lanes |
+| share links (ADR-0010) | ratings, dispute assembly |
+| sign-in (`otp`) | budget, alerts, deviation |
+| messages, incidents, waypoints | language *(client-side by design)* |
+| proof of delivery, drops, levies | |
 | verification, vehicles, duress | |
 | escrow, cancellation, costs, earnings | |
-| **matching** — the load board and its bids | |
+| **matching, chaining, consolidation** | |
 
 Everything in the right-hand column has a tested engine and a screen; what it
 does not have is a place to put the answer. The app renders those from
@@ -121,12 +121,13 @@ does not have is a place to put the answer. The app renders those from
 a walkthrough.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
-exists on both sides gets a parity case before it gets an endpoint. Nineteen
+exists on both sides gets a parity case before it gets an endpoint. Twenty-one
 of them do now — the trip machine, pricing, demurrage, settlement, fix
 cleaning, stall detection, sign-in wording, waypoint visits, incident severity,
 delivery sealing, drop fees, the trust ladder, vehicle standing, the escrow
 schedule, cancellation fees and their wording, the cost model, driver
-statements, the load ranking and the bid ranking.
+statements, the load ranking, the bid
+ranking, chain fits and load pairing.
 
 One thing the money routes needed that no engine could supply: **a trip's
 commercial terms**. A trip had a driver, a carrier, a shipper and a corridor,

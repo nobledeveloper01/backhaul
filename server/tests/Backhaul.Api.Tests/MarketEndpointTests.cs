@@ -237,12 +237,162 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+
+    [Fact]
+    public async Task A_chain_takes_the_leg_that_pays_most_per_kilometre_driven()
+    {
+        // Greedy, and the greed is per kilometre *driven* — empty ones
+        // included. A better-paid leg reached by 100 km of empty running is
+        // not the better leg.
+        // Its own board. Every other test in this class posts loads into the
+        // shared store, and a ranking asserted against "everything on the
+        // board" passes or fails depending on which test ran first.
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var start = Guid.NewGuid();
+        var good = Guid.NewGuid();
+        var poor = Guid.NewGuid();
+
+        await PostAsync(shipper, start, Load(
+            originLat: LagosLat, originLon: LagosLon,
+            destLat: IbadanLat, destLon: IbadanLon,
+            offeredKobo: 38_000_000));
+
+        await PostAsync(shipper, good, Load(
+            originLat: IbadanLat, originLon: IbadanLon,
+            destLat: KanoLat, destLon: KanoLon,
+            offeredKobo: 200_000_000, readyInHours: 12, expiresInHours: 96));
+
+        await PostAsync(shipper, poor, Load(
+            originLat: IbadanLat, originLon: IbadanLon,
+            destLat: KanoLat, destLon: KanoLon,
+            offeredKobo: 20_000_000, readyInHours: 12, expiresInHours: 96));
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var client = carrier.Carrying(board.CreateClient());
+
+        var chain = await client.GetFromJsonAsync<ChainView>($"/v1/loads/{start}/chain", Json);
+
+        Assert.Equal(start, chain!.Legs[0].LoadId);
+        Assert.Contains(chain.Legs, leg => leg.LoadId == good);
+        Assert.DoesNotContain(chain.Legs, leg => leg.LoadId == poor);
+
+        // The number the whole feature exists to move.
+        Assert.True(chain.LadenPct > 0);
+    }
+
+    [Fact]
+    public async Task A_chain_never_grows_past_three_legs()
+    {
+        // Longer than three is planning fiction: by the third handover the
+        // first leg's timings have moved.
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var start = Guid.NewGuid();
+        await PostAsync(shipper, start, Load(
+            originLat: LagosLat, originLon: LagosLon,
+            destLat: IbadanLat, destLon: IbadanLon,
+            offeredKobo: 38_000_000));
+
+        for (var i = 0; i < 5; i++)
+        {
+            await PostAsync(shipper, Guid.NewGuid(), Load(
+                originLat: IbadanLat, originLon: IbadanLon,
+                destLat: IbadanLat + 0.01 * i, destLon: IbadanLon,
+                offeredKobo: 40_000_000, readyInHours: 12, expiresInHours: 96));
+        }
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var chain = await carrier.Carrying(board.CreateClient())
+            .GetFromJsonAsync<ChainView>($"/v1/loads/{start}/chain", Json);
+
+        Assert.True(chain!.Legs.Count <= 3);
+    }
+
+    [Fact]
+    public async Task A_load_too_far_to_reposition_to_says_so_rather_than_vanishing()
+    {
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var start = Guid.NewGuid();
+        var farAway = Guid.NewGuid();
+
+        await PostAsync(shipper, start, Load(
+            originLat: LagosLat, originLon: LagosLon,
+            destLat: IbadanLat, destLon: IbadanLon,
+            offeredKobo: 38_000_000));
+
+        await PostAsync(shipper, farAway, Load(
+            originLat: KanoLat, originLon: KanoLon,
+            destLat: LagosLat, destLon: LagosLon,
+            offeredKobo: 200_000_000, readyInHours: 12, expiresInHours: 96));
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var refusals = await carrier.Carrying(board.CreateClient())
+            .GetFromJsonAsync<List<ChainRefusalView>>($"/v1/loads/{start}/chain/refusals", Json);
+
+        var refused = Assert.Single(refusals!, r => r.LoadId == farAway);
+        Assert.Equal("too_far", refused.Reason);
+        Assert.Contains("km empty from", refused.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Two_part_loads_going_the_same_way_are_proposed_as_a_pair()
+    {
+        using var board = new ApiFactory { StoreName = Guid.NewGuid().ToString() };
+        var shipper = await ShipperAsync(board);
+
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+
+        await PostAsync(shipper, a, Load(weight: 15, offeredKobo: 140_000_000));
+        await PostAsync(shipper, b, Load(
+            originLat: LagosLat + 0.1, originLon: LagosLon + 0.1,
+            destLat: KanoLat + 0.1, destLon: KanoLon + 0.1,
+            weight: 12, offeredKobo: 120_000_000));
+
+        var carrier = await Identities.IssueAsync(board.Services, Role.Carrier);
+        var pairs = await carrier.Carrying(board.CreateClient())
+            .GetFromJsonAsync<List<PairingView>>("/v1/loads/pairs?truck=trailer_30t", Json);
+
+        var found = Assert.Single(
+            pairs!,
+            p => (p.A.Id == a && p.B.Id == b) || (p.A.Id == b && p.B.Id == a));
+
+        // 27 t of 30 is 90% full, and each shipper pays 30% less than they
+        // offered — the whole reason either of them would agree to share.
+        Assert.Equal(90, found.FillPct);
+        Assert.Equal(98_000_000L, found.PaysAKobo);
+        Assert.Equal(84_000_000L, found.PaysBKobo);
+        Assert.Equal(182_000_000L, found.CarrierGetsKobo);
+    }
+
+    [Fact]
+    public async Task An_unknown_truck_class_is_refused_rather_than_defaulted()
+    {
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var response = await carrier.Carrying(factory.CreateClient())
+            .GetAsync("/v1/loads/pairs?truck=lorry");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // --- helpers -----------------------------------------------------------
 
     private async Task<(Guid Id, HttpClient Client)> ShipperAsync()
     {
         var shipper = await Identities.IssueAsync(factory, Role.Shipper);
         return (shipper.UserId, shipper.Carrying(factory.CreateClient()));
+    }
+
+    /// <summary>A shipper on a board of its own — see the ranking tests.</summary>
+    private static async Task<HttpClient> ShipperAsync(ApiFactory board)
+    {
+        var shipper = await Identities.IssueAsync(board.Services, Role.Shipper);
+        return shipper.Carrying(board.CreateClient());
     }
 
     private static async Task PostAsync(HttpClient client, Guid loadId, object body)
@@ -302,4 +452,18 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
         string Because);
 
     private sealed record BidView(Guid Id, long AmountKobo, int TripsCompleted);
+
+    private sealed record ChainView(List<ChainLegView> Legs, int DeadheadKm, int LadenKm, int LadenPct);
+
+    private sealed record ChainLegView(Guid LoadId, string FromName, string ToName, long PaysKobo);
+
+    private sealed record ChainRefusalView(Guid LoadId, string Reason, string Detail);
+
+    private sealed record PairingView(
+        LoadView A,
+        LoadView B,
+        int FillPct,
+        long PaysAKobo,
+        long PaysBKobo,
+        long CarrierGetsKobo);
 }

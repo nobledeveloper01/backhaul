@@ -865,4 +865,157 @@ public sealed class ParityTests
         _ => throw new InvalidOperationException($"unmapped blocker {blocked}"),
     };
 
+
+    // --- chaining ----------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_agree_which_legs_can_follow_which()
+    {
+        // A reason rather than a boolean, and the reason is asserted: a
+        // carrier looking at a load that nearly fits needs to know which of
+        // the two things is wrong, because the distance is something they
+        // might accept and the timing is not.
+        Assert.Equal(F.Chaining.MaxRepositionM, Chaining.MaxRepositionM);
+        Assert.Equal(F.Chaining.RepositionSpeedMs, Chaining.RepositionSpeedMs);
+        Assert.Equal(F.Chaining.ConnectionSlackMs, Chaining.ConnectionSlackMs);
+        Assert.Equal(F.Chaining.MaxChainLegs, Chaining.MaxChainLegs);
+
+        var start = ToLeg(F.Chaining.Start);
+        var pool = F.Chaining.Pool.Select(ToLeg).ToList();
+        var names = F.Chaining.Pool.Select(row => row.LoadId).ToList();
+
+        foreach (var (expected, candidate) in F.Chaining.Fits.Zip(pool))
+        {
+            switch (Chaining.CanFollow(start, candidate))
+            {
+                case Fit.Ok ok:
+                    Assert.True(expected.Ok, expected.LoadId);
+                    Assert.Equal(expected.RepositionM, ok.RepositionM);
+                    break;
+
+                case Fit.No no:
+                    Assert.False(expected.Ok, expected.LoadId);
+                    Assert.Equal(expected.Reason, ChainRefusalWire(no.Reason));
+                    Assert.Equal(expected.Detail, no.Detail);
+                    break;
+            }
+        }
+
+        var built = Chaining.Build(start, pool);
+        var all = new List<string> { F.Chaining.Start.LoadId };
+        all.AddRange(names);
+        var legs = new List<ChainLeg> { start };
+        legs.AddRange(pool);
+
+        Assert.Equal(
+            F.Chaining.Built.LegIds,
+            built.Legs.Select(l => all[legs.IndexOf(l)]));
+
+        Assert.Equal(F.Chaining.Built.DeadheadM, built.DeadheadM);
+        Assert.Equal(F.Chaining.Built.LadenM, built.Laden);
+        Assert.Equal(F.Chaining.Built.PaysKobo, built.Pays.Value);
+        Assert.Equal(
+            F.Chaining.Built.LadenFractionThousandths,
+            (int)Math.Floor(Chaining.LadenFraction(built) * 1000 + 0.5));
+    }
+
+    // --- consolidation -----------------------------------------------------
+
+    [Fact]
+    public void Both_sides_agree_which_two_loads_can_share_a_truck()
+    {
+        Assert.Equal(F.Consolidation.PickupSpreadM, Consolidation.PickupSpreadM);
+        Assert.Equal(F.Consolidation.DropSpreadM, Consolidation.DropSpreadM);
+        Assert.Equal(F.Consolidation.ShipperDiscountPct, Consolidation.ShipperDiscountPct);
+        Assert.Equal(
+            F.Consolidation.MinimumFillThousandths,
+            (int)Math.Floor(Consolidation.MinimumFill * 1000 + 0.5));
+
+        var loads = F.Consolidation.Loads.Select(ToPairLoad).ToList();
+        var names = F.Consolidation.Loads.Select(row => row.Id).ToList();
+
+        var verdicts = new List<VerdictRow>();
+        for (var i = 0; i < loads.Count; i++)
+        {
+            for (var j = i + 1; j < loads.Count; j++)
+            {
+                var expected = F.Consolidation.Verdicts[verdicts.Count];
+
+                switch (Consolidation.CanShare(loads[i], loads[j], TruckClass.Trailer30t))
+                {
+                    case PairVerdict.Ok ok:
+                        Assert.True(expected.Ok, $"{expected.A}+{expected.B}");
+                        Assert.Equal(expected.FillThousandths, (int)Math.Floor(ok.Fill * 1000 + 0.5));
+                        break;
+
+                    case PairVerdict.No no:
+                        Assert.False(expected.Ok, $"{expected.A}+{expected.B}");
+                        Assert.Equal(expected.Reason, PairRefusalWire(no.Reason));
+                        Assert.Equal(expected.Detail, no.Detail);
+                        break;
+                }
+
+                verdicts.Add(expected);
+            }
+        }
+
+        var found = Consolidation.Pairs(loads, TruckClass.Trailer30t);
+
+        Assert.Equal(
+            F.Consolidation.Pairs.Select(p => (p.A, p.B)),
+            found.Select(p => (names[loads.IndexOf(p.A)], names[loads.IndexOf(p.B)])));
+
+        foreach (var (expected, actual) in F.Consolidation.Pairs.Zip(found))
+        {
+            Assert.Equal(expected.FillThousandths, (int)Math.Floor(actual.Fill * 1000 + 0.5));
+            Assert.Equal(expected.PaysAKobo, actual.PaysA.Value);
+            Assert.Equal(expected.PaysBKobo, actual.PaysB.Value);
+            Assert.Equal(expected.CarrierGetsKobo, actual.CarrierGets.Value);
+        }
+    }
+
+    private static ChainLeg ToLeg(ChainLegRow row) => new(
+        Guid.NewGuid(),
+        new Position(row.FromLat, row.FromLon, 10, row.ReadyFromIso),
+        new Position(row.ToLat, row.ToLon, 10, row.ReadyFromIso),
+        row.FromName,
+        row.ToName,
+        row.ReadyFromIso,
+        row.DeliverByIso,
+        new Kobo(row.PaysKobo),
+        row.DistanceM);
+
+    private static PairLoad ToPairLoad(PairLoadRow row) => new(
+        Guid.NewGuid(),
+        "Lagos",
+        "Kano",
+        "Cement",
+        row.WeightKg,
+        new Kobo(row.OfferedKobo),
+        row.ReadyFromIso,
+        Trucks.FromWire(row.TruckClass) ?? TruckClass.Trailer30t,
+        "verified",
+        row.OriginLat,
+        row.OriginLon,
+        row.DestinationLat,
+        row.DestinationLon);
+
+    private static string ChainRefusalWire(ChainRefusal reason) => reason switch
+    {
+        ChainRefusal.TooFar => "too_far",
+        ChainRefusal.TooTight => "too_tight",
+        ChainRefusal.WrongOrder => "wrong_order",
+        _ => throw new InvalidOperationException($"unmapped refusal {reason}"),
+    };
+
+    private static string PairRefusalWire(PairRefusal reason) => reason switch
+    {
+        PairRefusal.TooHeavy => "too_heavy",
+        PairRefusal.PickupsTooFar => "pickups_too_far",
+        PairRefusal.DropsTooFar => "drops_too_far",
+        PairRefusal.WrongTruck => "wrong_truck",
+        PairRefusal.TooEmpty => "too_empty",
+        _ => throw new InvalidOperationException($"unmapped refusal {reason}"),
+    };
+
 }

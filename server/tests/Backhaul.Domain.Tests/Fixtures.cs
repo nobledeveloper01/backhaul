@@ -85,7 +85,9 @@ public sealed record ParityFixtures(
     CancellationFixtures Cancellation,
     CostFixtures Costs,
     EarningsFixtures Earnings,
-    MatchingFixtures Matching);
+    MatchingFixtures Matching,
+    ChainingFixtures Chaining,
+    ConsolidationFixtures Consolidation);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -413,3 +415,71 @@ public sealed record RankedBidRow(
     int? ReliabilityThousandths,
     int KmToPickup,
     string Because);
+
+public sealed record ChainingFixtures(
+    double MaxRepositionM,
+    double RepositionSpeedMs,
+    long ConnectionSlackMs,
+    int MaxChainLegs,
+    ChainLegRow Start,
+    IReadOnlyList<ChainLegRow> Pool,
+    IReadOnlyList<FitRow> Fits,
+    BuiltChainRow Built);
+
+public sealed record ChainLegRow(
+    string LoadId,
+    double FromLat,
+    double FromLon,
+    double ToLat,
+    double ToLon,
+    string FromName,
+    string ToName,
+    DateTimeOffset ReadyFromIso,
+    DateTimeOffset? DeliverByIso,
+    long PaysKobo,
+    double DistanceM);
+
+public sealed record FitRow(string LoadId, bool Ok, string? Reason, string? Detail, double? RepositionM);
+
+public sealed record BuiltChainRow(
+    IReadOnlyList<string> LegIds,
+    double DeadheadM,
+    double LadenM,
+    long PaysKobo,
+    int LadenFractionThousandths);
+
+public sealed record ConsolidationFixtures(
+    double PickupSpreadM,
+    double DropSpreadM,
+    int MinimumFillThousandths,
+    int ShipperDiscountPct,
+    IReadOnlyList<PairLoadRow> Loads,
+    IReadOnlyList<VerdictRow> Verdicts,
+    IReadOnlyList<PairingRow> Pairs);
+
+public sealed record PairLoadRow(
+    string Id,
+    double WeightKg,
+    long OfferedKobo,
+    string TruckClass,
+    double OriginLat,
+    double OriginLon,
+    double DestinationLat,
+    double DestinationLon,
+    DateTimeOffset ReadyFromIso);
+
+public sealed record VerdictRow(
+    string A,
+    string B,
+    bool Ok,
+    string? Reason,
+    string? Detail,
+    int? FillThousandths);
+
+public sealed record PairingRow(
+    string A,
+    string B,
+    int FillThousandths,
+    long PaysAKobo,
+    long PaysBKobo,
+    long CarrierGetsKobo);

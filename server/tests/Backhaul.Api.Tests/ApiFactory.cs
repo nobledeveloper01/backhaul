@@ -14,6 +14,19 @@ namespace Backhaul.Api.Tests;
 /// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
+    /// <summary>
+    /// Which in-memory store this application uses.
+    /// </summary>
+    /// <remarks>
+    /// Shared by default, because most tests want the cheap shared one and a
+    /// fresh database per test would cost a boot each. A test whose subject is
+    /// a *ranking over everything on the board* passes a name of its own —
+    /// otherwise its answer depends on which test ran first, and EF's
+    /// in-memory provider shares a database between every context that names
+    /// it, process-wide.
+    /// </remarks>
+    public string StoreName { get; init; } = "backhaul";
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -31,6 +44,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             {
                 ["RateLimits:PublicSharePerHour"] = "10000",
                 ["RateLimits:PublicAuthPerHour"] = "10000",
+                ["Store:InMemoryName"] = StoreName,
             }));
 
         return base.CreateHost(builder);

@@ -9,6 +9,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Chaining and sharing a trailer, from the same board.** Three loads instead
+  of one, chosen greedily by what each adds per kilometre *driven* — empty ones
+  included, because a better-paid leg reached by 100 km of empty running is not
+  the better leg. A chain never grows past three: by the third handover the
+  first leg's timings have moved. The loads that could not join come back on
+  their own route, each with which of the two things is wrong, because the
+  distance is something a carrier might accept and the timing is not.
+
+  And two part-loads going the same way are proposed as one run, fullest first,
+  with what each shipper saves and what the carrier collects. Only loads that
+  name a price can be paired — the discount is a share of what was offered, and
+  a load open to bids has no figure to take a share of yet.
+
 - **A load board, and bids on it.** A shipper posts a load; carriers see it
   ranked for their own truck and place one offer each; the shipper sees those
   offers ranked with the price and the record side by side, and accepts one.

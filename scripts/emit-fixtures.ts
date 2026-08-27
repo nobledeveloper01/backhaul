@@ -107,6 +107,25 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  CONNECTION_SLACK_MS,
+  MAX_CHAIN_LEGS,
+  MAX_REPOSITION_M,
+  REPOSITION_SPEED_MS,
+  canFollow,
+  chain,
+  ladenFraction,
+  type ChainLeg,
+} from '../packages/domain/src/chaining.ts';
+import {
+  DROP_SPREAD_M,
+  MINIMUM_FILL,
+  PICKUP_SPREAD_M,
+  SHIPPER_DISCOUNT_PCT,
+  canShare,
+  pairs,
+  type PairLoad,
+} from '../packages/domain/src/consolidation.ts';
+import {
   MAX_DEADHEAD_M,
   MINIMUM_TRIPS_FOR_RELIABILITY,
   PREMIUM_TOLERANCE,
@@ -1152,6 +1171,123 @@ const bidCases = rankBids(bids, BID_PICKUP).map((scored) => ({
   because: scored.because,
 }));
 
+// --- chaining --------------------------------------------------------------
+
+const leg = (
+  loadId: string,
+  from: Position,
+  fromName: string,
+  to: Position,
+  toName: string,
+  readyHours: number,
+  deliverHours: number | null,
+  paysNaira: number,
+): ChainLeg => ({
+  loadId,
+  from,
+  to,
+  fromName,
+  toName,
+  readyFrom: matchAt(readyHours),
+  deliverBy: deliverHours === null ? null : matchAt(deliverHours),
+  pays: fromNaira(paysNaira),
+  distanceM: distance(from, to),
+});
+
+const chainStart = leg('lagos-ibadan', LAGOS, 'Lagos', IBADAN, 'Ibadan', 0, 8, 380_000);
+
+const chainPool: readonly ChainLeg[] = [
+  leg('ibadan-abuja', IBADAN, 'Ibadan', ABUJA, 'Abuja', 10, 30, 1_400_000),
+  // Loads within reach of Ibadan but paying far less per kilometre driven.
+  leg('ibadan-lagos-back', IBADAN, 'Ibadan', LAGOS, 'Lagos', 10, 20, 300_000),
+  // Kano is beyond the repositioning limit from Ibadan.
+  leg('kano-abuja', KANO, 'Kano', ABUJA, 'Abuja', 10, 40, 2_000_000),
+  // Loads before the leg it would follow.
+  leg('abuja-kano-early', ABUJA, 'Abuja', KANO, 'Kano', -4, 40, 1_800_000),
+];
+
+const fitCases = chainPool.map((candidate) => {
+  const fit = canFollow(chainStart, candidate);
+  return {
+    loadId: candidate.loadId,
+    ok: fit.ok,
+    reason: fit.ok ? null : fit.reason,
+    detail: fit.ok ? null : fit.detail,
+    repositionM: fit.ok ? fit.repositionM : null,
+  };
+});
+
+const built = chain(chainStart, chainPool);
+
+const chainCase = {
+  legIds: built.legs.map((each) => each.loadId),
+  deadheadM: built.deadheadM,
+  ladenM: built.laden,
+  paysKobo: built.pays,
+  ladenFractionThousandths: Math.round(ladenFraction(built) * 1000),
+};
+
+// --- consolidation ---------------------------------------------------------
+
+const pairLoad = (
+  id: string,
+  weightKg: number,
+  origin: Position,
+  destination: Position,
+  offeredNaira: number,
+  truckClass: TruckClass = 'trailer_30t',
+): PairLoad => ({
+  id,
+  origin: 'Lagos',
+  destination: 'Kano',
+  cargo: 'Cement',
+  weightKg,
+  offered: fromNaira(offeredNaira),
+  readyFrom: matchAt(4),
+  truckClass,
+  shipperTier: 'verified',
+  origin_: { lat: origin.lat, lon: origin.lon },
+  destination_: { lat: destination.lat, lon: destination.lon },
+});
+
+const NEAR_LAGOS = place(6.6, 3.5);
+const NEAR_KANO = place(12.1, 8.7);
+
+const pairLoads: readonly PairLoad[] = [
+  pairLoad('half-a-trailer', 15_000, LAGOS, KANO, 1_400_000),
+  pairLoad('the-other-half', 12_000, NEAR_LAGOS, NEAR_KANO, 1_200_000),
+  pairLoad('too-small-to-pair', 3_000, LAGOS, KANO, 400_000),
+  pairLoad('wrong-truck', 12_000, LAGOS, KANO, 1_200_000, 'canter'),
+  pairLoad('pickup-far-away', 14_000, ABUJA, KANO, 1_300_000),
+];
+
+const shareCases: { a: string; b: string; ok: boolean; reason: string | null; detail: string | null; fillThousandths: number | null }[] = [];
+for (let i = 0; i < pairLoads.length; i++) {
+  for (let j = i + 1; j < pairLoads.length; j++) {
+    const a = pairLoads[i];
+    const b = pairLoads[j];
+    if (a === undefined || b === undefined) continue;
+    const verdict = canShare(a, b, 'trailer_30t');
+    shareCases.push({
+      a: a.id,
+      b: b.id,
+      ok: verdict.ok,
+      reason: verdict.ok ? null : verdict.reason,
+      detail: verdict.ok ? null : verdict.detail,
+      fillThousandths: verdict.ok ? Math.round(verdict.fill * 1000) : null,
+    });
+  }
+}
+
+const pairingCases = pairs(pairLoads, 'trailer_30t').map((pairing) => ({
+  a: pairing.a.id,
+  b: pairing.b.id,
+  fillThousandths: Math.round(pairing.fill * 1000),
+  paysAKobo: pairing.shipperPays[0],
+  paysBKobo: pairing.shipperPays[1],
+  carrierGetsKobo: pairing.carrierGets,
+}));
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1248,6 +1384,59 @@ const fixtures = {
     })),
     rankedBids: bidCases,
   },
+  chaining: {
+    maxRepositionM: MAX_REPOSITION_M,
+    repositionSpeedMs: REPOSITION_SPEED_MS,
+    connectionSlackMs: CONNECTION_SLACK_MS,
+    maxChainLegs: MAX_CHAIN_LEGS,
+    start: {
+      loadId: chainStart.loadId,
+      fromLat: chainStart.from.lat,
+      fromLon: chainStart.from.lon,
+      toLat: chainStart.to.lat,
+      toLon: chainStart.to.lon,
+      fromName: chainStart.fromName,
+      toName: chainStart.toName,
+      readyFromIso: iso(chainStart.readyFrom),
+      deliverByIso: chainStart.deliverBy === null ? null : iso(chainStart.deliverBy),
+      paysKobo: chainStart.pays,
+      distanceM: chainStart.distanceM,
+    },
+    pool: chainPool.map((each) => ({
+      loadId: each.loadId,
+      fromLat: each.from.lat,
+      fromLon: each.from.lon,
+      toLat: each.to.lat,
+      toLon: each.to.lon,
+      fromName: each.fromName,
+      toName: each.toName,
+      readyFromIso: iso(each.readyFrom),
+      deliverByIso: each.deliverBy === null ? null : iso(each.deliverBy),
+      paysKobo: each.pays,
+      distanceM: each.distanceM,
+    })),
+    fits: fitCases,
+    built: chainCase,
+  },
+  consolidation: {
+    pickupSpreadM: PICKUP_SPREAD_M,
+    dropSpreadM: DROP_SPREAD_M,
+    minimumFillThousandths: Math.round(MINIMUM_FILL * 1000),
+    shipperDiscountPct: SHIPPER_DISCOUNT_PCT,
+    loads: pairLoads.map((load) => ({
+      id: load.id,
+      weightKg: load.weightKg,
+      offeredKobo: load.offered,
+      truckClass: load.truckClass,
+      originLat: load.origin_.lat,
+      originLon: load.origin_.lon,
+      destinationLat: load.destination_.lat,
+      destinationLon: load.destination_.lon,
+      readyFromIso: iso(load.readyFrom),
+    })),
+    verdicts: shareCases,
+    pairs: pairingCases,
+  },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -1279,6 +1468,8 @@ process.stdout.write(
       `${earningsCases.length} statements`,
       `${matchCases.length} load rankings`,
       `${bidCases.length} bids`,
+      `${fitCases.length} chain fits`,
+      `${shareCases.length} pair verdicts`,
     ].join(', ')
   }\n`,
 );

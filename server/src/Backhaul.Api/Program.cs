@@ -28,7 +28,11 @@ builder.Services.AddSingleton(TimeProvider.System);
 // The store, and which one, is Infrastructure's business — see
 // AddBackhaulPersistence for the reasoning about the in-memory default.
 var connection = builder.Configuration.GetConnectionString("Backhaul");
-builder.Services.AddBackhaulPersistence(connection);
+builder.Services.AddBackhaulPersistence(
+    connection,
+    // Only a test sets this, and only so two applications in one process do
+    // not share a load board. See AddBackhaulPersistence.
+    builder.Configuration["Store:InMemoryName"] ?? "backhaul");
 
 // Which SMS sender. `http` hands codes to a gateway we run ourselves — an
 // Android phone with a Nigerian SIM, or a USB modem — and anything else falls

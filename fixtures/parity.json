@@ -3233,5 +3233,273 @@
         "because": "50% on time across 12 trips."
       }
     ]
+  },
+  "chaining": {
+    "maxRepositionM": 120000,
+    "repositionSpeedMs": 12.5,
+    "connectionSlackMs": 10800000,
+    "maxChainLegs": 3,
+    "start": {
+      "loadId": "lagos-ibadan",
+      "fromLat": 6.4531,
+      "fromLon": 3.3958,
+      "toLat": 7.3775,
+      "toLon": 3.947,
+      "fromName": "Lagos",
+      "toName": "Ibadan",
+      "readyFromIso": "2026-03-04T06:00:00.000Z",
+      "deliverByIso": "2026-03-04T14:00:00.000Z",
+      "paysKobo": 38000000,
+      "distanceM": 119447
+    },
+    "pool": [
+      {
+        "loadId": "ibadan-abuja",
+        "fromLat": 7.3775,
+        "fromLon": 3.947,
+        "toLat": 9.0765,
+        "toLon": 7.3986,
+        "fromName": "Ibadan",
+        "toName": "Abuja",
+        "readyFromIso": "2026-03-04T16:00:00.000Z",
+        "deliverByIso": "2026-03-05T12:00:00.000Z",
+        "paysKobo": 140000000,
+        "distanceM": 424224
+      },
+      {
+        "loadId": "ibadan-lagos-back",
+        "fromLat": 7.3775,
+        "fromLon": 3.947,
+        "toLat": 6.4531,
+        "toLon": 3.3958,
+        "fromName": "Ibadan",
+        "toName": "Lagos",
+        "readyFromIso": "2026-03-04T16:00:00.000Z",
+        "deliverByIso": "2026-03-05T02:00:00.000Z",
+        "paysKobo": 30000000,
+        "distanceM": 119447
+      },
+      {
+        "loadId": "kano-abuja",
+        "fromLat": 12.0022,
+        "fromLon": 8.5919,
+        "toLat": 9.0765,
+        "toLon": 7.3986,
+        "fromName": "Kano",
+        "toName": "Abuja",
+        "readyFromIso": "2026-03-04T16:00:00.000Z",
+        "deliverByIso": "2026-03-05T22:00:00.000Z",
+        "paysKobo": 200000000,
+        "distanceM": 350498
+      },
+      {
+        "loadId": "abuja-kano-early",
+        "fromLat": 9.0765,
+        "fromLon": 7.3986,
+        "toLat": 12.0022,
+        "toLon": 8.5919,
+        "fromName": "Abuja",
+        "toName": "Kano",
+        "readyFromIso": "2026-03-04T02:00:00.000Z",
+        "deliverByIso": "2026-03-05T22:00:00.000Z",
+        "paysKobo": 180000000,
+        "distanceM": 350498
+      }
+    ],
+    "fits": [
+      {
+        "loadId": "ibadan-abuja",
+        "ok": true,
+        "reason": null,
+        "detail": null,
+        "repositionM": 0
+      },
+      {
+        "loadId": "ibadan-lagos-back",
+        "ok": true,
+        "reason": null,
+        "detail": null,
+        "repositionM": 0
+      },
+      {
+        "loadId": "kano-abuja",
+        "ok": false,
+        "reason": "too_far",
+        "detail": "724 km empty from Ibadan to Kano.",
+        "repositionM": null
+      },
+      {
+        "loadId": "abuja-kano-early",
+        "ok": false,
+        "reason": "too_far",
+        "detail": "424 km empty from Ibadan to Abuja.",
+        "repositionM": null
+      }
+    ],
+    "built": {
+      "legIds": [
+        "lagos-ibadan",
+        "ibadan-abuja"
+      ],
+      "deadheadM": 0,
+      "ladenM": 543671,
+      "paysKobo": 178000000,
+      "ladenFractionThousandths": 1000
+    }
+  },
+  "consolidation": {
+    "pickupSpreadM": 50000,
+    "dropSpreadM": 80000,
+    "minimumFillThousandths": 700,
+    "shipperDiscountPct": 30,
+    "loads": [
+      {
+        "id": "half-a-trailer",
+        "weightKg": 15000,
+        "offeredKobo": 140000000,
+        "truckClass": "trailer_30t",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 12.0022,
+        "destinationLon": 8.5919,
+        "readyFromIso": "2026-03-04T10:00:00.000Z"
+      },
+      {
+        "id": "the-other-half",
+        "weightKg": 12000,
+        "offeredKobo": 120000000,
+        "truckClass": "trailer_30t",
+        "originLat": 6.6,
+        "originLon": 3.5,
+        "destinationLat": 12.1,
+        "destinationLon": 8.7,
+        "readyFromIso": "2026-03-04T10:00:00.000Z"
+      },
+      {
+        "id": "too-small-to-pair",
+        "weightKg": 3000,
+        "offeredKobo": 40000000,
+        "truckClass": "trailer_30t",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 12.0022,
+        "destinationLon": 8.5919,
+        "readyFromIso": "2026-03-04T10:00:00.000Z"
+      },
+      {
+        "id": "wrong-truck",
+        "weightKg": 12000,
+        "offeredKobo": 120000000,
+        "truckClass": "canter",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 12.0022,
+        "destinationLon": 8.5919,
+        "readyFromIso": "2026-03-04T10:00:00.000Z"
+      },
+      {
+        "id": "pickup-far-away",
+        "weightKg": 14000,
+        "offeredKobo": 130000000,
+        "truckClass": "trailer_30t",
+        "originLat": 9.0765,
+        "originLon": 7.3986,
+        "destinationLat": 12.0022,
+        "destinationLon": 8.5919,
+        "readyFromIso": "2026-03-04T10:00:00.000Z"
+      }
+    ],
+    "verdicts": [
+      {
+        "a": "half-a-trailer",
+        "b": "the-other-half",
+        "ok": true,
+        "reason": null,
+        "detail": null,
+        "fillThousandths": 900
+      },
+      {
+        "a": "half-a-trailer",
+        "b": "too-small-to-pair",
+        "ok": false,
+        "reason": "too_empty",
+        "detail": "Together they still only fill 60% of the truck — not worth two sets of paperwork.",
+        "fillThousandths": null
+      },
+      {
+        "a": "half-a-trailer",
+        "b": "wrong-truck",
+        "ok": false,
+        "reason": "wrong_truck",
+        "detail": "These two ask for different kinds of truck.",
+        "fillThousandths": null
+      },
+      {
+        "a": "half-a-trailer",
+        "b": "pickup-far-away",
+        "ok": false,
+        "reason": "pickups_too_far",
+        "detail": "529 km between the two pickups.",
+        "fillThousandths": null
+      },
+      {
+        "a": "the-other-half",
+        "b": "too-small-to-pair",
+        "ok": false,
+        "reason": "too_empty",
+        "detail": "Together they still only fill 50% of the truck — not worth two sets of paperwork.",
+        "fillThousandths": null
+      },
+      {
+        "a": "the-other-half",
+        "b": "wrong-truck",
+        "ok": false,
+        "reason": "wrong_truck",
+        "detail": "These two ask for different kinds of truck.",
+        "fillThousandths": null
+      },
+      {
+        "a": "the-other-half",
+        "b": "pickup-far-away",
+        "ok": false,
+        "reason": "pickups_too_far",
+        "detail": "510 km between the two pickups.",
+        "fillThousandths": null
+      },
+      {
+        "a": "too-small-to-pair",
+        "b": "wrong-truck",
+        "ok": false,
+        "reason": "wrong_truck",
+        "detail": "These two ask for different kinds of truck.",
+        "fillThousandths": null
+      },
+      {
+        "a": "too-small-to-pair",
+        "b": "pickup-far-away",
+        "ok": false,
+        "reason": "too_empty",
+        "detail": "Together they still only fill 57% of the truck — not worth two sets of paperwork.",
+        "fillThousandths": null
+      },
+      {
+        "a": "wrong-truck",
+        "b": "pickup-far-away",
+        "ok": false,
+        "reason": "wrong_truck",
+        "detail": "These two ask for different kinds of truck.",
+        "fillThousandths": null
+      }
+    ],
+    "pairs": [
+      {
+        "a": "half-a-trailer",
+        "b": "the-other-half",
+        "fillThousandths": 900,
+        "paysAKobo": 98000000,
+        "paysBKobo": 84000000,
+        "carrierGetsKobo": 182000000
+      }
+    ]
   }
 }
