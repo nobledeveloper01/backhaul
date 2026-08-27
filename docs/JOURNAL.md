@@ -71,6 +71,25 @@ writes sign-in codes to the log, which is right for a development store and
 means anybody who can read the logs can sign in as anybody. `Program.cs` now
 exits with a critical log line if a database is configured and no gateway is.
 
+**The route is the one thing on a trip that is replaced rather than appended
+to.** Everything else here follows ADR-0003 — a correction is a new row and the
+original survives. A route is a *plan*, though: it changes when a shipper adds
+a drop, and versioning a plan means every screen choosing which version it
+meant. What is evidence is where the truck actually went, and that lives in the
+position table where nothing is ever replaced. Written down in the repository
+rather than left to be inferred.
+
+**Visits are computed, never stored.** A stored visit is a stored *opinion*
+about a track. Recomputing means a corrected fix corrects the demurrage with
+it — and it is why the parity fixtures now cover five tracks' worth of visits
+to the millisecond.
+
+**Two endpoint tests read as "the visits engine is broken".** They sent
+positions to a trip that was still `open`, and the ingest endpoint rightly
+refuses: there is no off-trip tracking and the server enforces it rather than
+trusting the client. The failure surfaced as an empty visit list, which is the
+symptom of a completely different bug.
+
 ### Still open
 
 - **Neither native implementation has run on a physical handset.** Phase 1's

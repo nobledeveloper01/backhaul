@@ -362,6 +362,61 @@ public sealed class ParityTests
         }
     }
 
+    [Fact]
+    public void Both_sides_find_the_same_visits_and_charge_the_same_waiting()
+    {
+        // The most financially consequential arithmetic here after settlement.
+        // A visit measured to the last fix inside rather than the first
+        // outside loses a whole sampling interval of chargeable time, every
+        // visit — and the two implementations must not differ by a
+        // millisecond.
+        var route = new List<Waypoint>
+        {
+            new(Guid.Empty, "apapa", 6.45, 3.36, WaypointKind.Origin, 300),
+            new(Guid.Empty, "jebba", 9.13, 4.83, WaypointKind.Checkpoint, 500),
+            new(Guid.Empty, "kano", 12.0, 8.52, WaypointKind.Destination, 300),
+        };
+
+        foreach (var testCase in Fixtures.Parity.Waypoints.Cases)
+        {
+            var track = testCase.Fixes
+                .Select(f => new Position(f.Lat, f.Lon, f.Accuracy, f.At))
+                .ToList();
+
+            var visits = Waypoints.Visits(track, route);
+
+            Assert.Equal(testCase.Visits.Count, visits.Count);
+
+            foreach (var (expected, actual) in testCase.Visits.Zip(visits))
+            {
+                Assert.Equal(expected.Waypoint, actual.Waypoint.Name);
+                Assert.Equal(expected.Arrived, actual.Arrived);
+                Assert.Equal(expected.Left, actual.Left);
+                Assert.Equal(expected.DurationMs, actual.DurationMs);
+                Assert.Equal(expected.Fixes, actual.Fixes);
+            }
+
+            Assert.Equal(testCase.ChargeableWaitingMs, Waypoints.ChargeableWaitingMs(visits));
+        }
+    }
+
+    [Fact]
+    public void Both_sides_treat_an_incident_the_same_way()
+    {
+        // A driver at a roadside does not classify their own emergency, so the
+        // default severity is the answer — and an app and a server that
+        // disagree about it produce two different trips from one report.
+        foreach (var row in Fixtures.Parity.Incidents)
+        {
+            var kind = Incidents.FromWire(row.Kind);
+            Assert.NotNull(kind);
+
+            Assert.Equal(row.Severity, Incidents.ToWire(Incidents.DefaultSeverity(kind!.Value)));
+            Assert.Equal(row.RaisesDispute, Incidents.RaisesDispute(kind.Value));
+            Assert.Equal(row.NeedsPhoto, Incidents.NeedsPhoto(kind.Value));
+        }
+    }
+
     private static string Wire(CodeRefusal reason) => reason switch
     {
         CodeRefusal.Unknown => "unknown",

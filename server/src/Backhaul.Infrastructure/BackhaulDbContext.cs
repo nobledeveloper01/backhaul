@@ -22,6 +22,12 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<AccountEntity> Accounts => Set<AccountEntity>();
 
+    public DbSet<MessageEntity> Messages => Set<MessageEntity>();
+
+    public DbSet<IncidentEntity> Incidents => Set<IncidentEntity>();
+
+    public DbSet<WaypointEntity> Waypoints => Set<WaypointEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -64,6 +70,29 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // no path that finds a token by anything else.
             token.HasKey(t => t.Hash);
             token.HasIndex(t => t.UserId);
+        });
+
+        model.Entity<MessageEntity>(message =>
+        {
+            // The client-generated id is the key, which makes a retried
+            // message from a dead zone harmless by construction.
+            message.HasKey(m => m.Id);
+            message.HasIndex(m => new { m.TripId, m.At });
+        });
+
+        model.Entity<IncidentEntity>(incident =>
+        {
+            incident.HasKey(i => i.Id);
+            incident.HasIndex(i => new { i.TripId, i.At });
+        });
+
+        model.Entity<WaypointEntity>(waypoint =>
+        {
+            waypoint.HasKey(w => w.Id);
+
+            // A route's order, and a guard against two waypoints claiming the
+            // same position in it.
+            waypoint.HasIndex(w => new { w.TripId, w.Sequence }).IsUnique();
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

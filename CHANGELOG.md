@@ -61,6 +61,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   app being killed and the phone rebooting. The notification says who can see
   the driver rather than apologising for existing, and the app reports when the
   operating system is throttling it instead of quietly recording nothing.
+- **Messages, incidents and routes are served.** The thread on a trip, in the
+  order the conversation happened and carrying both times — when a message was
+  written and when the server took it. Incidents with the kind's own default
+  severity, because a driver at a roadside should not have to classify their
+  own emergency. And a route, with the visits and the chargeable waiting
+  computed from the track rather than stored, so a corrected fix corrects the
+  demurrage with it.
 - **Signing in.** A phone number and a six-digit code — no password, because a
   password is a thing to forget on a phone two drivers share on alternate
   weeks. The number is understood however it is written and shown back the way

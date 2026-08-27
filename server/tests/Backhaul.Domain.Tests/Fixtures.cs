@@ -74,7 +74,9 @@ public sealed record ParityFixtures(
     TripFixtures Trip,
     PricingFixtures Pricing,
     TrackingFixtures Tracking,
-    AuthFixtures Auth);
+    AuthFixtures Auth,
+    WaypointFixtures Waypoints,
+    IReadOnlyList<IncidentRow> Incidents);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -173,6 +175,27 @@ public sealed record AuthFixtures(
     IReadOnlyList<CodeRow> Codes);
 
 public sealed record PhoneRow(string Written, string? Normalised, string? Formatted);
+
+public sealed record WaypointFixtures(double MinimumRadiusM, IReadOnlyList<WaypointCase> Cases);
+
+public sealed record WaypointCase(
+    string Name,
+    IReadOnlyList<FixRow> Fixes,
+    IReadOnlyList<VisitRow> Visits,
+    long ChargeableWaitingMs);
+
+public sealed record VisitRow(
+    string Waypoint,
+    DateTimeOffset Arrived,
+    DateTimeOffset? Left,
+    long DurationMs,
+    int Fixes);
+
+public sealed record IncidentRow(
+    string Kind,
+    string Severity,
+    bool RaisesDispute,
+    bool NeedsPhoto);
 
 public sealed record CodeRow(
     string Name,

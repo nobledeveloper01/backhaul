@@ -1370,5 +1370,418 @@
         "detail": "That code is wrong, and that was the last try. Ask for a new one."
       }
     ]
-  }
+  },
+  "waypoints": {
+    "minimumRadiusM": 150,
+    "cases": [
+      {
+        "name": "a full trip, three places",
+        "fixes": [
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:30:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:45:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:30:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:45:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T08:00:00.000Z"
+          },
+          {
+            "lat": 7.5,
+            "lon": 4,
+            "accuracy": 10,
+            "at": "2026-03-04T10:00:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T12:00:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T12:15:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T12:30:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T12:45:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T13:00:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T13:15:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T13:30:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T13:45:00.000Z"
+          },
+          {
+            "lat": 9.13,
+            "lon": 4.83,
+            "accuracy": 10,
+            "at": "2026-03-04T14:00:00.000Z"
+          },
+          {
+            "lat": 10.5,
+            "lon": 6.5,
+            "accuracy": 10,
+            "at": "2026-03-04T15:00:00.000Z"
+          },
+          {
+            "lat": 12,
+            "lon": 8.52,
+            "accuracy": 10,
+            "at": "2026-03-04T16:00:00.000Z"
+          },
+          {
+            "lat": 12,
+            "lon": 8.52,
+            "accuracy": 10,
+            "at": "2026-03-04T16:15:00.000Z"
+          },
+          {
+            "lat": 12,
+            "lon": 8.52,
+            "accuracy": 10,
+            "at": "2026-03-04T16:30:00.000Z"
+          },
+          {
+            "lat": 12,
+            "lon": 8.52,
+            "accuracy": 10,
+            "at": "2026-03-04T16:45:00.000Z"
+          },
+          {
+            "lat": 12,
+            "lon": 8.52,
+            "accuracy": 10,
+            "at": "2026-03-04T17:00:00.000Z"
+          }
+        ],
+        "visits": [
+          {
+            "waypoint": "apapa",
+            "arrived": "2026-03-04T06:00:00.000Z",
+            "left": "2026-03-04T10:00:00.000Z",
+            "durationMs": 14400000,
+            "fixes": 9
+          },
+          {
+            "waypoint": "jebba",
+            "arrived": "2026-03-04T12:00:00.000Z",
+            "left": "2026-03-04T15:00:00.000Z",
+            "durationMs": 10800000,
+            "fixes": 9
+          },
+          {
+            "waypoint": "kano",
+            "arrived": "2026-03-04T16:00:00.000Z",
+            "left": null,
+            "durationMs": 3600000,
+            "fixes": 5
+          }
+        ],
+        "chargeableWaitingMs": 18000000
+      },
+      {
+        "name": "left and came back — two visits, not one",
+        "fixes": [
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:30:00.000Z"
+          },
+          {
+            "lat": 6.49,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:45:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:30:00.000Z"
+          },
+          {
+            "lat": 6.49,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:45:00.000Z"
+          }
+        ],
+        "visits": [
+          {
+            "waypoint": "apapa",
+            "arrived": "2026-03-04T06:00:00.000Z",
+            "left": "2026-03-04T06:45:00.000Z",
+            "durationMs": 2700000,
+            "fixes": 3
+          },
+          {
+            "waypoint": "apapa",
+            "arrived": "2026-03-04T07:00:00.000Z",
+            "left": "2026-03-04T07:45:00.000Z",
+            "durationMs": 2700000,
+            "fixes": 3
+          }
+        ],
+        "chargeableWaitingMs": 5400000
+      },
+      {
+        "name": "still there when the track ends",
+        "fixes": [
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:30:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T06:45:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:15:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:30:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T07:45:00.000Z"
+          },
+          {
+            "lat": 6.45,
+            "lon": 3.36,
+            "accuracy": 10,
+            "at": "2026-03-04T08:00:00.000Z"
+          }
+        ],
+        "visits": [
+          {
+            "waypoint": "apapa",
+            "arrived": "2026-03-04T06:00:00.000Z",
+            "left": null,
+            "durationMs": 7200000,
+            "fixes": 9
+          }
+        ],
+        "chargeableWaitingMs": 7200000
+      },
+      {
+        "name": "never arrived anywhere",
+        "fixes": [
+          {
+            "lat": 7.5,
+            "lon": 4,
+            "accuracy": 10,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 8,
+            "lon": 4.5,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          }
+        ],
+        "visits": [],
+        "chargeableWaitingMs": 0
+      },
+      {
+        "name": "an imprecise fix at the gate gets the benefit of the doubt",
+        "fixes": [
+          {
+            "lat": 6.4536,
+            "lon": 3.36,
+            "accuracy": 150,
+            "at": "2026-03-04T06:00:00.000Z"
+          },
+          {
+            "lat": 6.4536,
+            "lon": 3.36,
+            "accuracy": 150,
+            "at": "2026-03-04T06:15:00.000Z"
+          },
+          {
+            "lat": 7.5,
+            "lon": 4,
+            "accuracy": 10,
+            "at": "2026-03-04T07:00:00.000Z"
+          }
+        ],
+        "visits": [
+          {
+            "waypoint": "apapa",
+            "arrived": "2026-03-04T06:00:00.000Z",
+            "left": "2026-03-04T07:00:00.000Z",
+            "durationMs": 3600000,
+            "fixes": 2
+          }
+        ],
+        "chargeableWaitingMs": 3600000
+      }
+    ]
+  },
+  "incidents": [
+    {
+      "kind": "breakdown",
+      "severity": "blocking",
+      "raisesDispute": false,
+      "needsPhoto": false
+    },
+    {
+      "kind": "security",
+      "severity": "blocking",
+      "raisesDispute": true,
+      "needsPhoto": false
+    },
+    {
+      "kind": "accident",
+      "severity": "blocking",
+      "raisesDispute": false,
+      "needsPhoto": true
+    },
+    {
+      "kind": "detained",
+      "severity": "delaying",
+      "raisesDispute": false,
+      "needsPhoto": false
+    },
+    {
+      "kind": "road",
+      "severity": "delaying",
+      "raisesDispute": false,
+      "needsPhoto": false
+    },
+    {
+      "kind": "cargo",
+      "severity": "noted",
+      "raisesDispute": true,
+      "needsPhoto": true
+    }
+  ]
 }

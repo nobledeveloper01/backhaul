@@ -57,6 +57,18 @@ import {
   formatPhone,
   normalisePhone,
 } from '../packages/domain/src/otp.ts';
+import {
+  MINIMUM_RADIUS_M,
+  chargeableWaiting,
+  visits,
+  type Waypoint,
+} from '../packages/domain/src/waypoints.ts';
+import {
+  DEFAULT_SEVERITY,
+  needsPhoto,
+  raisesDispute,
+  type IncidentKind,
+} from '../packages/domain/src/incidents.ts';
 
 const CLASSES: readonly TruckClass[] = [
   'pickup',
@@ -453,6 +465,121 @@ const codes = (
   };
 });
 
+/**
+ * Waypoints, and the arithmetic that decides when demurrage starts.
+ *
+ * The most financially consequential code in the product after settlement, and
+ * the two implementations have to agree on a millisecond: a visit measured to
+ * the last fix inside rather than the first outside loses a whole sampling
+ * interval of chargeable time, every visit.
+ */
+const WAY_T0 = new Date('2026-03-04T06:00:00Z');
+const wayAt = (minutes: number) => new Date(WAY_T0.getTime() + minutes * 60_000);
+
+const wayFix = (lat: number, lon: number, minutes: number, accuracy = 10): Position => ({
+  lat,
+  lon,
+  accuracy,
+  at: wayAt(minutes),
+});
+
+const APAPA: Waypoint = {
+  id: 'apapa',
+  name: 'Apapa depot',
+  at: { lat: 6.45, lon: 3.36, accuracy: 0, at: WAY_T0 },
+  kind: 'origin',
+  radius: 300,
+};
+
+const JEBBA: Waypoint = {
+  id: 'jebba',
+  name: 'Jebba checkpoint',
+  at: { lat: 9.13, lon: 4.83, accuracy: 0, at: WAY_T0 },
+  kind: 'checkpoint',
+  radius: 500,
+};
+
+const KANO_W: Waypoint = {
+  id: 'kano',
+  name: 'Kano market',
+  at: { lat: 12.0, lon: 8.52, accuracy: 0, at: WAY_T0 },
+  kind: 'destination',
+  radius: 300,
+};
+
+const sitting = (w: Waypoint, from: number, to: number, every = 15): Position[] => {
+  const out: Position[] = [];
+  for (let m = from; m <= to; m += every) out.push(wayFix(w.at.lat, w.at.lon, m));
+  return out;
+};
+
+const waypointCases = (
+  [
+    [
+      'a full trip, three places',
+      [
+        ...sitting(APAPA, 0, 120),
+        wayFix(7.5, 4.0, 240),
+        ...sitting(JEBBA, 360, 480),
+        wayFix(10.5, 6.5, 540),
+        ...sitting(KANO_W, 600, 660),
+      ],
+    ],
+    [
+      'left and came back — two visits, not one',
+      [
+        ...sitting(APAPA, 0, 30),
+        wayFix(6.49, 3.36, 45),
+        ...sitting(APAPA, 60, 90),
+        wayFix(6.49, 3.36, 105),
+      ],
+    ],
+    ['still there when the track ends', sitting(APAPA, 0, 120)],
+    ['never arrived anywhere', [wayFix(7.5, 4.0, 0), wayFix(8.0, 4.5, 60)]],
+    [
+      'an imprecise fix at the gate gets the benefit of the doubt',
+      [wayFix(6.4536, 3.36, 0, 150), wayFix(6.4536, 3.36, 15, 150), wayFix(7.5, 4.0, 60)],
+    ],
+  ] as const
+).map(([name, track]) => {
+  const route = [APAPA, JEBBA, KANO_W];
+  const found = visits(track, route);
+
+  return {
+    name,
+    fixes: track.map((fix) => ({
+      lat: fix.lat,
+      lon: fix.lon,
+      accuracy: fix.accuracy,
+      at: iso(fix.at),
+    })),
+    visits: found.map((visit) => ({
+      waypoint: visit.waypoint.id,
+      arrived: iso(visit.arrived),
+      left: visit.left === null ? null : iso(visit.left),
+      durationMs: visit.durationMs,
+      fixes: visit.fixes,
+    })),
+    chargeableWaitingMs: chargeableWaiting(found),
+  };
+});
+
+const INCIDENT_KINDS: readonly IncidentKind[] = [
+  'breakdown',
+  'security',
+  'accident',
+  'detained',
+  'road',
+  'cargo',
+];
+
+const incidentCases = INCIDENT_KINDS.map((kind) => ({
+  kind,
+  severity: DEFAULT_SEVERITY[kind],
+  raisesDispute: raisesDispute(kind),
+  needsPhoto: needsPhoto(kind),
+}));
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -476,6 +603,8 @@ const fixtures = {
   pricing: { quotes, demurrages, settlements, roundings, classing },
   tracking: { distances, tracks, observations },
   auth: { phones, codes },
+  waypoints: { minimumRadiusM: MINIMUM_RADIUS_M, cases: waypointCases },
+  incidents: incidentCases,
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -495,6 +624,8 @@ process.stdout.write(
       `${observations.length} observations`,
       `${phones.length} phones`,
       `${codes.length} codes`,
+      `${waypointCases.length} waypoint tracks`,
+      `${incidentCases.length} incident kinds`,
     ].join(', ')
   }\n`,
 );
