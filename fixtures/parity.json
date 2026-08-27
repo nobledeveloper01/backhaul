@@ -2884,5 +2884,354 @@
         "longestWaitMs": 2624400000
       }
     ]
+  },
+  "matching": {
+    "maxDeadheadM": 400000,
+    "minimumTripsForReliability": 5,
+    "premiumTolerance": 0.25,
+    "nowIso": "2026-03-04T06:00:00.000Z",
+    "loads": [
+      {
+        "id": "toward-home",
+        "originLat": 7.3775,
+        "originLon": 3.947,
+        "destinationLat": 6.4531,
+        "destinationLon": 3.3958,
+        "weightTonnes": 28,
+        "requires": "trailer_30t",
+        "offeredKobo": 190000000,
+        "readyByIso": "2026-03-04T12:00:00.000Z",
+        "expiresAtIso": "2026-03-06T06:00:00.000Z"
+      },
+      {
+        "id": "away-from-home",
+        "originLat": 7.3775,
+        "originLon": 3.947,
+        "destinationLat": 12.0022,
+        "destinationLon": 8.5919,
+        "weightTonnes": 28,
+        "requires": "trailer_30t",
+        "offeredKobo": 240000000,
+        "readyByIso": "2026-03-05T12:00:00.000Z",
+        "expiresAtIso": "2026-03-07T06:00:00.000Z"
+      },
+      {
+        "id": "urgent-and-near",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 9.0765,
+        "destinationLon": 7.3986,
+        "weightTonnes": 24,
+        "requires": "trailer_30t",
+        "offeredKobo": null,
+        "readyByIso": "2026-03-04T05:00:00.000Z",
+        "expiresAtIso": "2026-03-04T18:00:00.000Z"
+      },
+      {
+        "id": "too-heavy",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 9.0765,
+        "destinationLon": 7.3986,
+        "weightTonnes": 34,
+        "requires": "trailer_30t",
+        "offeredKobo": null,
+        "readyByIso": "2026-03-04T12:00:00.000Z",
+        "expiresAtIso": "2026-03-06T06:00:00.000Z"
+      },
+      {
+        "id": "wrong-class",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 9.0765,
+        "destinationLon": 7.3986,
+        "weightTonnes": 6,
+        "requires": "canter",
+        "offeredKobo": null,
+        "readyByIso": "2026-03-04T12:00:00.000Z",
+        "expiresAtIso": "2026-03-06T06:00:00.000Z"
+      },
+      {
+        "id": "expired",
+        "originLat": 6.4531,
+        "originLon": 3.3958,
+        "destinationLat": 9.0765,
+        "destinationLon": 7.3986,
+        "weightTonnes": 28,
+        "requires": "trailer_30t",
+        "offeredKobo": null,
+        "readyByIso": "2026-03-03T00:00:00.000Z",
+        "expiresAtIso": "2026-03-04T05:00:00.000Z"
+      },
+      {
+        "id": "unreachable",
+        "originLat": 4.8156,
+        "originLon": 7.0498,
+        "destinationLat": 9.0765,
+        "destinationLon": 7.3986,
+        "weightTonnes": 28,
+        "requires": "trailer_30t",
+        "offeredKobo": null,
+        "readyByIso": "2026-03-04T12:00:00.000Z",
+        "expiresAtIso": "2026-03-06T06:00:00.000Z"
+      }
+    ],
+    "carriers": [
+      {
+        "name": "trailer near Ibadan, based in Lagos",
+        "hasBase": true,
+        "truck": "trailer_30t",
+        "ranked": [
+          {
+            "loadId": "toward-home",
+            "scoreThousandths": 988,
+            "blocked": null,
+            "deadheadM": 0,
+            "progressHomeM": 119447,
+            "because": "0 km empty to the pickup, and it covers 119 km of the run home."
+          },
+          {
+            "loadId": "urgent-and-near",
+            "scoreThousandths": 562,
+            "blocked": null,
+            "deadheadM": 119447,
+            "progressHomeM": -409275,
+            "because": "119 km empty to the pickup, but it takes you 409 km further from base."
+          },
+          {
+            "loadId": "away-from-home",
+            "scoreThousandths": 538,
+            "blocked": null,
+            "deadheadM": 0,
+            "progressHomeM": -720610,
+            "because": "0 km empty to the pickup, but it takes you 721 km further from base."
+          },
+          {
+            "loadId": "too-heavy",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 119447,
+            "progressHomeM": -409275,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "wrong-class",
+            "scoreThousandths": 0,
+            "blocked": "wrong_class",
+            "deadheadM": 119447,
+            "progressHomeM": -409275,
+            "because": "The shipper asked for a different class of truck."
+          },
+          {
+            "loadId": "expired",
+            "scoreThousandths": 0,
+            "blocked": "expired",
+            "deadheadM": 119447,
+            "progressHomeM": -409275,
+            "because": "This load has expired."
+          },
+          {
+            "loadId": "unreachable",
+            "scoreThousandths": 0,
+            "blocked": "cannot_reach",
+            "deadheadM": 445897,
+            "progressHomeM": -409275,
+            "because": "More than 400 km of empty running away."
+          }
+        ]
+      },
+      {
+        "name": "the same truck with nowhere to get back to",
+        "hasBase": false,
+        "truck": "trailer_30t",
+        "ranked": [
+          {
+            "loadId": "toward-home",
+            "scoreThousandths": 788,
+            "blocked": null,
+            "deadheadM": 0,
+            "progressHomeM": 0,
+            "because": "0 km empty to the pickup."
+          },
+          {
+            "loadId": "away-from-home",
+            "scoreThousandths": 738,
+            "blocked": null,
+            "deadheadM": 0,
+            "progressHomeM": 0,
+            "because": "0 km empty to the pickup."
+          },
+          {
+            "loadId": "urgent-and-near",
+            "scoreThousandths": 717,
+            "blocked": null,
+            "deadheadM": 119447,
+            "progressHomeM": 0,
+            "because": "119 km empty to the pickup."
+          },
+          {
+            "loadId": "too-heavy",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 119447,
+            "progressHomeM": 0,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "wrong-class",
+            "scoreThousandths": 0,
+            "blocked": "wrong_class",
+            "deadheadM": 119447,
+            "progressHomeM": 0,
+            "because": "The shipper asked for a different class of truck."
+          },
+          {
+            "loadId": "expired",
+            "scoreThousandths": 0,
+            "blocked": "expired",
+            "deadheadM": 119447,
+            "progressHomeM": 0,
+            "because": "This load has expired."
+          },
+          {
+            "loadId": "unreachable",
+            "scoreThousandths": 0,
+            "blocked": "cannot_reach",
+            "deadheadM": 445897,
+            "progressHomeM": 0,
+            "because": "More than 400 km of empty running away."
+          }
+        ]
+      },
+      {
+        "name": "a canter in Lagos",
+        "hasBase": true,
+        "truck": "canter",
+        "ranked": [
+          {
+            "loadId": "toward-home",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 119447,
+            "progressHomeM": 0,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "away-from-home",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 119447,
+            "progressHomeM": -840057,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "urgent-and-near",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 0,
+            "progressHomeM": -528722,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "too-heavy",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 0,
+            "progressHomeM": -528722,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "wrong-class",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 0,
+            "progressHomeM": -528722,
+            "because": "Heavier than your truck carries."
+          },
+          {
+            "loadId": "expired",
+            "scoreThousandths": 0,
+            "blocked": "expired",
+            "deadheadM": 0,
+            "progressHomeM": -528722,
+            "because": "This load has expired."
+          },
+          {
+            "loadId": "unreachable",
+            "scoreThousandths": 0,
+            "blocked": "too_heavy",
+            "deadheadM": 443436,
+            "progressHomeM": -528722,
+            "because": "Heavier than your truck carries."
+          }
+        ]
+      }
+    ],
+    "bidPickupLat": 6.4531,
+    "bidPickupLon": 3.3958,
+    "bids": [
+      {
+        "id": "cheapest-and-new",
+        "amountKobo": 180000000,
+        "tripsCompleted": 0,
+        "tripsOnTime": 0,
+        "atLat": 6.4531,
+        "atLon": 3.3958
+      },
+      {
+        "id": "dearer-with-a-record",
+        "amountKobo": 198000000,
+        "tripsCompleted": 40,
+        "tripsOnTime": 38,
+        "atLat": 7.3775,
+        "atLon": 3.947
+      },
+      {
+        "id": "one-trip-completed",
+        "amountKobo": 185000000,
+        "tripsCompleted": 1,
+        "tripsOnTime": 1,
+        "atLat": 6.4531,
+        "atLon": 3.3958
+      },
+      {
+        "id": "far-away",
+        "amountKobo": 182000000,
+        "tripsCompleted": 12,
+        "tripsOnTime": 6,
+        "atLat": 12.0022,
+        "atLon": 8.5919
+      }
+    ],
+    "rankedBids": [
+      {
+        "bidId": "cheapest-and-new",
+        "scoreThousandths": 840,
+        "reliabilityThousandths": null,
+        "kmToPickup": 0,
+        "because": "New to Backhaul — 0 completed trips, no record yet."
+      },
+      {
+        "bidId": "one-trip-completed",
+        "scoreThousandths": 796,
+        "reliabilityThousandths": null,
+        "kmToPickup": 0,
+        "because": "New to Backhaul — 1 completed trip, no record yet."
+      },
+      {
+        "bidId": "dearer-with-a-record",
+        "scoreThousandths": 764,
+        "reliabilityThousandths": 950,
+        "kmToPickup": 119,
+        "because": "95% on time across 40 trips."
+      },
+      {
+        "bidId": "far-away",
+        "scoreThousandths": 582,
+        "reliabilityThousandths": 500,
+        "kmToPickup": 840,
+        "because": "50% on time across 12 trips."
+      }
+    ]
   }
 }

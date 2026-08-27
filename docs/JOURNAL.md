@@ -6,6 +6,48 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (late) — The board, and an integer division that changed the winner
+
+**Did.** `matching.ts` has a C# mirror, parity cases and a route. A shipper
+posts a load; a carrier sees the board ranked for their own truck and places
+one offer; the shipper sees the offers ranked with the price and the record
+side by side and accepts one. Two new tables — `LoadEntity` and `BidEntity` —
+and ten endpoint tests around who may read what.
+
+### What surprised us
+
+**`long / 1000` is integer division, and it changed which bid won.** The
+proximity term in `rankBids` divides metres by a thousand to get kilometres.
+`Geo.Distance` returns `long`, `1000` is an `int`, and C# quietly truncated the
+result to whole kilometres before it ever became a double — so a bid 119.4 km
+from the pickup scored as though it were 119, and the second and third bids
+swapped places. The parity fixtures caught it on the first run, which is the
+entire argument for generating the expected order from TypeScript rather than
+writing it out by hand.
+
+**Every rounded figure in this engine ends up inside a sentence.** "1 km
+further from base" against "2 km" is a parity failure, not a display detail,
+because the sentence is asserted character for character. `Math.Round` with
+away-from-zero disagrees with JavaScript on a negative half and `progressHome`
+is negative for exactly the loads that go the wrong way — so the mirror has its
+own `Round` that floors `x + 0.5`, with a comment saying which rule it is
+copying and why.
+
+**The board is the one table read by people it does not belong to, and saying
+so was the design work.** ADR-0008 says every repository method composes a
+principal into the query. A load board that only shows a carrier their own
+loads is not a load board, so `BoardAsync` filters on *what is on offer* —
+open, unexpired, unawarded — and the exception is written into the repository's
+own documentation rather than left for somebody to notice. Writes are
+principal-filtered as usual, and bids on a load are readable only by the
+shipper who posted it: a carrier who could read the other bids would know
+exactly what to undercut, which is the failure the ranking exists to prevent.
+
+**A shared in-memory store makes an order-dependent test look like a passing
+one.** Two of the board tests asserted on the whole board, which happens to be
+right when they run first. Both now filter to the loads they posted. This repo
+has been bitten by the same shape once already, in the rate-limit tests.
+
 ## 2026-08-28 (night) — Four engines get a route, and one of them argued
 
 **Did.** Escrow, cancellation, the cost model and driver statements now have

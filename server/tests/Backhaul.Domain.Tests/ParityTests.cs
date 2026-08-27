@@ -1,4 +1,5 @@
 using Backhaul.Domain.Access;
+using Backhaul.Domain.Market;
 using Backhaul.Domain.Money;
 using Backhaul.Domain.Pricing;
 using Backhaul.Domain.Tracking;
@@ -754,6 +755,114 @@ public sealed class ParityTests
         MilestoneKind.Delivered => "delivered",
         MilestoneKind.Retention => "retention",
         _ => throw new InvalidOperationException($"unmapped milestone {kind}"),
+    };
+
+
+    // --- the load board ----------------------------------------------------
+
+    [Fact]
+    public void Both_sides_rank_the_same_loads_in_the_same_order()
+    {
+        // The ordering is the product. A server that ranks the same six loads
+        // differently to the phone is a server telling a carrier to drive
+        // somewhere else — and the sentence under each row is what a haulier
+        // argues with, so it is asserted as tightly as the position.
+        Assert.Equal(F.Matching.MaxDeadheadM, Matching.MaxDeadheadM);
+        Assert.Equal(F.Matching.PremiumTolerance, Matching.PremiumTolerance);
+        Assert.Equal(F.Matching.MinimumTripsForReliability, Matching.MinimumTripsForReliability);
+
+        var now = F.Matching.NowIso;
+
+        var loads = F.Matching.Loads
+            .Select(row => new Load(
+                Guid.Empty,
+                At(row.OriginLat, row.OriginLon, now),
+                At(row.DestinationLat, row.DestinationLon, now),
+                row.WeightTonnes,
+                Truck(row.Requires),
+                row.OfferedKobo is { } kobo ? new Kobo(kobo) : null,
+                row.ReadyByIso,
+                row.ExpiresAtIso))
+            .ToList();
+
+        // The fixture identifies loads by name; the C# record has a Guid. The
+        // index is the join, which is why the order of `Loads` is fixed.
+        var names = F.Matching.Loads.Select(l => l.Id).ToList();
+
+        foreach (var row in F.Matching.Carriers)
+        {
+            var lagos = At(6.4531, 3.3958, now);
+            var ibadan = At(7.3775, 3.947, now);
+
+            var carrier = new Carrier(
+                row.Truck == "canter" ? lagos : ibadan,
+                now,
+                Truck(row.Truck),
+                row.HasBase ? lagos : null);
+
+            var ranked = Matching.RankLoads(carrier, loads, now);
+
+            Assert.Equal(
+                row.Ranked.Select(r => r.LoadId),
+                ranked.Select(r => names[loads.IndexOf(r.Load)]));
+
+            foreach (var (expected, actual) in row.Ranked.Zip(ranked))
+            {
+                Assert.Equal(expected.ScoreThousandths, (int)Math.Floor(actual.Score * 1000 + 0.5));
+                Assert.Equal(expected.Blocked, actual.Blocked is null ? null : BlockerWire(actual.Blocked.Value));
+                Assert.Equal(expected.DeadheadM, actual.DeadheadM);
+                Assert.Equal(expected.ProgressHomeM, actual.ProgressHomeM);
+                Assert.Equal(expected.Because, actual.Because);
+            }
+        }
+    }
+
+    [Fact]
+    public void And_rank_the_same_bids_the_same_way()
+    {
+        // The cheapest bid is not the best bid, and this is where the product
+        // either earns trust or loses it.
+        var now = F.Matching.NowIso;
+        var pickup = At(F.Matching.BidPickupLat, F.Matching.BidPickupLon, now);
+
+        var bids = F.Matching.Bids
+            .Select(row => new Bid(
+                Guid.Empty,
+                Guid.Empty,
+                new Kobo(row.AmountKobo),
+                row.TripsCompleted,
+                row.TripsOnTime,
+                At(row.AtLat, row.AtLon, now),
+                now))
+            .ToList();
+
+        var names = F.Matching.Bids.Select(b => b.Id).ToList();
+        var ranked = Matching.RankBids(bids, pickup);
+
+        Assert.Equal(
+            F.Matching.RankedBids.Select(r => r.BidId),
+            ranked.Select(r => names[bids.IndexOf(r.Bid)]));
+
+        foreach (var (expected, actual) in F.Matching.RankedBids.Zip(ranked))
+        {
+            Assert.Equal(expected.ScoreThousandths, (int)Math.Floor(actual.Score * 1000 + 0.5));
+            Assert.Equal(
+                expected.ReliabilityThousandths,
+                actual.Reliability is null ? null : (int?)Math.Floor(actual.Reliability.Value * 1000 + 0.5));
+            Assert.Equal(expected.KmToPickup, actual.KmToPickup);
+            Assert.Equal(expected.Because, actual.Because);
+        }
+    }
+
+    private static Position At(double lat, double lon, DateTimeOffset now) => new(lat, lon, 10, now);
+
+    private static string BlockerWire(Blocker blocked) => blocked switch
+    {
+        Blocker.TooHeavy => "too_heavy",
+        Blocker.WrongClass => "wrong_class",
+        Blocker.Expired => "expired",
+        Blocker.CannotReach => "cannot_reach",
+        _ => throw new InvalidOperationException($"unmapped blocker {blocked}"),
     };
 
 }

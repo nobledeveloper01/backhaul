@@ -9,6 +9,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A load board, and bids on it.** A shipper posts a load; carriers see it
+  ranked for their own truck and place one offer each; the shipper sees those
+  offers ranked with the price and the record side by side, and accepts one.
+
+  The ranking is the point. A load going the way the truck is already headed
+  outranks a better-paid one going the wrong way — the asymmetry the product is
+  named after — and **every load comes back scored, including the ones that
+  cannot be taken**, greyed with the reason rather than hidden. A carrier who
+  cannot see why the 30-tonne load is missing from their list assumes the app
+  is broken.
+
+  A carrier cannot read the other bids: they would know exactly what to
+  undercut, and the ranking exists so the cheapest offer is not automatically
+  the winning one. A new carrier is scored as *unknown* rather than as
+  unreliable — a marketplace that never surfaces a new carrier never gets a
+  second one. One live bid per carrier per load, and an awarded load leaves the
+  board and stops taking both bids and amendments.
+
 - **The money engines are served, not just tested.** Four routes that were
   walkthroughs are now answers from the server: the escrow release schedule for
   a trip, what cancelling it would cost right now, what the run costs against

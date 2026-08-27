@@ -84,7 +84,8 @@ public sealed record ParityFixtures(
     EscrowFixtures Escrow,
     CancellationFixtures Cancellation,
     CostFixtures Costs,
-    EarningsFixtures Earnings);
+    EarningsFixtures Earnings,
+    MatchingFixtures Matching);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -359,3 +360,56 @@ public sealed record StatementRow(
     long? PerKilometreKobo,
     IReadOnlyList<string> UnpaidTripIds,
     long? LongestWaitMs);
+
+public sealed record MatchingFixtures(
+    double MaxDeadheadM,
+    int MinimumTripsForReliability,
+    double PremiumTolerance,
+    DateTimeOffset NowIso,
+    IReadOnlyList<LoadRow> Loads,
+    IReadOnlyList<CarrierRow> Carriers,
+    double BidPickupLat,
+    double BidPickupLon,
+    IReadOnlyList<BidRow> Bids,
+    IReadOnlyList<RankedBidRow> RankedBids);
+
+public sealed record LoadRow(
+    string Id,
+    double OriginLat,
+    double OriginLon,
+    double DestinationLat,
+    double DestinationLon,
+    double WeightTonnes,
+    string Requires,
+    long? OfferedKobo,
+    DateTimeOffset ReadyByIso,
+    DateTimeOffset ExpiresAtIso);
+
+public sealed record CarrierRow(
+    string Name,
+    bool HasBase,
+    string Truck,
+    IReadOnlyList<RankedLoadRow> Ranked);
+
+public sealed record RankedLoadRow(
+    string LoadId,
+    int ScoreThousandths,
+    string? Blocked,
+    double DeadheadM,
+    double ProgressHomeM,
+    string Because);
+
+public sealed record BidRow(
+    string Id,
+    long AmountKobo,
+    int TripsCompleted,
+    int TripsOnTime,
+    double AtLat,
+    double AtLon);
+
+public sealed record RankedBidRow(
+    string BidId,
+    int ScoreThousandths,
+    int? ReliabilityThousandths,
+    int KmToPickup,
+    string Because);

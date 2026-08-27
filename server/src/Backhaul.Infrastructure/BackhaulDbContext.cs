@@ -43,6 +43,12 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
     /// <summary>What a trip was agreed for. Absent on a tracking-only trip.</summary>
     public DbSet<TripTermsEntity> TripTerms => Set<TripTermsEntity>();
 
+    /// <summary>The load board.</summary>
+    public DbSet<LoadEntity> Loads => Set<LoadEntity>();
+
+    /// <summary>Offers on the loads.</summary>
+    public DbSet<BidEntity> Bids => Set<BidEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -157,6 +163,25 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // Keyed by the trip, because there is exactly one set of terms per
             // trip and a surrogate key would allow two.
             terms.HasKey(t => t.TripId);
+        });
+
+        model.Entity<LoadEntity>(load =>
+        {
+            load.HasKey(l => l.Id);
+
+            // The board's own query: what is still open, soonest expiry first.
+            load.HasIndex(l => new { l.AwardedAt, l.ExpiresAt });
+            load.HasIndex(l => l.ShipperId);
+        });
+
+        model.Entity<BidEntity>(bid =>
+        {
+            bid.HasKey(b => b.Id);
+            bid.HasIndex(b => b.LoadId);
+
+            // One live bid per carrier per load. Two would let a carrier
+            // bracket the auction and it is not an auction.
+            bid.HasIndex(b => new { b.LoadId, b.CarrierId }).IsUnique();
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

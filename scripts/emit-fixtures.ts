@@ -107,6 +107,16 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  MAX_DEADHEAD_M,
+  MINIMUM_TRIPS_FOR_RELIABILITY,
+  PREMIUM_TOLERANCE,
+  rankBids,
+  rankLoads,
+  type Bid,
+  type Carrier,
+  type Load,
+} from '../packages/domain/src/matching.ts';
+import {
   MINIMUM_TRIPS_FOR_PER_KM,
   longestWaitMs,
   perKilometre,
@@ -967,6 +977,181 @@ const earningsCases = ([0, 1, 2, 3, 7] as const).map((count) => {
   };
 });
 
+// --- the load board --------------------------------------------------------
+
+/**
+ * Ranking, with the sentence under each row.
+ *
+ * The ordering *is* the product, and the sentence is what a haulier argues
+ * with — so both are fixture material. A server that ranks the same six loads
+ * in a different order to the phone is a server telling a carrier to drive
+ * somewhere else.
+ */
+const MATCH_NOW = new Date('2026-03-04T06:00:00.000Z');
+const matchAt = (hours: number) => new Date(MATCH_NOW.getTime() + hours * 3_600_000);
+
+const place = (lat: number, lon: number): Position => ({
+  lat,
+  lon,
+  accuracy: 10,
+  at: MATCH_NOW,
+});
+
+const LAGOS = place(6.4531, 3.3958);
+const IBADAN = place(7.3775, 3.947);
+const ABUJA = place(9.0765, 7.3986);
+const KANO = place(12.0022, 8.5919);
+const PORT_HARCOURT = place(4.8156, 7.0498);
+
+const matchLoads: readonly Load[] = [
+  {
+    id: 'toward-home',
+    origin: IBADAN,
+    destination: LAGOS,
+    weight: 28,
+    requires: 'trailer_30t',
+    offered: fromNaira(1_900_000),
+    readyBy: matchAt(6),
+    expiresAt: matchAt(48),
+  },
+  {
+    id: 'away-from-home',
+    origin: IBADAN,
+    destination: KANO,
+    weight: 28,
+    requires: 'trailer_30t',
+    offered: fromNaira(2_400_000),
+    readyBy: matchAt(30),
+    expiresAt: matchAt(72),
+  },
+  {
+    id: 'urgent-and-near',
+    origin: LAGOS,
+    destination: ABUJA,
+    weight: 24,
+    requires: 'trailer_30t',
+    readyBy: matchAt(-1),
+    expiresAt: matchAt(12),
+  },
+  {
+    id: 'too-heavy',
+    origin: LAGOS,
+    destination: ABUJA,
+    weight: 34,
+    requires: 'trailer_30t',
+    readyBy: matchAt(6),
+    expiresAt: matchAt(48),
+  },
+  {
+    id: 'wrong-class',
+    origin: LAGOS,
+    destination: ABUJA,
+    weight: 6,
+    requires: 'canter',
+    readyBy: matchAt(6),
+    expiresAt: matchAt(48),
+  },
+  {
+    id: 'expired',
+    origin: LAGOS,
+    destination: ABUJA,
+    weight: 28,
+    requires: 'trailer_30t',
+    readyBy: matchAt(-30),
+    expiresAt: matchAt(-1),
+  },
+  {
+    id: 'unreachable',
+    origin: PORT_HARCOURT,
+    destination: ABUJA,
+    weight: 28,
+    requires: 'trailer_30t',
+    readyBy: matchAt(6),
+    expiresAt: matchAt(48),
+  },
+];
+
+const matchCarriers: readonly { name: string; carrier: Carrier }[] = [
+  {
+    name: 'trailer near Ibadan, based in Lagos',
+    carrier: { at: IBADAN, freeFrom: MATCH_NOW, truck: 'trailer_30t', base: LAGOS },
+  },
+  {
+    // Without a base this reduces to ordinary proximity matching, and that is
+    // the comparison the homeward weight has to be visible against.
+    name: 'the same truck with nowhere to get back to',
+    carrier: { at: IBADAN, freeFrom: MATCH_NOW, truck: 'trailer_30t' },
+  },
+  {
+    name: 'a canter in Lagos',
+    carrier: { at: LAGOS, freeFrom: MATCH_NOW, truck: 'canter', base: LAGOS },
+  },
+];
+
+const matchCases = matchCarriers.map(({ name, carrier }) => ({
+  name,
+  hasBase: carrier.base !== undefined,
+  truck: carrier.truck,
+  ranked: rankLoads(carrier, matchLoads, MATCH_NOW).map((scored) => ({
+    loadId: scored.load.id,
+    scoreThousandths: Math.round(scored.score * 1000),
+    blocked: scored.blocked,
+    deadheadM: scored.deadhead,
+    progressHomeM: scored.progressHome,
+    because: scored.because,
+  })),
+}));
+
+const BID_PICKUP = LAGOS;
+
+const bids: readonly Bid[] = [
+  {
+    id: 'cheapest-and-new',
+    carrierId: 'c1',
+    amount: fromNaira(1_800_000),
+    tripsCompleted: 0,
+    tripsOnTime: 0,
+    at: LAGOS,
+    placedAt: MATCH_NOW,
+  },
+  {
+    id: 'dearer-with-a-record',
+    carrierId: 'c2',
+    amount: fromNaira(1_980_000),
+    tripsCompleted: 40,
+    tripsOnTime: 38,
+    at: IBADAN,
+    placedAt: MATCH_NOW,
+  },
+  {
+    id: 'one-trip-completed',
+    carrierId: 'c3',
+    amount: fromNaira(1_850_000),
+    tripsCompleted: 1,
+    tripsOnTime: 1,
+    at: LAGOS,
+    placedAt: MATCH_NOW,
+  },
+  {
+    id: 'far-away',
+    carrierId: 'c4',
+    amount: fromNaira(1_820_000),
+    tripsCompleted: 12,
+    tripsOnTime: 6,
+    at: KANO,
+    placedAt: MATCH_NOW,
+  },
+];
+
+const bidCases = rankBids(bids, BID_PICKUP).map((scored) => ({
+  bidId: scored.bid.id,
+  scoreThousandths: Math.round(scored.score * 1000),
+  reliabilityThousandths:
+    scored.reliability === null ? null : Math.round(scored.reliability * 1000),
+  kmToPickup: scored.kmToPickup,
+  because: scored.because,
+}));
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1033,6 +1218,36 @@ const fixtures = {
     nowIso: iso(EARNINGS_NOW),
     cases: earningsCases,
   },
+  matching: {
+    maxDeadheadM: MAX_DEADHEAD_M,
+    minimumTripsForReliability: MINIMUM_TRIPS_FOR_RELIABILITY,
+    premiumTolerance: PREMIUM_TOLERANCE,
+    nowIso: iso(MATCH_NOW),
+    loads: matchLoads.map((load) => ({
+      id: load.id,
+      originLat: load.origin.lat,
+      originLon: load.origin.lon,
+      destinationLat: load.destination.lat,
+      destinationLon: load.destination.lon,
+      weightTonnes: load.weight,
+      requires: load.requires,
+      offeredKobo: load.offered ?? null,
+      readyByIso: iso(load.readyBy),
+      expiresAtIso: iso(load.expiresAt),
+    })),
+    carriers: matchCases,
+    bidPickupLat: BID_PICKUP.lat,
+    bidPickupLon: BID_PICKUP.lon,
+    bids: bids.map((bid) => ({
+      id: bid.id,
+      amountKobo: bid.amount,
+      tripsCompleted: bid.tripsCompleted,
+      tripsOnTime: bid.tripsOnTime,
+      atLat: bid.at.lat,
+      atLon: bid.at.lon,
+    })),
+    rankedBids: bidCases,
+  },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -1062,6 +1277,8 @@ process.stdout.write(
       `${cancelCases.length} cancellations`,
       `${costCases.length} cost models`,
       `${earningsCases.length} statements`,
+      `${matchCases.length} load rankings`,
+      `${bidCases.length} bids`,
     ].join(', ')
   }\n`,
 );
