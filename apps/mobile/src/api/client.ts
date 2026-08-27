@@ -91,6 +91,18 @@ export interface TripSummaryView {
 }
 
 export interface TripView {
+  /**
+   * The three parties, by id.
+   *
+   * Only ever sent to the three of them — this read is behind the same query
+   * filter as every other. They are here because a party needs to reach the
+   * others' records: a shipper reviewing a carrier has to name which carrier,
+   * and an id is the only handle that is stable and carries nothing about
+   * anybody. A share link's view carries none of this.
+   */
+  readonly driverId: string;
+  readonly carrierId: string;
+  readonly shipperId: string;
   readonly id: string;
   readonly state: TripState;
   readonly tracking: boolean;
@@ -924,6 +936,9 @@ function toSummary(raw: RawTripSummary): TripSummaryView {
 
 interface RawTrip {
   id: string;
+  driverId: string;
+  carrierId: string;
+  shipperId: string;
   state: TripState;
   tracking: boolean;
   allowedNext: TripState[];
@@ -938,6 +953,9 @@ interface RawTrip {
 function toTrip(raw: RawTrip): TripView {
   return {
     id: raw.id,
+    driverId: raw.driverId,
+    carrierId: raw.carrierId,
+    shipperId: raw.shipperId,
     state: raw.state,
     tracking: raw.tracking,
     allowedNext: raw.allowedNext,

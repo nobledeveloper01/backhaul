@@ -224,6 +224,11 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'no_name_yet'
+  | 'answer_one_to_send'
+  | 'answers_word'
+  | 'how_did_they_do_title'
+  | 'review_sent'
   | 'posting'
   | 'posted'
   | 'not_posted'
@@ -721,6 +726,11 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  no_name_yet: "No name yet",
+  answer_one_to_send: "Answer one to send",
+  answers_word: "answers",
+  how_did_they_do_title: "How did they do?",
+  review_sent: "Sent",
   posting: "Posting…",
   posted: "Posted",
   not_posted: "Not posted. Try again.",
@@ -1218,6 +1228,11 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  no_name_yet: "Babu suna tukuna",
+  answer_one_to_send: "Amsa ɗaya kafin ka aika",
+  answers_word: "amsoshi",
+  how_did_they_do_title: "Yaya suka yi?",
+  review_sent: "An aika",
   posting: "Ana sanyawa…",
   posted: "An sanya",
   not_posted: "Ba a sanya ba. Ka sake gwadawa.",
@@ -1720,6 +1735,11 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  no_name_yet: "Kò sí orúkọ síbẹ̀",
+  answer_one_to_send: "Dáhùn ọ̀kan kí o tó fi ránṣẹ́",
+  answers_word: "ìdáhùn",
+  how_did_they_do_title: "Báwo ni wọ́n ṣe ṣe é?",
+  review_sent: "A fi ránṣẹ́",
   posting: "À ń gbé e kalẹ̀…",
   posted: "A ti gbé e kalẹ̀",
   not_posted: "A kò gbé e kalẹ̀. Tún gbìyànjú.",
@@ -2220,6 +2240,11 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  no_name_yet: "Enweghị aha ugbu a",
+  answer_one_to_send: "Zaa otu tupu ị zipụ ya",
+  answers_word: "azịza",
+  how_did_they_do_title: "Kedu ka ha si mee ya?",
+  review_sent: "E zipụla ya",
   posting: "Na-ebipụta…",
   posted: "E bipụtala ya",
   not_posted: "E bipụtaghị ya. Nwaa ọzọ.",

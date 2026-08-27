@@ -121,12 +121,23 @@ the honest answer to "how far along is this".
 other engine now has a route, so the answer a screen renders can come from the
 server rather than from `state/demo.ts`.
 
-**Wiring the screens to those routes is the work that remains**, and it is a
-different job from building them. The trips list is done and is the pattern for
-the rest: `useQuery` in `state/server.tsx`, four empty states rather than one —
-*loading*, *nothing yet*, *nothing matching* and *cannot see* — and the
-walkthrough shown only when the server answers with nothing, labelled as the
-walkthrough. Everything else still reads `state/demo.ts`.
+**And the screens are wired to them.** Every screen that should read the server
+does: `useQuery` in `state/server.tsx`, and `emptiness()` returning which of
+*five* facts an empty list actually is — *loading*, *cannot reach*, *refused*,
+*nothing yet* and *nothing matching*. Four of those five are not about the data,
+and rendering them alike tells a shipper their trucks are idle when the phone is
+on a bad cell. The walkthrough survives, shown only when the server answers with
+nothing, and labelled as the walkthrough wherever it appears.
+
+Four screens stay local and say so in their own source: **alerts** explains the
+notification policy rather than reporting alerts, **follow** is the preview of
+what a link-holder sees and therefore carries no token (ADR-0010), **language**
+is a device preference, and **sign-in** takes its callbacks from the shell.
+
+`scripts/round-trip.ts` is the gate on the wire itself. The client's tests mock
+the server and the parity fixtures hold the two *domains* rather than the two
+*serialisers*, so a field the server spells differently passes both and reaches
+a screen. Two did.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
 exists on both sides gets a parity case before it gets an endpoint. Thirty-two

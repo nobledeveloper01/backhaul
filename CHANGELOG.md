@@ -9,6 +9,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Every screen reads the server.** The app was a complete face over a
+  walkthrough: real screens, real words, and figures that came from a fixture
+  file. All sixty-two routes are wired now — trips and their history, the
+  cleaned fixes behind the map, messages, incidents, waypoints, drops, the
+  checkpoint ledger, proof of delivery, the dispute pack, deviation, escrow,
+  cancellation, costs, terms, earnings, alerts, verification, vehicles, lanes,
+  records, the load board and its bids, chains, trailer pairs and the quote.
+
+  Five states rather than one, because "nothing here" is five different facts
+  and only one of them is about the data: still loading, could not reach the
+  server, the server refused, there is genuinely nothing, and a filter is
+  hiding it. A screen that renders all five as an empty list is a screen that
+  tells a shipper their trucks are idle when the phone is simply on a bad cell.
+
+  The walkthrough did not go. It is what a driver sees before their first trip
+  exists, and it is **labelled as the walkthrough on every screen that shows
+  it** — a demonstration a person cannot tell from their own data is worse than
+  no demonstration. Four screens stay local on purpose and say so in their own
+  source: the alerts screen explains the notification policy rather than
+  reporting alerts, the follow screen is the preview of what a link-holder sees
+  and therefore holds no token by design, the language screen is a device
+  preference, and sign-in takes its callbacks from the shell around it.
+
+  Two wire mismatches came out of this that no unit test could have caught,
+  because the client's tests mock the server and the parity fixtures hold the
+  two *domains* rather than the two *serialisers*: posting a levy returns the
+  levy and not the ledger, and the quote route names its fields `low`/`mid`/
+  `high` where every other money route suffixes `Kobo`. Both surfaced on the
+  first run of a round-trip script that drives every client method against a
+  live server, and it runs as a gate now.
+
 - **Alerts, and search that finds the thing.** What reaches a phone is decided
   by one policy table both sides hold: exactly one kind is urgent — a driver in
   trouble — and a push inside quiet hours is *held* and summarised in one

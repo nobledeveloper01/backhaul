@@ -56,7 +56,7 @@ export function VerificationScreen({ onBack }: Props) {
   const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
-  const { api } = useSession();
+  const { api, who } = useSession();
 
   /*
     The tier is the server's answer, not this screen's.
@@ -101,7 +101,13 @@ export function VerificationScreen({ onBack }: Props) {
       >
         {/* No icon on the overline: the badge below is already a shield, and two
             of the same mark in one card is one too many. */}
-        <Card emphasis="accent" overline="Sahel Haulage">
+        {/*
+          The carrier's own name, from the session — not a constant.
+
+          A verification card headed with somebody else's company was the one
+          thing on this screen that could not be true, and it was the heading.
+        */}
+        <Card emphasis="accent" overline={who?.name.trim() || t('no_name_yet')}>
           <View style={styles.badgeRow}>
             <View style={[styles.badge, { backgroundColor: washFor(tier, colours) }]}>
               <Icon name="shield" size="lg" colour={tintFor(tier, colours)} />

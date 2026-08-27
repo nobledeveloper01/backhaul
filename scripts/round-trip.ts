@@ -152,6 +152,17 @@ async function main(): Promise<void> {
         'open,assigned,loading,in_transit',
       running.value.history.map((e) => e.state).join(','),
     );
+    // The three parties, read back off the same trip they were opened with.
+    // A driver screen decides whether it is looking at its own trip by
+    // comparing these against the signed-in principal, so a trip that comes
+    // back without them is a screen that quietly shows somebody else's chrome.
+    check(
+      'and it names the three parties it was opened with',
+      running.value.driverId === parties.driverId &&
+        running.value.carrierId === parties.carrierId &&
+        running.value.shipperId === parties.shipperId,
+      `${running.value.driverId} / ${running.value.carrierId} / ${running.value.shipperId}`,
+    );
   }
 
   // A batch with one fix the cleaner will throw away.

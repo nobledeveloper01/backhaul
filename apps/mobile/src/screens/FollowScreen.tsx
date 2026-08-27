@@ -52,9 +52,20 @@ export function FollowScreen({ trip, onBack }: Props) {
   const now = useMemo(demoNow, []);
 
   /*
-    A toggle a reviewer can use, because the states worth authoring are the two
-    nobody would otherwise look at: a link that lapsed, and one that was turned
-    off. Both are dead ends unless the page says what to do next.
+    Built locally, and it has to be.
+
+    This is the *preview* — "see what they will see" — and the page a holder
+    actually opens is `GET /v1/share/{token}`, unauthenticated, on a token this
+    screen does not have. A token is shown once at issue and is never
+    retrievable, which is what makes a share link a capability rather than a
+    listing; a preview that could fetch one would have broken that. See
+    ADR-0010.
+
+    So the shipper sees a faithful rendering of the scope they picked, built
+    from the trip in front of them. The one thing it cannot show is somebody
+    else's clock, and the toggle exists for exactly that: the states worth
+    authoring are a link that lapsed and one that was turned off, and neither
+    happens while you are looking at it.
   */
   const links = useMemo(() => demoShareLinks(trip, now), [trip, now]);
   const [index, setIndex] = useState(0);

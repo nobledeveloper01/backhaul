@@ -94,6 +94,25 @@ public sealed class TripResponse
 
     public string State { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The three parties, by id.
+    /// </summary>
+    /// <remarks>
+    /// Ids, and only to the three of them — this response is behind the same
+    /// query filter every other trip read is, so a stranger never sees it.
+    /// They are here because a party needs to reach the others' records:
+    /// a shipper reviewing a carrier has to name which carrier, and an id is
+    /// the only handle that is stable and carries nothing about anybody.
+    ///
+    /// A share link's view is a different response and carries none of this.
+    /// See ADR-0010.
+    /// </remarks>
+    public Guid DriverId { get; set; }
+
+    public Guid CarrierId { get; set; }
+
+    public Guid ShipperId { get; set; }
+
     /// <summary>Whether the device should be recording positions right now.</summary>
     public bool Tracking { get; set; }
 

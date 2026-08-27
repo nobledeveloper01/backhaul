@@ -6,6 +6,63 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 (last) — Every screen reads the server, and four that should not
+
+> A note on the dates below this one. The headings from here down run
+> 2026-08-28 to 2026-08-31; every one of those commits was actually made on
+> 2026-08-27. The qualifiers keep the order right and the dates do not. Left
+> as they are rather than rewriting fourteen headings of a record, and written
+> down here so the next person does not spend ten minutes wondering.
+
+**Did.** Wired the remaining screens to the API. Every screen that should read
+the server now does — trips, the fixes behind the map, messages, incidents,
+waypoints, drops, levies, delivery, the pack, deviation, escrow, cancellation,
+costs, terms, earnings, alerts, verification, vehicles, lanes, records, the
+board, bids, chains, pairs and the quote. `make ci` green; `make round-trip`
+clean against a live server; the loads board verified on the simulator reading a
+load seeded over curl, in Yorùbá, with no walkthrough banner on it.
+
+### What surprised us
+
+**"Empty" was five different facts wearing one coat.** Every list started with
+the same shape: fetch, and if the array is empty render the empty state. That
+renders *still loading*, *could not reach the server*, *the server refused*,
+*there is genuinely nothing here* and *a filter is hiding it* as the same
+screen. Four of those five are not about the data at all, and the one that
+matters most — no network — is the one a Nigerian corridor produces several
+times a day. A shipper reading "no trips" on a bad cell concludes their trucks
+are idle. `emptiness()` returns which of the five it is, and each has its own
+words.
+
+**The walkthrough had to be told from the real thing by something other than
+its id.** The first cut sniffed: a GUID is a server trip, `t1` is a
+demonstration. It works today and breaks silently the first time a walkthrough
+id looks like a GUID — and "silently" here means a driver's own trip rendered
+under a banner saying it is a sample, or worse, the reverse. `DemoTrip` carries
+`live: boolean` now. Stated, not inferred.
+
+**The id generator was producing things that were not ids.** The tracker's old
+`defaultId` made `b18f2a-3c9e01`. Unique enough for a local row, and not a GUID,
+which is what every id column on the server is. It had never mattered because
+nothing local had ever been posted. `newId()` produces a real v4, with a
+hand-rolled fallback for the platforms without `crypto.randomUUID`.
+
+**Four screens are local and it took writing them down to be sure.** The
+untranslated-and-unwired sweep flagged them, and each turned out to be right as
+it was: the alerts screen explains the notification policy rather than reporting
+alerts; the follow screen is the preview of what a link-holder sees, and a
+preview holding a token would not be that preview (ADR-0010); the language
+screen is a device preference; sign-in takes its callbacks from `App.tsx`, which
+does call the API. Each now says so in its own source, because the next person
+to run that sweep will otherwise "fix" all four.
+
+**A trip came back without knowing who was on it.** `TripResponse` carried the
+history and the state and not the three party ids, so a screen deciding whether
+it was looking at its own trip had nothing to compare against. Added, and the
+round-trip asserts them on read-back now — the assertion is the point, because
+the field is the sort of thing that gets dropped in a serialiser refactor and
+degrades a screen rather than breaking it.
+
 ## 2026-08-31 — The client catches up, and the wire disagrees twice
 
 **Did.** The API client covered 13 of the server's 62 routes. It covers them

@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CARRIER_CLAIMS,
   MINIMUM_ANSWERS,
-  tally,
   worthShowing,
   type CarrierClaim,
 } from '@backhaul/domain';
@@ -17,9 +16,11 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import { map } from '../api/client';
 import { CARRIER_CLAIM_WORDS, CARRIER_QUESTIONS } from '../state/words';
-import { demoNow, type DemoTrip } from '../state/demo';
-import { demoCarrierReviews } from '../state/product';
+import type { DemoTrip } from '../state/demo';
 
 interface Props {
   readonly trip: DemoTrip;
@@ -43,21 +44,75 @@ export function ReviewScreen({ trip, onBack }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const now = useMemo(demoNow, []);
 
   const [answers, setAnswers] = useState<Partial<Record<CarrierClaim, boolean>>>({});
 
-  const history = useMemo(() => demoCarrierReviews(now), [now]);
-  const counted = useMemo(
-    () => tally([...history, { tripId: trip.id, at: now, answers, note: '' }], CARRIER_CLAIMS),
-    [history, trip, now, answers],
+  const { api } = useSession();
+  const [sent, setSent] = useState(false);
+
+  /*
+    The record is the carrier's, and it is public.
+
+    A tally is what a *stranger* reads to decide whether to trade with
+    somebody, so it comes from the route that serves strangers rather than from
+    whatever this phone happens to remember. The answers being typed are added
+    on top so the counts move as the shipper answers — which is the point of
+    showing them here rather than after.
+  */
+  /*
+    Who the carrier is comes from the trip, not from this screen's props.
+
+    A `DemoTrip` carries a carrier's *name* — "Sahel Haulage" — which is what a
+    screen renders and not what a record is keyed by. The id is on the trip
+    read, sent only to the three parties.
+  */
+  const { query: detail } = useMine<string | null>(
+    async () =>
+      trip.live
+        ? map(await api.trip(trip.id), (view) => view.carrierId)
+        : { ok: true, value: null },
+    [api, trip.id, trip.live],
   );
 
+  const carrierId = detail.state === 'ready' ? detail.value : null;
+
+  const { query, refresh } = useMine(
+    async () =>
+      carrierId === null
+        ? ({ ok: true, value: { reviews: 0, tallies: [] } } as const)
+        : api.record(carrierId, 'carrier'),
+    [api, carrierId],
+  );
+
+  const held = query.state === 'ready' ? query.value.tallies : [];
   const answered = Object.keys(answers).length;
+
+  const counted = useMemo(
+    () =>
+      held.map((row) => {
+        const mine = answers[row.claim as CarrierClaim];
+        return {
+          claim: row.claim,
+          yes: row.yes + (mine === true ? 1 : 0),
+          asked: row.asked + (mine === undefined ? 0 : 1),
+        };
+      }),
+    [held, answers],
+  );
+
+  const send = () => {
+    if (answered === 0 || sent) return;
+    void api.review(trip.id, answers as Record<string, boolean>, '').then((result) => {
+      if (result.ok) {
+        setSent(true);
+        refresh();
+      }
+    });
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title={`How did ${trip.carrier} do?`} onBack={onBack} />
+      <ScreenHeader title={t('how_did_they_do_title')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -130,13 +185,17 @@ export function ReviewScreen({ trip, onBack }: Props) {
         </Card>
 
         <Press
-          onPress={onBack}
-          disabled={answered === 0}
+          onPress={send}
+          disabled={answered === 0 || sent}
           accessibilityLabel={t('send_the_review')}
           style={[styles.send, { backgroundColor: colours.accent }]}
         >
           <Text variant="title" style={{ color: colours.onAccent }}>
-            {answered === 0 ? 'Answer one to send' : `Send ${answered} answer${answered === 1 ? '' : 's'}`}
+            {sent
+              ? t('review_sent')
+              : answered === 0
+                ? t('answer_one_to_send')
+                : `${answered} ${t('answers_word')} · ${t('send')}`}
           </Text>
         </Press>
       </ScrollView>

@@ -30,6 +30,9 @@ import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import { map } from '../api/client';
 import type { Words } from '../components/PositionAge';
 
 /**
@@ -69,8 +72,37 @@ export function DriverScreen({
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
-  const base = useMemo(() => demoTrips(now)[0], [now]);
-  const [history, setHistory] = useState<readonly TripEvent[]>(base?.history ?? []);
+  const { api } = useSession();
+
+  /*
+    The driver's own trip, from the server.
+
+    A driver has at most one trip in front of them, and it is the newest one
+    they are on. Two would be a scheduling question this screen does not ask.
+  */
+  const { query: mine, refresh } = useMine(() => api.trips(), [api]);
+
+  const live = mine.state === 'ready' ? (mine.value[0] ?? null) : null;
+  const walkthrough = useMemo(() => demoTrips(now)[0], [now]);
+
+  const { query: detail } = useMine<readonly TripEvent[] | null>(
+    async () =>
+      live === null
+        ? { ok: true, value: null }
+        : map(await api.trip(live.id), (view) => view.history),
+    [api, live],
+  );
+
+  /*
+    The server's history when there is one; the walkthrough's when there is
+    not. Never a mix — a state machine fed half of each would offer a driver an
+    action their trip cannot take.
+  */
+  const history: readonly TripEvent[] =
+    detail.state === 'ready' && detail.value !== null
+      ? detail.value
+      : (walkthrough?.history ?? []);
+
   const [refusal, setRefusal] = useState<string | null>(null);
 
   /*
@@ -97,7 +129,26 @@ export function DriverScreen({
     if (shown !== null) throw new Error('A duress alarm must show nothing.');
   };
 
-  const kept = base?.track.kept.length ?? 0;
+  /*
+    The trip in front of the driver: the server's when there is one, the
+    walkthrough's otherwise. Named `trip` rather than `base` because it is no
+    longer a base for anything — it is the trip.
+  */
+  const trip = live ?? walkthrough;
+
+  /*
+    The corridor as two names, picked apart here rather than downstream.
+
+    `TripSummaryView.origin` is a place name and `DemoTrip.origin` is a
+    coordinate — the same field spelled two ways in two types that this screen
+    is now handed either of. Reading it once, by name, is the difference
+    between one line and a type error in four places.
+  */
+  const corridor = live === null
+    ? { from: walkthrough?.originName ?? '', to: walkthrough?.destinationName ?? '' }
+    : { from: live.origin, to: live.destination };
+
+  const kept = walkthrough?.track.kept.length ?? 0;
   const dataUsed = usage(kept, Math.max(1, Math.round(kept / 10)));
   const dataCost = estimateCost(dataUsed);
 
@@ -105,7 +156,7 @@ export function DriverScreen({
   // nothing at all. The month is the number that answers the question.
   const dailyData = dailyCost({ interval: INTERVAL.moving, uploadEveryMs: UPLOAD_EVERY_MS });
 
-  if (base === undefined) {
+  if (trip === undefined) {
     return null;
   }
 
@@ -126,14 +177,30 @@ export function DriverScreen({
       !isSystemRaised(candidate) && candidate !== 'disputed' && candidate !== 'cancelled',
   );
 
+  /*
+    Checked here, recorded there.
+
+    The local `transition` runs first so a driver at a loading bay with no
+    signal is told immediately that the button they pressed is not one their
+    trip can take — the server would say the same thing, in the same words,
+    two seconds later. What it must not do is *record* it: a history that
+    exists only on a phone is a history that ends with the phone.
+  */
   function move(to: TripState) {
     const result = transition(history, to, new Date(), 'driver');
     if (!result.ok) {
       setRefusal(result.detail);
       return;
     }
+
     setRefusal(null);
-    setHistory([...history, result.event]);
+
+    if (live === null) return;
+
+    void api.recordEvent(live.id, to, result.event.at, 'driver').then((sent) => {
+      if (sent.ok) refresh();
+      else if (sent.failure.kind === 'refused') setRefusal(sent.failure.detail);
+    });
   }
 
   return (
@@ -149,7 +216,7 @@ export function DriverScreen({
           {t('your_trip').toUpperCase()}
         </Text>
         <Text variant="headline">
-          {base.originName} → {base.destinationName}
+          {corridor.from} → {corridor.to}
         </Text>
         {/*
           The duress alarm lives on this line.
@@ -167,12 +234,12 @@ export function DriverScreen({
           onLongPress={raiseAlarm}
           delayLongPress={HOLD_MS}
           accessibilityRole="button"
-          accessibilityLabel={`${base.cargo}, ${base.plate}`}
+          accessibilityLabel={`${corridor.from} → ${corridor.to}`}
           style={styles.metaRow}
         >
           <Icon name="package" size="sm" colour={colours.textSecondary} />
           <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
-            {base.cargo} · {base.plate}
+            {corridor.from} → {corridor.to}
           </Text>
         </Pressable>
       </View>
@@ -217,7 +284,7 @@ export function DriverScreen({
           */}
           {tracking
             ? language === 'en'
-              ? `Shared with ${base.carrier} and the cargo owner, until this trip ends.`
+              ? say(language, 'shared_until_trip_ends')
               : say(language, 'shared_until_trip_ends')
             : state === 'open' || state === 'assigned'
               ? say(language, 'nothing_shared_yet')
