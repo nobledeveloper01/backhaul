@@ -45,9 +45,13 @@ Full analysis in [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md).
 
 ## 1. Where this is
 
-**Phase 0 — Foundation.** The domain, the server and the app are built and
-tested, and the app has been walked through on a device — which is where most
-of the defects in §8 were found.
+**Phase 0 is complete.** Its exit gate is green: the domain package is
+importable by consumers that are not React Native, the boundary rule is proven
+to fire, both platforms build in CI on every push, and the app has been walked
+through on a device — which is where most of the defects in §8 were found.
+
+**Phase 1 is next, and it is the long pole**: the native tracking loop, with
+three hard gates measured on real hardware.
 
 | | |
 |---|---|

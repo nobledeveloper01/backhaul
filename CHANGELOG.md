@@ -69,6 +69,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The appearance choice now survives a restart.
 - The app builds and runs on Android.
+- CI runs every gate and builds both platforms on every push.
 
 ### Fixed
 

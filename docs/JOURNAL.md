@@ -158,6 +158,12 @@ Android run had "1 of 3 need a look" printed through the clock, because the
 list has no header. One opaque strip in `App.tsx` now covers every screen that
 does not have one.
 
+**Phase 0's exit gate went green.** CI runs the gates, the domain, app and
+server tests, the round trip against a real server, and builds both platforms
+— 1m16s for everything that does not need a native toolchain, 12–14 minutes for
+the two that do. Written, pushed, and *watched*, because a workflow that has
+never run is a workflow that does not work.
+
 ### Still open
 
 - **Android on real hardware.** The emulator proves it compiles and runs; it

@@ -9,7 +9,7 @@ built.
 
 ---
 
-## Phase 0 — Foundation · **current**
+## Phase 0 — Foundation · **complete**
 
 Monorepo, the pure domain package and the lint boundary that keeps it pure, RN
 New Architecture, navigation, design tokens, `op-sqlite`, CI producing signed
@@ -19,12 +19,13 @@ artefacts for both platforms.
 
 | | |
 |---|---|
-| Both platforms building in CI | not started |
+| Both platforms building in CI | **green** — iOS and Android, on every push |
 | `packages/domain` importable by a non-RN consumer, proving the boundary holds | **green** — the package builds to plain ESM and its tests run under Node with no RN present |
 | Boundary rule proven to fire | **green** — `scripts/boundary-check.sh` |
 | Documentation gate running in CI | **green** — `scripts/doc-check.sh` |
 | The server builds, and agrees with the domain | **green** — 106 parity cases and 16 endpoint tests |
 | Parity staleness gate proven to fire | **green** — `make fixtures-check` |
+| Every endpoint behind a token, visibility filtered at the query layer | **green** — ADR-0008 |
 
 Domain engines for later phases are being written now, ahead of their app
 surfaces. That is deliberate: they are pure arithmetic, they need no device,
@@ -39,7 +40,7 @@ which gates it from being useful to anyone outside this machine.
 
 ---
 
-## Phase 1 — The tracking engine · **the long pole**
+## Phase 1 — The tracking engine · **current, and the long pole**
 
 Built first and built alone: Android foreground service, iOS background
 location and region monitoring, the native SQLite queue, batched upload with
