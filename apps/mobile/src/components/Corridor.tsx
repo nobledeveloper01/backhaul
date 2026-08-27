@@ -6,6 +6,7 @@ import { distance } from '@backhaul/domain';
 import { Text } from './Text';
 import { space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly origin: Position;
@@ -31,6 +32,7 @@ interface Props {
  */
 export function Corridor({ origin, destination, track, originName, destinationName }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   const total = distance(origin, destination);
   const travelled = travelledAlong(track);
@@ -92,7 +94,7 @@ export function Corridor({ origin, destination, track, originName, destinationNa
         </View>
         <View style={styles.middle}>
           <Text variant="label" tone="secondary" tabular maxFontSizeMultiplier={1.4}>
-            {Math.round(travelled / 1000)} of {Math.round(total / 1000)} km
+            {Math.round(travelled / 1000)}/{Math.round(total / 1000)} km
           </Text>
         </View>
         <View style={styles.endRight}>
@@ -104,7 +106,7 @@ export function Corridor({ origin, destination, track, originName, destinationNa
 
       {gaps.length > 0 ? (
         <Text variant="label" tone="stale" style={styles.note}>
-          {gaps.length === 1 ? '1 stretch' : `${gaps.length} stretches`} with no signal, marked in grey
+          {gaps.length} · {t('no_signal_stretches')}
         </Text>
       ) : null}
     </View>

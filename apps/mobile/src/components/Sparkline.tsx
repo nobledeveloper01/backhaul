@@ -4,6 +4,7 @@ import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { Text } from './Text';
 import { space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 export interface Series {
   /** One value per step. Nulls are gaps, and are drawn as gaps. */
@@ -32,6 +33,7 @@ interface Props {
  */
 export function Sparkline({ series, height = 72 }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   const width = 300;
   const pad = 6;
@@ -125,13 +127,13 @@ export function Sparkline({ series, height = 72 }: Props) {
           {series.label}
         </Text>
         <Text variant="label" tone="secondary" tabular>
-          {present.length === 0 ? '—' : `peak ${Math.round(peak)} ${series.unit}`}
+          {present.length === 0 ? '—' : `${Math.round(peak)} ${series.unit} · ${t('peak')}`}
         </Text>
       </View>
 
       {gaps.length > 0 ? (
         <Text variant="label" tone="stale" style={styles.note}>
-          Shaded where there was no signal
+          {t('shaded_no_signal')}
         </Text>
       ) : null}
     </View>

@@ -32,7 +32,8 @@ import { Card } from '../components/Card';
 import { Corridor } from '../components/Corridor';
 import { EtaRange } from '../components/EtaRange';
 import { Icon } from '../components/Icon';
-import { PositionAge, agoLabel, humanDuration, plural } from '../components/PositionAge';
+import { PositionAge, agoLabel, humanDuration } from '../components/PositionAge';
+import type { Words } from '../components/PositionAge';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Press } from '../components/Press';
 import { Sparkline } from '../components/Sparkline';
@@ -51,6 +52,7 @@ import {
   demoWaypoints,
 } from '../state/product';
 import { unread } from '@backhaul/domain';
+import type { Phrase } from '@backhaul/domain';
 
 interface Props {
   readonly trip: DemoTrip;
@@ -198,9 +200,7 @@ export function TripDetailScreen({
               {course.detail}
             </Text>
             <Text variant="body" tone="secondary" style={styles.note}>
-              Measured as distance to the destination, not as distance from a
-              line. The Lagos–Kano road is up to 90 km off that line for hours,
-              and an alarm on every correct trip is an alarm nobody reads.
+              {t('deviation_note')}
             </Text>
           </Card>
         ) : null}
@@ -214,16 +214,16 @@ export function TripDetailScreen({
           })}
           <Text variant="body" tone="secondary" style={styles.note}>
             {waiting > 0
-              ? `${humanDuration(waiting, t)} waiting at ${chargeablePlaces(visited)} so far — the part a demurrage claim is made of. Time at the weighbridge is not counted.`
+              ? `${humanDuration(waiting, t)} · ${chargeablePlaces(visited)} — ${t('waiting_note')}`
               : ahead.length > 0
-                ? `${ahead.length} still ahead. Arrival is measured against each place's own radius, not one distance for the whole trip — a depot yard is 400 m and a weighbridge queue can be a kilometre.`
-                : 'Every point on the route was reached.'}
+                ? `${ahead.length} ${t('still_ahead_note')}`
+                : t('every_point_reached')}
           </Text>
         </Card>
 
         <Press
           onPress={onDrops}
-          accessibilityLabel="Drops on this trip"
+          accessibilityLabel={t('drops_on_this_trip')}
           accessibilityHint={describeProgress(drops)}
           feedback="opacity"
           style={[styles.rowLink, { borderColor: colours.outline }]}
@@ -239,12 +239,9 @@ export function TripDetailScreen({
         </Press>
 
         <Card overline={t('pace')} icon="truck">
-          <Sparkline series={paceSeries(trip.track.kept)} />
+          <Sparkline series={paceSeries(trip.track.kept, t)} />
           <Text variant="body" tone="secondary" style={styles.note}>
-            Door to door, including every stop. Not the speedometer — a trailer
-            that cruises at 80 and spends nine hours at checkpoints makes about
-            35 over the day, and it is the second number an arrival is built
-            from.
+            {t('pace_note')}
           </Text>
         </Card>
 
@@ -266,11 +263,11 @@ export function TripDetailScreen({
             <Text variant="display"> km</Text>
           </View>
           <Text variant="body" tone={quality < 0.9 ? 'stale' : 'secondary'}>
-            {describeQuality(trip.track.kept.length, trip.track.dropped.length, quality)}
+            {describeQuality(trip.track.kept.length, trip.track.dropped.length, quality, t)}
           </Text>
           {trip.track.dropped.length > 0 ? (
             <View style={styles.dropped}>
-              {summariseDropped(trip.track.dropped).map((line) => (
+              {summariseDropped(trip.track.dropped, t).map((line) => (
                 <View key={line} style={styles.droppedRow}>
                   <Icon name="alert" size="sm" colour={colours.stale} />
                   <Text variant="label" tone="stale" style={styles.flex}>
@@ -283,10 +280,9 @@ export function TripDetailScreen({
         </Card>
 
         {tripStops.length > 0 ? (
-          <Card overline={`Stops · ${tripStops.length}`} icon="pin">
+          <Card overline={`${t('stops_overline')} · ${tripStops.length}`} icon="pin">
             <Text variant="body" tone="secondary" style={styles.stopsLede}>
-              {plural(timeStopped(tripStops) / 3_600_000, 'hour')} stopped in
-              total. This is what a demurrage claim is made of.
+              {humanDuration(timeStopped(tripStops), t)} {t('stops_note')}
             </Text>
             {tripStops.map((stop, i) => (
               <StopRow key={stop.from.toISOString()} stop={stop} index={i + 1} />
@@ -299,9 +295,16 @@ export function TripDetailScreen({
             {format(released(money))}
           </Text>
           <Text variant="body" tone="secondary" style={styles.note}>
+            {/*
+              The milestone's `kind` is the key, and the condition sentence in
+              `escrow.ts` is what the two implementations are held to through
+              the parity fixtures. The screen renders the reader's own words
+              for it rather than the domain's English — the domain writes one
+              language and the app is read in four.
+            */}
             {nextMoney === null
-              ? 'Everything has been released.'
-              : `Next: ${nextMoney.milestone.condition}`}
+              ? t('everything_released')
+              : `${t('next')} · ${t(CONDITIONS[nextMoney.milestone.kind])}`}
           </Text>
 
           <View style={styles.milestones}>
@@ -317,7 +320,7 @@ export function TripDetailScreen({
                   tone={release.met ? 'primary' : 'secondary'}
                   style={styles.flex}
                 >
-                  {milestoneLabel(release.milestone.kind)} · {release.milestone.pct}%
+                  {milestoneLabel(release.milestone.kind, t)} · {release.milestone.pct}%
                 </Text>
                 <Text variant="body" tabular tone={release.met ? 'primary' : 'secondary'}>
                   {format(release.amount)}
@@ -328,12 +331,12 @@ export function TripDetailScreen({
         </Card>
 
         <Card overline={t('what_is_owed')} icon="naira">
-          <Line label="Agreed fare" amount={settlement.agreed} />
-          <Line label="Demurrage" amount={settlement.demurrage} />
-          <Line label="Backhaul commission" amount={settlement.commission} deduction />
-          <Line label="Advance already paid" amount={settlement.advance} deduction />
+          <Line label={t('agreed_fare')} amount={settlement.agreed} />
+          <Line label={t('demurrage')} amount={settlement.demurrage} />
+          <Line label={t('commission')} amount={settlement.commission} deduction />
+          <Line label={t('advance_paid')} amount={settlement.advance} deduction />
           <View style={[styles.rule, { backgroundColor: colours.outline }]} />
-          <Line label="Due to carrier" amount={settlement.toCarrier} emphasis />
+          <Line label={t('due_to_carrier')} amount={settlement.toCarrier} emphasis />
           <Text variant="label" tone="secondary" style={styles.note}>
             {waited.basis}
           </Text>
@@ -478,16 +481,27 @@ function Action({
  * a disguise. These are the four things a carrier is waiting to be paid for
  * and they deserve their own words.
  */
-function milestoneLabel(kind: 'advance' | 'in_transit' | 'delivered' | 'retention'): string {
+/** The escrow conditions, keyed by the milestone kind rather than its wording. */
+const CONDITIONS: Record<'advance' | 'in_transit' | 'delivered' | 'retention', Phrase> = {
+  advance: 'condition_advance',
+  in_transit: 'condition_in_transit',
+  delivered: 'condition_delivered',
+  retention: 'condition_retention',
+};
+
+function milestoneLabel(
+  kind: 'advance' | 'in_transit' | 'delivered' | 'retention',
+  t: Words,
+): string {
   switch (kind) {
     case 'advance':
-      return 'On loading';
+      return t('on_loading');
     case 'in_transit':
-      return 'On the road';
+      return t('on_the_road');
     case 'delivered':
-      return 'On delivery';
+      return t('on_delivery');
     case 'retention':
-      return 'Held back';
+      return t('held_back');
   }
 }
 
@@ -584,7 +598,7 @@ function WaypointRow({
  * means nothing, and drawing it would put a confident line through the part of
  * the trip nobody can account for.
  */
-function paceSeries(track: readonly Position[]) {
+function paceSeries(track: readonly Position[], t: Words) {
   const values: (number | null)[] = [];
 
   for (let i = 1; i < track.length; i++) {
@@ -600,12 +614,12 @@ function paceSeries(track: readonly Position[]) {
     values.push((distance(from, to) / seconds) * 3.6);
   }
 
-  return { values, label: 'Pace over the trip', unit: 'km/h' };
+  return { values, label: t('pace_over_the_trip'), unit: 'km/h' };
 }
 
 function StopRow({ stop, index }: { stop: Stop; index: number }) {
   const colours = useColours();
-  const hours = stop.durationMs / 3_600_000;
+  const { t } = useLanguage();
 
   return (
     <View style={styles.stop}>
@@ -616,14 +630,12 @@ function StopRow({ stop, index }: { stop: Stop; index: number }) {
       </View>
       <View style={styles.flex}>
         <Text variant="body">
-          {hours >= 1
-            ? plural(hours, 'hour')
-            : plural(Math.round(stop.durationMs / 60_000), 'minute')}
-          {stop.openEnded ? ' so far' : ''}
+          {humanDuration(stop.durationMs, t)}
+          {stop.openEnded ? ` ${t('so_far')}` : ''}
         </Text>
         <Text variant="label" tone="secondary" tabular>
-          {clockOf(stop.from)} – {stop.openEnded ? 'now' : clockOf(stop.to)} ·{' '}
-          {stop.fixes} positions
+          {clockOf(stop.from)} – {stop.openEnded ? t('now') : clockOf(stop.to)} ·{' '}
+          {stop.fixes} {t('positions')}
         </Text>
       </View>
     </View>
@@ -661,28 +673,35 @@ function Line({
   );
 }
 
-function describeQuality(kept: number, dropped: number, quality: number): string {
+function describeQuality(kept: number, dropped: number, quality: number, t: Words): string {
   if (kept === 0) {
-    return 'No usable positions yet.';
+    return t('no_usable_positions_yet');
   }
   if (dropped === 0) {
-    return `From ${kept} positions, all of them usable.`;
+    return `${kept} ${t('positions_all_usable')}`;
   }
-  return `From ${kept} of ${kept + dropped} positions — ${Math.round(quality * 100)}% usable.`;
+  // The fraction first, then the words — see `humanDuration` for why.
+  return `${kept}/${kept + dropped} ${t('positions')} · ${Math.round(quality * 100)}% ${t('usable')}`;
 }
 
 /** Names what was excluded, because "we dropped some" is not an answer. */
-function summariseDropped(dropped: readonly { readonly problem: string }[]): string[] {
+function summariseDropped(
+  dropped: readonly { readonly problem: string }[],
+  t: Words,
+): string[] {
   const counts = new Map<string, number>();
   for (const item of dropped) {
     counts.set(item.problem, (counts.get(item.problem) ?? 0) + 1);
   }
-  const wording: Record<string, string> = {
-    too_imprecise: 'the phone could not say where it was',
-    out_of_order: 'dated before the position before it',
-    implausible_jump: 'a jump no truck could make',
+  const wording: Record<string, Phrase> = {
+    too_imprecise: 'dropped_imprecise',
+    out_of_order: 'dropped_out_of_order',
+    implausible_jump: 'dropped_jump',
   };
-  return [...counts].map(([problem, count]) => `${count} × ${wording[problem] ?? problem}`);
+  return [...counts].map(([problem, count]) => {
+    const phrase = wording[problem];
+    return `${count} × ${phrase === undefined ? problem : t(phrase)}`;
+  });
 }
 
 const styles = StyleSheet.create({

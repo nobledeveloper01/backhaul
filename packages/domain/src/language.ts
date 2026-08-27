@@ -228,6 +228,50 @@ export type Phrase =
   | 'appearance_light'
   | 'appearance_dark'
   | 'appearance_auto'
+  | 'arrival'
+  | 'not_enough_to_say_yet'
+  | 'estimated'
+  | 'to_go'
+  | 'no_signal_stretches'
+  | 'day_sunday'
+  | 'day_monday'
+  | 'day_tuesday'
+  | 'day_wednesday'
+  | 'day_thursday'
+  | 'day_friday'
+  | 'day_saturday'
+  | 'next'
+  | 'everything_released'
+  | 'condition_advance'
+  | 'condition_in_transit'
+  | 'condition_delivered'
+  | 'condition_retention'
+  | 'on_loading'
+  | 'on_delivery'
+  | 'held_back'
+  | 'agreed_fare'
+  | 'demurrage'
+  | 'commission'
+  | 'advance_paid'
+  | 'due_to_carrier'
+  | 'now'
+  | 'no_usable_positions_yet'
+  | 'usable'
+  | 'dropped_imprecise'
+  | 'dropped_out_of_order'
+  | 'dropped_jump'
+  | 'deviation_note'
+  | 'waiting_note'
+  | 'still_ahead_note'
+  | 'every_point_reached'
+  | 'pace_note'
+  | 'stops_note'
+  | 'stops_overline'
+  | 'pace_over_the_trip'
+  | 'peak'
+  | 'shaded_no_signal'
+  | 'positions_all_usable'
+  | 'positions'
   | 'settings';
 
 /**
@@ -400,6 +444,50 @@ export const EN: Readonly<Record<Phrase, string>> = {
   appearance_light: 'Light',
   appearance_dark: 'Dark',
   appearance_auto: 'Auto',
+  arrival: 'Arrival',
+  not_enough_to_say_yet: 'Not enough to say yet',
+  estimated: 'Estimated',
+  to_go: 'to go',
+  no_signal_stretches: 'with no signal, marked in grey',
+  day_sunday: 'Sunday',
+  day_monday: 'Monday',
+  day_tuesday: 'Tuesday',
+  day_wednesday: 'Wednesday',
+  day_thursday: 'Thursday',
+  day_friday: 'Friday',
+  day_saturday: 'Saturday',
+  next: "Next",
+  everything_released: "Everything has been released.",
+  condition_advance: "The truck reached the depot and loading started.",
+  condition_in_transit: "The trip has been moving with positions arriving for six hours.",
+  condition_delivered: "Proof of delivery captured: photographs, a signature and a name.",
+  condition_retention: "Seven days after delivery with no exception raised.",
+  on_loading: "On loading",
+  on_delivery: "On delivery",
+  held_back: "Held back",
+  agreed_fare: "Agreed fare",
+  demurrage: "Demurrage",
+  commission: "Backhaul commission",
+  advance_paid: "Advance already paid",
+  due_to_carrier: "Due to carrier",
+  now: "now",
+  no_usable_positions_yet: "No usable positions yet.",
+  usable: "usable.",
+  dropped_imprecise: "the phone could not say where it was",
+  dropped_out_of_order: "dated before the position before it",
+  dropped_jump: "a jump no truck could make",
+  deviation_note: "Measured as distance to the destination, not as distance from a line. The Lagos–Kano road is up to 90 km off that line for hours, and an alarm on every correct trip is an alarm nobody reads.",
+  waiting_note: "the part a demurrage claim is made of. Time at the weighbridge is not counted.",
+  still_ahead_note: "still ahead. Arrival is measured against each place’s own radius, not one distance for the whole trip.",
+  every_point_reached: "Every point on the route was reached.",
+  pace_note: "Door to door, including every stop. Not the speedometer — a trailer that cruises at 80 and spends nine hours at checkpoints makes about 35 over the day, and it is the second number an arrival is built from.",
+  stops_note: "stopped in total. This is what a demurrage claim is made of.",
+  stops_overline: "Stops",
+  pace_over_the_trip: "Pace over the trip",
+  peak: "peak",
+  shaded_no_signal: "Shaded where there was no signal",
+  positions_all_usable: "positions, all of them usable.",
+  positions: "positions",
   settings: 'Settings',
 } as const;
 
@@ -572,6 +660,50 @@ export const HA: Readonly<Record<Phrase, string>> = {
   appearance_light: 'Haske',
   appearance_dark: 'Duhu',
   appearance_auto: 'Kai tsaye',
+  arrival: 'Isowa',
+  not_enough_to_say_yet: 'Bayanai ba su isa a faɗi ba tukuna',
+  estimated: 'Ƙiyasi',
+  to_go: 'suka rage',
+  no_signal_stretches: 'ba tare da sigina ba, an nuna su da launin toka',
+  day_sunday: 'Lahadi',
+  day_monday: 'Litinin',
+  day_tuesday: 'Talata',
+  day_wednesday: 'Laraba',
+  day_thursday: 'Alhamis',
+  day_friday: 'Jumaʼa',
+  day_saturday: 'Asabar',
+  next: "Na gaba",
+  everything_released: "An saki kuɗin gaba ɗaya.",
+  condition_advance: "Motar ta isa ma’ajiyar kuma an fara ɗaukar kaya.",
+  condition_in_transit: "Tafiyar tana ci gaba, wurare kuma suna zuwa har sa’o’i shida.",
+  condition_delivered: "An ɗauki tabbacin isar da kaya: hotuna, sa hannu da suna.",
+  condition_retention: "Kwana bakwai bayan isar da kaya ba tare da wani ƙorafi ba.",
+  on_loading: "Lokacin ɗaukar kaya",
+  on_delivery: "Lokacin isar da kaya",
+  held_back: "An riƙe",
+  agreed_fare: "Kuɗin da aka amince",
+  demurrage: "Kuɗin jinkiri",
+  commission: "Kwamitin Backhaul",
+  advance_paid: "Kuɗin gaba da aka riga aka biya",
+  due_to_carrier: "Abin da ya kamata a biya mai jigilar",
+  now: "yanzu",
+  no_usable_positions_yet: "Babu wurin da za a iya amfani da shi tukuna.",
+  usable: "ana iya amfani da su.",
+  dropped_imprecise: "wayar ba ta iya faɗin inda take ba",
+  dropped_out_of_order: "kwanan wata ya gabaci wurin da ya zo gabansa",
+  dropped_jump: "tsalle da babu motar da za ta iya yi",
+  deviation_note: "An auna shi da nisan da ya rage zuwa inda za a je, ba da nisansa daga layi miƙaƙƙe ba. Hanyar Legas zuwa Kano na iya yin nisan kilomita 90 daga wannan layi na sa’o’i, kuma ƙara da ke kara a kowace tafiya daidai ƙara ce da ba a karanta.",
+  waiting_note: "shi ne abin da ake yin buƙatar kuɗin jinkiri da shi. Ba a ƙirga lokacin ma’aunin nauyi.",
+  still_ahead_note: "sun rage. Ana auna isowa da faɗin kowane wuri na kansa, ba da nisa ɗaya ga dukan tafiyar ba.",
+  every_point_reached: "An isa kowane wuri da ke kan hanyar.",
+  pace_note: "Daga ƙofa zuwa ƙofa, tare da kowane tsayawa. Ba mizanin gudu ba — mota mai tafiya 80 da ke ƙarasa sa’o’i tara a shingayen bincike takan yi kusan 35 a ranar, kuma lamba ta biyu ce ake gina isowa da ita.",
+  stops_note: "aka tsaya gaba ɗaya. Wannan ne ake yin buƙatar kuɗin jinkiri da shi.",
+  stops_overline: "Tsayawa",
+  pace_over_the_trip: "Gudun tafiya gaba ɗaya",
+  peak: "mafi girma",
+  shaded_no_signal: "An yi inuwa inda babu sigina",
+  positions_all_usable: "wurare, dukkansu ana iya amfani da su.",
+  positions: "wurare",
   settings: 'Saituna',
 } as const;
 
@@ -749,6 +881,50 @@ export const YO: Readonly<Record<Phrase, string>> = {
   appearance_light: 'Ìmọ́lẹ̀',
   appearance_dark: 'Òkùnkùn',
   appearance_auto: 'Fúnra rẹ̀',
+  arrival: 'Ìdé',
+  not_enough_to_say_yet: 'Kò tíì tó láti sọ',
+  estimated: 'Ìdíwọ̀n',
+  to_go: 'ló kù',
+  no_signal_stretches: 'láìsí sìgínàlì, a fi àwọ̀ eérú sàmì sí wọn',
+  day_sunday: 'Àìkú',
+  day_monday: 'Ajé',
+  day_tuesday: 'Ìsẹ́gun',
+  day_wednesday: 'Ọjọ́rú',
+  day_thursday: 'Ọjọ́bọ̀',
+  day_friday: 'Ẹtì',
+  day_saturday: 'Àbámẹ́ta',
+  next: "Ìtẹ̀lé",
+  everything_released: "A ti tú gbogbo owó náà sílẹ̀.",
+  condition_advance: "Ọkọ̀ náà dé ilé ìtọ́jú ẹrù, ìkó ẹrù sì bẹ̀rẹ̀.",
+  condition_in_transit: "Ìrìn náà ń lọ, àwọn ibi tí a kọ sílẹ̀ sì ń dé fún wákàtí mẹ́fà.",
+  condition_delivered: "A ti kó ẹ̀rí ìfiránṣẹ́: àwòrán, ìfọwọ́sí àti orúkọ.",
+  condition_retention: "Ọjọ́ méje lẹ́yìn ìfiránṣẹ́ láìsí ẹ̀sùn kankan.",
+  on_loading: "Nígbà ìkó ẹrù",
+  on_delivery: "Nígbà ìfiránṣẹ́",
+  held_back: "A dá dúró",
+  agreed_fare: "Owó tí a fọwọ́sí",
+  demurrage: "Owó ìdúró",
+  commission: "Owó iṣẹ́ Backhaul",
+  advance_paid: "Owó ìtẹ̀síwájú tí a ti san",
+  due_to_carrier: "Ohun tí ó tọ́ sí ẹni tí ń gbé ẹrù",
+  now: "báyìí",
+  no_usable_positions_yet: "Kò tíì sí ibi tí a lè lò.",
+  usable: "ṣeé lò.",
+  dropped_imprecise: "fóònù kò lè sọ ibi tí ó wà",
+  dropped_out_of_order: "ọjọ́ rẹ̀ ṣáájú ibi tó wà ṣáájú rẹ̀",
+  dropped_jump: "ìfòfò tí kò sí ọkọ̀ tó lè ṣe",
+  deviation_note: "Àyèwò rẹ̀ ni ìjìnnà tí ó kù sí ibi tí ó ń lọ, kì í ṣe ìjìnnà rẹ̀ sí ìlà tó tọ́. Ọ̀nà Léégọ̀s sí Kànò lè jìnnà kílómítà 90 sí ìlà yìí fún àwọn wákàtí, àti pé ìkìlọ̀ tó ń dún ní gbogbo ìrìn tó tọ́ jẹ́ ìkìlọ̀ tí kò sí ẹni tó ń kà.",
+  waiting_note: "ìyẹn ni ohun tí a fi ń bèèrè owó ìdúró. A kò ka àkókò tí a lò ní ibi ìwọ̀n.",
+  still_ahead_note: "ló kù sí iwájú. A ń wọn ìdé pẹ̀lú ìwọ̀n ilẹ̀ tí ibi kọ̀ọ̀kan ní, kì í ṣe ìjìnnà kan fún gbogbo ìrìn náà.",
+  every_point_reached: "A dé gbogbo ibi tí ó wà lórí ọ̀nà náà.",
+  pace_note: "Láti ọ̀nà dé ọ̀nà, pẹ̀lú gbogbo ìdúró. Kì í ṣe ìwọ̀n eré ọkọ̀ — ọkọ̀ tó ń sáré 80 tó sì ń lo wákàtí mẹ́sàn-án ní ibi àyẹ̀wò á ṣe nǹkan bí 35 ní ọjọ́ náà, òun ni nọ́mbà kejì tí a fi ń kọ ìdé.",
+  stops_note: "ni gbogbo ìdúró papọ̀. Ìyẹn ni ohun tí a fi ń bèèrè owó ìdúró.",
+  stops_overline: "Ìdúró",
+  pace_over_the_trip: "Eré ìrìn náà lápapọ̀",
+  peak: "ó ga jùlọ",
+  shaded_no_signal: "A fi àwọ̀ ṣàmì sí ibi tí kò ti sí sìgínàlì",
+  positions_all_usable: "ibi tí a kọ sílẹ̀, gbogbo wọn ṣeé lò.",
+  positions: "ibi tí a kọ sílẹ̀",
   settings: 'Ètò',
 } as const;
 
@@ -924,6 +1100,50 @@ export const IG: Readonly<Record<Phrase, string>> = {
   appearance_light: 'Ìhè',
   appearance_dark: 'Ọchịchịrị',
   appearance_auto: 'Onwe ya',
+  arrival: 'Nrute',
+  not_enough_to_say_yet: 'Ozi ezughị ikwu ya ugbu a',
+  estimated: 'Atụmatụ',
+  to_go: 'fọdụrụ',
+  no_signal_stretches: 'na-enweghị signal, e ji ntụ ntụ akara ha',
+  day_sunday: 'Ụbọchị Ụka',
+  day_monday: 'Mọnde',
+  day_tuesday: 'Tiuzdee',
+  day_wednesday: 'Wenezdee',
+  day_thursday: 'Tọọzdee',
+  day_friday: 'Fraịdee',
+  day_saturday: 'Satọdee',
+  next: "Nke ọzọ",
+  everything_released: "A hapụla ego ahụ dum.",
+  condition_advance: "Ụgbọ ahụ rutere n’ụlọ nchekwa, ibubata ibu amalitekwala.",
+  condition_in_transit: "Njem ahụ na-aga, ebe ndị e dekọrọ na-abịakwa ruo awa isii.",
+  condition_delivered: "E jidere ihe àmà nnyefe: foto, mbinye aka na aha.",
+  condition_retention: "Ụbọchị asaa mgbe e nyefechara ya na-enweghị mkpesa ọ bụla.",
+  on_loading: "Mgbe a na-ebu ibu",
+  on_delivery: "Mgbe e nyefere ya",
+  held_back: "E jidere ya",
+  agreed_fare: "Ụgwọ e kwetara",
+  demurrage: "Ụgwọ oge nchere",
+  commission: "Ọrụ Backhaul",
+  advance_paid: "Ego e buru ụzọ kwụọ",
+  due_to_carrier: "Ihe ruru onye na-ebu ibu",
+  now: "ugbu a",
+  no_usable_positions_yet: "Enwebeghị ebe e nwere ike iji ya mee ihe.",
+  usable: "e nwere ike iji ha mee ihe.",
+  dropped_imprecise: "ekwentị enweghị ike ịkọ ebe ọ nọ",
+  dropped_out_of_order: "ụbọchị ya buru ebe bu ya ụzọ",
+  dropped_jump: "ịwụli nke ọ dịghị ụgbọ nwere ike ime",
+  deviation_note: "A na-atụ ya dịka ebe fọdụrụ ruo ebe ọ na-aga, ọ bụghị ka ọ dị anya site n’ahịrị kwụ ọtọ. Ụzọ Legos ruo Kano nwere ike ịdị kilomita 90 site n’ahịrị ahụ ruo ọtụtụ awa, mkpu a na-akụ na njem ọ bụla ziri ezi bụ mkpu ọ dịghị onye na-anụ.",
+  waiting_note: "nke ahụ bụ ihe e ji arịọ ụgwọ oge nchere. A naghị agụta oge nọ n’ebe a na-atụ arọ.",
+  still_ahead_note: "ka fọdụrụ n’ihu. A na-atụ nrute site n’obosara nke ebe ọ bụla, ọ bụghị otu ebe dị anya maka njem dum.",
+  every_point_reached: "E rutere ebe niile dị n’ụzọ ahụ.",
+  pace_note: "Site n’ọnụ ụzọ ruo ọnụ ụzọ, tinyere nkwụsị ọ bụla. Ọ bụghị ihe nlele ọsọ — ụgbọ na-aga 80 nke na-anọ awa itoolu n’ebe nlele na-eme ihe dịka 35 n’ụbọchị ahụ, ọ bụ nọmba nke abụọ ka e ji ewu nrute.",
+  stops_note: "ka a kwụsịrị n’ọnụ ọgụgụ. Nke a bụ ihe e ji arịọ ụgwọ oge nchere.",
+  stops_overline: "Nkwụsị",
+  pace_over_the_trip: "Ọsọ njem ahụ n’ozuzu",
+  peak: "kacha elu",
+  shaded_no_signal: "E ji ntụ ntụ akara ebe signal na-adịghị",
+  positions_all_usable: "ebe e dekọrọ, e nwere ike iji ha niile.",
+  positions: "ebe e dekọrọ",
   settings: 'Ntọala',
 } as const;
 
