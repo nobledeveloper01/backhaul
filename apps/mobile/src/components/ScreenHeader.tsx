@@ -49,7 +49,18 @@ export function ScreenHeader({ title, onBack }: Props) {
             </Text>
           </Pressable>
         ) : null}
-        <Text variant="title" numberOfLines={1} style={styles.title}>
+        {/*
+          Two lines and a capped scale, rather than one line and an ellipsis.
+          At the largest accessibility size "Lagos → Kano" truncated to
+          "Lagos →…", which loses the destination — the single most useful word
+          on the screen. Capping the growth keeps the whole route legible.
+        */}
+        <Text
+          variant="title"
+          numberOfLines={2}
+          maxFontSizeMultiplier={1.4}
+          style={styles.title}
+        >
           {title}
         </Text>
       </View>

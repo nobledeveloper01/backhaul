@@ -48,7 +48,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   however they were written down. An empty result says which condition to relax.
 - **Multi-leg chaining.** Return runs strung two and three legs deep, refusing
   any leg that would need more than 120 km of empty repositioning or a
-  connection the truck could not physically make.
+  connection the truck could not physically make. The loads it passed over are
+  shown too, each with the reason — a proposal you cannot argue with is a
+  proposal nobody acts on.
+- **Every one of the above now has a screen**, on the face that needs it: the
+  shipper shares and reads the thread, the carrier sees verification and the
+  chain, the driver reports and hands over. Switching tabs keeps your place, and
+  tapping the tab you are already on takes you back to the top of it.
 
 - **Trip lifecycle.** A trip moves through an explicit set of states — open,
   assigned, loading, in transit, arrived, delivered — with signal loss and
@@ -151,6 +157,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   arrived.
 - On screens without a header, content scrolled under the status bar with
   nothing behind it, printing the summary line through the clock.
+- A twenty-minute wait at a depot was shown as "0.3 hours", and the summary
+  under it named a place the truck had not reached.
+- A truck was flagged as late while "arriving between 03:08 and 03:08" — both
+  times correct, neither carrying the day it fell on. Times on the fleet screen
+  now say today, tomorrow or the date, and a range with no width reads as a
+  single time.
+- A cargo report said "nothing else changes" while putting the trip under
+  dispute.
+- Trip histories showed a driver posting their own cargo, and an owner-driver's
+  name printed twice.
+- The chain proposal explained a rejected load against the wrong leg of the
+  chain, refusing a load in the town the truck was standing in.
+- At the largest accessibility text size the trip header lost its destination
+  to an ellipsis, the three trip actions read "Sh…", "M…" and "Re…", and the
+  corridor's own labels broke across three lines.
 
 ### Notes
 

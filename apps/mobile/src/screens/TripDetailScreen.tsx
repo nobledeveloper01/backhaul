@@ -340,7 +340,17 @@ function Action({
           </View>
         ) : null}
       </View>
-      <Text variant="label" numberOfLines={1} style={{ color: primary ? colours.onAccent : colours.textPrimary }}>
+      {/*
+        Two lines and a cap. One line uncapped truncated all three to "Sh…",
+        "M…" and "Re…" at the largest text size — three buttons that no longer
+        said what they did.
+      */}
+      <Text
+        variant="label"
+        numberOfLines={2}
+        maxFontSizeMultiplier={1.5}
+        style={{ textAlign: 'center', color: primary ? colours.onAccent : colours.textPrimary }}
+      >
         {label}
       </Text>
     </Press>

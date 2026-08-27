@@ -138,7 +138,9 @@ export function TripsScreen({ onOpen }: Props) {
             <SearchField
               value={filter.text}
               onChange={(text) => setFilter((was) => ({ ...was, text }))}
-              placeholder="Plate, driver, cargo, town"
+              // Three words, not four: at the largest text size the longer
+              // version ran off the right edge of the field.
+              placeholder="Plate, town, cargo"
               accessibilityLabel="Search trips"
             />
 

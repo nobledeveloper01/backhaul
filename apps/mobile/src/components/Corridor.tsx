@@ -79,15 +79,26 @@ export function Corridor({ origin, destination, track, originName, destinationNa
 
       <View style={styles.ends}>
         <View style={styles.end}>
-          <Text variant="label" tone="secondary">{originName}</Text>
+          {/*
+            Capped. These three sit in one row under the bar, and at the
+            largest accessibility size they broke "Lagos" across two lines and
+            "764 of 841 km" across three. The same figures are spelled out at
+            full size in the distance card below, so nothing is lost by holding
+            the axis labels down.
+          */}
+          <Text variant="label" tone="secondary" maxFontSizeMultiplier={1.4}>
+            {originName}
+          </Text>
         </View>
         <View style={styles.middle}>
-          <Text variant="label" tone="secondary" tabular>
+          <Text variant="label" tone="secondary" tabular maxFontSizeMultiplier={1.4}>
             {Math.round(travelled / 1000)} of {Math.round(total / 1000)} km
           </Text>
         </View>
         <View style={styles.endRight}>
-          <Text variant="label" tone="secondary">{destinationName}</Text>
+          <Text variant="label" tone="secondary" maxFontSizeMultiplier={1.4}>
+            {destinationName}
+          </Text>
         </View>
       </View>
 

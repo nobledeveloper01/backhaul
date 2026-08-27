@@ -6,6 +6,101 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 (night) — Fifteen screens, and what looking at them found
+
+**Did.** Gave the fifteen features their surfaces: share links with scope,
+expiry and revocation; the public follow page the wedge depends on; a trip
+thread; waypoints and chargeable waiting on the trip; incident reporting at
+driver size; proof of delivery and the delivery note; post-trip reviews;
+verification and papers; load-board filters; and the three-leg chain proposal.
+
+Replaced the navigation while doing it. `App` was a `face` plus one boolean per
+screen — fine at four screens, a five-way `if` ladder at fifteen. It is now one
+stack per face (`nav/stack.ts`), so switching tabs keeps your place and tapping
+the tab you are on gets you out.
+
+### What surprised us
+
+**`Press` was silently swallowing every layout style it was given.** The
+animation has to be on the view carrying the background and the border, or a
+press scales the label and leaves the box behind — so the caller's `style` went
+on a *child* of the `Pressable`. Which meant `flex: 1` landed one level too
+deep: three buttons meant to share a row equally came out three different
+widths, sized by how long each word was. Lifting the layout properties onto the
+`Pressable` fixed it, and then broke it twice more:
+
+- adding `flexGrow: 1` to the inner view so it would fill turned a small dashed
+  pill into one the height of the screen;
+- leaving `width: '48%'` in *both* places applied it twice — 48% of 48% — and a
+  grid of six report buttons came out a fifth of the screen wide with every
+  label truncated.
+
+The working version destructures the layout props out of the style rather than
+copying them. Three visual bugs from one component's contract being unstated;
+it is now stated, in the file.
+
+**"0.3 hours".** A twenty-minute stop at the depot, rendered by
+`plural(ms / 3_600_000, 'hour')`. Nobody has ever said that out loud.
+`humanDuration` existed and was not being used. It said it twice — once on the
+waypoint row and once in the summary sentence under it.
+
+**A sentence naming a place the truck had never been.** "waiting at the depot
+and the market" was written flat, on a trip that had only reached the depot.
+The screen was inventing evidence for a demurrage claim.
+
+**"Due by 23:48; arriving between 03:08 and 03:08."** A truck flagged as late
+while arriving, apparently, five hours early. Both times were right and both
+were missing the day — the arrival was tomorrow. A bare clock is unambiguous
+only within one day, and nothing on a Lagos–Kano run is. Times on the fleet
+screen now carry today/tomorrow/the date, and a zero-width range says
+"arriving 03:08" rather than "between 03:08 and 03:08".
+
+**A cargo report that said nothing would change.** The incident screen
+explained the severity and stopped there, so a cargo report — which puts the
+trip under dispute — read as "recorded against the trip, nothing else changes".
+Severity and dispute are two different answers and the screen was only giving
+one.
+
+**"open · driver".** A driver posting their own cargo. `walk()` attributed
+every non-system event to the driver; shippers post loads and accept bids.
+
+**"Tunde Adeyemi · Tunde Adeyemi".** An owner-driver is one person, and most of
+this market is owner-drivers. Printing the name twice reads as a bug rather
+than as a one-truck business.
+
+**A chain proposal arguing against itself.** Rejected loads were compared with
+the *last* leg of the chain, so a load in Kano the truck was standing next to
+was refused with "841 km empty from Lagos to Kano" — the right arithmetic asked
+at the wrong point. Each rejected load is now tested against every leg taken,
+and says either which leg out-earned it or the shortest reposition that was
+still too far.
+
+**The 200% pass caught four things a test could not.** At the largest
+accessibility size the header truncated "Lagos → Kano" to "Lagos →…", losing
+the destination; the three trip actions became "Sh…", "M…", "Re…"; the corridor
+labels broke "764 of 841 km" across three lines; and the search placeholder ran
+off the edge. Capping growth on chrome — headers, axis labels, button labels —
+and letting body text grow uncapped is the trade that keeps a screen both
+scalable and legible.
+
+**Two accent cards is no accent card.** The load board had an accent-washed
+chain proposal directly above the accent-washed best-fit load. One primary per
+screen is a rule that only bites when you add the second thing months later.
+
+### Still open
+
+- **A share link still has no server route.** `sharing.ts` decides what a
+  holder may see and nothing serves it. The endpoint has to be
+  unauthenticated by design, which makes it the most exposed surface in the
+  product, and it should not be written casually.
+- **The README screenshots predate all fifteen screens.** `make screenshots`
+  regenerates them; the doc gate only blocks on *orphans*, so this is a warning
+  nobody would hit.
+- **None of this has been on an Android device**, let alone a Transsion one.
+  Phase 1's two hardware gates are still the long pole.
+
+---
+
 ## 2026-08-27 (later) — Fifteen more, phased before they were built
 
 **Did.** Specified fifteen further features and then split them across four
