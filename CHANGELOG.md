@@ -9,6 +9,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Course deviation, on the server.** A truck that has been getting further
+  from its destination for ninety minutes, while moving, is going somewhere
+  else — measured against the *closest* it has been inside that window, so a
+  turn cannot hide behind the progress that preceded it.
+
+  Not cross-track distance from a straight line. The Lagos–Kano road is up to
+  90 km off that line for hours, and an alarm on every correct trip is an alarm
+  nobody reads. When no route has been declared the answer is "there is nothing
+  to be off" rather than a reassuring tick, and a dead zone answers "too few
+  positions to say which way it is heading" rather than becoming an accusation.
+
 - **The dispute pack, assembled by the server.** Everything the product has
   been careful about, in one document in time order: the append-only history,
   the position runs and the intervals they cover, the message written in a dead

@@ -88,6 +88,7 @@ public sealed record ParityFixtures(
     MatchingFixtures Matching,
     ChainingFixtures Chaining,
     ConsolidationFixtures Consolidation,
+    DeviationFixtures Deviation,
     DisputeFixtures Dispute);
 
 public sealed record ParityConstants(
@@ -512,3 +513,22 @@ public sealed record EvidenceRow(
     DateTimeOffset? ReceivedAtIso,
     string Summary,
     string Source);
+
+public sealed record DeviationFixtures(
+    double DeviationM,
+    long WindowMs,
+    DateTimeOffset NowIso,
+    double DestinationLat,
+    double DestinationLon,
+    IReadOnlyList<DeviationRow> Cases);
+
+public sealed record DeviationRow(
+    string Name,
+    IReadOnlyList<DeviationFixRow> Fixes,
+    string Kind,
+    string? Detail,
+    double? FurtherM,
+    long? SinceMs);
+
+
+public sealed record DeviationFixRow(double Lat, double Lon, DateTimeOffset AtIso);

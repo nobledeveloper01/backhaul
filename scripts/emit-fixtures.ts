@@ -107,6 +107,11 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  DEVIATION_M,
+  DEVIATION_WINDOW_MS,
+  deviation,
+} from '../packages/domain/src/deviation.ts';
+import {
   GAP_MS,
   LATE_AFTER_MS,
   MINIMUM_COVERED_MS,
@@ -1392,6 +1397,74 @@ const packCases = (
   };
 });
 
+// --- deviation -------------------------------------------------------------
+
+/**
+ * The engine that argued back.
+ *
+ * Written first as cross-track distance and thrown away: the Lagos–Kano road
+ * is up to 90 km off the straight line for hours, so that version fired on
+ * every trip that went the right way. These cases pin the replacement — how
+ * much further from the destination than the *closest* the truck has been
+ * inside the window.
+ */
+const DEV_NOW = new Date('2026-03-05T12:00:00.000Z');
+const devAt = (minutesAgo: number) => new Date(DEV_NOW.getTime() - minutesAgo * 60_000);
+
+const KADUNA = place(10.5222, 7.4383);
+
+/** A straight run of fixes between two points, evenly spaced in the window. */
+const runBetween = (
+  from: Position,
+  to: Position,
+  count: number,
+  fromMinutesAgo: number,
+  toMinutesAgo: number,
+): Position[] =>
+  Array.from({ length: count }, (_, i) => {
+    const t = count === 1 ? 0 : i / (count - 1);
+    return {
+      lat: from.lat + (to.lat - from.lat) * t,
+      lon: from.lon + (to.lon - from.lon) * t,
+      accuracy: 10,
+      at: devAt(fromMinutesAgo + (toMinutesAgo - fromMinutesAgo) * t),
+    };
+  });
+
+const deviationCases = (
+  [
+    ['closing on the destination', runBetween(IBADAN, KADUNA, 10, 85, 0)],
+    ['turned around and going back', runBetween(KADUNA, IBADAN, 10, 85, 0)],
+    ['no positions at all', []],
+    ['three fixes is a coverage gap, not a course', runBetween(KADUNA, IBADAN, 3, 85, 0)],
+    ['half the window is not enough of it', runBetween(KADUNA, IBADAN, 10, 30, 0)],
+    // Closed on the destination, then turned. Measuring from the window's
+    // first fix would let the turn hide behind the progress before it.
+    [
+      'closed then turned',
+      [
+        ...runBetween(IBADAN, KADUNA, 6, 85, 45),
+        ...runBetween(KADUNA, IBADAN, 6, 44, 0),
+      ],
+    ],
+  ] as const
+).map(([name, track]) => {
+  const verdict = deviation(track as readonly Position[], KANO, DEV_NOW);
+
+  return {
+    name,
+    fixes: (track as readonly Position[]).map((fix) => ({
+      lat: fix.lat,
+      lon: fix.lon,
+      atIso: iso(fix.at),
+    })),
+    kind: verdict.kind,
+    detail: verdict.kind === 'on_course' ? null : verdict.detail,
+    furtherM: verdict.kind === 'deviating' ? verdict.furtherM : null,
+    sinceMs: verdict.kind === 'deviating' ? verdict.sinceMs : null,
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1541,6 +1614,14 @@ const fixtures = {
     verdicts: shareCases,
     pairs: pairingCases,
   },
+  deviation: {
+    deviationM: DEVIATION_M,
+    windowMs: DEVIATION_WINDOW_MS,
+    nowIso: iso(DEV_NOW),
+    destinationLat: KANO.lat,
+    destinationLon: KANO.lon,
+    cases: deviationCases,
+  },
   dispute: {
     lateAfterMs: LATE_AFTER_MS,
     gapMs: GAP_MS,
@@ -1582,6 +1663,7 @@ process.stdout.write(
       `${fitCases.length} chain fits`,
       `${shareCases.length} pair verdicts`,
       `${packCases.length} dispute packs`,
+      `${deviationCases.length} deviation verdicts`,
     ].join(', ')
   }\n`,
 );

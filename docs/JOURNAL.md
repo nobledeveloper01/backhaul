@@ -6,6 +6,33 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-29 (evening) — Deviation, and a rename that went too far
+
+**Did.** `deviation.ts` mirrored, six parity cases and a route. 125 parity
+cases, 133 endpoint tests.
+
+The parity cases are named after the arguments the engine had with itself:
+"three fixes is a coverage gap, not a course", "closed then turned". The second
+is the one worth keeping — a truck that closed on the destination and then
+turned around has deviated by the amount it has given back, and measuring from
+the window's first fix would let the turn hide behind the progress before it.
+
+### What surprised us
+
+**A record name collided across two fixture groups, and the fix collided
+wider.** `FixRow` already existed for the tracking fixtures. Renaming the new
+one with a blind string replace changed all four declarations, including three
+that were fine — and the compiler caught it immediately, which is the only
+reason it is a footnote rather than an afternoon. Substituting on a type name
+is a search-and-replace that wants a line number, not a pattern.
+
+**The destination is a waypoint, not a field on the trip.** A trip carries
+`Origin` and `Destination` as *names* — "Lagos", "Kano" — because that is what
+a share page renders. There is no coordinate anywhere on the trip row, so the
+deviation route reads the declared route and takes the last waypoint marked as
+the destination. With no route it says there is nothing to be off, which is a
+better answer than inventing a coordinate from a place name.
+
 ## 2026-08-29 (later) — The pack, served
 
 **Did.** `dispute.ts` has a C# mirror, five parity cases and a route. The

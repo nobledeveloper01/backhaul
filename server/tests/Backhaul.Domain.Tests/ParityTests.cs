@@ -1104,4 +1104,53 @@ public sealed class ParityTests
         _ => throw new InvalidOperationException($"unknown weight '{wire}'"),
     };
 
+
+    // --- deviation ---------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_decide_the_same_way_whether_a_truck_is_off_course()
+    {
+        // This engine was written as cross-track distance first and thrown
+        // away: the Lagos–Kano road is up to 90 km off the straight line for
+        // hours, so that version fired on every trip that went the right way.
+        // The cases pin the replacement — progress against the *closest* the
+        // truck has been inside the window, not the first fix in it.
+        Assert.Equal(F.Deviation.DeviationM, Deviation.DeviationM);
+        Assert.Equal(F.Deviation.WindowMs, Deviation.DeviationWindowMs);
+
+        var destination = new Position(
+            F.Deviation.DestinationLat,
+            F.Deviation.DestinationLon,
+            10,
+            F.Deviation.NowIso);
+
+        foreach (var row in F.Deviation.Cases)
+        {
+            var track = row.Fixes
+                .Select(fix => new Position(fix.Lat, fix.Lon, 10, fix.AtIso))
+                .ToList();
+
+            var verdict = Deviation.Of(track, destination, F.Deviation.NowIso);
+
+            switch (verdict)
+            {
+                case DeviationVerdict.OnCourse:
+                    Assert.Equal("on_course", row.Kind);
+                    break;
+
+                case DeviationVerdict.Unknown unknown:
+                    Assert.Equal("unknown", row.Kind);
+                    Assert.Equal(row.Detail, unknown.Detail);
+                    break;
+
+                case DeviationVerdict.Deviating deviating:
+                    Assert.Equal("deviating", row.Kind);
+                    Assert.Equal(row.Detail, deviating.Detail);
+                    Assert.Equal(row.FurtherM, deviating.FurtherM);
+                    Assert.Equal(row.SinceMs, deviating.SinceMs);
+                    break;
+            }
+        }
+    }
+
 }
