@@ -15,6 +15,7 @@ import {
 
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
+import { Press } from '../components/Press';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -39,7 +40,7 @@ const at = (lat: number, lon: number, when: Date): Position => ({
  * reason rather than hidden: a carrier who cannot see why the 30-tonne load is
  * missing assumes the app is broken.
  */
-export function ReturnLoadsScreen() {
+export function ReturnLoadsScreen({ onPost }: { readonly onPost: () => void }) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
@@ -113,7 +114,23 @@ export function ReturnLoadsScreen() {
         { paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xxl },
       ]}
     >
-      <Text variant="headline">Loads going your way</Text>
+      <View style={styles.headerRow}>
+        <Text variant="headline" style={styles.flex}>
+          Loads going your way
+        </Text>
+        <Press
+          onPress={onPost}
+          accessibilityLabel="Post a load"
+          accessibilityHint="Opens it to bids from verified carriers"
+          feedback="opacity"
+          style={[styles.post, { borderColor: colours.accent }]}
+        >
+          <Icon name="package" size="sm" colour={colours.accent} />
+          <Text variant="label" tone="accent">
+            Post
+          </Text>
+        </Press>
+      </View>
       <View style={styles.lede}>
         <Icon name="truck" size="sm" colour={colours.textSecondary} />
         <Text variant="body" tone="secondary" style={styles.flex}>
@@ -236,6 +253,16 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, gap: space.md },
   flex: { flex: 1 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  post: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs + 2,
+    borderWidth: 1.5,
+    borderRadius: radius.pill,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
   lede: { flexDirection: 'row', gap: space.sm, marginBottom: space.xs },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.sm },
   route: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap' },

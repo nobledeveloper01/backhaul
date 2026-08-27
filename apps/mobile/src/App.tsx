@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from './components/Icon';
+import { OfflineBanner } from './components/OfflineBanner';
 import { Text } from './components/Text';
 import { ThemeProvider, useColours, useTheme } from './design/theme';
 import { radius, space, target } from './design/tokens';
 import { BidsScreen } from './screens/BidsScreen';
 import { DriverScreen } from './screens/DriverScreen';
+import { DriverHistoryScreen } from './screens/DriverHistoryScreen';
 import { FleetScreen } from './screens/FleetScreen';
+import { PostLoadScreen } from './screens/PostLoadScreen';
 import { ReturnLoadsScreen } from './screens/ReturnLoadsScreen';
 import { TripDetailScreen } from './screens/TripDetailScreen';
 import { TripsScreen } from './screens/TripsScreen';
@@ -34,6 +37,18 @@ function Shell() {
   const [face, setFace] = useState<Face>('shipper');
   const [open, setOpen] = useState<DemoTrip | null>(null);
   const [bidsOpen, setBidsOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  /**
+   * Connectivity, faked.
+   *
+   * Real connectivity needs `@react-native-community/netinfo`, another native
+   * dependency and another CocoaPods cycle. What matters for the design is
+   * that the offline state is *authored* — a driver spends hours in it — so it
+   * is wired to something a reviewer can toggle rather than left unbuilt.
+   */
+  const [online, setOnline] = useState(true);
 
   return (
     <View style={[styles.root, { backgroundColor: colours.surface }]}>
@@ -63,7 +78,13 @@ function Shell() {
             <TripDetailScreen trip={open} now={now} onBack={() => setOpen(null)} />
           )
         ) : null}
-        {face === 'loads' ? <ReturnLoadsScreen /> : null}
+        {face === 'loads' ? (
+          postOpen ? (
+            <PostLoadScreen onBack={() => setPostOpen(false)} />
+          ) : (
+            <ReturnLoadsScreen onPost={() => setPostOpen(true)} />
+          )
+        ) : null}
         {face === 'fleet' ? (
           bidsOpen ? (
             <BidsScreen onBack={() => setBidsOpen(false)} />
@@ -71,8 +92,25 @@ function Shell() {
             <FleetScreen onOpenBids={() => setBidsOpen(true)} />
           )
         ) : null}
-        {face === 'driver' ? <DriverScreen /> : null}
+        {face === 'driver' ? (
+          historyOpen ? (
+            <DriverHistoryScreen onBack={() => setHistoryOpen(false)} />
+          ) : (
+            <DriverScreen
+              online={online}
+              onToggleConnection={() => setOnline((was) => !was)}
+              onOpenHistory={() => setHistoryOpen(true)}
+            />
+          )
+        ) : null}
       </View>
+
+      {/*
+        In the layout, not over it. Absolutely positioned it covered whatever
+        card happened to be at the bottom of the screen — and being offline is
+        a fact about the whole app, so the app should make room for saying so.
+      */}
+      <OfflineBanner online={online} queued={18} />
 
       <View
         style={[
@@ -101,6 +139,8 @@ function Shell() {
               setFace(value);
               setOpen(null);
               setBidsOpen(false);
+              setPostOpen(false);
+              setHistoryOpen(false);
             }}
           />
         ))}

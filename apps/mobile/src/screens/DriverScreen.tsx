@@ -13,6 +13,7 @@ import {
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
+import { Press } from '../components/Press';
 import { Icon } from '../components/Icon';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
@@ -32,7 +33,13 @@ import { demoNow, demoTrips } from '../state/demo';
  * phone is doing something assumes the worst and force-quits — and a
  * force-quit trip is a trip with no evidence.
  */
-export function DriverScreen() {
+interface Props {
+  readonly online: boolean;
+  readonly onToggleConnection: () => void;
+  readonly onOpenHistory: () => void;
+}
+
+export function DriverScreen({ online, onToggleConnection, onOpenHistory }: Props) {
   const colours = useColours();
   const elevation = useElevation();
   const insets = useSafeAreaInsets();
@@ -51,7 +58,7 @@ export function DriverScreen() {
 
   // The same policy the native loop follows. Rendered so the driver can see
   // it rather than infer it.
-  const plan = decide({ speed: tracking ? 18 : 0, battery: 0.42, online: true, queued: 6 }, now);
+  const plan = decide({ speed: tracking ? 18 : 0, battery: 0.42, online, queued: 18 }, now);
 
   // Three exclusions, each for its own reason. `signal_lost` and `stalled` are
   // observations the tracker raises — asking a driver to tap "signal lost" is
@@ -136,6 +143,23 @@ export function DriverScreen() {
         </Text>
       </View>
 
+      {/*
+        A way to see the offline state without waiting for a dead zone. In the
+        product this is the OS telling us; here it is a control, because an
+        offline state nobody can reach is an offline state nobody authored.
+      */}
+      <Press
+        onPress={onToggleConnection}
+        accessibilityLabel={online ? 'Simulate losing signal' : 'Simulate regaining signal'}
+        feedback="opacity"
+        style={[styles.link, { borderColor: colours.outline }]}
+      >
+        <Icon name={online ? 'signal' : 'signal-off'} size="sm" colour={colours.textSecondary} />
+        <Text variant="label" tone="secondary" style={styles.flex}>
+          {online ? 'Signal is good — tap to simulate losing it' : 'Offline — tap to restore signal'}
+        </Text>
+      </Press>
+
       {tracking ? (
         <Card overline="Battery" icon="battery">
           <Text variant="bodyDriver">
@@ -158,6 +182,19 @@ export function DriverScreen() {
           </Text>
         </View>
       ) : null}
+
+      <Press
+        onPress={onOpenHistory}
+        accessibilityLabel="Your past trips and earnings"
+        feedback="opacity"
+        style={[styles.link, { borderColor: colours.outline }]}
+      >
+        <Icon name="naira" size="sm" colour={colours.textSecondary} />
+        <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
+          Your trips and what they paid
+        </Text>
+        <Icon name="chevron-right" size="sm" colour={colours.textSecondary} />
+      </Press>
 
       {next.length > 0 ? (
         <View style={styles.actions}>
@@ -253,6 +290,16 @@ const styles = StyleSheet.create({
     padding: space.lg,
     borderRadius: radius.lg,
     borderWidth: 2,
+  },
+  link: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: radius.lg,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    minHeight: target.standard,
   },
   actions: { gap: space.md },
   action: {

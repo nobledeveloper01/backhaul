@@ -54,6 +54,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A fleet screen.** Utilisation — the share of kilometres that were paid for
+  — and what one more loaded return leg would be worth at the fleet's own
+  realised rate. Plus what needs a person, derived from the tracking rather
+  than from a flag somebody set.
+- **Bid ranking, on screen.** Price, record and proximity, with the record
+  beside the price so a shipper can overrule the order. A new carrier ranks as
+  unknown, not as bad.
+- **Posting a load**, with the indicative range updating as you type and the
+  truck class derived from the weight rather than chosen.
+- **Stops.** Every stop on a trip, with its duration and how many positions it
+  is made of — what a demurrage claim is actually made of.
+- **A pace chart**, door to door, with the stretches that had no signal drawn
+  as gaps rather than interpolated across.
+- **A driver's own record**: past trips, what they paid, and which arrived on
+  time — the same figures a shipper sees.
+- **An offline banner** that says nothing is being lost, because that is the
+  only question a driver has when the bars go.
 - **Store-and-forward for positions.** A fix leaves the phone only when the
   server has acknowledged that exact fix — not when a batch was sent, not when
   a response arrived, and not when a batch containing it was acknowledged in

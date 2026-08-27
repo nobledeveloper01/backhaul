@@ -57,10 +57,10 @@ physical Transsion handset and no simulation stands in for them.
 
 | | |
 |---|---|
-| Domain tests | **157** passing |
+| Domain tests | **176** passing |
 | Server parity cases | **106** passing |
 | Server endpoint tests | **16** passing |
-| App tests | **32** passing |
+| App tests | **33** passing |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Screens | shipper, carrier and driver faces, both themes, iOS and Android |
 | Authentication | bearer tokens; authorisation filtered at the query layer |
@@ -87,6 +87,9 @@ fails if the rule stays quiet.
 | `pricing.ts` | Indicative rates, demurrage, settlement |
 | `eta.ts` | An arrival window, or a refusal with a reason |
 | `matching.ts` | Which load a carrier should take, and whose bid a shipper should accept |
+| `queue.ts` | What may be deleted from the phone, and when |
+| `stops.ts` | Every stop on a trip, and how long it lasted |
+| `utilisation.ts` | How much of a fleet's driving was paid for |
 
 ### `apps/mobile` — React Native 0.87, New Architecture
 
