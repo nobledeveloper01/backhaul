@@ -116,6 +116,18 @@ export interface SignedIn {
 }
 
 /** A link, as its issuer sees it. Never carries the token. */
+/**
+ * A link on a trip, as the list gives it.
+ *
+ * The timestamps are strings here and `Date` almost everywhere else, and that
+ * is a wart rather than a decision: these two types predate the rest and the
+ * screens that read them parse where they use them. Worth unifying the day
+ * something else needs them.
+ *
+ * There is no token. A token is shown once, at issue, and is never retrievable
+ * — so revoking works from the `id`, and a list that carried tokens would be a
+ * list that leaks every link on the trip to whoever opens the screen.
+ */
 export interface ShareLinkView {
   readonly id: string;
   readonly scope: ShareScope;

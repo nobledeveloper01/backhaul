@@ -19,6 +19,9 @@ import { Text } from '../components/Text';
 import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoShareLinks } from '../state/product';
 
@@ -46,8 +49,37 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
   const now = useMemo(demoNow, []);
   const { t } = useLanguage();
 
+  const { api } = useSession();
   const [scope, setScope] = useState<ShareScope>('position');
-  const [links, setLinks] = useState<readonly ShareLink[]>(() => demoShareLinks(trip, now));
+
+  /*
+    The list carries no tokens, and that is the design rather than an omission.
+
+    A token is shown once, at the moment it is issued, and is never retrievable
+    — so a link is revoked by its id. A list that carried tokens would hand
+    every link on the trip to whoever opened this screen, which is exactly what
+    a capability must not do. See ADR-0010.
+  */
+  const { query, refresh } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.shareLinks(trip.id), (rows) =>
+        rows.map<ShareLink>((row) => ({
+          // The id stands in for the token everywhere this screen needs a key.
+          token: row.id,
+          tripId: trip.id,
+          scope: row.scope,
+          issuedAt: new Date(row.issuedAt),
+          expiresAt: new Date(row.expiresAt),
+          revokedAt: row.revokedAt === null ? null : new Date(row.revokedAt),
+          label: row.label,
+        })),
+      ),
+    () => demoShareLinks(trip, now),
+    [api, trip.id, now],
+  );
+
+  const links = query.state === 'ready' ? query.value : [];
 
   const visible = visibleUnder(scope);
 
@@ -58,10 +90,12 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
     url: 'bkhl.ng/t/9f3a2b1c',
   });
 
-  const revoke = (token: string) => {
-    setLinks((was) =>
-      was.map((link) => (link.token === token ? { ...link, revokedAt: now } : link)),
-    );
+  const revoke = (id: string) => {
+    if (!trip.live) {
+      refresh();
+      return;
+    }
+    void api.revokeShare(trip.id, id).then(() => refresh());
   };
 
   return (

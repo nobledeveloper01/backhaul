@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -9,6 +9,7 @@ import {
   seal,
   settlesDespite,
   type Delivery,
+  type ExceptionKind,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -19,6 +20,10 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { newId } from '../state/ids';
+import { map } from '../api/client';
 import { EXCEPTION_WORDS } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDelivery, demoWaypoints } from '../state/product';
@@ -58,11 +63,75 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
     [trip],
   );
 
-  const [delivery, setDelivery] = useState<Delivery>({
+  const { api } = useSession();
+
+  /*
+    The draft lives on the server, not in this component.
+
+    A delivery is captured at a gate on a phone that may be closed, killed by
+    the OEM, or out of battery before the driver reaches the office. Holding
+    the photographs and the signature in `useState` means a delivery that
+    vanishes when the app does — which is the one piece of evidence the whole
+    product is built to keep.
+  */
+  const { query, refresh } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.delivery(trip.id), (view) =>
+        view === null
+          ? { ...captured, photoIds: [], signature: null }
+          : {
+              tripId: trip.id,
+              at: view.at,
+              photoIds: view.photoIds,
+              signature:
+                view.signatureName === null
+                  ? null
+                  : {
+                      name: view.signatureName,
+                      role: view.signatureRole ?? '',
+                      // The strokes are an opaque blob the domain never looks
+                      // inside, and the list route does not send its id.
+                      imageId: '',
+                    },
+              capturedAt: captured.capturedAt,
+              note: view.note,
+              exception:
+                view.exceptionKind === null
+                  ? null
+                  : {
+                      kind: view.exceptionKind as ExceptionKind,
+                      quantity: view.exceptionQuantity,
+                      note: view.exceptionNote ?? '',
+                      photoIds: [],
+                    },
+            },
+      ),
+    () => ({ ...captured, photoIds: [], signature: null }),
+    [api, trip.id, captured],
+  );
+
+  const delivery: Delivery = query.state === 'ready' ? query.value : {
     ...captured,
     photoIds: [],
     signature: null,
-  });
+  };
+
+  /** Saves the draft and re-reads it, so the screen shows what the server holds. */
+  const save = (next: Delivery) => {
+    if (!trip.live) return;
+
+    void api
+      .saveDelivery(trip.id, {
+        at: next.at,
+        photoIds: next.photoIds,
+        signatureName: next.signature?.name ?? null,
+        signatureRole: next.signature?.role ?? null,
+        signatureImageId: next.signature?.imageId ?? null,
+        note: next.note,
+      })
+      .then(() => refresh());
+  };
 
   const sealed = seal(delivery);
   const away = capturedNear(delivery, destination);
@@ -102,10 +171,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
           <View style={styles.capture}>
             <Press
               onPress={() =>
-                setDelivery((was) => ({
-                  ...was,
-                  photoIds: [...was.photoIds, `p${was.photoIds.length + 1}`],
-                }))
+                save({ ...delivery, photoIds: [...delivery.photoIds, newId()] })
               }
               accessibilityLabel={t('take_photo')}
               style={[styles.tile, { borderColor: colours.outline }]}
@@ -117,9 +183,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
             </Press>
 
             <Press
-              onPress={() =>
-                setDelivery((was) => ({ ...was, signature: captured.signature }))
-              }
+              onPress={() => save({ ...delivery, signature: captured.signature })}
               accessibilityLabel={t('ask_for_signature')}
               style={[styles.tile, { borderColor: colours.outline }]}
             >

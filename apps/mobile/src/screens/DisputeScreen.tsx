@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { isThin, type Weight } from '@backhaul/domain';
+import { isThin, type Evidence, type Pack, type Weight } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
@@ -11,6 +11,9 @@ import { humanDuration } from '../components/PositionAge';
 import { mono, radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { whatThePackHolds } from '../state/words';
 import type { Words } from '../components/PositionAge';
 import { demoNow, type DemoTrip } from '../state/demo';
@@ -39,13 +42,61 @@ const day = (at: Date) =>
  * **It takes no side.** No summary, no fault, no "the evidence suggests". Each
  * item says how it got here and the humans do the rest.
  */
+/** What a pack looks like before one has arrived. Not a pack with nothing in
+ * it — a pack that has not been read yet, which the screen says out loud. */
+const EMPTY_PACK: Pack = {
+  tripId: '',
+  assembledAt: new Date(0),
+  items: [],
+  counts: { measured: 0, attested: 0, late_attested: 0 },
+  gaps: [],
+  coveredMs: 0,
+};
+
 export function DisputeScreen({ trip, onBack }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
-  const pack = useMemo(() => demoDispute(trip, now), [trip, now]);
+  const { api } = useSession();
+
+  /*
+    The pack is assembled on the server, and that is the point.
+
+    It reads six tables — the append-only history, the position runs, the
+    thread, the incidents, the sealed proof, the share links — and this phone
+    holds at most a slice of any of them. A pack assembled from what one device
+    happens to have cached is a pack that is missing whatever it missed.
+  */
+  const { query } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.disputePack(trip.id), (view) => ({
+        tripId: view.tripId,
+        assembledAt: view.assembledAt,
+        items: view.items.map((item) => ({
+          kind: item.kind as Evidence['kind'],
+          at: item.at,
+          ...(item.until === null ? {} : { until: item.until }),
+          receivedAt: item.receivedAt,
+          summary: item.summary,
+          source: item.source as Evidence['source'],
+          weight: item.weight as Weight,
+        })),
+        counts: {
+          measured: view.measured,
+          attested: view.attested,
+          late_attested: view.lateAttested,
+        },
+        gaps: view.gaps,
+        coveredMs: view.coveredMs,
+      })),
+    () => demoDispute(trip, now),
+    [api, trip.id, now],
+  );
+
+  const pack = query.state === 'ready' ? query.value : EMPTY_PACK;
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -54,6 +105,12 @@ export function DisputeScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
+        {query.state !== 'ready' ? (
+          <Text variant="body" tone="stale" style={styles.gapTight}>
+            {query.state === 'loading' ? t('loading_state') : t('could_not_load')}
+          </Text>
+        ) : null}
+
         <Card emphasis="accent" overline={t('the_pack')} icon="document">
           <Text variant="title">{whatThePackHolds(
               pack.items.length,
@@ -71,9 +128,9 @@ export function DisputeScreen({ trip, onBack }: Props) {
               colour={colours.moving}
             />
             <Count
-              label="Reported"
+              label={t('reported_word')}
               value={pack.counts.attested}
-              detail="by a person"
+              detail={t('by_a_person')}
               colour={colours.accent}
             />
             {/*

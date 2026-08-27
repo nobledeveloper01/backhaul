@@ -224,6 +224,7 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'by_a_person'
   | 'sending_the_report'
   | 'report_not_sent'
   | 'could_not_load'
@@ -690,6 +691,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  by_a_person: "by a person",
   sending_the_report: "Sending…",
   report_not_sent: "Not sent. It is saved here — try again.",
   could_not_load: "Could not load this",
@@ -1156,6 +1158,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  by_a_person: "daga mutum",
   sending_the_report: "Ana aikawa…",
   report_not_sent: "Ba a aika ba. An ajiye shi a nan — ka sake gwadawa.",
   could_not_load: "Ba a iya ɗauko wannan ba",
@@ -1627,6 +1630,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  by_a_person: "láti ọwọ́ ènìyàn",
   sending_the_report: "À ń fi ránṣẹ́…",
   report_not_sent: "A kò fi ránṣẹ́. A tọ́jú rẹ̀ síbí — tún gbìyànjú.",
   could_not_load: "A kò lè mú èyí wá",
@@ -2096,6 +2100,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  by_a_person: "site n’aka mmadụ",
   sending_the_report: "Na-eziga…",
   report_not_sent: "E zipụghị ya. E chekwara ya ebe a — nwaa ọzọ.",
   could_not_load: "Enweghị ike ibubata nke a",
