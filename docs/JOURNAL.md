@@ -6,6 +6,83 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 (later) — Fifteen more, phased before they were built
+
+**Did.** Specified fifteen further features and then split them across four
+phases before writing a line of screen code. Nine new domain engines, all pure
+and all tested ahead of the surfaces that will use them: `sharing.ts` (scoped,
+expiring, revocable tracking links), `waypoints.ts` (geofenced arrival and
+chargeable waiting), `trust.ts` (verification tiers), `messages.ts` (a thread
+attached to the trip), `incidents.ts` (reports from the road), `pod.ts` (proof
+of delivery), `ratings.ts` (post-trip reviews), `search.ts` (trip and load
+filtering) and `chaining.ts` (multi-leg return runs). The domain suite went from
+177 tests to 317.
+
+The phasing is in `docs/ROADMAP.md` under *The next fifteen*. Three features
+moved **forward** — shareable links, reverse discovery and multi-leg chaining,
+all previously parked in phases 6 and 7 — because each turned out to be
+load-bearing for an earlier phase rather than a nicety on top of it. A wedge
+with no shareable link has nobody to show the truck to.
+
+### What surprised us
+
+**A five-star rating would have been the wrong feature, and it took writing it
+to see why.** The obvious build is stars and an average. But a 4.2 compresses
+"arrived late twice" and "damaged the load" into the same number, and on a
+two-sided market the average drifts upward until everyone is 4.8 and it carries
+no information. `ratings.ts` asks four yes-or-no questions instead and reports
+counts — "loaded on time: 9 of 11". The denominator is the part that matters,
+and a percentage throws it away: *2 of 2* and *34 of 34* are the same fraction
+and not the same evidence.
+
+**A missing answer is not a no.** The first tally counted every unanswered
+claim as a failure, which quietly punished a shipper for never having needed to
+call the driver. Answers are now `Partial`, and `asked` is its own count.
+
+**One incident should not end a career.** The first tier ladder zeroed a carrier
+on any upheld incident. Somebody whose truck was robbed is not thereby
+untrustworthy, and a system that treats one bad trip as terminal is one carriers
+will lie to. An incident now drops exactly one tier, floored at unverified.
+
+**Requiring a photograph of a hijack.** `needsPhoto` originally covered every
+incident kind. Nobody photographs an armed robbery, so the effect would have
+been that the report which matters most is the one that cannot be filed.
+Security is exempt; cargo and accident are not.
+
+**A departure measured to the last fix inside is a demurrage error.** Waiting
+time at a depot is money. Measuring a visit from arrival to the *last fix
+inside the fence* silently discards the gap between that fix and the first one
+outside — up to a full sampling interval, and at the 15-minute stopped cadence
+that is fifteen minutes of chargeable time per visit. Measured to the first fix
+outside instead.
+
+**Two more export collisions.** `Leg` was already taken by `utilisation.ts` and
+`fits` by `pricing.ts`; `chaining.ts` claimed both. The barrel file caught it,
+the same way it caught `CAPACITY` last time. Renamed to `ChainLeg` and
+`canFollow`. Three collisions in one flat namespace is a pattern, not bad luck —
+worth an ADR if it happens again.
+
+**Node's type stripping cannot parse an apostrophe inside a single-quoted test
+name.** `'never shows a state's underscore'` failed as
+`ERR_INVALID_TYPESCRIPT_SYNTAX` — a message that points at TypeScript when the
+problem is a quote.
+
+### Still open
+
+- **No screens for any of the fifteen.** Same position as after the first
+  domain session, and the same lesson applies: the engines being green says
+  nothing about whether the features are usable. Screens next, in phase order.
+- **A share link needs a server route to be worth anything.** `sharing.ts`
+  decides what a holder may see; nothing yet serves it, and the endpoint has to
+  be unauthenticated by design, which makes it the most exposed surface in the
+  product.
+- **`chaining.ts` is greedy, not optimal.** Deliberate — an optimal search over
+  a load pool is a travelling-salesman problem and a carrier is looking at a
+  few dozen loads — but it will occasionally propose a worse chain than a human
+  would. Worth revisiting only once there is a real pool to test against.
+
+---
+
 ## 2026-08-27 — Fifteen things the product did not have, and a real typeface
 
 **Did.** Widened the product and sharpened the design. Two new domain engines

@@ -9,6 +9,50 @@ built.
 
 ---
 
+## The next fifteen, and where each one lands
+
+Fifteen features were specified together and then **deliberately scattered
+across four phases**, because the alternative — building all fifteen now — is
+how a product ends up with fifteen half-surfaces and no working trip.
+
+Each one's engine is written and tested in `packages/domain` before its screen
+exists. The engines are pure arithmetic: they need no device, no network and no
+phase gate, and settling them first is what keeps the app layer thin. A feature
+is only *shipped* when its phase's exit gate is green.
+
+| # | Feature | Phase | Engine |
+|---|---|---|---|
+| 1 | Shareable tracking link, with scope, expiry and revocation | 2 | `sharing.ts` |
+| 2 | Standalone tracking of a trip arranged elsewhere — **the wedge** | 2 | `sharing.ts`, `trip.ts` |
+| 3 | Trip search and filter | 2 | `search.ts` |
+| 4 | Waypoints and geofenced arrival | 2 | `waypoints.ts` |
+| 5 | Messages between the three parties, attached to the trip | 2 | `messages.ts` |
+| 6 | Verification tiers | 3 | `trust.ts` |
+| 7 | Document capture with expiry warnings | 3 | `trust.ts` |
+| 8 | Post-trip reviews — facts, not stars | 3 | `ratings.ts` |
+| 9 | Incident reporting from the road | 3 | `incidents.ts` |
+| 10 | Proof-of-delivery capture: photos, signature, geotag | 4 | `pod.ts` |
+| 11 | The delivery document | 4 | `pod.ts` |
+| 12 | Delivery exceptions — short, damaged, refused | 4 | `pod.ts` |
+| 13 | Load board search with filters | 5 | `search.ts` |
+| 14 | Reverse discovery — a truck advertising where it will be empty | 5 | `matching.ts`, `utilisation.ts` |
+| 15 | Multi-leg chaining | 5 | `chaining.ts` |
+
+Three of these were previously parked in phases 6 and 7 — shareable links,
+reverse discovery and multi-leg chaining. They moved forward because their
+engines turned out to be small and because each one is load-bearing for the
+phase it moved into: a wedge with no shareable link has nobody to show the
+truck to, and a return-load market with no chaining is a market that solves
+one empty leg out of two.
+
+**What did not move.** Waybill OCR, insurance integration, rate bands from
+corridor history and the web shipper console stay where they are. Each needs
+something this codebase does not have yet — a corpus of real trips, a partner,
+or a second platform — and pulling them forward would mean building them
+against guesses.
+
+---
+
 ## Phase 0 — Foundation · **complete**
 
 Monorepo, the pure domain package and the lint boundary that keeps it pure, RN
@@ -74,8 +118,13 @@ week 10 than in week 30.
 
 ## Phase 2 — Trips and the wedge
 
-Geofencing, standalone tracking with SMS invite links, the shipper map with
-position age and trail, stop detection, ETA ranges on screen.
+Geofencing and waypoint arrival, standalone tracking with SMS invite links,
+scoped and revocable share links, the shipper map with position age and trail,
+stop detection, ETA ranges on screen, trip search, and a message thread
+attached to the trip.
+
+Carries features **1–5** of the fifteen. All five engines are written and
+tested; none has a screen yet.
 
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
 both platforms. First external pilot users onboard here — before any
@@ -89,7 +138,11 @@ endpoint currently accepts a batch from anybody who knows a trip id.
 ## Phase 3 — Identity and trust
 
 Verification tiers, document capture, liveness and ID match, expiry tracking,
-ratings, incident reporting.
+post-trip reviews, incident reporting.
+
+Carries features **6–9**. A review here is a set of facts each side answers yes
+or no to, never a star average — see the reasoning at the top of
+`packages/domain/src/ratings.ts`.
 
 **Exit gate:** tier gates enforced server-side and proven unbypassable from a
 modified client.
@@ -99,6 +152,8 @@ modified client.
 ## Phase 4 — Proof of delivery
 
 Loading and delivery capture, exceptions, offline queueing, the POD document.
+
+Carries features **10–12**.
 
 **Exit gate:** a complete proof-of-delivery document generated on a device that
 has been offline for the entire trip.
@@ -110,8 +165,9 @@ has been offline for the entire trip.
 Load posting, bidding, award and assignment, proactive return-load alerts,
 reverse discovery, fleet utilisation reporting.
 
-The ranking engines are written and tested (`packages/domain/src/matching.ts`).
-Phase 5 builds what surrounds them.
+Carries features **13–15**. The ranking, filtering and chaining engines are
+written and tested (`matching.ts`, `search.ts`, `chaining.ts`); phase 5 builds
+what surrounds them.
 
 **Exit gate:** match query under 2 s; first return load matched and completed
 end to end.
@@ -121,8 +177,11 @@ end to end.
 ## Phase 6 — Hardening and launch
 
 Device matrix including Transsion handsets, battery and data budgets enforced
-in CI, deviation alerts, waybill OCR, shareable tracking links, Hausa driver
-localisation, web shipper console, staged rollout.
+in CI, deviation alerts, waybill OCR, Hausa driver localisation, web shipper
+console, staged rollout.
+
+Shareable tracking links moved out of this phase and into phase 2, where the
+wedge needs them.
 
 **v1.0 ships to both stores.**
 
@@ -130,7 +189,7 @@ localisation, web shipper console, staged rollout.
 
 ## Phase 7 — Depth · v1.1
 
-Multi-drop loads, multi-leg chaining, rate bands from corridor history,
+Multi-drop loads, rate bands from corridor history,
 insurance partner integration, broker tooling, fleet accounting exports.
 
 Several of these are in `docs/FEATURE-BACKLOG.md` with the reason they are

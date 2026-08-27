@@ -9,6 +9,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Shareable tracking links.** A trip can be followed by somebody with no
+  account, through a link that expires after fourteen days and can be turned
+  off at any time. A link shows where the truck is and when it should arrive —
+  never a phone number, and never what the load is worth. Expired and revoked
+  are different answers, because they need different sentences.
+- **Waypoints and arrival.** Origins, destinations and checkpoints have their
+  own arrival radius, so a truck queueing at a border post and a truck parked
+  at the depot it was told to load at are told apart. Waiting time at the depot
+  and the destination counts toward demurrage; time at a checkpoint does not.
+- **Verification tiers.** Verified, Business and Trusted, earned from documents
+  and a delivery record and never self-reported. An upheld incident costs one
+  tier, not the whole record. Every profile shows exactly what is missing
+  between it and the next tier up.
+- **Document expiry warnings.** Thirty days before a licence or an insurance
+  certificate lapses, rather than on the morning it does — a carrier who loses
+  a tier mid-trip loses work already committed to.
+- **Messages on the trip.** A thread the shipper, carrier and driver share,
+  attached to the trip rather than to a phone. A message written in a dead zone
+  keeps both times: when it was written and when it was received, and the
+  thread reads in the order the conversation happened.
+- **Incident reporting.** Breakdown, security, accident, detention, road and
+  cargo, each with a sensible default severity so nobody has to classify their
+  own emergency. A blocking incident stops the arrival estimate rather than
+  showing one beside "broken down near Jebba".
+- **Proof of delivery.** Two photographs, a signature, a name and the position
+  the phone was in when it was captured. A capture more than a kilometre from
+  the destination is flagged on the document, not refused — a market address is
+  a district, not a gate.
+- **Delivery exceptions.** Short, damaged or refused, recorded against the trip
+  with their own photographs. A short delivery still settles; only a refusal
+  does not.
+- **Post-trip reviews.** Four yes-or-no facts each side answers about the
+  other, reported as counts — "load ready on arrival: 9 of 11" — never as a
+  star average. Nothing is shown until three trips have been answered for.
+- **Trip and load search.** Filter by state, lateness, incidents and date, or
+  search across reference, corridor, cargo, plate and driver. Plates match
+  however they were written down. An empty result says which condition to relax.
+- **Multi-leg chaining.** Return runs strung two and three legs deep, refusing
+  any leg that would need more than 120 km of empty repositioning or a
+  connection the truck could not physically make.
+
 - **Trip lifecycle.** A trip moves through an explicit set of states — open,
   assigned, loading, in transit, arrived, delivered — with signal loss and
   stalls tracked as first-class states rather than gaps. Its history is
