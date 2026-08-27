@@ -271,7 +271,7 @@ export function DriverScreen({
         */}
         {cargoLine === null ? null : (
           <View style={styles.metaRow}>
-            <Icon name="package" size="sm" colour={colours.textSecondary} />
+            <Icon name="package" size="sm" colour={colours.textSecondary} beside="bodyDriver" />
             <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
               {cargoLine}
             </Text>
@@ -299,6 +299,7 @@ export function DriverScreen({
             name={tracking ? 'signal' : 'signal-off'}
             size="lg"
             colour={tracking ? colours.moving : colours.textSecondary}
+            beside="title"
           />
           <Text variant="title" tone={tracking ? 'moving' : 'secondary'} style={styles.flex}>
             {say(language, tracking ? 'tracking_on' : 'tracking_off')}
@@ -415,7 +416,7 @@ export function DriverScreen({
       </Press>
 
       <View style={styles.dataRow}>
-        <Icon name="signal" size="sm" colour={colours.textSecondary} />
+        <Icon name="signal" size="sm" colour={colours.textSecondary} beside="body" />
         <Text variant="body" tone="secondary" style={styles.flex}>
           {describeBytes(dataUsed.bytes)} {t('of_data_so_far')} —{' '}
           {dataCost / 100 < 1 ? t('under_one_naira') : `₦${Math.round(dataCost / 100)}`}{' '}
@@ -562,7 +563,7 @@ function actionLabel(state: TripState, t: Words): string {
 }
 
 const styles = StyleSheet.create({
-  dataRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  dataRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   centred: { textAlign: 'center' },
   plateRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
   pair: { flexDirection: 'row', gap: space.md },
@@ -581,14 +582,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   gap: { marginTop: space.sm },
   route: { gap: space.xs },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs },
+  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginTop: space.xs },
   consent: {
     padding: space.lg,
     borderRadius: radius.xl,
     borderWidth: 2,
     gap: space.sm,
   },
-  consentHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  consentHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   refusal: {
     flexDirection: 'row',
     alignItems: 'flex-start',

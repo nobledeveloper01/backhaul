@@ -216,7 +216,7 @@ function Line({
 }) {
   return (
     <View style={styles.line}>
-      <Icon name={icon} size="sm" colour={colour} />
+      <Icon name={icon} size="sm" colour={colour} beside="body" />
       <Text variant="body" style={styles.flex}>
         {text}
       </Text>
@@ -251,5 +251,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  line: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  line: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, paddingVertical: space.xs },
 });

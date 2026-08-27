@@ -126,7 +126,7 @@ export function PairsScreen({ onBack }: Props) {
             {refused.map((entry) => (
               <Card key={`${entry.a.id}-${entry.b.id}`} emphasis="plain">
                 <View style={styles.refusedTop}>
-                  <Icon name="close" size="sm" colour={colours.textSecondary} />
+                  <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
                   <Text variant="body" tone="secondary" style={styles.flex}>
                     {entry.a.cargo} + {entry.b.cargo}
                   </Text>
@@ -202,5 +202,5 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     borderTopWidth: StyleSheet.hairlineWidth * 2,
   },
-  refusedTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  refusedTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
 });

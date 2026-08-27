@@ -166,7 +166,7 @@ export function VerificationScreen({ onBack }: Props) {
               .filter((doc) => !documents[doc])
               .map((doc) => (
                 <View key={doc} style={styles.missing}>
-                  <Icon name="plus" size="sm" colour={colours.accent} />
+                  <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
                   <Text variant="body" style={styles.flex}>
                     {t(DOCUMENT_WORDS[doc])}
                   </Text>
@@ -178,7 +178,7 @@ export function VerificationScreen({ onBack }: Props) {
             */}
             {record.tripsCompleted < REQUIREMENTS[step.tier].trips ? (
               <View style={styles.missing}>
-                <Icon name="plus" size="sm" colour={colours.accent} />
+                <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
                 <Text variant="body" style={styles.flex}>
                   {REQUIREMENTS[step.tier].trips - record.tripsCompleted}{' '}
                   {t('more_completed_trips')}
@@ -187,7 +187,7 @@ export function VerificationScreen({ onBack }: Props) {
             ) : null}
             {REQUIREMENTS[step.tier].onTime > 0 && record.tripsCompleted > 0 ? (
               <View style={styles.missing}>
-                <Icon name="plus" size="sm" colour={colours.accent} />
+                <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
                 <Text variant="body" style={styles.flex}>
                   {Math.round(REQUIREMENTS[step.tier].onTime * 100)}%{' '}
                   {t('on_time_delivery')}
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  missing: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  missing: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, paddingVertical: space.xs },
   paper: {
     minHeight: target.standard,
     flexDirection: 'row',

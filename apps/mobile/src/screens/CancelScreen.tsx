@@ -232,7 +232,7 @@ function Line({ on, text }: { on: boolean; text: string }) {
   const colours = useColours();
   return (
     <View style={styles.check}>
-      <Icon name={on ? 'check' : 'close'} size="sm" colour={on ? colours.moving : colours.textSecondary} />
+      <Icon name={on ? 'check' : 'close'} size="sm" colour={on ? colours.moving : colours.textSecondary} beside="body" />
       <Text variant="body" tone={on ? 'primary' : 'secondary'} style={styles.flex}>
         {text}
       </Text>
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     gap: space.xs,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  check: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  check: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, paddingVertical: space.xs },
   destructive: {
     flexDirection: 'row',
     alignItems: 'center',

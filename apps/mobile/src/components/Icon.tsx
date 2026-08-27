@@ -1,5 +1,7 @@
+import { useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+import { lineHeightAt, type as typeScale } from '../design/tokens';
 import { useColours } from '../design/theme';
 
 /**
@@ -57,10 +59,31 @@ interface Props {
   readonly name: IconName;
   readonly size?: keyof typeof SIZE;
   readonly colour?: string;
+  /**
+   * The variant of the text this icon sits beside.
+   *
+   * Set it on an icon that opens a row of prose, and the row gets
+   * `alignItems: 'flex-start'`. Without both, the icon is centred against the
+   * whole paragraph — so a line that wraps to three leaves it floating in the
+   * gap between lines two and three instead of sitting beside the first word,
+   * which reads as a bullet that has come loose. Yorùbá and Igbo run longer
+   * than English and the driver face is set at `bodyDriver` before the
+   * reader's own scaling is applied, so almost every row wraps eventually;
+   * several wrap at the default size.
+   *
+   * The nudge is half the difference between the line and the icon, which is
+   * where a square sits level with the middle of one line of text — measured
+   * at the reader's own text size, because the line grows with their setting
+   * and the icon does not. A nudge computed from the unscaled `lineHeight`
+   * left the icon riding high on the first line at 235%, which is better than
+   * floating between lines two and three and still visibly wrong.
+   */
+  readonly beside?: keyof typeof typeScale;
 }
 
-export function Icon({ name, size = 'md', colour }: Props) {
+export function Icon({ name, size = 'md', colour, beside }: Props) {
   const colours = useColours();
+  const { fontScale } = useWindowDimensions();
   const stroke = colour ?? colours.textSecondary;
   const px = SIZE[size];
 
@@ -72,10 +95,18 @@ export function Icon({ name, size = 'md', colour }: Props) {
     fill: 'none',
   };
 
-  return (
+  const drawn = (
     <Svg width={px} height={px} viewBox="0 0 24 24">
       {paths(name, common, stroke)}
     </Svg>
+  );
+
+  if (beside === undefined) return drawn;
+
+  return (
+    <View style={{ paddingTop: Math.max(0, (lineHeightAt(beside, fontScale) - px) / 2) }}>
+      {drawn}
+    </View>
   );
 }
 

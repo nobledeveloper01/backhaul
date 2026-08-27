@@ -282,13 +282,12 @@ export function TripsScreen({ onOpen }: Props) {
                 wraps to three, and a centred icon floats in the gap between
                 lines two and three instead of sitting beside the first word.
               */}
-              <View style={styles.summaryIcon}>
-                <Icon
-                  name={attention === 0 ? 'check' : 'alert'}
-                  size="sm"
-                  colour={attention === 0 ? colours.moving : colours.stopped}
-                />
-              </View>
+              <Icon
+                name={attention === 0 ? 'check' : 'alert'}
+                size="sm"
+                colour={attention === 0 ? colours.moving : colours.stopped}
+                beside="body"
+              />
               <Text
                 variant="body"
                 tone={attention === 0 ? 'moving' : 'stopped'}
@@ -436,9 +435,7 @@ const Row = memo(function Row({
         */}
         {[trip.cargo, trip.plate].some((part) => part !== '') ? (
           <View style={styles.meta}>
-            <View style={styles.summaryIcon}>
-              <Icon name="package" size="sm" colour={colours.textSecondary} />
-            </View>
+            <Icon name="package" size="sm" colour={colours.textSecondary} beside="body" />
             <Text variant="body" tone="secondary" style={styles.metaText}>
               {[trip.cargo, trip.plate].filter((part) => part !== '').join(' · ')}
             </Text>
@@ -488,7 +485,6 @@ const styles = StyleSheet.create({
   headerTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1 },
   summary: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
-  summaryIcon: { paddingTop: 3 },
   separator: { height: space.md },
   row: {
     minHeight: target.standard,

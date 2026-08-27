@@ -57,6 +57,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Icons beside text floated in the middle of it.** Twenty-three rows across
+  fifteen screens centred a small icon against a whole paragraph, so a line
+  that wrapped left the icon hanging in the gap between lines two and three
+  instead of sitting beside the first word. Visible at the *default* text size
+  on the driver screen's data-cost line, and unmissable at 235%: Yorùbá and
+  Igbo run longer than English and the driver face is set at `bodyDriver`
+  before the reader's own scaling is applied, so most rows wrap eventually.
+
+  An icon now says which text it sits beside and works out the offset from how
+  tall that line actually is at the reader's own setting — including the cap,
+  because a display heading stops growing at 150% and an icon that assumed 310%
+  would sit a long way from it.
+
 - **The fleet screen was showing an invented number as your own.** Utilisation
   — the fraction of a fleet's kilometres that are paid for, which is the figure
   this product exists to move — came from the walkthrough's legs on every

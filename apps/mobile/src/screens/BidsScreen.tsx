@@ -173,7 +173,7 @@ function BidRow({
       </View>
 
       <View style={styles.factRow}>
-        <Icon name="pin" size="sm" colour={colours.textSecondary} />
+        <Icon name="pin" size="sm" colour={colours.textSecondary} beside="body" />
         <Text variant="body" tone="secondary" style={styles.flex}>
           {scored.kmToPickup === 0
             ? t('at_the_pickup_now')
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
     paddingVertical: 2,
   },
-  factRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs },
+  factRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginBottom: space.xs },
   award: {
     minHeight: 44,
     borderRadius: radius.md,

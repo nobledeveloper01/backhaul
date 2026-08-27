@@ -95,6 +95,21 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**200% text scaling passed, and looking at it found something else.** The
+definition of done says to check it rather than assume it, so I did: no
+truncation anywhere, every container grows, and the per-variant caps in `Text`
+were already right — a 36pt hero at 310% would fill a phone, and it stops at
+150%.
+
+What the check *did* find was icons. Twenty-three rows centred a small icon
+against a paragraph, so any line that wrapped left it hanging between lines two
+and three. Visible at the default size on the driver screen, not only at the
+extremes. The fix is a `beside` prop naming the variant the icon sits next to,
+and the offset comes from `lineHeightAt(variant, fontScale)` — the same
+function `Text` caps with, so the two cannot disagree. The first version used
+the unscaled `lineHeight` and left the icon riding high at 235%, which is the
+sort of thing only a screenshot says.
+
 **And the verification badge disagreed with the evidence under it.** The tier
 came from the API. The trip counts on the next line came from `DEMO_RECORD`, on
 every render, including when the server had already answered. Two facts about

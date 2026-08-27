@@ -258,7 +258,7 @@ function PastRow({ trip }: { trip: PastTrip }) {
       </View>
 
       <View style={styles.metaRow}>
-        <Icon name="package" size="sm" colour={colours.textSecondary} />
+        <Icon name="package" size="sm" colour={colours.textSecondary} beside="body" />
         <Text variant="body" tone="secondary" style={styles.flex}>
           {trip.cargo} · {trip.km} km
         </Text>
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
     paddingVertical: 2,
   },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   bottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',

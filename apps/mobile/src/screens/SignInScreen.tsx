@@ -297,7 +297,7 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
         */}
         {refusal !== null ? (
           <View style={[styles.refusal, { backgroundColor: colours.exceptionWash }]}>
-            <Icon name="alert" size="sm" colour={colours.exception} />
+            <Icon name="alert" size="sm" colour={colours.exception} beside="body" />
             <Text variant="body" tone="exception" style={styles.flex}>
               {refusal.kind === 'unreachable'
                 ? t('could_not_reach')
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   resend: { paddingVertical: space.sm },
   refusal: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: space.sm,
     padding: space.md,
     borderRadius: radius.md,

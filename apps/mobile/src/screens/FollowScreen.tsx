@@ -194,7 +194,7 @@ function Line({ on, label }: { on: boolean; label: string }) {
   const colours = useColours();
   return (
     <View style={styles.line}>
-      <Icon name={on ? 'check' : 'close'} size="sm" colour={on ? colours.moving : colours.textSecondary} />
+      <Icon name={on ? 'check' : 'close'} size="sm" colour={on ? colours.moving : colours.textSecondary} beside="body" />
       <Text variant="body" tone={on ? 'primary' : 'secondary'} style={styles.flex}>
         {label}
       </Text>
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   },
   headline: { gap: space.xs },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' },
-  line: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  line: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, paddingVertical: space.xs },
   expiry: { marginTop: space.sm },
   pitch: { padding: space.lg, borderRadius: radius.xl, gap: space.xs },
 });

@@ -195,7 +195,7 @@ export function ChainScreen({ onBack }: Props) {
             {rejected.map((entry) => (
               <Card key={entry.loadId} emphasis="plain">
                 <View style={styles.legTop}>
-                  <Icon name="close" size="sm" colour={colours.textSecondary} />
+                  <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
                   <Text variant="body" tone="secondary" style={styles.flex}>
                     {entry.detail}
                   </Text>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   gapTop: { marginTop: space.md },
   gapTight: { marginTop: space.xs },
   figureRow: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-end' },
-  legTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  legTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   pip: {
     width: 22,
     height: 22,

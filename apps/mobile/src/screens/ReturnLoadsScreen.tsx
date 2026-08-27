@@ -355,7 +355,7 @@ function LoadRow({ scored, rank }: { scored: RankedLoadView; rank: number }) {
       </View>
 
       <View style={styles.metaRow}>
-        <Icon name="package" size="sm" colour={colours.textSecondary} />
+        <Icon name="package" size="sm" colour={colours.textSecondary} beside="body" />
         <Text variant="body" tone={blocked ? 'stale' : 'secondary'} style={styles.flex}>
           {cargo}
         </Text>
@@ -363,7 +363,7 @@ function LoadRow({ scored, rank }: { scored: RankedLoadView; rank: number }) {
 
       {blocked ? (
         <View style={styles.metaRow}>
-          <Icon name="alert" size="sm" colour={colours.stale} />
+          <Icon name="alert" size="sm" colour={colours.stale} beside="body" />
           <Text variant="body" tone="stale" style={styles.flex}>
             {t(BLOCKER_WORDS[(scored.blocked ?? 'expired') as Blocker])}
           </Text>
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.sm },
   route: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap' },
   best: { paddingHorizontal: space.md, paddingVertical: 3, borderRadius: radius.pill },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs },
+  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginBottom: space.xs },
   price: { marginTop: space.sm },
   blocked: { opacity: 0.6 },
   blockedHead: { marginTop: space.lg },

@@ -109,6 +109,41 @@ export const type = {
   overline: { fontSize: 12, lineHeight: 16, fontFamily: family.bold, letterSpacing: 0.9 },
 } as const;
 
+export type Variant = keyof typeof type;
+
+/**
+ * How far each variant is allowed to grow.
+ *
+ * Body text is what a low-vision user actually needs scaled, so it has no cap.
+ * A 36pt hero at 310% is 112pt and eats a whole screen — at maximum text size
+ * the words "Loads going your way" filled the display and pushed every load
+ * off it. Capping display type is not a refusal to scale; it is scaling the
+ * thing that carries the meaning rather than the thing that carries the
+ * emphasis.
+ *
+ * Checked on a device at the largest size, not assumed. It was broken the
+ * first time anybody looked, on this project as on the last one.
+ *
+ * It lives beside the scale rather than inside `Text` because it is a property
+ * of the scale: an icon deciding where to sit beside a line has to know how
+ * tall that line actually got, and there is one answer to that.
+ */
+export const MAX_SCALE: Record<Variant, number | undefined> = {
+  display: 1.5,
+  headline: 1.6,
+  title: 1.8,
+  body: undefined,
+  bodyDriver: undefined,
+  label: undefined,
+  overline: 1.6,
+};
+
+/** How tall one line of a variant actually is, at the reader's own setting. */
+export function lineHeightAt(variant: Variant, fontScale: number): number {
+  const cap = MAX_SCALE[variant];
+  return type[variant].lineHeight * (cap === undefined ? fontScale : Math.min(fontScale, cap));
+}
+
 /**
  * Tabular figures, for anything that changes in place.
  *

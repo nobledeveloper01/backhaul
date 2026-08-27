@@ -162,6 +162,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
               name={sealed.ok ? 'check' : 'camera'}
               size="md"
               colour={sealed.ok ? colours.moving : colours.accent}
+              beside="title"
             />
             <Text variant="title" style={styles.flex}>
               {sealed.ok ? t('signed_for') : sealed.detail}
@@ -215,6 +216,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                 name={far ? 'alert' : 'check'}
                 size="md"
                 colour={far ? colours.stopped : colours.moving}
+                beside="body"
               />
               <Text variant="body" style={styles.flex}>
                 {far
@@ -295,7 +297,7 @@ const styles = StyleSheet.create({
   body: { padding: space.lg, gap: space.md },
   flex: { flex: 1 },
   heading: { marginTop: space.md },
-  state: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  state: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   capture: { flexDirection: 'row', gap: space.sm, marginTop: space.md },
   tile: {
     flex: 1,

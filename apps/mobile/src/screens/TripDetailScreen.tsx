@@ -276,13 +276,13 @@ export function TripDetailScreen({
       >
         <View style={styles.identity}>
           <View style={styles.identityRow}>
-            <Icon name="package" size="sm" colour={colours.textSecondary} />
+            <Icon name="package" size="sm" colour={colours.textSecondary} beside="body" />
             <Text variant="body" tone="secondary" style={styles.flex}>
               {trip.cargo} · {trip.plate}
             </Text>
           </View>
           <View style={styles.identityRow}>
-            <Icon name="truck" size="sm" colour={colours.textSecondary} />
+            <Icon name="truck" size="sm" colour={colours.textSecondary} beside="body" />
             {/*
               An owner-driver is one person, and printing their name twice —
               "Tunde Adeyemi · Tunde Adeyemi" — reads as a bug rather than as a
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   flex: { flex: 1 },
   identity: { gap: space.sm, marginBottom: space.xs },
-  identityRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  identityRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',

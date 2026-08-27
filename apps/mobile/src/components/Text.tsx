@@ -1,33 +1,10 @@
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
 
-import { mono, type as typeScale } from '../design/tokens';
+import { MAX_SCALE, mono, type as typeScale } from '../design/tokens';
 import { useColours } from '../design/theme';
 
 type Variant = keyof typeof typeScale;
 type Tone = 'primary' | 'secondary' | 'accent' | 'moving' | 'stopped' | 'stale' | 'exception';
-
-/**
- * How far each variant is allowed to grow.
- *
- * Body text is what a low-vision user actually needs scaled, so it has no cap.
- * A 36pt hero at 310% is 112pt and eats a whole screen — at maximum text size
- * the words "Loads going your way" filled the display and pushed every load
- * off it. Capping display type is not a refusal to scale; it is scaling the
- * thing that carries the meaning rather than the thing that carries the
- * emphasis.
- *
- * Checked on a device at the largest size, not assumed. It was broken the
- * first time anybody looked, on this project as on the last one.
- */
-const MAX_SCALE: Record<Variant, number | undefined> = {
-  display: 1.5,
-  headline: 1.6,
-  title: 1.8,
-  body: undefined,
-  bodyDriver: undefined,
-  label: undefined,
-  overline: 1.6,
-};
 
 interface Props extends TextProps {
   readonly variant?: Variant;
