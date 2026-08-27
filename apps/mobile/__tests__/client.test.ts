@@ -241,7 +241,7 @@ describe('a refusal', () => {
         JSON.stringify({ refusal: 'too_soon', message: 'A code was just sent.' }),
         { status: 429, headers: { 'content-type': 'application/json' } },
       ),
-    ) as unknown as typeof fetch;
+    );
 
     const api = new BackhaulApi('http://example.test', null);
     const result = await api.requestCode('+2348031234567');
@@ -260,7 +260,7 @@ describe('a refusal', () => {
         status: 422,
         headers: { 'content-type': 'application/json' },
       }),
-    ) as unknown as typeof fetch;
+    );
 
     const api = new BackhaulApi('http://example.test', null);
     const result = await api.requestCode('+2348031234567');
