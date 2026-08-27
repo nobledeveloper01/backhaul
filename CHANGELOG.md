@@ -9,6 +9,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Records, not stars.** After a delivery is proved, the shipper and the
+  carrier each answer four yes-or-no questions about the other, and what a
+  stranger reads is how often each was true — with the denominator, because
+  "2 of 2" and "34 of 34" are the same fraction and not the same evidence.
+
+  A question left unanswered stays unanswered all the way through the database
+  and back: somebody who never needed to phone the driver has not said the
+  driver was unreachable. Below three answers nothing is shown at all — a
+  single bad trip must not read as a pattern to somebody who has no way to
+  outrun it. Reviews close a week after delivery, are amendable until then, and
+  hang off the sealed proof rather than off anybody's claim that the trip
+  finished.
+
 - **Course deviation, on the server.** A truck that has been getting further
   from its destination for ninety minutes, while moving, is going somewhere
   else — measured against the *closest* it has been inside that window, so a

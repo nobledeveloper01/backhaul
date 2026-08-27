@@ -49,6 +49,9 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
     /// <summary>Offers on the loads.</summary>
     public DbSet<BidEntity> Bids => Set<BidEntity>();
 
+    /// <summary>What each side said about the other after a trip.</summary>
+    public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -182,6 +185,18 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // One live bid per carrier per load. Two would let a carrier
             // bracket the auction and it is not an auction.
             bid.HasIndex(b => new { b.LoadId, b.CarrierId }).IsUnique();
+        });
+
+        model.Entity<ReviewEntity>(review =>
+        {
+            review.HasKey(r => r.Id);
+
+            // The profile read: every review about one person.
+            review.HasIndex(r => r.AboutUserId);
+
+            // One review per side per trip. A second would let somebody
+            // answer the same question twice and have both counted.
+            review.HasIndex(r => new { r.TripId, r.By }).IsUnique();
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

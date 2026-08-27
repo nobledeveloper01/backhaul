@@ -68,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<MoneyRepository>();
         services.AddScoped<MarketRepository>();
         services.AddScoped<DisputeRepository>();
+        services.AddScoped<ReviewRepository>();
         services.AddScoped<DeliveryRepository>();
         services.AddScoped<IdentityRepository>();
 

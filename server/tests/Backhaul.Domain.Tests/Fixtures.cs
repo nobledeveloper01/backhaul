@@ -89,6 +89,7 @@ public sealed record ParityFixtures(
     ChainingFixtures Chaining,
     ConsolidationFixtures Consolidation,
     DeviationFixtures Deviation,
+    RatingFixtures Ratings,
     DisputeFixtures Dispute);
 
 public sealed record ParityConstants(
@@ -532,3 +533,19 @@ public sealed record DeviationRow(
 
 
 public sealed record DeviationFixRow(double Lat, double Lon, DateTimeOffset AtIso);
+
+public sealed record RatingFixtures(
+    int ReviewWindowDays,
+    int MinimumAnswers,
+    IReadOnlyList<string> CarrierClaims,
+    IReadOnlyList<string> ShipperClaims,
+    IReadOnlyList<string> ShipperLabels,
+    IReadOnlyList<ReviewRow> Reviews,
+    IReadOnlyList<TallyRow> Tallies,
+    IReadOnlyList<ReviewWindowRow> Windows);
+
+public sealed record ReviewRow(string TripId, Dictionary<string, bool> Answers);
+
+public sealed record TallyRow(string Claim, int Yes, int Asked, bool WorthShowing, string Label);
+
+public sealed record ReviewWindowRow(int Days, bool Reviewable);

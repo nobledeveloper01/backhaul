@@ -1153,4 +1153,60 @@ public sealed class ParityTests
         }
     }
 
+
+    // --- ratings -----------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_count_a_record_the_same_way_and_neither_averages_it()
+    {
+        // Counts, never a percentage. "2 of 2" and "34 of 34" are the same
+        // fraction and not the same evidence, so the pair of numbers is what
+        // is pinned rather than a ratio either side could compute differently.
+        Assert.Equal(F.Ratings.ReviewWindowDays, Ratings.ReviewWindowDays);
+        Assert.Equal(F.Ratings.MinimumAnswers, Ratings.MinimumAnswers);
+
+        Assert.Equal(
+            F.Ratings.CarrierClaims,
+            Ratings.CarrierClaims.Select(Ratings.CarrierWire));
+
+        Assert.Equal(
+            F.Ratings.ShipperClaims,
+            Ratings.ShipperClaims.Select(Ratings.ShipperWire));
+
+        Assert.Equal(
+            F.Ratings.ShipperLabels,
+            Ratings.ShipperClaims.Select(Ratings.LabelShipper));
+
+        var reviews = F.Ratings.Reviews
+            .Select(row => new Review(Guid.Empty, DateTimeOffset.UnixEpoch, row.Answers, string.Empty))
+            .ToList();
+
+        var tallies = Ratings.Tallies(reviews, F.Ratings.CarrierClaims);
+
+        foreach (var (expected, actual) in F.Ratings.Tallies.Zip(tallies))
+        {
+            Assert.Equal(expected.Claim, actual.Claim);
+            Assert.Equal(expected.Yes, actual.Yes);
+            // A missing answer is missing, not a no — this is the assertion
+            // that would break if either side started counting blanks.
+            Assert.Equal(expected.Asked, actual.Asked);
+            Assert.Equal(expected.WorthShowing, Ratings.WorthShowing(actual));
+        }
+
+        Assert.Equal(
+            F.Ratings.Tallies.Select(t => t.Label),
+            Ratings.CarrierClaims.Select(Ratings.LabelCarrier));
+    }
+
+    [Fact]
+    public void And_close_the_review_window_at_the_same_moment()
+    {
+        var delivered = new DateTimeOffset(2026, 3, 1, 9, 0, 0, TimeSpan.Zero);
+
+        foreach (var row in F.Ratings.Windows)
+        {
+            Assert.Equal(row.Reviewable, Ratings.Reviewable(delivered, delivered.AddDays(row.Days)));
+        }
+    }
+
 }

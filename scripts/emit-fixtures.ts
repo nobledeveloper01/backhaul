@@ -107,6 +107,19 @@ import {
   type CostInput,
 } from '../packages/domain/src/costs.ts';
 import {
+  CARRIER_CLAIMS,
+  MINIMUM_ANSWERS,
+  REVIEW_WINDOW_DAYS,
+  SHIPPER_CLAIMS,
+  labelCarrier,
+  labelShipper,
+  reviewable,
+  tally,
+  worthShowing,
+  type CarrierClaim,
+  type Review,
+} from '../packages/domain/src/ratings.ts';
+import {
   DEVIATION_M,
   DEVIATION_WINDOW_MS,
   deviation,
@@ -1465,6 +1478,57 @@ const deviationCases = (
   };
 });
 
+// --- ratings ---------------------------------------------------------------
+
+/**
+ * Facts, never stars.
+ *
+ * The counts are the fixture material: "2 of 2" and "34 of 34" are the same
+ * fraction and not the same evidence, so what is pinned here is the pair of
+ * numbers rather than a ratio either side could compute differently.
+ */
+const REVIEW_DELIVERED = new Date('2026-03-01T09:00:00.000Z');
+const REVIEW_NOW = new Date('2026-03-05T09:00:00.000Z');
+
+const carrierReviews: readonly Review<CarrierClaim>[] = [
+  {
+    tripId: 't1',
+    at: REVIEW_NOW,
+    answers: { arrived_to_load: true, reachable: true, cargo_intact: true, no_extras: true },
+    note: '',
+  },
+  {
+    tripId: 't2',
+    at: REVIEW_NOW,
+    // "reachable" left unanswered on purpose: a missing answer is missing,
+    // not a no. This shipper may never have needed to call.
+    answers: { arrived_to_load: false, cargo_intact: true, no_extras: true },
+    note: '',
+  },
+  {
+    tripId: 't3',
+    at: REVIEW_NOW,
+    answers: { arrived_to_load: true, reachable: false, cargo_intact: true },
+    note: '',
+  },
+];
+
+const ratingCases = tally(carrierReviews, CARRIER_CLAIMS).map((counted) => ({
+  claim: counted.claim,
+  yes: counted.yes,
+  asked: counted.asked,
+  worthShowing: worthShowing(counted),
+  label: labelCarrier(counted.claim as CarrierClaim),
+}));
+
+const reviewableCases = ([0, 1, 7, 8, -1] as const).map((days) => ({
+  days,
+  reviewable: reviewable(
+    REVIEW_DELIVERED,
+    new Date(REVIEW_DELIVERED.getTime() + days * 86_400_000),
+  ),
+}));
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -1614,6 +1678,19 @@ const fixtures = {
     verdicts: shareCases,
     pairs: pairingCases,
   },
+  ratings: {
+    reviewWindowDays: REVIEW_WINDOW_DAYS,
+    minimumAnswers: MINIMUM_ANSWERS,
+    carrierClaims: CARRIER_CLAIMS,
+    shipperClaims: SHIPPER_CLAIMS,
+    shipperLabels: SHIPPER_CLAIMS.map((claim) => labelShipper(claim)),
+    reviews: carrierReviews.map((review) => ({
+      tripId: review.tripId,
+      answers: review.answers,
+    })),
+    tallies: ratingCases,
+    windows: reviewableCases,
+  },
   deviation: {
     deviationM: DEVIATION_M,
     windowMs: DEVIATION_WINDOW_MS,
@@ -1664,6 +1741,7 @@ process.stdout.write(
       `${shareCases.length} pair verdicts`,
       `${packCases.length} dispute packs`,
       `${deviationCases.length} deviation verdicts`,
+      `${ratingCases.length} tallies`,
     ].join(', ')
   }\n`,
 );

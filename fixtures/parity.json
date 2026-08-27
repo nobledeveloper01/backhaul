@@ -3502,6 +3502,107 @@
       }
     ]
   },
+  "ratings": {
+    "reviewWindowDays": 7,
+    "minimumAnswers": 3,
+    "carrierClaims": [
+      "arrived_to_load",
+      "reachable",
+      "cargo_intact",
+      "no_extras"
+    ],
+    "shipperClaims": [
+      "load_ready",
+      "as_described",
+      "paid_on_time",
+      "receiver_present"
+    ],
+    "shipperLabels": [
+      "Load ready on arrival",
+      "Goods as described",
+      "Paid within terms",
+      "Receiver present"
+    ],
+    "reviews": [
+      {
+        "tripId": "t1",
+        "answers": {
+          "arrived_to_load": true,
+          "reachable": true,
+          "cargo_intact": true,
+          "no_extras": true
+        }
+      },
+      {
+        "tripId": "t2",
+        "answers": {
+          "arrived_to_load": false,
+          "cargo_intact": true,
+          "no_extras": true
+        }
+      },
+      {
+        "tripId": "t3",
+        "answers": {
+          "arrived_to_load": true,
+          "reachable": false,
+          "cargo_intact": true
+        }
+      }
+    ],
+    "tallies": [
+      {
+        "claim": "arrived_to_load",
+        "yes": 2,
+        "asked": 3,
+        "worthShowing": true,
+        "label": "Arrived to load on time"
+      },
+      {
+        "claim": "reachable",
+        "yes": 1,
+        "asked": 2,
+        "worthShowing": false,
+        "label": "Reachable on the road"
+      },
+      {
+        "claim": "cargo_intact",
+        "yes": 3,
+        "asked": 3,
+        "worthShowing": true,
+        "label": "Goods arrived intact"
+      },
+      {
+        "claim": "no_extras",
+        "yes": 2,
+        "asked": 2,
+        "worthShowing": false,
+        "label": "No charges beyond the quote"
+      }
+    ],
+    "windows": [
+      {
+        "days": 0,
+        "reviewable": true
+      },
+      {
+        "days": 1,
+        "reviewable": true
+      },
+      {
+        "days": 7,
+        "reviewable": true
+      },
+      {
+        "days": 8,
+        "reviewable": false
+      },
+      {
+        "days": -1,
+        "reviewable": false
+      }
+    ]
+  },
   "deviation": {
     "deviationM": 25000,
     "windowMs": 5400000,

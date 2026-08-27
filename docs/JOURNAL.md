@@ -6,6 +6,36 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-29 (night) — Records, and the third state that had to survive storage
+
+**Did.** `ratings.ts` mirrored, six parity cases, a `ReviewEntity`, and two
+routes: leave a review of a trip, and read somebody's record. 127 parity cases,
+140 endpoint tests.
+
+### What surprised us
+
+**A boolean column per claim would have destroyed the feature.** The engine's
+whole point is that an answer has three states — yes, no, and *not asked* —
+because a shipper who never needed to phone the driver has not said the driver
+was unreachable. A nullable boolean would work; four of them is four columns
+that have to be kept in step with an enum. The row stores two comma-separated
+lists instead, one of claims answered yes and one of claims answered no, and
+anything in neither list was never asked. The test that matters asserts a
+`(0, 0)` tally for the question that was skipped.
+
+**A review hangs off the proof, not the state.** `delivered` is a claim
+somebody made through the trip machine; the sealed proof of delivery is
+evidence. Reviews are gated on the second, and a trip whose proof is still a
+draft gets "there is nothing to review yet" rather than a 404 — the same
+distinction the escrow milestones make, arrived at independently.
+
+**A record is deliberately not principal-filtered.** Every other read in this
+server composes a `Principal` into the query. This one does not, and the
+repository says why in its own documentation: a record exists so a *stranger*
+can decide whether to trade with somebody, and one only its subject can read is
+not a record. What is filtered is the content — counts and questions, never
+trip ids or note authors.
+
 ## 2026-08-29 (evening) — Deviation, and a rename that went too far
 
 **Did.** `deviation.ts` mirrored, six parity cases and a route. 125 parity

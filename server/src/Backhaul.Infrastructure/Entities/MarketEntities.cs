@@ -76,3 +76,40 @@ public sealed class BidEntity
     /// <summary>Withdrawn bids are kept, not deleted — see ADR-0003.</summary>
     public DateTimeOffset? WithdrawnAt { get; set; }
 }
+
+/// <summary>
+/// One review of one trip, by one side of it.
+/// </summary>
+/// <remarks>
+/// The answers are stored as a comma-separated list of claims answered
+/// <em>yes</em> and another of claims answered <em>no</em>, because the third
+/// state — unanswered — has to survive the round trip. A boolean column per
+/// claim would make "not asked" and "no" the same row, and the whole point of
+/// this shape is that they are not the same thing.
+/// </remarks>
+public sealed class ReviewEntity
+{
+    public Guid Id { get; set; }
+
+    public Guid TripId { get; set; }
+
+    /// <summary>Who wrote it: shipper or carrier.</summary>
+    [MaxLength(10)]
+    public string By { get; set; } = string.Empty;
+
+    /// <summary>Whose record it counts towards.</summary>
+    public Guid AboutUserId { get; set; }
+
+    /// <summary>Claims answered yes, comma separated.</summary>
+    [MaxLength(200)]
+    public string Yes { get; set; } = string.Empty;
+
+    /// <summary>Claims answered no, comma separated.</summary>
+    [MaxLength(200)]
+    public string No { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string Note { get; set; } = string.Empty;
+
+    public DateTimeOffset At { get; set; }
+}
