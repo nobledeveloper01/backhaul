@@ -29,6 +29,33 @@ services:
       timeout: 3s
       retries: 20
 
+  # The SMS gateway we run ourselves.
+  #
+  # `android-sms-gateway` (Apache-2.0, github.com/capcom6/android-sms-gateway).
+  # This container is the *server* half; the half that actually sends is an
+  # Android phone running the project's app, paired to this instance, with a
+  # Nigerian SIM and a data bundle in it.
+  #
+  # What that buys: no aggregator account, no per-message billing contract, and
+  # codes that arrive from an ordinary Nigerian mobile number — which matters
+  # more than it sounds, because an unfamiliar shortcode reads as a scam here.
+  #
+  # What it does not buy: free SMS. Every message is a message off that SIM's
+  # bundle. At a sign-in code per driver per ninety days that is small; at
+  # marketing volume it is not, and this is the wrong architecture for that.
+  #
+  # Commented out rather than running by default: without a paired handset it
+  # starts, accepts a message and delivers nothing, which is worse than not
+  # being there. Uncomment it, pair a phone, then set Sms__Provider on the api
+  # service below.
+  #
+  # sms:
+  #   image: ghcr.io/capcom6/sms-gateway:latest
+  #   environment:
+  #     GATEWAY__MODE: private
+  #   ports:
+  #     - '3000:3000'
+
   api:
     build:
       context: .
@@ -38,6 +65,23 @@ services:
     environment:
       ConnectionStrings__Backhaul: >-
         Host=db;Port=5432;Database=backhaul;Username=backhaul;Password=backhaul
+
+      # Uncomment together with the `sms` service above.
+      #
+      # Until then the API will refuse to start against this database, and it
+      # should: the fallback sender writes sign-in codes to the log, where
+      # anybody who can read them can sign in as anybody.
+      #
+      # Sms__Provider: http
+      # Sms__Url: http://sms:3000/message
+      # Sms__Username: ${SMS_USERNAME}
+      # Sms__Password: ${SMS_PASSWORD}
+      #
+      # The two field names the gateway expects. These are
+      # android-sms-gateway's; a different gateway is a config edit rather
+      # than a code change.
+      # Sms__PhoneField: phoneNumbers
+      # Sms__MessageField: message
     ports:
       - '8080:8080'
 

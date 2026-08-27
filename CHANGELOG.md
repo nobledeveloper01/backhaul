@@ -61,6 +61,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   app being killed and the phone rebooting. The notification says who can see
   the driver rather than apologising for existing, and the app reports when the
   operating system is throttling it instead of quietly recording nothing.
+- **Sign-in codes go through a gateway we host.** An Apache-2.0 Android SMS
+  gateway, its server half in `compose.yaml` and its sending half a spare phone
+  with a Nigerian SIM — no aggregator account to open before a pilot can send
+  its first code, and codes that arrive from an ordinary mobile number rather
+  than a shortcode. Which gateway is configuration, not code.
 - **Verification, the truck registry and the duress alarm are served.** A tier
   is computed on every read and never stored, so a carrier is the same thing on
   their own screen and on a shipper's. The fleet lists the worst truck first. An

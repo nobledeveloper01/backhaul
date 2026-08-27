@@ -54,8 +54,35 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DeliveryRepository>();
         services.AddScoped<IdentityRepository>();
 
-        // Replaced by a real gateway in production; `Program.cs` refuses to
-        // start with this one against a real database.
+        return services;
+    }
+
+    /// <summary>
+    /// Wires whichever SMS sender is configured.
+    /// </summary>
+    /// <remarks>
+    /// Two, and the difference matters: <see cref="LoggingSmsSender"/> writes
+    /// the code to the log and is a development convenience;
+    /// <see cref="HttpSmsSender"/> hands it to a gateway we run. `Program.cs`
+    /// refuses to start with the first one against a real database, because
+    /// anybody who can read the logs could otherwise sign in as anybody.
+    /// </remarks>
+    public static IServiceCollection AddBackhaulSms(
+        this IServiceCollection services,
+        string? provider)
+    {
+        if (string.Equals(provider, "http", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddHttpClient<ISmsSender, HttpSmsSender>(client =>
+            {
+                // A gateway on a phone over a home connection is slow, and a
+                // request that never settles holds a sign-in open forever.
+                client.Timeout = TimeSpan.FromSeconds(20);
+            });
+
+            return services;
+        }
+
         services.AddSingleton<ISmsSender, LoggingSmsSender>();
 
         return services;

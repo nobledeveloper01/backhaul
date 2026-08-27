@@ -30,6 +30,12 @@ builder.Services.AddSingleton(TimeProvider.System);
 var connection = builder.Configuration.GetConnectionString("Backhaul");
 builder.Services.AddBackhaulPersistence(connection);
 
+// Which SMS sender. `http` hands codes to a gateway we run ourselves — an
+// Android phone with a Nigerian SIM, or a USB modem — and anything else falls
+// back to writing them to the log, which the guard below refuses to allow
+// against a real database.
+builder.Services.AddBackhaulSms(builder.Configuration["Sms:Provider"]);
+
 // The share route is the only one that answers an unauthenticated request with
 // a truck's position, which makes it the only one an outsider can hammer
 // without first getting a credential. Guessing a 32-byte token is not the

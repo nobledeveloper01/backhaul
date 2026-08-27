@@ -221,11 +221,20 @@ not a threat; hammering the endpoint is. See
 
 **No longer blocked on auth.** Phone-plus-code sign-in is built —
 `packages/domain/src/otp.ts` for the policy, `/v1/auth/request` and
-`/v1/auth/verify` for the endpoints, and the app is gated behind it. What
-remains is an **SMS gateway**, which is a contract rather than a piece of
-code: the seam is `ISmsSender`, the development implementation writes the code
-to the log, and the server *refuses to start* in that mode against a real
-database.
+`/v1/auth/verify` for the endpoints, and the app is gated behind it.
+
+**The SMS gateway is no longer a contract either.** `HttpSmsSender` talks to a
+gateway we host: `android-sms-gateway` (Apache-2.0), whose server half is a
+container in `server/compose.yaml` and whose sending half is a spare Android
+phone with a Nigerian SIM. No aggregator account, no per-message billing
+negotiation before the pilot sends its first code, and the codes arrive from an
+ordinary mobile number rather than a shortcode — which matters, because an
+unfamiliar shortcode reads as a scam here.
+
+What it is **not** is free SMS. Every message comes off that SIM's bundle. At
+one sign-in code per driver per ninety days that is small; at marketing volume
+it is the wrong architecture, and an aggregator is what that needs. The request
+shape is configuration rather than code, so swapping to one is a config edit.
 
 ---
 
