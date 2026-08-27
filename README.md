@@ -146,6 +146,23 @@ The history is append-only, and it says so on the screen rather than only in an
 ADR. Every settlement line is whole naira, so the column adds up on screen as
 well as in the arithmetic.
 
+### The fleet owner
+
+| Utilisation and what needs a person | Whose bid to take |
+|---|---|
+| ![The fleet screen](docs/screenshots/14-fleet.png) | ![Ranked bids](docs/screenshots/15-bids.png) |
+
+Utilisation leads, because it is the number the product exists to move: the
+share of kilometres that were paid for, and what one more loaded return leg
+would earn *at the fleet's own realised rate*. Not a quote — their last eight
+legs, read back.
+
+The bids screen is where the product earns trust or loses it. The recommended
+bid on the right is **₦160,000 dearer than the cheapest**, because 95% on time
+across 41 trips beats 33% across 6 — and both numbers sit beside both prices,
+so a shipper can disagree. A carrier with no history ranks as *unknown*, not as
+bad: a marketplace that never surfaces a new carrier never gets a second one.
+
 ### The carrier
 
 ![Return loads](docs/screenshots/04-return-loads.png)

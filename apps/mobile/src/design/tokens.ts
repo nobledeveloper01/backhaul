@@ -67,14 +67,38 @@ export const palette = {
  */
 export type Colours = Readonly<Record<keyof (typeof palette)['light'], string>>;
 
+/**
+ * Inter, bundled.
+ *
+ * Not the system face. iOS gets SF Pro and Android gets Roboto, so the same
+ * screen has different metrics on each platform and neither is the one the
+ * spacing was set against — and on the Transsion handsets that dominate the
+ * driver segment, "the system face" is whatever the OEM shipped.
+ *
+ * Bundling one face makes the product look the same everywhere, which is the
+ * difference between an app that was designed and an app that was assembled.
+ *
+ * **Weights are named, not numbered.** React Native maps `fontWeight` onto a
+ * family's available faces inconsistently across platforms; naming the exact
+ * file removes the guess. `fontWeight` is left off entirely for the same
+ * reason — set alongside a named face it produces synthetic bolding on
+ * Android, which looks like a rendering fault.
+ */
+export const family = {
+  regular: 'Inter-Regular',
+  medium: 'Inter-Medium',
+  semibold: 'Inter-SemiBold',
+  bold: 'Inter-Bold',
+} as const;
+
 export const type = {
-  display: { fontSize: 36, lineHeight: 42, fontWeight: '700', letterSpacing: -0.8 },
-  headline: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.5 },
-  title: { fontSize: 19, lineHeight: 25, fontWeight: '600', letterSpacing: -0.2 },
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  display: { fontSize: 36, lineHeight: 42, fontFamily: family.bold, letterSpacing: -0.9 },
+  headline: { fontSize: 28, lineHeight: 34, fontFamily: family.bold, letterSpacing: -0.6 },
+  title: { fontSize: 19, lineHeight: 25, fontFamily: family.semibold, letterSpacing: -0.2 },
+  body: { fontSize: 16, lineHeight: 24, fontFamily: family.regular, letterSpacing: -0.1 },
   /** The driver face default: read in a cab, in motion. */
-  bodyDriver: { fontSize: 19, lineHeight: 28, fontWeight: '400' },
-  label: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  bodyDriver: { fontSize: 19, lineHeight: 28, fontFamily: family.regular, letterSpacing: -0.1 },
+  label: { fontSize: 14, lineHeight: 20, fontFamily: family.medium, letterSpacing: 0 },
   /**
    * Section headings inside a card. Small, wide-tracked, upper-case.
    *
@@ -82,7 +106,7 @@ export const type = {
    * section heading and the text under it were the same weight and nothing led
    * the eye down the screen.
    */
-  overline: { fontSize: 12, lineHeight: 16, fontWeight: '700', letterSpacing: 0.9 },
+  overline: { fontSize: 12, lineHeight: 16, fontFamily: family.bold, letterSpacing: 0.9 },
 } as const;
 
 /**

@@ -6,6 +6,64 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-27 — Fifteen things the product did not have, and a real typeface
+
+**Did.** Widened the product and sharpened the design. Two new domain engines
+(stop detection, fleet utilisation), five new screens — fleet, ranked bids,
+posting a load, a driver's own record, and the offline state — plus a pace
+chart, a stops list, staggered list entrances, skeletons, empty states, a
+press primitive, and Inter bundled on both platforms.
+
+### What surprised us
+
+**The pace chart was right and the data was wrong.** It reported five km/h for
+the last leg of a Lagos–Kano run, which looked like a broken chart. The demo's
+last leg spanned twenty-six hours for two hundred kilometres. Every leg is now
+timed at 45–55 km/h door to door, which is what a loaded trailer actually
+makes on that corridor — and the chart is the reason the bad data was visible
+at all.
+
+**A cadence test caught a helper lying to the engine.** After retiming the
+demo, one leg was 110 minutes, which `leg()` divides into 15.7-minute steps —
+a spacing the tracking policy would never produce. The test that asserts fixes
+arrive at a plausible cadence rejected it. Spans are multiples of the cadence
+now.
+
+**A stop-detection test failed because of the test, not the code.** The helper
+that generates "moving" fixes started every run at the same coordinates, so a
+run following a stop at those coordinates had its first fix absorbed into the
+stop and a two-hour wait measured 125 minutes.
+
+**Pluralisation has now been got wrong three times** — "every 1 minutes", "1
+completed trip", "1 hours stopped" — always by writing the number and the noun
+into the same template literal. There is one `plural()` helper now, with a
+test that names all three.
+
+**"just now ago".** `humanDuration` returns a duration; most take "ago" and the
+smallest bucket does not.
+
+**Two seven-figure naira amounts and a dash do not fit on a phone** at 36pt.
+The indicative range was truncating mid-figure on the post-a-load screen.
+Stacked now.
+
+**The offline banner covered whatever card was at the bottom of the screen.**
+It was absolutely positioned. Being offline is a fact about the whole app, so
+the app makes room for saying so — it is in the layout now.
+
+**A tick in a warning colour is worse than either alone.** The bids screen
+showed a checkmark beside "33% on time", tinted amber. It reads as an
+endorsement with a caveat rather than as a caution.
+
+**Bundling a font is three separate build systems.** `react-native-asset`
+writes `UIAppFonts` into Info.plist and copies into `android/app/src/main/assets/fonts`,
+and neither takes effect without a native rebuild. Then the RN CLI failed with
+a CocoaPods version mismatch, and building by hand with `-derivedDataPath build`
+deleted React Native's codegen output — which lives in `ios/build/generated`,
+under the same directory. The error, `Build input file cannot be found:
+RCTThirdPartyComponentsProvider.mm`, says nothing about any of that.
+
+
+
 ## 2026-08-27 — The API client, a round trip that holds both wire formats to each other, and a persisted appearance
 
 **Did.** Wrote the app's API client — a sealed result rather than exceptions,

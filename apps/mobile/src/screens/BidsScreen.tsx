@@ -113,15 +113,28 @@ function BidRow({
         overruling the ranking needs both numbers in one glance.
       */}
       <View style={styles.factRow}>
+        {/*
+          A tick is a claim that the record is good. At 33% on time it is the
+          wrong glyph in the right colour, which reads as an endorsement with a
+          warning tint — worse than either alone.
+        */}
         <Icon
-          name={scored.reliability === null ? 'clock' : 'check'}
+          name={
+            scored.reliability === null
+              ? 'clock'
+              : scored.reliability >= 0.8
+                ? 'check'
+                : 'alert'
+          }
           size="sm"
           colour={
             scored.reliability === null
               ? colours.textSecondary
               : scored.reliability >= 0.9
                 ? colours.moving
-                : colours.stopped
+                : scored.reliability >= 0.8
+                  ? colours.stopped
+                  : colours.exception
           }
         />
         <Text variant="body" tone="secondary" style={styles.flex}>

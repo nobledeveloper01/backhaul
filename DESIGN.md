@@ -124,8 +124,24 @@ label or an icon, because the map is read in sunlight through a windscreen.
 
 ## Typography
 
-**Inter** throughout; **Roboto Mono, tabular** for plate numbers, rates,
-weights and timestamps.
+**Inter, bundled** — not the system face.
+
+iOS gets SF Pro and Android gets Roboto, so the same screen has different
+metrics on each and neither is the one the spacing was set against. On the
+Transsion handsets that dominate the driver segment, "the system face" is
+whatever the OEM shipped. Bundling one face is the difference between an app
+that was designed and one that was assembled.
+
+Four static weights are linked (`assets/fonts`, via `react-native.config.js`).
+**Weights are named, not numbered:** React Native maps `fontWeight` onto a
+family's faces inconsistently across platforms, and setting it alongside a
+named face produces synthetic bolding on Android that looks like a rendering
+fault. `fontFamily: family.semibold`, never `fontWeight: '600'`.
+
+`Menlo`, tabular, for figures that change in place — times, settlement columns,
+distances mid-trip. **Not** for a figure with a unit after it: Menlo sets a
+full space before the unit, and "764  km" was shipped twice before that was
+noticed.
 
 | Style | Size / Line | Use |
 |---|---|---|
@@ -141,6 +157,25 @@ Tabular figures are not a nicety. A rate that shifts horizontally as its digits
 change is a rate that looks like it is being edited while you read it.
 
 ---
+
+## Motion
+
+One set of durations and two curves, so everything moves at the same rhythm.
+Mixed timings are the same tell as mixed stroke widths.
+
+| Token | ms | Used for |
+|---|---|---|
+| `fast` | 140 | A press, a tint, a chip |
+| `base` | 220 | A card, a sheet, a banner |
+| `slow` | 320 | A screen transition, and nothing longer |
+| `stagger` | 40 | Per item as a list arrives, capped at six |
+
+Exits run at about 70% of the entrance: a thing leaving should get out of the
+way, and a slow exit reads as the app hesitating.
+
+**Transform and opacity only.** Both run off the main thread, which matters on
+a 2 GB handset. A list row uses opacity rather than scale — a scaling row
+nudges its neighbours and the whole list twitches under the thumb.
 
 ## Voice
 

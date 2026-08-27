@@ -39,6 +39,7 @@ export default tseslint.config(
       'apps/mobile/metro.config.js',
       'apps/mobile/jest.config.js',
       'apps/mobile/babel.config.js',
+      'apps/mobile/react-native.config.js',
     ],
     ...tseslint.configs.disableTypeChecked,
     rules: {
@@ -61,6 +62,7 @@ export default tseslint.config(
             'apps/mobile/babel.config.js',
             'apps/mobile/jest.config.js',
             'apps/mobile/metro.config.js',
+            'apps/mobile/react-native.config.js',
           ],
         },
         tsconfigRootDir: import.meta.dirname,

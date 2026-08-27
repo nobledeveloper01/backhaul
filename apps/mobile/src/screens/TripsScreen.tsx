@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { observe, shouldTrack, silentFor, type Observation } from '@backhaul/domain';
 
+import { Appear } from '../components/Appear';
 import { Icon } from '../components/Icon';
 import { PositionAge } from '../components/PositionAge';
 import { StatusChip } from '../components/StatusChip';
@@ -74,7 +75,11 @@ export function TripsScreen({ onOpen }: Props) {
           </View>
         }
         ItemSeparatorComponent={Separator}
-        renderItem={({ item }) => <Row trip={item} now={now} onPress={() => onOpen(item)} />}
+        renderItem={({ item, index }) => (
+          <Appear index={index}>
+            <Row trip={item} now={now} onPress={() => onOpen(item)} />
+          </Appear>
+        )}
       />
     </View>
   );
