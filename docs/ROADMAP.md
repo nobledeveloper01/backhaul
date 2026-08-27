@@ -117,6 +117,7 @@ the honest answer to "how far along is this".
 | dispute assembly, deviation, ratings, lanes | |
 | **alerts, search** | **utilisation** *(ADR-0012)* |
 | | *`search.ts`'s tier filter is served; nothing has a tier — F10* |
+| **alert dispatch** *(the loop; transport is credentials — F3)* | |
 
 **The right-hand column is down to three.** Two of them should stay there, and
 the third should not: `utilisation` is the number this whole product exists to

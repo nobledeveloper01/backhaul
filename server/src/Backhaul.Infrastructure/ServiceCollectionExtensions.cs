@@ -73,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<AlertRepository>();
         services.AddScoped<DeliveryRepository>();
         services.AddScoped<IdentityRepository>();
+        services.AddScoped<NotificationRepository>();
 
         return services;
     }
@@ -104,6 +105,13 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddSingleton<ISmsSender, LoggingSmsSender>();
+
+        // Unlike the SMS sender this one does not stop the server booting
+        // against a real database: a notification is not a credential, so a
+        // logged one is not a hole. It says on every send that it did not
+        // send, because a deployment that believes it is notifying shippers
+        // and is not is worse than one that never claimed to.
+        services.AddSingleton<IPushSender, LoggingPushSender>();
 
         return services;
     }

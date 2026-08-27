@@ -464,6 +464,18 @@ async function main(): Promise<void> {
 
     const alerts = await api.alerts(12);
     check('alerts read back', alerts.ok, alerts.ok ? '' : alerts.failure.detail);
+
+    // The device registry the dispatcher sends to. The offset travels with it
+    // because quiet hours belong to the reader — a loop running at three in
+    // the morning has no client to ask what hour it is where they are.
+    const registered = await api.registerDevice('round-trip-token', 'android', 60);
+    check('a device registers', registered.ok, registered.ok ? '' : registered.failure.detail);
+
+    const nonsense = await api.registerDevice('round-trip-token', 'android', 5_000);
+    check('and an impossible offset is refused', !nonsense.ok);
+
+    const forgotten = await api.forgetDevice('round-trip-token');
+    check('a device forgets', forgotten.ok, forgotten.ok ? '' : forgotten.failure.detail);
     if (alerts.ok) {
       check('and carry an urgency', alerts.value.alerts.every((a) => a.urgency !== ''));
     }

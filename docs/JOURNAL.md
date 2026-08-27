@@ -95,6 +95,50 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**The alerts engine had been right and idle for weeks.**
+
+`alerts.ts` decides who hears what and how loudly — one urgent kind, a push
+held rather than dropped inside quiet hours, nothing said twice inside its own
+window. Parity-tested on both sides. `AlertRepository` even threaded
+`LastSentAt` through every row with a comment explaining that it was null
+because there was no transport yet, so the day one arrived the repeat policy
+would already be applied. That comment was right and the day took a while.
+
+Building the loop was mostly obedience to decisions already taken. Three points
+where it could have gone wrong:
+
+**Record sends, never holds.** Holding works *because* nothing is written — the
+next run finds the condition still true and still unsent. A dispatcher that
+recorded a hold would have silently turned quiet hours into dropped, and the
+symptom would be a shipper never hearing about an overnight stall.
+
+**Quiet hours belong to the reader.** The route asks the client what hour it
+is, which works because there is a client. A loop at three in the morning has
+nobody to ask, so the phone registers its own offset. The existing comment on
+the route — "assuming that inside the server is how this breaks the first time
+somebody ships from Accra" — was the whole design brief.
+
+**One scope and one try per person.** A shipper whose data throws must not stop
+the driver in trouble two rows down from being told about, which is the entire
+point of having an urgent tier.
+
+**Two things the tests found that reading would not have.**
+
+The first run sent nothing. `RoleOfAsync` read the account table; test
+identities and the seeded development principals have tokens and no account, so
+the dispatcher skipped every one of them without a word. The role is asserted
+on a *token* for every principal in this system — that is the universal fact,
+and the account is the fallback.
+
+Then the quiet-hours test failed by sending. `signal_lost` is a **quiet** alert
+and quiet alerts are deliberately not held — they were never going to wake
+anybody. My test premise was wrong, not the engine. It uses `stalled` now,
+which is a push, and the distinction is written into the test's own parameter.
+
+Along the way the suite failed once for being run at half past eleven at night:
+an offset of +60 puts a phone in quiet hours or out of them depending on when
+you happen to run the tests. The offset is derived from the clock now.
+
 **And every load said its shipper was Verified.**
 
 The same shape of defect, found by pulling the thread: a literal `"verified"`

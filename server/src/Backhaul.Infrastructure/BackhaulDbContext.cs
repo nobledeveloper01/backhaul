@@ -55,6 +55,12 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
     /// <summary>The runs a shipper makes again.</summary>
     public DbSet<LaneEntity> Lanes => Set<LaneEntity>();
 
+    /// <summary>Phones that have asked to be told things.</summary>
+    public DbSet<DeviceEntity> Devices => Set<DeviceEntity>();
+
+    /// <summary>What has already gone out, so it is not said again.</summary>
+    public DbSet<AlertSentEntity> AlertsSent => Set<AlertSentEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -69,6 +75,22 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
                 .WithOne()
                 .HasForeignKey(e => e.TripId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        model.Entity<DeviceEntity>(device =>
+        {
+            // The token is the identity of the install, so a reinstall
+            // replaces its own row rather than leaving a dead one beside it.
+            device.HasKey(d => d.Token);
+            device.HasIndex(d => d.UserId);
+        });
+
+        model.Entity<AlertSentEntity>(sent =>
+        {
+            sent.HasKey(s => s.Id);
+            // The three things `repeatAfterMs` is about: who was told, what
+            // about, and which trip. Read once per dispatcher run, per person.
+            sent.HasIndex(s => new { s.UserId, s.TripId, s.Kind });
         });
 
         model.Entity<TripEventEntity>(evt =>

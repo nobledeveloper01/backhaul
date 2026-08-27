@@ -40,17 +40,28 @@ empirically. Roadmap phase 7.
 
 ## Blocked on the app layer
 
-### F3 — Stall and deviation alerts
+### F3 — Stall and deviation alerts · *transport only*
 
-`observe()` returns `stalled` and `silent` correctly and nothing consumes them.
-There is no notification layer, no shipper device to notify, and no rule yet
-about how often a shipper may be told the same thing.
+**The rule and the loop are both built.** `alerts.ts` decides who is told what
+and how often, parity-tested on both sides; `AlertDispatcher` runs it every
+five minutes, honours `repeatAfterMs` against a stored record of what actually
+went out, and holds a push inside the reader's own quiet hours rather than
+dropping it. The device registry carries the phone's UTC offset, because a loop
+running at three in the morning has no client to ask what hour it is where the
+person is.
 
-That last part is not a detail: a shipper pinged for every fifteen-minute
-coverage gap on a northern corridor stops reading the pings, and then the alert
-that matters is one of forty they ignored that day. The thresholds here are set
-wide for that reason and the alerting rule needs to be as considered as they
-were.
+What is left is **transport, and it is credentials rather than code**:
+
+- `IPushSender` has one implementation, `LoggingPushSender`, which writes the
+  notification to the log and says on every line that it did not send. Same
+  seam and same reason as `ISmsSender`. APNs wants a signed JWT and a p8 key
+  from an Apple developer account; FCM wants a service-account JSON.
+- The app cannot register a device until it has a push token to register, and
+  getting one needs a native module this build does not have. `registerDevice`
+  is written and proven over the wire against a token the round-trip makes up.
+
+So: nothing reaches a phone yet, and every piece between the condition and the
+gateway is built and tested.
 
 ### F4 — Proof of delivery
 

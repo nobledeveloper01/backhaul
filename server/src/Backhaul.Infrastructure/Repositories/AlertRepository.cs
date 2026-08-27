@@ -24,10 +24,11 @@ public sealed record OpenAlert(
 /// evidence the trip screens read.
 /// </para>
 /// <para>
-/// <c>LastSentAt</c> is null throughout: nothing has been pushed yet, because
-/// there is no push transport. Threading it through now means the day one
-/// arrives, the repeat policy is already being applied rather than being
-/// discovered.
+/// <c>LastSentAt</c> comes from what was actually sent — the one stored part
+/// of the alerting path, and the reason <c>repeatAfterMs</c> works. Without it
+/// a shipper on a northern corridor is told about the same coverage gap every
+/// time the dispatcher runs, and then the alert that matters is one of forty
+/// they ignored that day.
 /// </para>
 /// </remarks>
 public sealed class AlertRepository(BackhaulDbContext db)
@@ -38,11 +39,25 @@ public sealed class AlertRepository(BackhaulDbContext db)
             (principal.Role == Role.Carrier && trip.CarrierId == principal.UserId) ||
             (principal.Role == Role.Shipper && trip.ShipperId == principal.UserId));
 
+    /// <param name="principal">Whose trips.</param>
+    /// <param name="now">The clock, passed in.</param>
+    /// <param name="lastSent">
+    /// When each thing was last said to this person, by trip and kind. Null
+    /// when the caller does not care — the alerts screen renders what is true
+    /// now, and only the dispatcher is deciding whether to say it again.
+    /// </param>
+    /// <param name="ct">Cancellation.</param>
     public async Task<IReadOnlyList<OpenAlert>> OpenAsync(
         Principal principal,
         DateTimeOffset now,
+        IReadOnlyDictionary<(Guid TripId, string Kind), DateTimeOffset>? lastSent = null,
         CancellationToken ct = default)
     {
+        DateTimeOffset? SentAt(Guid tripId, AlertKind kind) =>
+            lastSent is not null && lastSent.TryGetValue((tripId, Alerts.ToWire(kind)), out var at)
+                ? at
+                : null;
+
         var trips = await Visible(principal).AsNoTracking().ToListAsync(ct);
         var ids = trips.Select(t => t.Id).ToList();
 
@@ -69,7 +84,7 @@ public sealed class AlertRepository(BackhaulDbContext db)
                     .Select(e => e.At)
                     .FirstOrDefaultAsync(ct);
 
-                found.Add(new OpenAlert(observed, trip.Id, corridor, since, null));
+                found.Add(new OpenAlert(observed, trip.Id, corridor, since, SentAt(trip.Id, observed)));
             }
         }
 
@@ -89,7 +104,7 @@ public sealed class AlertRepository(BackhaulDbContext db)
                 incident.TripId,
                 $"{trip.Origin}–{trip.Destination}",
                 incident.At,
-                null));
+                SentAt(incident.TripId, AlertKind.Incident)));
         }
 
         var duress = await db.DuressSignals
@@ -105,7 +120,7 @@ public sealed class AlertRepository(BackhaulDbContext db)
                 signal.TripId,
                 $"{trip.Origin}–{trip.Destination}",
                 signal.At,
-                null));
+                SentAt(signal.TripId, AlertKind.Duress)));
         }
 
         // A delivery is worth saying once, and only when it is proved.
@@ -122,7 +137,7 @@ public sealed class AlertRepository(BackhaulDbContext db)
                 delivery.TripId,
                 $"{trip.Origin}–{trip.Destination}",
                 delivery.SealedAt!.Value,
-                null));
+                SentAt(delivery.TripId, AlertKind.Delivered)));
         }
 
         return found;

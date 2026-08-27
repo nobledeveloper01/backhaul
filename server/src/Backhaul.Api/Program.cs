@@ -40,6 +40,21 @@ builder.Services.AddBackhaulPersistence(
 // against a real database.
 builder.Services.AddBackhaulSms(builder.Configuration["Sms:Provider"]);
 
+/*
+    The loop that finally sends the alerts.
+
+    `alerts.ts` has decided what reaches a phone and when since before there
+    was any way to send one, and it is parity-tested on both sides. This is
+    what runs it. Off by default in the in-memory store: a demonstration server
+    with no devices registered has nothing to do, and a background loop nobody
+    asked for is a surprise in a process somebody started to read Swagger.
+*/
+if (!string.IsNullOrWhiteSpace(connection)
+    || builder.Configuration.GetValue("Alerts:Dispatch", false))
+{
+    builder.Services.AddHostedService<AlertDispatcher>();
+}
+
 // The share route is the only one that answers an unauthenticated request with
 // a truck's position, which makes it the only one an outsider can hammer
 // without first getting a credential. Guessing a 32-byte token is not the

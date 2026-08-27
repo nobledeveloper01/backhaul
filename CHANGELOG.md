@@ -9,6 +9,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Alerts now have somewhere to go.** `alerts.ts` has decided who is told
+  what, how loudly and how often since before there was any way to send one —
+  exactly one kind is urgent, a push inside quiet hours is held rather than
+  dropped, and the same thing is not said twice inside its own window. All of
+  it parity-tested on both sides, and none of it running.
+
+  A dispatcher runs it every five minutes: derive what is true, ask the policy,
+  send what it says to send, and **record only that**. Recording only actual
+  sends is what makes holding work — the condition is still true after six in
+  the morning, still unsent, and goes out then. A loop that recorded holds
+  would have turned "quiet hours" into "dropped".
+
+  Quiet hours belong to the reader, so a phone registers its own UTC offset.
+  The alerts *screen* can ask the client what hour it is; a loop running at
+  three in the morning has nobody to ask, and assuming West Africa Time inside
+  the server is how that breaks the first time somebody ships from Accra.
+
+  Every person is a separate scope and a separate try: one shipper whose data
+  makes the loop throw must not stop the driver in trouble two rows down from
+  being told about.
+
+  **Nothing reaches a phone yet, and that is credentials rather than code.**
+  `IPushSender` has one implementation, which writes to the log and says on
+  every line that it did not send — the same seam as the SMS sender, for the
+  same reason. APNs wants a p8 key; FCM wants a service account. The app cannot
+  register a device until it has a token to register, and that needs a native
+  module this build does not have.
+
 - **The capture loop is connected.** `Tracker` was written and tested,
   `permissions.ts` was written and tested, the Android foreground service and
   the iOS location manager were both built — and nothing in the app ever called

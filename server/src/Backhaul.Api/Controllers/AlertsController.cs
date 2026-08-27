@@ -54,6 +54,7 @@ public sealed record AlertsResponse(IReadOnlyList<AlertResponse> Alerts, string?
 [Tags("alerts")]
 public sealed class AlertsController(
     AlertRepository alerts,
+    NotificationRepository sent,
     TimeProvider clock) : AuthorisedController
 {
     /// <param name="localHour">The reader's own hour of the day, 0–23.</param>
@@ -68,7 +69,11 @@ public sealed class AlertsController(
         if (localHour is < 0 or > 23) return BadRequest("localHour must be between 0 and 23.");
 
         var now = clock.GetUtcNow();
-        var open = await alerts.OpenAsync(Caller, now, ct);
+        // With what has already gone out, so this screen agrees with the
+        // phone. A shipper who was pushed about a stall an hour ago should see
+        // it marked as already sent rather than as pending — the screen and the
+        // dispatcher read the same policy against the same record.
+        var open = await alerts.OpenAsync(Caller, now, await sent.LastSentAsync(Caller.UserId, ct), ct);
 
         var audience = Caller.Role switch
         {

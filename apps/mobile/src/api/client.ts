@@ -638,6 +638,32 @@ export class BackhaulApi {
 
   // --- the person signed in ----------------------------------------------
 
+  /**
+   * Register this install for notifications.
+   *
+   * The offset goes with it because **quiet hours belong to the reader**. The
+   * alerts screen can be asked what hour it is; the server's dispatcher runs
+   * at three in the morning with nobody to ask, and assuming West Africa Time
+   * inside the server is how this breaks the first time somebody ships from
+   * Accra.
+   */
+  async registerDevice(
+    token: string,
+    platform: 'ios' | 'android',
+    utcOffsetMinutes: number,
+  ): Promise<ApiResult<null>> {
+    return this.request<null>('PUT', '/v1/me/devices', {
+      token,
+      platform,
+      utcOffsetMinutes,
+    });
+  }
+
+  /** Stop sending to this install. */
+  async forgetDevice(token: string): Promise<ApiResult<null>> {
+    return this.request<null>('DELETE', `/v1/me/devices/${encodeURIComponent(token)}`);
+  }
+
   async earnings(from: Date, to: Date): Promise<ApiResult<EarningsView>> {
     const query = new URLSearchParams({
       from: from.toISOString(),
