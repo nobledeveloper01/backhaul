@@ -767,6 +767,23 @@ export class BackhaulApi {
     );
   }
 
+  /**
+   * Every pair on the board that will *not* share a truck, and why.
+   *
+   * The mirror of `pairs`. A carrier looking at two loads that nearly fit
+   * needs to know which of the five things is wrong, because one of them —
+   * a pickup fifty-one kilometres away — they might solve with a phone call.
+   */
+  async pairRefusals(truck: string): Promise<ApiResult<readonly PairRefusalView[]>> {
+    return map(
+      await this.request<readonly RawPairRefusal[]>(
+        'GET',
+        `/v1/loads/pairs/refusals?truck=${truck}`,
+      ),
+      (rows) => rows.map(toPairRefusal),
+    );
+  }
+
   // --- pricing ------------------------------------------------------------
 
   async quote(truck: string, distanceMetres: number): Promise<ApiResult<QuoteView>> {
@@ -1749,6 +1766,25 @@ function toPairing(raw: RawPairing): PairingView {
  * without it is a quote a screen can render as a price, and no estimate in
  * this product is presented as a measurement.
  */
+export interface PairRefusalView {
+  readonly a: LoadView;
+  readonly b: LoadView;
+  /** too_heavy, pickups_too_far, drops_too_far, wrong_truck or too_empty. */
+  readonly reason: string;
+  readonly detail: string;
+}
+
+interface RawPairRefusal {
+  a: RawLoad;
+  b: RawLoad;
+  reason: string;
+  detail: string;
+}
+
+function toPairRefusal(raw: RawPairRefusal): PairRefusalView {
+  return { ...raw, a: toLoad(raw.a), b: toLoad(raw.b) };
+}
+
 export interface QuoteView {
   readonly low: number;
   readonly mid: number;

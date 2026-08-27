@@ -126,6 +126,65 @@ public sealed class ChainController(MarketRepository market, TimeProvider clock)
             .ToList();
     }
 
+    /// <summary>
+    /// Every pair on the board that will <em>not</em> share a truck, and why.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <c>pairs</c>, and the same argument as the chain's
+    /// refusals: a carrier looking at two loads that nearly fit needs to know
+    /// which of the five things is wrong, because one of them — a pickup
+    /// fifty-one kilometres away — they might solve with a phone call.
+    /// </remarks>
+    /// <param name="truck">The class of truck being offered.</param>
+    /// <param name="ct">Cancellation.</param>
+    [HttpGet("pairs/refusals")]
+    [ProducesResponseType<IReadOnlyList<PairRefusalResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<PairRefusalResponse>>> GetPairRefusals(
+        [FromQuery] string truck,
+        CancellationToken ct)
+    {
+        var truckClass = Trucks.FromWire(truck);
+        if (truckClass is null) return BadRequest($"Unknown truck class '{truck}'.");
+
+        var priced = (await market.BoardAsync(clock.GetUtcNow(), ct))
+            .Where(l => l.OfferedKobo is not null)
+            .ToList();
+
+        var refusals = new List<PairRefusalResponse>();
+
+        for (var i = 0; i < priced.Count; i++)
+        {
+            for (var j = i + 1; j < priced.Count; j++)
+            {
+                var verdict = Consolidation.CanShare(
+                    ToPairLoad(priced[i]),
+                    ToPairLoad(priced[j]),
+                    truckClass.Value);
+
+                if (verdict is not PairVerdict.No no) continue;
+
+                refusals.Add(new PairRefusalResponse(
+                    ToResponse(priced[i]),
+                    ToResponse(priced[j]),
+                    PairRefusalWire(no.Reason),
+                    no.Detail));
+            }
+        }
+
+        return refusals;
+    }
+
+    private static string PairRefusalWire(PairRefusal reason) => reason switch
+    {
+        PairRefusal.TooHeavy => "too_heavy",
+        PairRefusal.PickupsTooFar => "pickups_too_far",
+        PairRefusal.DropsTooFar => "drops_too_far",
+        PairRefusal.WrongTruck => "wrong_truck",
+        PairRefusal.TooEmpty => "too_empty",
+        _ => throw new InvalidOperationException($"unmapped refusal {reason}"),
+    };
+
     private static ChainLeg ToLeg(LoadRecord row)
     {
         var from = new Position(row.OriginLat, row.OriginLon, 10, row.ReadyBy);

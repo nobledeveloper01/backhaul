@@ -143,3 +143,10 @@ public sealed record PairingResponse(
     string PaysBNaira,
     long CarrierGetsKobo,
     string CarrierGetsNaira);
+
+/// <summary>Two loads that will not share a truck, and which of the five things is wrong.</summary>
+public sealed record PairRefusalResponse(
+    LoadResponse A,
+    LoadResponse B,
+    string Reason,
+    string Detail);

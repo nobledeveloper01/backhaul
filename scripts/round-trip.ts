@@ -424,9 +424,25 @@ async function main(): Promise<void> {
   {
     const board = await api.loads();
     check('the load board reads back', board.ok, board.ok ? '' : board.failure.detail);
+    if (board.ok && board.value.length > 0) {
+      // The coordinates travel: "going your way" is a claim about exactly
+      // these four numbers, and a client that cannot place a load cannot
+      // price the haul or check the ranking.
+      const first = board.value[0];
+      check(
+        'and every load carries where it starts and ends',
+        first !== undefined && Number.isFinite(first.load.originLat),
+      );
+    }
 
     const pairs = await api.pairs('trailer_30t');
     check('pairs read back', pairs.ok, pairs.ok ? '' : pairs.failure.detail);
+
+    const refused = await api.pairRefusals('trailer_30t');
+    check('pair refusals read back', refused.ok, refused.ok ? '' : refused.failure.detail);
+
+    const mine = await api.myLoads();
+    check('a shipper\'s own loads read back', mine.ok, mine.ok ? '' : mine.failure.detail);
 
     const priced = await api.quote('trailer_30t', 830_000);
     check('a quote reads back', priced.ok, priced.ok ? '' : priced.failure.detail);

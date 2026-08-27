@@ -17,18 +17,37 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { newId } from '../state/ids';
 
 interface Props {
   readonly onBack: () => void;
 }
 
 /** Corridors a shipper picks from, with the road distance somebody would drive. */
-const CORRIDORS: readonly { from: string; to: string; metres: number }[] = [
-  { from: 'Lagos', to: 'Ibadan', metres: 130_000 },
-  { from: 'Lagos', to: 'Abuja', metres: 750_000 },
-  { from: 'Lagos', to: 'Kano', metres: 1_000_000 },
-  { from: 'Port Harcourt', to: 'Abuja', metres: 620_000 },
-  { from: 'Kano', to: 'Lagos', metres: 1_000_000 },
+/**
+ * The corridors this screen offers, with where each end is.
+ *
+ * The coordinates are here because a posted load carries them: "going your
+ * way" is a claim about where a load starts and ends, and a board entry
+ * without them cannot be ranked, priced or drawn. Five corridors rather than a
+ * map, because a shipper posting from an office types a route they run rather
+ * than dropping a pin.
+ */
+const CORRIDORS: readonly {
+  from: string;
+  to: string;
+  metres: number;
+  fromLat: number;
+  fromLon: number;
+  toLat: number;
+  toLon: number;
+}[] = [
+  { from: 'Lagos', to: 'Ibadan', metres: 130_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 7.3775, toLon: 3.947 },
+  { from: 'Lagos', to: 'Abuja', metres: 750_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 9.0765, toLon: 7.3986 },
+  { from: 'Lagos', to: 'Kano', metres: 1_000_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 12.0022, toLon: 8.5919 },
+  { from: 'Port Harcourt', to: 'Abuja', metres: 620_000, fromLat: 4.8156, fromLon: 7.0498, toLat: 9.0765, toLon: 7.3986 },
+  { from: 'Kano', to: 'Lagos', metres: 1_000_000, fromLat: 12.0022, fromLon: 8.5919, toLat: 6.4531, toLon: 3.3958 },
 ];
 
 /**
@@ -66,6 +85,52 @@ export function PostLoadScreen({ onBack }: Props) {
   );
 
   const tooHeavy = validWeight && truck === null;
+
+  const { api } = useSession();
+  const [posting, setPosting] = useState(false);
+  const [posted, setPosted] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  /*
+    Posted only once the server has it.
+
+    A load that reads "Posted" and is not on the board is a shipper waiting for
+    bids that cannot arrive, and they will not find out until they wonder why
+    it has been quiet.
+
+    Ready in an hour and open for two days. Both are defaults a posting screen
+    has to pick, and neither is a rule — the moment a shipper needs to say
+    "Thursday" this becomes a field.
+  */
+  const post = () => {
+    if (truck === null || corridor === undefined || posting) return;
+
+    setPosting(true);
+    setFailed(false);
+
+    const now = Date.now();
+
+    void api
+      .postLoad(newId(), {
+        originName: corridor.from,
+        destinationName: corridor.to,
+        originLat: corridor.fromLat,
+        originLon: corridor.fromLon,
+        destinationLat: corridor.toLat,
+        destinationLon: corridor.toLon,
+        cargo,
+        weightTonnes: weight,
+        requires: truck,
+        offeredKobo: estimate?.mid ?? null,
+        readyBy: new Date(now + 3_600_000),
+        expiresAt: new Date(now + 2 * 86_400_000),
+      })
+      .then((result) => {
+        setPosting(false);
+        if (result.ok) setPosted(true);
+        else setFailed(true);
+      });
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -189,15 +254,21 @@ export function PostLoadScreen({ onBack }: Props) {
           </Card>
         ) : null}
 
+        {failed ? (
+          <Text variant="label" tone="exception">
+            {t('not_posted')}
+          </Text>
+        ) : null}
+
         <Press
-          onPress={() => {}}
+          onPress={post}
           accessibilityLabel={t('post_this_load')}
           accessibilityHint={t('opens_to_bids')}
-          disabled={estimate === null || cargo.trim() === ''}
+          disabled={estimate === null || cargo.trim() === '' || posting || posted}
           style={[styles.post, { backgroundColor: colours.accent }]}
         >
           <Text variant="title" style={{ color: colours.onAccent }}>
-            {t('post_this_load')}
+            {posted ? t('posted') : posting ? t('posting') : t('post_this_load')}
           </Text>
         </Press>
       </ScrollView>

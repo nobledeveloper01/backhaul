@@ -1,12 +1,8 @@
-import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   MINIMUM_FILL,
   SHIPPER_DISCOUNT_PCT,
-  canShare,
-  format,
-  type PairLoad,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -17,8 +13,9 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
-import { demoNow } from '../state/demo';
-import { demoPairs } from '../state/product';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { LoadView } from '../api/client';
 
 interface Props {
   readonly onBack: () => void;
@@ -39,24 +36,22 @@ export function PairsScreen({ onBack }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const now = useMemo(demoNow, []);
 
-  const { board, found } = useMemo(() => demoPairs(now), [now]);
+  const { api } = useSession();
 
-  // Every pair the engine turned down, with its sentence.
-  const refused = useMemo(() => {
-    const out: { a: PairLoad; b: PairLoad; detail: string }[] = [];
-    for (let i = 0; i < board.length; i++) {
-      for (let j = i + 1; j < board.length; j++) {
-        const a = board[i];
-        const b = board[j];
-        if (a === undefined || b === undefined) continue;
-        const verdict = canShare(a, b, 'trailer_30t');
-        if (!verdict.ok) out.push({ a, b, detail: verdict.detail });
-      }
-    }
-    return out;
-  }, [board]);
+  /*
+    Both halves come from the server, over the whole board.
+
+    Pairing is quadratic in the number of loads, and the number of loads is the
+    thing a phone does not have. The refusals are a route of their own for the
+    same reason the chain's are: a carrier looking at two loads that nearly fit
+    needs to know which of the five things is wrong.
+  */
+  const { query: pairs } = useMine(() => api.pairs('trailer_30t'), [api]);
+  const { query: refusals } = useMine(() => api.pairRefusals('trailer_30t'), [api]);
+
+  const found = pairs.state === 'ready' ? pairs.value : [];
+  const refused = refusals.state === 'ready' ? refusals.value : [];
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -82,15 +77,15 @@ export function PairsScreen({ onBack }: Props) {
               <Card
                 key={`${pairing.a.id}-${pairing.b.id}`}
                 emphasis={index === 0 ? 'accent' : 'raised'}
-                overline={index === 0 ? 'Best fit' : undefined}
+                overline={index === 0 ? t('best_fit') : undefined}
                 icon={index === 0 ? 'package' : undefined}
               >
                 <View style={styles.fill}>
                   <Text variant="display" tabular>
-                    {Math.round(pairing.fill * 100)}%
+                    {pairing.fillPct}%
                   </Text>
                   <Text variant="body" tone="secondary" style={styles.flex}>
-                    of the trailer used
+                    {t('of_the_trailer_used')}
                   </Text>
                 </View>
 
@@ -99,22 +94,22 @@ export function PairsScreen({ onBack }: Props) {
                     style={[
                       styles.barFill,
                       {
-                        width: `${Math.round(pairing.fill * 100)}%`,
+                        width: `${pairing.fillPct}%`,
                         backgroundColor: colours.moving,
                       },
                     ]}
                   />
                 </View>
 
-                <Half load={pairing.a} pays={pairing.shipperPays[0]} />
-                <Half load={pairing.b} pays={pairing.shipperPays[1]} />
+                <Half load={pairing.a} pays={pairing.paysANaira} />
+                <Half load={pairing.b} pays={pairing.paysBNaira} />
 
                 <View style={[styles.total, { borderTopColor: colours.outline }]}>
                   <Text variant="title" style={styles.flex}>
                     {t('you_collect')}
                   </Text>
                   <Text variant="title" tabular>
-                    {format(pairing.carrierGets)}
+                    {pairing.carrierGetsNaira}
                   </Text>
                 </View>
               </Card>
@@ -155,8 +150,9 @@ export function PairsScreen({ onBack }: Props) {
   );
 }
 
-function Half({ load, pays }: { load: PairLoad; pays: number }) {
+function Half({ load, pays }: { load: LoadView; pays: string }) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.half, { borderColor: colours.outline }]}>
@@ -167,15 +163,15 @@ function Half({ load, pays }: { load: PairLoad; pays: number }) {
           and "· 14 t" after the corridor was the same fact twice in two lines.
         */}
         <Text variant="label" tone="secondary">
-          {load.origin} → {load.destination}
+          {load.originName} → {load.destinationName}
         </Text>
       </View>
       <View style={styles.pays}>
         <Text variant="body" tabular>
-          {format(pays as never)}
+          {pays}
         </Text>
         <Text variant="label" tone="secondary">
-          was {format(load.offered)}
+          {t('was_word')} {load.offeredNaira ?? '—'}
         </Text>
       </View>
     </View>

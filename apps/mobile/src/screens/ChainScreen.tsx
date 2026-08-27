@@ -1,12 +1,9 @@
-import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   MAX_REPOSITION_M,
-  distance,
   format,
-  ladenFraction,
-  subtract,
+  type Kobo,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -16,8 +13,9 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
-import { demoNow } from '../state/demo';
-import { demoChain } from '../state/product';
+import { useSession } from '../state/session';
+import { useMine } from '../state/server';
+import type { ChainRefusalView, ChainView } from '../api/client';
 
 interface Props {
   readonly onBack: () => void;
@@ -37,16 +35,58 @@ const km = (metres: number) => Math.round(metres / 1_000);
  * one that pays four times as much and starts 800 km away, with the sentence
  * explaining why it was passed over, is what makes the choice checkable.
  */
+/**
+ * Where the truck is.
+ *
+ * Hard-coded, and it is the last thing on this screen that is: a carrier's
+ * position comes from the tracker on their own phone, and the screen that
+ * reads it is the driver face rather than this one. Named so the day it is
+ * wired the change is one line.
+ */
+const KANO = { lat: 12.0022, lon: 8.592 };
+
 export function ChainScreen({ onBack }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const now = useMemo(demoNow, []);
 
-  const { built, aloneValue, cargoOf, rejected } = useMemo(() => demoChain(now), [now]);
+  const { api } = useSession();
 
-  const laden = ladenFraction(built);
-  const extra = subtract(built.pays, aloneValue.pays);
+  /*
+    The chain is built on the server, from the whole board.
+
+    Greedy at each step over every load on offer — which is a search this phone
+    cannot run, because it does not have the board. The starting leg is the
+    top-ranked load for this truck, which is the load a carrier is looking at
+    when they ask "what else could I do with this run".
+  */
+  const { query: board } = useMine(
+    () => api.loads({ lat: KANO.lat, lon: KANO.lon, truck: 'trailer_30t' }),
+    [api],
+  );
+
+  const start = board.state === 'ready'
+    ? (board.value.find((row) => row.blocked === null)?.load ?? null)
+    : null;
+
+  const { query: chain } = useMine<ChainView | null>(
+    async () => (start === null ? { ok: true, value: null } : api.chain(start.id)),
+    [api, start],
+  );
+
+  const { query: passed } = useMine<readonly ChainRefusalView[]>(
+    async () => (start === null ? { ok: true, value: [] } : api.chainRefusals(start.id)),
+    [api, start],
+  );
+
+  const built = chain.state === 'ready' ? chain.value : null;
+  const rejected = passed.state === 'ready' ? passed.value : [];
+
+  // What the first leg alone pays. The comparison the whole screen makes is
+  // "this chain against running that one load and going home empty".
+  const alone = built?.legs[0]?.paysKobo ?? 0;
+  const laden = (built?.ladenPct ?? 0) / 100;
+  const extra = ((built?.paysKobo ?? 0) - alone) as Kobo;
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -62,7 +102,7 @@ export function ChainScreen({ onBack }: Props) {
                 {Math.round(laden * 100)}%
               </Text>
               <Text variant="body" tone="secondary">
-                of the kilometres paid for
+                {t('of_the_km_paid_for')}
               </Text>
             </View>
             <View style={styles.flex}>
@@ -70,15 +110,13 @@ export function ChainScreen({ onBack }: Props) {
                 {format(extra)}
               </Text>
               <Text variant="body" tone="secondary">
-                more than running home empty
+                {t('more_than_running_home_empty')}
               </Text>
             </View>
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {km(built.deadheadM)} km empty across the whole chain. The same truck
-            going straight home covers {km(aloneValue.laden)} km loaded and the
-            same again with nothing on it.
+            {built?.deadheadKm ?? 0} {t('km_empty_across_the_chain')}
           </Text>
         </Card>
 
@@ -86,12 +124,23 @@ export function ChainScreen({ onBack }: Props) {
           {t('the_chain').toUpperCase()}
         </Text>
 
-        {built.legs.map((leg, index) => {
-          const previous = built.legs[index - 1];
-          // The gap between one leg dropping and the next one loading, measured
-          // rather than assumed. Written as 0 while it was hard-coded, which is
-          // exactly the kind of figure a carrier checks first.
-          const empty = previous === undefined ? 0 : distance(previous.to, leg.from);
+        {built === null ? (
+          <Text variant="body" tone="secondary">
+            {t('nothing_to_chain')}
+          </Text>
+        ) : null}
+
+        {(built?.legs ?? []).map((leg, index) => {
+          /*
+            The empty run between one leg dropping and the next loading.
+
+            The server's chain carries a total rather than a per-hop figure, so
+            this is the total shared out — which is honest for one hop and a
+            lie for three. It is the total on the first hop and zero after,
+            rather than an average that would put a plausible-looking number
+            against every gap.
+          */
+          const empty = index === 1 ? (built?.deadheadKm ?? 0) * 1_000 : 0;
 
           return (
           <View key={leg.loadId}>
@@ -100,8 +149,8 @@ export function ChainScreen({ onBack }: Props) {
                 <View style={[styles.hopLine, { backgroundColor: colours.outline }]} />
                 <Text variant="label" tone="secondary">
                   {empty < 1_000
-                    ? 'Loads where the last one dropped'
-                    : `${km(empty)} km empty to get there`}
+                    ? t('loads_where_last_dropped')
+                    : `${km(empty)} ${t('km_empty_to_get_there')}`}
                 </Text>
               </View>
             ) : null}
@@ -124,13 +173,13 @@ export function ChainScreen({ onBack }: Props) {
                   {leg.fromName} → {leg.toName}
                 </Text>
                 <Text variant="body" tabular>
-                  {format(leg.pays)}
+                  {leg.paysNaira}
                 </Text>
               </View>
 
               <Text variant="body" tone="secondary" style={styles.gapTight}>
-                {cargoOf.get(leg.loadId) ?? 'Load'} · {km(leg.distanceM)} km
-                {index === 0 ? ' · already carrying this' : ''}
+                {leg.distanceKm} km
+                {index === 0 ? ` · ${t('already_carrying_this')}` : ''}
               </Text>
             </Card>
           </View>
@@ -144,19 +193,13 @@ export function ChainScreen({ onBack }: Props) {
             </Text>
 
             {rejected.map((entry) => (
-              <Card key={entry.leg.loadId} emphasis="plain">
+              <Card key={entry.loadId} emphasis="plain">
                 <View style={styles.legTop}>
                   <Icon name="close" size="sm" colour={colours.textSecondary} />
                   <Text variant="body" tone="secondary" style={styles.flex}>
-                    {entry.leg.fromName} → {entry.leg.toName}
-                  </Text>
-                  <Text variant="label" tone="secondary" tabular>
-                    {format(entry.leg.pays)}
+                    {entry.detail}
                   </Text>
                 </View>
-                <Text variant="label" tone="secondary" style={styles.gapTight}>
-                  {entry.detail}
-                </Text>
               </Card>
             ))}
 

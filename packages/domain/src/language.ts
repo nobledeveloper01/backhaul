@@ -224,6 +224,18 @@ export type Phrase =
   | 'later'
   | 'there_now'
   | 'so_far'
+  | 'posting'
+  | 'posted'
+  | 'not_posted'
+  | 'of_the_trailer_used'
+  | 'was_word'
+  | 'of_the_km_paid_for'
+  | 'more_than_running_home_empty'
+  | 'km_empty_across_the_chain'
+  | 'loads_where_last_dropped'
+  | 'km_empty_to_get_there'
+  | 'already_carrying_this'
+  | 'nothing_to_chain'
   | 'recommended'
   | 'cheapest'
   | 'completed_trips'
@@ -709,6 +721,18 @@ export const EN: Readonly<Record<Phrase, string>> = {
   later: 'later',
   there_now: 'there now',
   so_far: 'so far',
+  posting: "Posting…",
+  posted: "Posted",
+  not_posted: "Not posted. Try again.",
+  of_the_trailer_used: "of the trailer used",
+  was_word: "was",
+  of_the_km_paid_for: "of the kilometres paid for",
+  more_than_running_home_empty: "more than running home empty",
+  km_empty_across_the_chain: "km empty across the whole chain.",
+  loads_where_last_dropped: "Loads where the last one dropped",
+  km_empty_to_get_there: "km empty to get there",
+  already_carrying_this: "already carrying this",
+  nothing_to_chain: "Nothing to chain from yet",
   recommended: "Recommended",
   cheapest: "Cheapest",
   completed_trips: "completed trips",
@@ -1194,6 +1218,18 @@ export const HA: Readonly<Record<Phrase, string>> = {
   later: 'daga baya',
   there_now: 'yana can yanzu',
   so_far: 'ya zuwa yanzu',
+  posting: "Ana sanyawa…",
+  posted: "An sanya",
+  not_posted: "Ba a sanya ba. Ka sake gwadawa.",
+  of_the_trailer_used: "na motar da aka yi amfani da shi",
+  was_word: "ya kasance",
+  of_the_km_paid_for: "na kilomitocin da aka biya",
+  more_than_running_home_empty: "fiye da komawa gida babu kaya",
+  km_empty_across_the_chain: "kilomita babu kaya a duk jerin tafiye-tafiyen.",
+  loads_where_last_dropped: "Ana ɗauka inda aka sauke na ƙarshe",
+  km_empty_to_get_there: "kilomita babu kaya kafin a isa can",
+  already_carrying_this: "ta riga ta ɗauki wannan",
+  nothing_to_chain: "Babu abin da za a fara jerin da shi tukuna",
   recommended: "An ba da shawara",
   cheapest: "Mafi arha",
   completed_trips: "tafiye-tafiyen da aka kammala",
@@ -1684,6 +1720,18 @@ export const YO: Readonly<Record<Phrase, string>> = {
   later: 'lẹ́yìn náà',
   there_now: 'ó wà níbẹ̀ báyìí',
   so_far: 'títí di ìsinsìnyí',
+  posting: "À ń gbé e kalẹ̀…",
+  posted: "A ti gbé e kalẹ̀",
+  not_posted: "A kò gbé e kalẹ̀. Tún gbìyànjú.",
+  of_the_trailer_used: "nínú ọkọ̀ tí a lò",
+  was_word: "ó jẹ́",
+  of_the_km_paid_for: "nínú àwọn kílómítà tí a san fún",
+  more_than_running_home_empty: "ju kíkó òfìfo padà sí ilé lọ",
+  km_empty_across_the_chain: "kílómítà ní òfìfo ní gbogbo ìsopọ̀ náà.",
+  loads_where_last_dropped: "Ó kó ẹrù níbi tí a ti sọ èyí tó kọjá kalẹ̀",
+  km_empty_to_get_there: "kílómítà ní òfìfo kí ó tó dé ibẹ̀",
+  already_carrying_this: "ó ti ń gbé èyí lọ́wọ́",
+  nothing_to_chain: "Kò tíì sí ohun tí a lè bẹ̀rẹ̀ ìsopọ̀ láti ọ̀dọ̀ rẹ̀",
   recommended: "A dábàá rẹ̀",
   cheapest: "Ó tọ́ jùlọ",
   completed_trips: "ìrìn tí a ti parí",
@@ -2172,6 +2220,18 @@ export const IG: Readonly<Record<Phrase, string>> = {
   later: 'mgbe e mesịrị',
   there_now: 'ọ nọ ebe ahụ ugbu a',
   so_far: 'ruo ugbu a',
+  posting: "Na-ebipụta…",
+  posted: "E bipụtala ya",
+  not_posted: "E bipụtaghị ya. Nwaa ọzọ.",
+  of_the_trailer_used: "nke ụgbọ e ji mee ihe",
+  was_word: "ọ bụ",
+  of_the_km_paid_for: "nke kilomita e kwụrụ ụgwọ ya",
+  more_than_running_home_empty: "karịa ịlaghachi n’ụlọ n’efu",
+  km_empty_across_the_chain: "kilomita n’efu na njikọ ahụ dum.",
+  loads_where_last_dropped: "Ọ na-ebu ebe e nyefere nke gara aga",
+  km_empty_to_get_there: "kilomita n’efu iji rute ebe ahụ",
+  already_carrying_this: "ọ na-ebubu nke a",
+  nothing_to_chain: "Ọ dịbeghị ihe a ga-eji malite njikọ",
   recommended: "A tụrụ aro ya",
   cheapest: "Kacha ọnụ ala",
   completed_trips: "njem emechara",
