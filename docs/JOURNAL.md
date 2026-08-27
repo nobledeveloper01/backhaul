@@ -6,6 +6,56 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (night) — Four engines get a route, and one of them argued
+
+**Did.** Escrow, cancellation, the cost model and driver statements now have
+somewhere to put their answer. Each got a C# mirror, parity cases in
+`fixtures/parity.json` before the endpoint existed, and then the endpoint —
+`GET /v1/trips/{id}/escrow`, `GET …/cancellation?by=`, `GET …/costs`, and
+`GET /v1/me/earnings`. 119 parity cases and 107 endpoint tests, both green.
+
+The one new table is `TripTermsEntity`: a trip had a driver, a carrier, a
+shipper and a corridor, and nothing about what it was worth. It is optional,
+and that is the point — a trip that is tracked and not traded is the wedge
+working, so every money route answers that case with a sentence.
+
+### What surprised us
+
+**The second milestone was reading the wrong evidence, and a test caught it
+before a carrier did.** The condition is "moving with positions arriving for
+six hours", and the first implementation summed time spent in the `in_transit`,
+`signal_lost` and `stalled` states. Two things wrong with that. An open stretch
+was measured to the *last event* rather than to now, so a truck currently in
+transit showed zero moving time forever and the milestone could never release
+while the trip was running. And `signal_lost` is precisely the state where
+positions are *not* arriving — counting it would have paid a carrier for the
+stretch a shipper disputes.
+
+It now sums the intervals between actual position samples, skipping any gap
+longer than `Tracker.SignalLostAfter`. Same threshold the tracker uses to call
+a trip silent, so there is one number and not two.
+
+**A `Func` in a LINQ query is a runtime failure, not a compile error.** The
+controller had its own `Owned(trip)` helper composed into `db.Trips.Any(...)`,
+which EF cannot translate and reported as an exception on the first request.
+The fix was not to inline the predicate: it was to move the write into the
+repository, where ADR-0008 says the principal filter lives. A controller that
+builds its own authorisation filter is a controller somebody will copy and get
+slightly wrong.
+
+**JavaScript and .NET disagree about rounding a negative half.**
+`Math.round(-2.5)` is -2; `Math.Round(-2.5, AwayFromZero)` is -3. It does not
+currently fire in `Advise` — the loss case returns before that line — but the
+parity assertion on a loss-making offer would have been a coin flip, so it now
+rounds the way the fixture generator did. Written down in both places rather
+than fixed silently.
+
+**`make server-run` was never listening where the repo said it was.**
+`round-trip` says "expects a server on :5111" and `DEFAULT_BASE_URL` in the
+mobile client agrees, but the target inherited 5063 from `launchSettings.json`
+— so following the instruction produced a connection refused and no hint as to
+why. The port is named in the Makefile now.
+
 ## 2026-08-28 (evening) — Four languages, and the helper that could not be told
 
 **Did.** Hausa, Yorùbá, Igbo and English across the whole app, asked at the

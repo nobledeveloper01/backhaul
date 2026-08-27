@@ -2137,5 +2137,752 @@
       ],
       "mayCarry": false
     }
-  ]
+  ],
+  "escrow": {
+    "retentionDays": 7,
+    "inTransitMs": 21600000,
+    "sumsTo100": true,
+    "schedule": [
+      {
+        "kind": "advance",
+        "pct": 30,
+        "condition": "The truck reached the depot and loading started."
+      },
+      {
+        "kind": "in_transit",
+        "pct": 20,
+        "condition": "The trip has been moving with positions arriving for six hours."
+      },
+      {
+        "kind": "delivered",
+        "pct": 40,
+        "condition": "Proof of delivery captured: photographs, a signature and a name."
+      },
+      {
+        "kind": "retention",
+        "pct": 10,
+        "condition": "Seven days after delivery with no exception raised."
+      }
+    ],
+    "agreedKobo": 224000000,
+    "nowIso": "2026-03-20T09:00:00.000Z",
+    "cases": [
+      {
+        "name": "nothing has happened",
+        "state": "assigned",
+        "movingForMs": 0,
+        "podSealed": false,
+        "deliveredAt": null,
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": false
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": false
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": false
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 0,
+        "heldBackKobo": 224000000,
+        "nextKind": "advance",
+        "nextCondition": "The truck reached the depot and loading started."
+      },
+      {
+        "name": "loading started",
+        "state": "loading",
+        "movingForMs": 0,
+        "podSealed": false,
+        "deliveredAt": null,
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": false
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": false
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 67200000,
+        "heldBackKobo": 156800000,
+        "nextKind": "in_transit",
+        "nextCondition": "The trip has been moving with positions arriving for six hours."
+      },
+      {
+        "name": "moving, five hours",
+        "state": "in_transit",
+        "movingForMs": 18000000,
+        "podSealed": false,
+        "deliveredAt": null,
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": false
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": false
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 67200000,
+        "heldBackKobo": 156800000,
+        "nextKind": "in_transit",
+        "nextCondition": "The trip has been moving with positions arriving for six hours."
+      },
+      {
+        "name": "moving, six hours exactly",
+        "state": "in_transit",
+        "movingForMs": 21600000,
+        "podSealed": false,
+        "deliveredAt": null,
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": true
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": false
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 112000000,
+        "heldBackKobo": 112000000,
+        "nextKind": "delivered",
+        "nextCondition": "Proof of delivery captured: photographs, a signature and a name."
+      },
+      {
+        "name": "delivered but not sealed",
+        "state": "delivered",
+        "movingForMs": 72000000,
+        "podSealed": false,
+        "deliveredAt": "2026-03-19T09:00:00.000Z",
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": true
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": false
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 112000000,
+        "heldBackKobo": 112000000,
+        "nextKind": "delivered",
+        "nextCondition": "Proof of delivery captured: photographs, a signature and a name."
+      },
+      {
+        "name": "sealed, one day ago",
+        "state": "delivered",
+        "movingForMs": 72000000,
+        "podSealed": true,
+        "deliveredAt": "2026-03-19T09:00:00.000Z",
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": true
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": true
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 201600000,
+        "heldBackKobo": 22400000,
+        "nextKind": "retention",
+        "nextCondition": "Seven days after delivery with no exception raised."
+      },
+      {
+        "name": "sealed, seven days ago",
+        "state": "delivered",
+        "movingForMs": 72000000,
+        "podSealed": true,
+        "deliveredAt": "2026-03-13T09:00:00.000Z",
+        "exceptionRaised": false,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": true
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": true
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": true
+          }
+        ],
+        "releasedKobo": 224000000,
+        "heldBackKobo": 0,
+        "nextKind": null,
+        "nextCondition": null
+      },
+      {
+        "name": "seven days but an exception is open",
+        "state": "delivered",
+        "movingForMs": 72000000,
+        "podSealed": true,
+        "deliveredAt": "2026-03-13T09:00:00.000Z",
+        "exceptionRaised": true,
+        "releases": [
+          {
+            "kind": "advance",
+            "pct": 30,
+            "amountKobo": 67200000,
+            "met": true
+          },
+          {
+            "kind": "in_transit",
+            "pct": 20,
+            "amountKobo": 44800000,
+            "met": true
+          },
+          {
+            "kind": "delivered",
+            "pct": 40,
+            "amountKobo": 89600000,
+            "met": true
+          },
+          {
+            "kind": "retention",
+            "pct": 10,
+            "amountKobo": 22400000,
+            "met": false
+          }
+        ],
+        "releasedKobo": 201600000,
+        "heldBackKobo": 22400000,
+        "nextKind": "retention",
+        "nextCondition": "Seven days after delivery with no exception raised."
+      }
+    ]
+  },
+  "cancellation": {
+    "graceMs": 7200000,
+    "agreedKobo": 224000000,
+    "acceptedAtIso": "2026-03-20T06:00:00.000Z",
+    "cases": [
+      {
+        "name": "shipper, inside the grace window",
+        "by": "shipper",
+        "state": "assigned",
+        "minutesAfterAccepted": 60,
+        "ok": true,
+        "reason": null,
+        "feePct": 0,
+        "feeKobo": 0,
+        "withinGrace": true,
+        "detail": "Nothing to pay — this was cancelled within two hours of being accepted.",
+        "countsAgainstRecord": false
+      },
+      {
+        "name": "shipper, after the grace window",
+        "by": "shipper",
+        "state": "assigned",
+        "minutesAfterAccepted": 180,
+        "ok": true,
+        "reason": null,
+        "feePct": 0,
+        "feeKobo": 0,
+        "withinGrace": false,
+        "detail": "Nothing to pay at this stage.",
+        "countsAgainstRecord": false
+      },
+      {
+        "name": "shipper, at the depot",
+        "by": "shipper",
+        "state": "loading",
+        "minutesAfterAccepted": 300,
+        "ok": true,
+        "reason": null,
+        "feePct": 50,
+        "feeKobo": 112000000,
+        "withinGrace": false,
+        "detail": "50% of the fare, because the truck was at the depot.",
+        "countsAgainstRecord": false
+      },
+      {
+        "name": "shipper, already on the road",
+        "by": "shipper",
+        "state": "in_transit",
+        "minutesAfterAccepted": 900,
+        "ok": true,
+        "reason": null,
+        "feePct": 100,
+        "feeKobo": 224000000,
+        "withinGrace": false,
+        "detail": "100% of the fare, because the load was already on the road.",
+        "countsAgainstRecord": false
+      },
+      {
+        "name": "carrier, inside the grace window",
+        "by": "carrier",
+        "state": "assigned",
+        "minutesAfterAccepted": 60,
+        "ok": true,
+        "reason": null,
+        "feePct": 0,
+        "feeKobo": 0,
+        "withinGrace": true,
+        "detail": "Nothing to pay — this was cancelled within two hours of being accepted.",
+        "countsAgainstRecord": true
+      },
+      {
+        "name": "carrier, after the grace window",
+        "by": "carrier",
+        "state": "assigned",
+        "minutesAfterAccepted": 180,
+        "ok": true,
+        "reason": null,
+        "feePct": 20,
+        "feeKobo": 44800000,
+        "withinGrace": false,
+        "detail": "20% of the fare, paid to the shipper, because the truck had been assigned.",
+        "countsAgainstRecord": true
+      },
+      {
+        "name": "carrier, at the depot",
+        "by": "carrier",
+        "state": "loading",
+        "minutesAfterAccepted": 300,
+        "ok": true,
+        "reason": null,
+        "feePct": 50,
+        "feeKobo": 112000000,
+        "withinGrace": false,
+        "detail": "50% of the fare, paid to the shipper, because the truck was at the depot.",
+        "countsAgainstRecord": true
+      },
+      {
+        "name": "carrier, already on the road",
+        "by": "carrier",
+        "state": "in_transit",
+        "minutesAfterAccepted": 900,
+        "ok": true,
+        "reason": null,
+        "feePct": 100,
+        "feeKobo": 224000000,
+        "withinGrace": false,
+        "detail": "100% of the fare, paid to the shipper, because the load was already on the road.",
+        "countsAgainstRecord": true
+      },
+      {
+        "name": "a delivered trip cannot be cancelled",
+        "by": "shipper",
+        "state": "delivered",
+        "minutesAfterAccepted": 900,
+        "ok": false,
+        "reason": "terminal",
+        "feePct": null,
+        "feeKobo": null,
+        "withinGrace": null,
+        "detail": "This trip is already delivered and cannot be cancelled.",
+        "countsAgainstRecord": false
+      },
+      {
+        "name": "a cancelled trip cannot be cancelled again",
+        "by": "carrier",
+        "state": "cancelled",
+        "minutesAfterAccepted": 900,
+        "ok": false,
+        "reason": "terminal",
+        "feePct": null,
+        "feeKobo": null,
+        "withinGrace": null,
+        "detail": "This trip is already cancelled and cannot be cancelled.",
+        "countsAgainstRecord": true
+      }
+    ]
+  },
+  "costs": {
+    "emptyFuelFraction": 0.75,
+    "floorMargin": 0.15,
+    "cases": [
+      {
+        "name": "Lagos–Kano, trailer, loaded both ways",
+        "truck": "trailer_30t",
+        "ladenM": 830000,
+        "emptyM": 0,
+        "dieselPerLitreKobo": 125000,
+        "leviesKobo": 6000000,
+        "otherKobo": 1500000,
+        "litres": 374,
+        "fuelKobo": 46687500,
+        "runningKobo": 13280000,
+        "totalKobo": 67467500,
+        "walkAwayBelowKobo": 79373529,
+        "offers": [
+          {
+            "offeredKobo": 53974000,
+            "profitKobo": -13493500,
+            "fractionPct": -250,
+            "take": false,
+            "detail": "This loses money: 374 litres of diesel and the running cost come to more than the fare."
+          },
+          {
+            "offeredKobo": 79373529,
+            "profitKobo": 11906029,
+            "fractionPct": 150,
+            "take": true,
+            "detail": "About 15% over what the run costs."
+          },
+          {
+            "offeredKobo": 111122941,
+            "profitKobo": 43655441,
+            "fractionPct": 393,
+            "take": true,
+            "detail": "About 39% over what the run costs."
+          }
+        ]
+      },
+      {
+        "name": "Lagos–Kano, trailer, empty return",
+        "truck": "trailer_30t",
+        "ladenM": 830000,
+        "emptyM": 830000,
+        "dieselPerLitreKobo": 125000,
+        "leviesKobo": 6000000,
+        "otherKobo": 1500000,
+        "litres": 654,
+        "fuelKobo": 81703125,
+        "runningKobo": 26560000,
+        "totalKobo": 115763125,
+        "walkAwayBelowKobo": 136191912,
+        "offers": [
+          {
+            "offeredKobo": 92610500,
+            "profitKobo": -23152625,
+            "fractionPct": -250,
+            "take": false,
+            "detail": "This loses money: 654 litres of diesel and the running cost come to more than the fare."
+          },
+          {
+            "offeredKobo": 136191912,
+            "profitKobo": 20428787,
+            "fractionPct": 150,
+            "take": true,
+            "detail": "About 15% over what the run costs."
+          },
+          {
+            "offeredKobo": 190668677,
+            "profitKobo": 74905552,
+            "fractionPct": 393,
+            "take": true,
+            "detail": "About 39% over what the run costs."
+          }
+        ]
+      },
+      {
+        "name": "Lagos–Ibadan, canter",
+        "truck": "canter",
+        "ladenM": 120000,
+        "emptyM": 40000,
+        "dieselPerLitreKobo": 125000,
+        "leviesKobo": 6000000,
+        "otherKobo": 1500000,
+        "litres": 33,
+        "fuelKobo": 4125000,
+        "runningKobo": 1200000,
+        "totalKobo": 12825000,
+        "walkAwayBelowKobo": 15088235,
+        "offers": [
+          {
+            "offeredKobo": 10260000,
+            "profitKobo": -2565000,
+            "fractionPct": -250,
+            "take": false,
+            "detail": "This loses money: 33 litres of diesel and the running cost come to more than the fare."
+          },
+          {
+            "offeredKobo": 15088235,
+            "profitKobo": 2263235,
+            "fractionPct": 150,
+            "take": true,
+            "detail": "About 15% over what the run costs."
+          },
+          {
+            "offeredKobo": 21123529,
+            "profitKobo": 8298529,
+            "fractionPct": 393,
+            "take": true,
+            "detail": "About 39% over what the run costs."
+          }
+        ]
+      },
+      {
+        "name": "across town, pickup",
+        "truck": "pickup",
+        "ladenM": 12000,
+        "emptyM": 6000,
+        "dieselPerLitreKobo": 125000,
+        "leviesKobo": 6000000,
+        "otherKobo": 1500000,
+        "litres": 2,
+        "fuelKobo": 247500,
+        "runningKobo": 72000,
+        "totalKobo": 7819500,
+        "walkAwayBelowKobo": 9199412,
+        "offers": [
+          {
+            "offeredKobo": 6255600,
+            "profitKobo": -1563900,
+            "fractionPct": -250,
+            "take": false,
+            "detail": "This loses money: 2 litres of diesel and the running cost come to more than the fare."
+          },
+          {
+            "offeredKobo": 9199412,
+            "profitKobo": 1379912,
+            "fractionPct": 150,
+            "take": true,
+            "detail": "About 15% over what the run costs."
+          },
+          {
+            "offeredKobo": 12879177,
+            "profitKobo": 5059677,
+            "fractionPct": 393,
+            "take": true,
+            "detail": "About 39% over what the run costs."
+          }
+        ]
+      },
+      {
+        "name": "lowbed, long haul",
+        "truck": "lowbed",
+        "ladenM": 700000,
+        "emptyM": 350000,
+        "dieselPerLitreKobo": 125000,
+        "leviesKobo": 6000000,
+        "otherKobo": 1500000,
+        "litres": 501,
+        "fuelKobo": 62562500,
+        "runningKobo": 19950000,
+        "totalKobo": 90012500,
+        "walkAwayBelowKobo": 105897059,
+        "offers": [
+          {
+            "offeredKobo": 72010000,
+            "profitKobo": -18002500,
+            "fractionPct": -250,
+            "take": false,
+            "detail": "This loses money: 501 litres of diesel and the running cost come to more than the fare."
+          },
+          {
+            "offeredKobo": 105897059,
+            "profitKobo": 15884559,
+            "fractionPct": 150,
+            "take": true,
+            "detail": "About 15% over what the run costs."
+          },
+          {
+            "offeredKobo": 148255883,
+            "profitKobo": 58243383,
+            "fractionPct": 393,
+            "take": true,
+            "detail": "About 39% over what the run costs."
+          }
+        ]
+      }
+    ]
+  },
+  "earnings": {
+    "minimumTripsForPerKm": 3,
+    "nowIso": "2026-04-02T09:00:00.000Z",
+    "cases": [
+      {
+        "trips": 0,
+        "fromIso": "2026-03-01T00:00:00.000Z",
+        "toIso": "2026-03-31T23:59:59.999Z",
+        "countedTrips": 0,
+        "distanceM": 0,
+        "earnedKobo": 0,
+        "outOfPocketKobo": 0,
+        "outstandingKobo": 0,
+        "settledKobo": 0,
+        "perKilometreKobo": null,
+        "unpaidTripIds": [],
+        "longestWaitMs": null
+      },
+      {
+        "trips": 1,
+        "fromIso": "2026-03-01T00:00:00.000Z",
+        "toIso": "2026-03-31T23:59:59.999Z",
+        "countedTrips": 1,
+        "distanceM": 830000,
+        "earnedKobo": 18000000,
+        "outOfPocketKobo": 1500000,
+        "outstandingKobo": 1500000,
+        "settledKobo": 18000000,
+        "perKilometreKobo": null,
+        "unpaidTripIds": [],
+        "longestWaitMs": null
+      },
+      {
+        "trips": 2,
+        "fromIso": "2026-03-01T00:00:00.000Z",
+        "toIso": "2026-03-31T23:59:59.999Z",
+        "countedTrips": 2,
+        "distanceM": 1660000,
+        "earnedKobo": 36000000,
+        "outOfPocketKobo": 1500000,
+        "outstandingKobo": 19500000,
+        "settledKobo": 18000000,
+        "perKilometreKobo": null,
+        "unpaidTripIds": [
+          "t2"
+        ],
+        "longestWaitMs": 2624400000
+      },
+      {
+        "trips": 3,
+        "fromIso": "2026-03-01T00:00:00.000Z",
+        "toIso": "2026-03-31T23:59:59.999Z",
+        "countedTrips": 3,
+        "distanceM": 2490000,
+        "earnedKobo": 54000000,
+        "outOfPocketKobo": 1500000,
+        "outstandingKobo": 19500000,
+        "settledKobo": 36000000,
+        "perKilometreKobo": 21687,
+        "unpaidTripIds": [
+          "t2"
+        ],
+        "longestWaitMs": 2624400000
+      },
+      {
+        "trips": 7,
+        "fromIso": "2026-03-01T00:00:00.000Z",
+        "toIso": "2026-03-31T23:59:59.999Z",
+        "countedTrips": 7,
+        "distanceM": 5810000,
+        "earnedKobo": 126000000,
+        "outOfPocketKobo": 4500000,
+        "outstandingKobo": 58500000,
+        "settledKobo": 72000000,
+        "perKilometreKobo": 21687,
+        "unpaidTripIds": [
+          "t2",
+          "t4",
+          "t6"
+        ],
+        "longestWaitMs": 2624400000
+      }
+    ]
+  }
 }

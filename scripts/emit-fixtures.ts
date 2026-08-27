@@ -85,6 +85,35 @@ import {
   type Record_,
 } from '../packages/domain/src/trust.ts';
 import { assess, mayCarry, type Vehicle } from '../packages/domain/src/vehicles.ts';
+import {
+  IN_TRANSIT_MS,
+  RETENTION_DAYS,
+  SCHEDULE,
+  heldBack,
+  nextRelease,
+  released,
+  schedule,
+  sumsTo100,
+  type EscrowConditions,
+} from '../packages/domain/src/escrow.ts';
+import { GRACE_MS, cancel, countsAgainstRecord } from '../packages/domain/src/cancellation.ts';
+import {
+  EMPTY_FUEL_FRACTION,
+  FLOOR_MARGIN,
+  advise,
+  margin,
+  runningCost,
+  walkAwayBelow,
+  type CostInput,
+} from '../packages/domain/src/costs.ts';
+import {
+  MINIMUM_TRIPS_FOR_PER_KM,
+  longestWaitMs,
+  perKilometre,
+  statement,
+  unpaid,
+  type Earning,
+} from '../packages/domain/src/earnings.ts';
 
 const CLASSES: readonly TruckClass[] = [
   'pickup',
@@ -750,6 +779,194 @@ const vehicleCases = (
   };
 });
 
+// --- escrow ----------------------------------------------------------------
+
+/**
+ * The release schedule, against trips at every stage.
+ *
+ * The condition sentences are fixture material for the same reason the trip
+ * machine's refusals are: they are rendered to a carrier deciding whether to
+ * take the next load, and two servers explaining the same held-back 10% in
+ * different words is an argument nobody can settle.
+ */
+const ESCROW_NOW = new Date('2026-03-20T09:00:00.000Z');
+const escrowAgreed = fromNaira(2_240_000);
+
+const escrowCases = (
+  [
+    ['nothing has happened', { state: 'assigned', movingForMs: 0, podSealed: false, deliveredAt: null, exceptionRaised: false }],
+    ['loading started', { state: 'loading', movingForMs: 0, podSealed: false, deliveredAt: null, exceptionRaised: false }],
+    ['moving, five hours', { state: 'in_transit', movingForMs: 5 * 3_600_000, podSealed: false, deliveredAt: null, exceptionRaised: false }],
+    ['moving, six hours exactly', { state: 'in_transit', movingForMs: IN_TRANSIT_MS, podSealed: false, deliveredAt: null, exceptionRaised: false }],
+    ['delivered but not sealed', { state: 'delivered', movingForMs: 20 * 3_600_000, podSealed: false, deliveredAt: new Date('2026-03-19T09:00:00.000Z'), exceptionRaised: false }],
+    ['sealed, one day ago', { state: 'delivered', movingForMs: 20 * 3_600_000, podSealed: true, deliveredAt: new Date('2026-03-19T09:00:00.000Z'), exceptionRaised: false }],
+    ['sealed, seven days ago', { state: 'delivered', movingForMs: 20 * 3_600_000, podSealed: true, deliveredAt: new Date('2026-03-13T09:00:00.000Z'), exceptionRaised: false }],
+    ['seven days but an exception is open', { state: 'delivered', movingForMs: 20 * 3_600_000, podSealed: true, deliveredAt: new Date('2026-03-13T09:00:00.000Z'), exceptionRaised: true }],
+  ] as const
+).map(([name, raw]) => {
+  const conditions: EscrowConditions = raw;
+  const releases = schedule(escrowAgreed, conditions, ESCROW_NOW);
+  const next = nextRelease(releases);
+
+  return {
+    name,
+    state: conditions.state,
+    movingForMs: conditions.movingForMs,
+    podSealed: conditions.podSealed,
+    deliveredAt: conditions.deliveredAt === null ? null : iso(conditions.deliveredAt),
+    exceptionRaised: conditions.exceptionRaised,
+    releases: releases.map((release) => ({
+      kind: release.milestone.kind,
+      pct: release.milestone.pct,
+      amountKobo: release.amount,
+      met: release.met,
+    })),
+    releasedKobo: released(releases),
+    heldBackKobo: heldBack(escrowAgreed, releases),
+    nextKind: next === null ? null : next.milestone.kind,
+    nextCondition: next === null ? null : next.milestone.condition,
+  };
+});
+
+// --- cancellation ----------------------------------------------------------
+
+const CANCEL_ACCEPTED = new Date('2026-03-20T06:00:00.000Z');
+const cancelAgreed = fromNaira(2_240_000);
+
+const cancelCases = (
+  [
+    ['shipper, inside the grace window', 'shipper', 'assigned', 60],
+    ['shipper, after the grace window', 'shipper', 'assigned', 180],
+    ['shipper, at the depot', 'shipper', 'loading', 300],
+    ['shipper, already on the road', 'shipper', 'in_transit', 900],
+    ['carrier, inside the grace window', 'carrier', 'assigned', 60],
+    ['carrier, after the grace window', 'carrier', 'assigned', 180],
+    ['carrier, at the depot', 'carrier', 'loading', 300],
+    ['carrier, already on the road', 'carrier', 'in_transit', 900],
+    ['a delivered trip cannot be cancelled', 'shipper', 'delivered', 900],
+    ['a cancelled trip cannot be cancelled again', 'carrier', 'cancelled', 900],
+  ] as const
+).map(([name, by, state, minutes]) => {
+  const outcome = cancel({
+    by,
+    state,
+    agreed: cancelAgreed,
+    acceptedAt: CANCEL_ACCEPTED,
+    now: new Date(CANCEL_ACCEPTED.getTime() + minutes * 60_000),
+  });
+
+  return {
+    name,
+    by,
+    state,
+    minutesAfterAccepted: minutes,
+    ok: outcome.ok,
+    reason: outcome.ok ? null : outcome.reason,
+    feePct: outcome.ok ? outcome.feePct : null,
+    feeKobo: outcome.ok ? outcome.fee : null,
+    withinGrace: outcome.ok ? outcome.withinGrace : null,
+    detail: outcome.detail,
+    countsAgainstRecord: countsAgainstRecord(by, state),
+  };
+});
+
+// --- what the road costs ---------------------------------------------------
+
+const costCases = (
+  [
+    ['Lagos–Kano, trailer, loaded both ways', 'trailer_30t', 830_000, 0],
+    ['Lagos–Kano, trailer, empty return', 'trailer_30t', 830_000, 830_000],
+    ['Lagos–Ibadan, canter', 'canter', 120_000, 40_000],
+    ['across town, pickup', 'pickup', 12_000, 6_000],
+    ['lowbed, long haul', 'lowbed', 700_000, 350_000],
+  ] as const
+).map(([name, truck, ladenM, emptyM]) => {
+  const input: CostInput = {
+    truck,
+    ladenM,
+    emptyM,
+    dieselPerLitre: fromNaira(1_250),
+    levies: fromNaira(60_000),
+    other: fromNaira(15_000),
+  };
+
+  const costs = runningCost(input);
+  const floor = walkAwayBelow(input);
+  // Three offers around the floor: below it, on it, and comfortably over.
+  const offers = [
+    Math.round(costs.total * 0.8),
+    floor,
+    Math.round(floor * 1.4),
+  ] as Kobo[];
+
+  return {
+    name,
+    truck,
+    ladenM,
+    emptyM,
+    dieselPerLitreKobo: input.dieselPerLitre,
+    leviesKobo: input.levies,
+    otherKobo: input.other,
+    litres: costs.litres,
+    fuelKobo: costs.fuel,
+    runningKobo: costs.running,
+    totalKobo: costs.total,
+    walkAwayBelowKobo: floor,
+    offers: offers.map((offered) => {
+      const found = margin(offered, input);
+      const opinion = advise(offered, input);
+      return {
+        offeredKobo: offered,
+        profitKobo: found.profit,
+        fractionPct: found.fraction === null ? null : Math.round(found.fraction * 1000),
+        take: opinion.take,
+        detail: opinion.detail,
+      };
+    }),
+  };
+});
+
+// --- earnings --------------------------------------------------------------
+
+const EARNINGS_FROM = new Date('2026-03-01T00:00:00.000Z');
+const EARNINGS_TO = new Date('2026-03-31T23:59:59.999Z');
+const EARNINGS_NOW = new Date('2026-04-02T09:00:00.000Z');
+
+const earningsFor = (n: number): Earning[] =>
+  Array.from({ length: n }, (_, i) => ({
+    tripId: `t${i + 1}`,
+    corridor: 'Lagos–Kano',
+    deliveredAt: new Date(EARNINGS_FROM.getTime() + (i + 1) * 86_400_000),
+    distanceM: 830_000,
+    pay: fromNaira(180_000),
+    advance: fromNaira(80_000),
+    // Every third trip costs more than the advance covered.
+    spent: fromNaira(i % 3 === 0 ? 95_000 : 60_000),
+    paidAt: i % 2 === 0 ? new Date(EARNINGS_FROM.getTime() + (i + 5) * 86_400_000) : null,
+  }));
+
+const earningsCases = ([0, 1, 2, 3, 7] as const).map((count) => {
+  const earnings = earningsFor(count);
+  const found = statement(earnings, EARNINGS_FROM, EARNINGS_TO);
+  const rate = perKilometre(found);
+  const waiting = longestWaitMs(earnings, EARNINGS_NOW);
+
+  return {
+    trips: count,
+    fromIso: iso(EARNINGS_FROM),
+    toIso: iso(EARNINGS_TO),
+    countedTrips: found.trips,
+    distanceM: found.distanceM,
+    earnedKobo: found.earned,
+    outOfPocketKobo: found.outOfPocket,
+    outstandingKobo: found.outstanding,
+    settledKobo: found.settled,
+    perKilometreKobo: rate,
+    unpaidTripIds: unpaid(earnings).map((earning) => earning.tripId),
+    longestWaitMs: waiting,
+  };
+});
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -787,6 +1004,35 @@ const fixtures = {
     cases: trustCases,
   },
   vehicles: vehicleCases,
+  escrow: {
+    retentionDays: RETENTION_DAYS,
+    inTransitMs: IN_TRANSIT_MS,
+    sumsTo100: sumsTo100(),
+    schedule: SCHEDULE.map((milestone) => ({
+      kind: milestone.kind,
+      pct: milestone.pct,
+      condition: milestone.condition,
+    })),
+    agreedKobo: escrowAgreed,
+    nowIso: iso(ESCROW_NOW),
+    cases: escrowCases,
+  },
+  cancellation: {
+    graceMs: GRACE_MS,
+    agreedKobo: cancelAgreed,
+    acceptedAtIso: iso(CANCEL_ACCEPTED),
+    cases: cancelCases,
+  },
+  costs: {
+    emptyFuelFraction: EMPTY_FUEL_FRACTION,
+    floorMargin: FLOOR_MARGIN,
+    cases: costCases,
+  },
+  earnings: {
+    minimumTripsForPerKm: MINIMUM_TRIPS_FOR_PER_KM,
+    nowIso: iso(EARNINGS_NOW),
+    cases: earningsCases,
+  },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -812,6 +1058,10 @@ process.stdout.write(
       `${dropFeeCases.length} drop fees`,
       `${trustCases.length} tiers`,
       `${vehicleCases.length} vehicles`,
+      `${escrowCases.length} escrow schedules`,
+      `${cancelCases.length} cancellations`,
+      `${costCases.length} cost models`,
+      `${earningsCases.length} statements`,
     ].join(', ')
   }\n`,
 );

@@ -80,7 +80,11 @@ public sealed record ParityFixtures(
     PodFixtures Pod,
     DropFixtures Drops,
     TrustFixtures Trust,
-    IReadOnlyList<VehicleRow> Vehicles);
+    IReadOnlyList<VehicleRow> Vehicles,
+    EscrowFixtures Escrow,
+    CancellationFixtures Cancellation,
+    CostFixtures Costs,
+    EarningsFixtures Earnings);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -264,3 +268,94 @@ public sealed record CodeRow(
     bool Ok,
     string? Reason,
     string? Detail);
+
+public sealed record EscrowFixtures(
+    int RetentionDays,
+    long InTransitMs,
+    bool SumsTo100,
+    IReadOnlyList<MilestoneRow> Schedule,
+    long AgreedKobo,
+    DateTimeOffset NowIso,
+    IReadOnlyList<EscrowRow> Cases);
+
+public sealed record MilestoneRow(string Kind, int Pct, string Condition);
+
+public sealed record EscrowRow(
+    string Name,
+    string State,
+    long MovingForMs,
+    bool PodSealed,
+    DateTimeOffset? DeliveredAt,
+    bool ExceptionRaised,
+    IReadOnlyList<ReleaseRow> Releases,
+    long ReleasedKobo,
+    long HeldBackKobo,
+    string? NextKind,
+    string? NextCondition);
+
+public sealed record ReleaseRow(string Kind, int Pct, long AmountKobo, bool Met);
+
+public sealed record CancellationFixtures(
+    long GraceMs,
+    long AgreedKobo,
+    DateTimeOffset AcceptedAtIso,
+    IReadOnlyList<CancelRow> Cases);
+
+public sealed record CancelRow(
+    string Name,
+    string By,
+    string State,
+    int MinutesAfterAccepted,
+    bool Ok,
+    string? Reason,
+    int? FeePct,
+    long? FeeKobo,
+    bool? WithinGrace,
+    string Detail,
+    bool CountsAgainstRecord);
+
+public sealed record CostFixtures(
+    double EmptyFuelFraction,
+    double FloorMargin,
+    IReadOnlyList<CostRow> Cases);
+
+public sealed record CostRow(
+    string Name,
+    string Truck,
+    double LadenM,
+    double EmptyM,
+    long DieselPerLitreKobo,
+    long LeviesKobo,
+    long OtherKobo,
+    int Litres,
+    long FuelKobo,
+    long RunningKobo,
+    long TotalKobo,
+    long WalkAwayBelowKobo,
+    IReadOnlyList<OfferRow> Offers);
+
+public sealed record OfferRow(
+    long OfferedKobo,
+    long ProfitKobo,
+    int? FractionPct,
+    bool Take,
+    string Detail);
+
+public sealed record EarningsFixtures(
+    int MinimumTripsForPerKm,
+    DateTimeOffset NowIso,
+    IReadOnlyList<StatementRow> Cases);
+
+public sealed record StatementRow(
+    int Trips,
+    DateTimeOffset FromIso,
+    DateTimeOffset ToIso,
+    int CountedTrips,
+    double DistanceM,
+    long EarnedKobo,
+    long OutOfPocketKobo,
+    long OutstandingKobo,
+    long SettledKobo,
+    long? PerKilometreKobo,
+    IReadOnlyList<string> UnpaidTripIds,
+    long? LongestWaitMs);

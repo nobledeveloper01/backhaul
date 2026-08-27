@@ -40,6 +40,9 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<DuressEntity> DuressSignals => Set<DuressEntity>();
 
+    /// <summary>What a trip was agreed for. Absent on a tracking-only trip.</summary>
+    public DbSet<TripTermsEntity> TripTerms => Set<TripTermsEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -147,6 +150,13 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // Every read is "is anything open on this trip", and the answer
             // has to be instant.
             duress.HasIndex(d => new { d.TripId, d.At });
+        });
+
+        model.Entity<TripTermsEntity>(terms =>
+        {
+            // Keyed by the trip, because there is exactly one set of terms per
+            // trip and a surrogate key would allow two.
+            terms.HasKey(t => t.TripId);
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

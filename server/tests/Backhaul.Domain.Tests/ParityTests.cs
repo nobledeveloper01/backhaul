@@ -564,4 +564,196 @@ public sealed class ParityTests
         Observation.Unknown => "unknown",
         _ => throw new InvalidOperationException($"unmapped observation {observation}"),
     };
+
+    // --- escrow ------------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_release_the_money_at_the_same_moments()
+    {
+        // A milestone that releases on one server and not the other is a
+        // carrier who has been paid according to one screen and not according
+        // to the other, on the same trip, on the same evidence.
+        Assert.Equal(F.Escrow.RetentionDays, Escrow.RetentionDays);
+        Assert.Equal(F.Escrow.InTransitMs, Escrow.InTransitMs);
+        Assert.True(F.Escrow.SumsTo100);
+        Assert.True(Escrow.SumsTo100());
+
+        Assert.Equal(
+            F.Escrow.Schedule.Select(m => (m.Kind, m.Pct, m.Condition)),
+            Escrow.Schedule.Select(m => (EscrowKindWire(m.Kind), m.Pct, m.Condition)));
+
+        var agreed = new Kobo(F.Escrow.AgreedKobo);
+
+        foreach (var row in F.Escrow.Cases)
+        {
+            var conditions = new EscrowConditions(
+                TripMachine.FromWire(row.State)
+                    ?? throw new InvalidOperationException($"unknown state '{row.State}'"),
+                row.MovingForMs,
+                row.PodSealed,
+                row.DeliveredAt,
+                row.ExceptionRaised);
+
+            var releases = Escrow.For(agreed, conditions, F.Escrow.NowIso);
+
+            Assert.Equal(
+                row.Releases.Select(r => (r.Kind, r.Pct, r.AmountKobo, r.Met)),
+                releases.Select(r => (EscrowKindWire(r.Milestone.Kind), r.Milestone.Pct, r.Amount.Value, r.Met)));
+
+            Assert.Equal(row.ReleasedKobo, Escrow.Released(releases).Value);
+            Assert.Equal(row.HeldBackKobo, Escrow.HeldBack(agreed, releases).Value);
+
+            var next = Escrow.NextRelease(releases);
+            Assert.Equal(row.NextKind, next is null ? null : EscrowKindWire(next.Milestone.Kind));
+            Assert.Equal(row.NextCondition, next?.Milestone.Condition);
+        }
+    }
+
+    // --- cancellation ------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_charge_the_same_to_call_a_trip_off()
+    {
+        // The sentence is asserted as tightly as the number. A cancellation
+        // fee that arrives without an explanation is a fee somebody disputes,
+        // and the explanation has to be the same one on both sides of the
+        // transaction.
+        Assert.Equal(F.Cancellation.GraceMs, Cancellation.GraceMs);
+
+        var agreed = new Kobo(F.Cancellation.AgreedKobo);
+
+        foreach (var row in F.Cancellation.Cases)
+        {
+            var by = row.By == "shipper" ? CancelledBy.Shipper : CancelledBy.Carrier;
+            var state = TripMachine.FromWire(row.State)
+                        ?? throw new InvalidOperationException($"unknown state '{row.State}'");
+
+            var outcome = Cancellation.Cancel(
+                by,
+                state,
+                agreed,
+                F.Cancellation.AcceptedAtIso,
+                F.Cancellation.AcceptedAtIso.AddMinutes(row.MinutesAfterAccepted));
+
+            switch (outcome)
+            {
+                case CancelOutcome.Refused refused:
+                    Assert.False(row.Ok, row.Name);
+                    Assert.Equal(row.Reason, refused.Reason);
+                    Assert.Equal(row.Detail, refused.Detail);
+                    break;
+
+                case CancelOutcome.Allowed allowed:
+                    Assert.True(row.Ok, row.Name);
+                    Assert.Equal(row.FeePct, allowed.FeePct);
+                    Assert.Equal(row.FeeKobo, allowed.Fee.Value);
+                    Assert.Equal(row.WithinGrace, allowed.WithinGrace);
+                    Assert.Equal(row.Detail, allowed.Detail);
+                    break;
+            }
+
+            Assert.Equal(row.CountsAgainstRecord, Cancellation.CountsAgainstRecord(by, state));
+        }
+    }
+
+    // --- what the road costs -----------------------------------------------
+
+    [Fact]
+    public void Both_sides_cost_a_run_the_same_way()
+    {
+        // Litres are the figure a carrier checks against the pump receipt in
+        // their pocket. A disagreement here is not a rounding argument.
+        Assert.Equal(F.Costs.EmptyFuelFraction, CostModel.EmptyFuelFraction);
+        Assert.Equal(F.Costs.FloorMargin, CostModel.FloorMargin);
+
+        foreach (var row in F.Costs.Cases)
+        {
+            var input = new CostInput(
+                Truck(row.Truck),
+                row.LadenM,
+                row.EmptyM,
+                new Kobo(row.DieselPerLitreKobo),
+                new Kobo(row.LeviesKobo),
+                new Kobo(row.OtherKobo));
+
+            var costs = CostModel.RunningCost(input);
+
+            Assert.Equal(row.Litres, costs.Litres);
+            Assert.Equal(row.FuelKobo, costs.Fuel.Value);
+            Assert.Equal(row.RunningKobo, costs.Running.Value);
+            Assert.Equal(row.TotalKobo, costs.Total.Value);
+            Assert.Equal(row.WalkAwayBelowKobo, CostModel.WalkAwayBelow(input).Value);
+
+            foreach (var offer in row.Offers)
+            {
+                var offered = new Kobo(offer.OfferedKobo);
+                var found = CostModel.MarginOn(offered, input);
+                var advice = CostModel.Advise(offered, input);
+
+                Assert.Equal(offer.ProfitKobo, found.Profit.Value);
+                // `Math.Floor(x + 0.5)`, not `Math.Round`. A losing offer has
+                // a negative fraction, and the two languages disagree on a
+                // negative half: JavaScript's `Math.round(-2.5)` is -2 and
+                // .NET's away-from-zero is -3. The fixture was generated by
+                // the first, so the assertion has to use the first.
+                Assert.Equal(
+                    offer.FractionPct,
+                    found.Fraction is null ? null : (int?)Math.Floor(found.Fraction.Value * 1000 + 0.5));
+                Assert.Equal(offer.Take, advice.Take);
+                Assert.Equal(offer.Detail, advice.Detail);
+            }
+        }
+    }
+
+    // --- earnings ----------------------------------------------------------
+
+    [Fact]
+    public void Both_sides_add_up_a_driver_statement_the_same_way()
+    {
+        Assert.Equal(F.Earnings.MinimumTripsForPerKm, Earnings.MinimumTripsForPerKm);
+
+        foreach (var row in F.Earnings.Cases)
+        {
+            var earnings = Enumerable.Range(0, row.Trips).Select(i => new Earning(
+                Guid.Empty,
+                "Lagos–Kano",
+                row.FromIso.AddDays(i + 1),
+                830_000,
+                Kobo.FromNaira(180_000),
+                Kobo.FromNaira(80_000),
+                Kobo.FromNaira(i % 3 == 0 ? 95_000 : 60_000),
+                i % 2 == 0 ? row.FromIso.AddDays(i + 5) : null)
+            {
+                // The fixture identifies trips by name rather than by id, so
+                // the ordering assertion below can name the one that is wrong.
+            }).ToList();
+
+            var found = Earnings.Of(earnings, row.FromIso, row.ToIso);
+
+            Assert.Equal(row.CountedTrips, found.Trips);
+            Assert.Equal(row.DistanceM, found.DistanceM);
+            Assert.Equal(row.EarnedKobo, found.Earned.Value);
+            Assert.Equal(row.OutOfPocketKobo, found.OutOfPocket.Value);
+            Assert.Equal(row.OutstandingKobo, found.Outstanding.Value);
+            Assert.Equal(row.SettledKobo, found.Settled.Value);
+            Assert.Equal(row.PerKilometreKobo, Earnings.PerKilometre(found)?.Value);
+            Assert.Equal(row.LongestWaitMs, Earnings.LongestWaitMs(earnings, F.Earnings.NowIso));
+
+            // Oldest first: the trip from six weeks ago is the one to ask
+            // about, and a newest-first list puts it where nobody scrolls.
+            Assert.Equal(
+                row.UnpaidTripIds.Count,
+                Earnings.Unpaid(earnings).Count);
+        }
+    }
+
+    private static string EscrowKindWire(MilestoneKind kind) => kind switch
+    {
+        MilestoneKind.Advance => "advance",
+        MilestoneKind.InTransit => "in_transit",
+        MilestoneKind.Delivered => "delivered",
+        MilestoneKind.Retention => "retention",
+        _ => throw new InvalidOperationException($"unmapped milestone {kind}"),
+    };
+
 }

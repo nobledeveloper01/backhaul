@@ -9,6 +9,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **The money engines are served, not just tested.** Four routes that were
+  walkthroughs are now answers from the server: the escrow release schedule for
+  a trip, what cancelling it would cost right now, what the run costs against
+  what it pays, and a driver's statement over a window. Each one has parity
+  cases before it has an endpoint, wording included — a cancellation fee
+  explained one way on a phone and another way on a server is a dispute the
+  platform created itself.
+
+  The second escrow milestone reads the **positions**, not the trip's state. Its
+  condition says "moving with positions arriving", and a trip sitting in the
+  `in_transit` state while sending nothing has not met it; a gap longer than the
+  tracker's own silence threshold is not counted as covered time either, because
+  crediting it would pay a carrier for exactly the stretch a shipper disputes.
+
+  A trip can still have no commercial terms at all. That is tracking working as
+  intended, and these routes say so in a sentence rather than answering with a
+  schedule of zeroes.
+
 - **Four languages, chosen before anything else.** Hausa, Yorùbá, Igbo and
   English. The question is the first screen in the app — before the phone
   number, because a sign-in screen in the wrong language is the first thing a
