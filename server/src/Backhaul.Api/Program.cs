@@ -1,5 +1,7 @@
 using System.Reflection;
+using System.Threading.RateLimiting;
 
+using Backhaul.Api;
 using Backhaul.Api.Auth;
 using Backhaul.Api.Serialization;
 using Backhaul.Infrastructure;
@@ -27,6 +29,43 @@ builder.Services.AddSingleton(TimeProvider.System);
 // AddBackhaulPersistence for the reasoning about the in-memory default.
 var connection = builder.Configuration.GetConnectionString("Backhaul");
 builder.Services.AddBackhaulPersistence(connection);
+
+// The share route is the only one that answers an unauthenticated request with
+// a truck's position, which makes it the only one an outsider can hammer
+// without first getting a credential. Guessing a 32-byte token is not the
+// threat; volume is. Phase 2's exit gate names this; see ADR-0010.
+//
+// Partitioned by client address rather than globally: a global bucket means
+// one abusive caller takes the feature away from every cargo owner watching a
+// delivery, which is the outage the attacker wanted.
+// Sixty an hour per address by default. A person following one delivery
+// refreshes a handful of times; a script does not stop. Configurable so a test
+// can prove the limiter fires without making sixty requests to do it — the
+// number is a policy, and a policy nobody can exercise is a policy nobody
+// knows works.
+var sharePerHour = builder.Configuration.GetValue("RateLimits:PublicSharePerHour", 60);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(RateLimits.PublicShare, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            // `RemoteIpAddress` is null in some hosting setups and every such
+            // request would otherwise share one partition. They share a named
+            // one instead, so the fallback is explicit rather than accidental.
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = sharePerHour,
+                Window = TimeSpan.FromHours(1),
+
+                // No queue. A caller past the limit is told so immediately
+                // rather than held open — a held connection is the resource
+                // the flood was trying to exhaust.
+                QueueLimit = 0,
+            }));
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -95,6 +134,11 @@ using (var scope = app.Services.CreateScope())
 // did not prove it. Swapping them makes the second one useless.
 app.UseMiddleware<BearerMiddleware>();
 app.UseMiddleware<RequireBearerMiddleware>();
+
+// After authentication, so a rejected request has already been identified in
+// the log, and before the controllers, so the limit is enforced rather than
+// merely measured.
+app.UseRateLimiter();
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>

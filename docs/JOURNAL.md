@@ -52,11 +52,19 @@ places** — the domain's tests, the endpoint tests and the round trip. Copy is
 a rule like any other, and a holder who reads one sentence in the app and a
 different one on the web has found a seam.
 
+**Two tests that passed only in one order were one test.** The rate-limit
+suite split the "a flood is refused" and "and the rest of the API still works"
+claims into two `[Fact]`s sharing one application — and a fixed-window limiter
+is per-application state, so whichever ran second found the budget spent. Merged
+into one test that makes both claims in sequence.
+
 ### Still open
 
-- **Rate limiting.** Guessing a 32-byte token is not a threat; hammering an
-  unauthenticated endpoint is. This route must not ship without it, and it is
-  now a named item on phase 2's gate rather than a thought.
+- **Rate limiting is now in place** — sixty an hour per address on the public
+  route, and a test that proves it fires. What is *not* in place is anything in
+  front of the process: behind a proxy, `RemoteIpAddress` is the proxy, and the
+  partition collapses to one bucket for everybody. That is a deployment
+  concern and it is not solved by this code.
 - The mobile app's share screen still reads from `state/product.ts` rather
   than the API. Wiring it is a phase 2 task and needs auth on the device
   first.

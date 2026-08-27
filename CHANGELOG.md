@@ -56,6 +56,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   link's stored scope allows. Issuing and revoking are authenticated and open
   only to somebody already on the trip. A link that was turned off says so; one
   that lapsed says that instead; one nobody issued is simply not found.
+- **The public share route is rate limited** — sixty requests an hour per
+  address, partitioned so that one caller flooding it cannot take the feature
+  away from every cargo owner watching a delivery.
 - **A trip now carries its corridor.** Origin and destination as names, so the
   API can say what a trip *is* rather than only where its truck has been.
 - **Every one of the above now has a screen**, on the face that needs it: the

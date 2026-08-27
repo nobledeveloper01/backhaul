@@ -127,8 +127,11 @@ Carries features **1–5** of the fifteen. All five engines are written and
 tested; none has a screen yet.
 
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
-both platforms, **and the public share route is rate limited**. First external
-pilot users onboard here — before any marketplace exists.
+both platforms, **and the public share route is rate limited** — *green in
+software*: sixty an hour per address, partitioned so one abusive caller cannot
+take the feature away from everybody else, and proven to fire by
+`ShareRateLimitTests`. First external pilot users onboard here — before any
+marketplace exists.
 
 The rate limit is on the gate rather than in the backlog because
 `GET /v1/share/{token}` is the only route in the product that answers an

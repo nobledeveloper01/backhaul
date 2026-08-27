@@ -33,9 +33,18 @@ public static class Identities
 {
     private static readonly DateTimeOffset Issued = new(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
 
-    public static async Task<Identity> IssueAsync(ApiFactory factory, Role role)
+    /// <remarks>
+    /// Takes <see cref="IServiceProvider"/> rather than <see cref="ApiFactory"/>
+    /// so a test that boots its own application — the rate-limit tests need
+    /// their own, because a limiter is per-application state — can still mint
+    /// a real token through the real repository.
+    /// </remarks>
+    public static Task<Identity> IssueAsync(ApiFactory factory, Role role) =>
+        IssueAsync(factory.Services, role);
+
+    public static async Task<Identity> IssueAsync(IServiceProvider services, Role role)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = services.CreateScope();
         var tokens = scope.ServiceProvider.GetRequiredService<TokenRepository>();
 
         var userId = Guid.NewGuid();

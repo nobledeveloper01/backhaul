@@ -4,6 +4,7 @@ using Backhaul.Domain.Access;
 using Backhaul.Domain.Tracking;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backhaul.Api.Controllers;
 
@@ -19,6 +20,7 @@ namespace Backhaul.Api.Controllers;
 [ApiController]
 [Route("v1/share")]
 [Tags("share")]
+[EnableRateLimiting(RateLimits.PublicShare)]
 public sealed class ShareController(
     ShareRepository links,
     TripRepository trips,
