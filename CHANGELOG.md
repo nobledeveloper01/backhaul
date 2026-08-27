@@ -9,6 +9,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **The capture loop is connected.** `Tracker` was written and tested,
+  `permissions.ts` was written and tested, the Android foreground service and
+  the iOS location manager were both built — and nothing in the app ever called
+  `start()`. The driver's screen said "we are recording your trip" over a loop
+  that had never been asked to begin, and the queue depth under it was the
+  literal number 18, passed as a prop from the app shell.
+
+  It runs now, from the trip machine rather than from a button: `shouldTrack`
+  already decides when a trip is being recorded, on both sides of the wire and
+  under the parity fixtures, and a second answer to that question on one screen
+  is a second thing to get wrong. Location is asked for before capture starts,
+  the cadence comes back from the policy that chose it, and the next turn is
+  scheduled on that cadence rather than on a fixed timer quietly overruling it.
+
+  What the driver sees is now measured rather than assumed: the real interval,
+  the real reason, and the real number of fixes still on the phone — with
+  nothing at all when nothing is waiting, because "0 waiting to send" is a
+  sentence about a problem they do not have.
+
+  **A refusal reaches the screen rather than the log.** Location denied,
+  location blocked and a handset that cannot record at all are three different
+  situations with three different ways forward, and each gets a card with the
+  way forward on it. A phone throttling the service — the Transsion case
+  ADR-0002 is about — says so too, and says the stronger of the two truths it
+  covers, because on iOS the same state means either a revoked authorisation
+  or Low Power Mode and only one of those merely causes gaps.
+
+  The app shell stopped claiming a queue depth it has never had. Only the
+  driver face runs the loop, so only the driver face has a number.
+
+
 - **Every screen reads the server.** The app was a complete face over a
   walkthrough: real screens, real words, and figures that came from a fixture
   file. All sixty-two routes are wired now — trips and their history, the

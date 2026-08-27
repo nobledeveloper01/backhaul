@@ -12,7 +12,15 @@ const ENTER = Easing.bezier(...motion.enter);
 interface Props {
   readonly online: boolean;
   /** Rows the phone is holding until it can send them. */
-  readonly queued: number;
+  /**
+   * Fixes waiting on the phone, or null when this face has no way to know.
+   *
+   * Null is not zero. The app used to pass a literal `18` from every screen —
+   * a specific claim about a driver's own evidence, made by chrome that has
+   * never spoken to the queue. Only the driver face runs the loop, so only the
+   * driver face has a number.
+   */
+  readonly queued: number | null;
 }
 
 /**
@@ -59,9 +67,11 @@ export function OfflineBanner({ online, queued }: Props) {
       <Icon name="signal-off" size="sm" colour={colours.stale} />
       <View style={styles.body}>
         <Text variant="label" tone="stale">
-          {queued === 0
-            ? t('no_signal_still_recording')
-            : `${queued} ${t('positions_saved_waiting')}`}
+          {queued === null
+            ? t('no_signal')
+            : queued === 0
+              ? t('no_signal_still_recording')
+              : `${queued} ${t('positions_saved_waiting')}`}
         </Text>
       </View>
     </Animated.View>

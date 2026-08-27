@@ -1,5 +1,7 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 
+import { say, type Phrase } from '@backhaul/domain';
+
 import { canTrack, explain, request } from '../src/native/permissions';
 
 /**
@@ -89,16 +91,31 @@ describe('canTrack', () => {
 });
 
 describe('explain', () => {
-  test('says what it means for the driver, not what the OS calls it', () => {
-    const blocked = explain({ location: 'blocked', notifications: 'granted' });
-    expect(blocked).toMatch(/not being recorded/);
-    expect(blocked).toMatch(/Settings/);
-    expect(blocked).not.toMatch(/permission/i);
+  test('tells blocked apart from denied, because the forward paths differ', () => {
+    // `blocked` means nothing this app does will raise another prompt and the
+    // only way on is Settings. A screen that treats it as `denied` shows a
+    // button that does nothing, twice.
+    expect(explain({ location: 'blocked', notifications: 'granted' })).toBe('location_blocked');
+    expect(explain({ location: 'denied', notifications: 'granted' })).toBe('location_denied');
   });
 
-  test('warns about the notification without overstating it', () => {
-    const said = explain({ location: 'granted', notifications: 'denied' });
-    expect(said).toMatch(/may/);
+  test('warns about the notification without stopping the trip', () => {
+    // Notifications are not required — `canTrack` says so — so the warning is
+    // about gaps rather than about nothing being recorded.
+    expect(explain({ location: 'granted', notifications: 'denied' })).toBe(
+      'notifications_missing',
+    );
+  });
+
+  test('says what it means for the driver, in their own language', () => {
+    // A key, not a sentence. This module knows nothing about which of the four
+    // languages the phone is in, and the one message a driver most needs to
+    // act on is the last one that should arrive in English.
+    for (const language of ['ha', 'yo', 'ig'] as const) {
+      const key = explain({ location: 'blocked', notifications: 'granted' });
+      expect(key).not.toBeNull();
+      expect(say(language, key as Phrase)).not.toBe(say('en', key as Phrase));
+    }
   });
 
   test('says nothing when there is nothing to say', () => {

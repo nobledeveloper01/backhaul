@@ -1,4 +1,5 @@
 import { Linking, PermissionsAndroid, Platform } from 'react-native';
+import type { Phrase } from '@backhaul/domain';
 
 /**
  * Asking for the two things the capture loop cannot work without.
@@ -91,16 +92,15 @@ function toOutcome(result: string): PermissionOutcome {
  * Not "permission denied". A driver reading that has been told what the
  * operating system calls the problem, not what it means for them or what to do
  * about it.
+ *
+ * A phrase key rather than a sentence, because the driver face is read in four
+ * languages and this module knows none of them. It used to return English,
+ * which would have put the one message a driver most needs to act on in the
+ * one language many of them do not read.
  */
-export function explain(permissions: TrackingPermissions): string | null {
-  if (permissions.location === 'blocked') {
-    return 'Location is switched off for Backhaul. Your trip is not being recorded — turn it on in Settings.';
-  }
-  if (permissions.location === 'denied') {
-    return 'Backhaul needs your location to record this trip. Nothing is recorded until you allow it.';
-  }
-  if (permissions.notifications !== 'granted') {
-    return 'Without a notification, your phone may stop the recording in the background. Your trip may end up with gaps.';
-  }
+export function explain(permissions: TrackingPermissions): Phrase | null {
+  if (permissions.location === 'blocked') return 'location_blocked';
+  if (permissions.location === 'denied') return 'location_denied';
+  if (permissions.notifications !== 'granted') return 'notifications_missing';
   return null;
 }

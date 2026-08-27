@@ -6,7 +6,7 @@ changelog with worse formatting.
 
 ---
 
-## 2026-08-27 (last) — Every screen reads the server, and two that were lying about it
+## 2026-08-27 (last) — Every screen reads the server, and the loop nobody started
 
 > A note on the dates below this one. The headings from here down run
 > 2026-08-28 to 2026-08-31; every one of those commits was actually made on
@@ -94,6 +94,61 @@ because that is what the server says and what the parity fixtures pin. Rendering
 it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
+
+**The loop that is the product was never started.**
+
+`Tracker` — 200 lines, seven tests, the one rule the whole subsystem is
+arranged around. `permissions.ts` — its own module, nine tests, a comment
+explaining why the Android notification has to be granted before the foreground
+service starts. An Android service, an iOS location manager, a SQLite queue on
+both, a boot receiver. All of it written, all of it green.
+
+Nothing in the app ever called `start()`.
+
+The driver's screen said **"we are recording your trip"** — the consent card,
+the biggest thing on the screen, the product rule that tracking is consented
+and visible — over a loop that had never begun. The battery card under it
+rendered `decide({ speed: 18, battery: 0.42, queued: 18 })`: the real policy
+fed three constants. The offline banner said "18 positions saved, waiting to
+send", from a literal in `App.tsx`, on every face of the app including a
+shipper's.
+
+Every piece was right and nothing was plugged in. There is no test for that.
+`tracker.test.ts` passes because it constructs its own `Tracker`; the parity
+fixtures pass because they are about the domain; the round-trip passes because
+it drives the client directly. Each one asserts its own piece works, and the
+question "does anything call this" is not a question any of them asks.
+
+The thing that found it was reading `App.tsx` for something else and noticing
+`queued={18}`.
+
+**What it took to connect.** `useTracking` starts from the trip machine rather
+than from a button — `shouldTrack(state)` already answers "is this trip being
+recorded", on both sides of the wire and under the parity fixtures, and a
+second answer on one screen is a second thing to get wrong. The next turn is
+scheduled on the cadence the policy just chose, because a fixed timer would be
+a second, slower policy quietly overruling `tracking.ts`. And a refusal is a
+card with a way forward, not a line in a log: location denied, location blocked
+and a handset that cannot do this at all are three situations with three
+different next actions.
+
+**Then it ran.** Live trip, iOS raised its own prompt with the product's own
+purpose string, and the battery card came back reading *"À ń wò ní gbogbo
+ìṣẹ́jú márùn-ún — ọkọ̀ kò lọ"* — checking every five minutes, the truck is not
+moving. Five minutes because the simulator is stationary and the policy said
+so, not because anything was hard-coded. Under it: *1 wọ́n ń dúró láti fi
+ránṣẹ́*. One fix, captured, queued, waiting for the ten-minute upload window.
+That is the wedge working end to end, in Yorùbá, for the first time.
+
+**One thing I expected to find and did not.** On iOS `request()` returns
+`granted` without asking, because the prompt belongs to CoreLocation — so a
+driver who taps "Don't Allow" would leave the app thinking it was fine. The
+native side had already handled it: `status()` reports a revoked authorisation
+through `restrictedByOs`, deliberately collapsed with Low Power Mode because
+both mean "this is not recording" to a driver. My phrase for that state
+understated it — "may end up with gaps" is true of throttling and not of a
+revoked permission — so it now says the stronger of the two truths and offers
+Settings.
 
 **The guard against the worst defect in this product was used by one screen
 out of nineteen.** `emptiness()` exists to keep *nothing here* apart from *we

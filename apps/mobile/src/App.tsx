@@ -216,7 +216,14 @@ function Shell() {
         card happened to be at the bottom of the screen — and being offline is
         a fact about the whole app, so the app should make room for saying so.
       */}
-      <OfflineBanner online={online} queued={18} />
+      {/*
+        No count here. This banner is on every face and only the driver's runs
+        the capture loop, so the app shell has no honest number to put in it —
+        it used to pass a literal 18, which is a specific claim about somebody's
+        own evidence made by chrome that has never spoken to the queue. The
+        driver's screen shows the real depth.
+      */}
+      <OfflineBanner online={online} queued={null} />
 
       <View
         style={[

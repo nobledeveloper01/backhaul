@@ -237,6 +237,16 @@ background location with the same queue and the same contract. Both compile,
 both link through autolinking, and both are driven by the same policy in
 `@backhaul/domain`.
 
+**And connected.** The app now starts the loop for the trip in front of the
+driver, asks for location before it does, and renders what comes back — the
+real cadence, the real reason, the real queue depth. It was not connected
+before: `Tracker` was written and tested, `permissions.ts` was written and
+tested, both native sides were built, and nothing ever called `start()`. The
+consent card said "we are recording your trip" over a loop that had never
+begun, and the queue count under it was a literal 18 passed down from the app
+shell. Verified on the simulator: the iOS prompt is raised by the native
+module, a fix is captured, and the screen reports one waiting to send.
+
 **Not proven:** neither has run on a physical handset, which is exactly what
 gates 2 and 3 are about.
 

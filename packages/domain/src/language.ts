@@ -187,6 +187,14 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'location_blocked'
+  | 'location_denied'
+  | 'notifications_missing'
+  | 'tracking_not_available'
+  | 'phone_is_holding_back'
+  | 'open_settings'
+  | 'allow_location'
+  | 'waiting_to_send'
   | 'walkthrough_unreached'
   | 'and_word'
   | 'needs_a_note'
@@ -707,6 +715,14 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  location_blocked: "Location is switched off for Backhaul. Your trip is not being recorded — turn it on in Settings.",
+  location_denied: "Backhaul needs your location to record this trip. Nothing is recorded until you allow it.",
+  notifications_missing: "Without a notification, your phone may stop the recording in the background. Your trip may end up with gaps.",
+  tracking_not_available: "This phone cannot record a trip. Ask the office for a phone that can.",
+  phone_is_holding_back: "Your phone is stopping Backhaul recording properly. Check location and battery settings.",
+  open_settings: "Open Settings",
+  allow_location: "Allow location",
+  waiting_to_send: "waiting to send",
   walkthrough_unreached: "This is the walkthrough. We could not reach the server to look for yours.",
   and_word: "and",
   needs_a_note: "needs a note",
@@ -1311,6 +1327,14 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  location_blocked: "An kashe wurin zama don Backhaul. Ba a rubuta tafiyarka ba — ka kunna shi a cikin Saituna.",
+  location_denied: "Backhaul na buƙatar wurin da kake don rubuta wannan tafiyar. Ba a rubuta komai sai ka yarda.",
+  notifications_missing: "Idan babu sanarwa, wayarka na iya dakatar da rubutun a baya. Tafiyarka na iya samun gibi.",
+  tracking_not_available: "Wannan wayar ba za ta iya rubuta tafiya ba. Ka tambayi ofishi wayar da za ta iya.",
+  phone_is_holding_back: "Wayarka na hana Backhaul yin rubutu yadda ya kamata. Ka duba saitunan wuri da baturi.",
+  open_settings: "Buɗe Saituna",
+  allow_location: "Yarda da wurin zama",
+  waiting_to_send: "suna jiran a aika",
   walkthrough_unreached: "Wannan nuni ne kawai. Ba mu iya isa ga uwar garken don neman naka ba.",
   and_word: "da",
   needs_a_note: "yana buƙatar bayani",
@@ -1919,6 +1943,14 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  location_blocked: "A ti pa ipò ibi fún Backhaul. A kò ń kọ ìrìn rẹ sílẹ̀ — tan án nínú Ètò.",
+  location_denied: "Backhaul nílò ibi tí o wà láti kọ ìrìn yìí sílẹ̀. A kò ní kọ ohunkóhun títí tí o fi gbà.",
+  notifications_missing: "Láìsí ìkìlọ̀, fóònù rẹ lè dá àkọsílẹ̀ dúró lẹ́yìn ìpìlẹ̀. Ìrìn rẹ lè ní àwọn àlàfo.",
+  tracking_not_available: "Fóònù yìí kò lè kọ ìrìn sílẹ̀. Béèrè lọ́wọ́ ọ́fíìsì fún fóònù tí ó lè ṣe é.",
+  phone_is_holding_back: "Fóònù rẹ ń dí Backhaul lọ́wọ́ láti kọ sílẹ̀ dáadáa. Yẹ ètò ipò àti bátìrì wò.",
+  open_settings: "Ṣí Ètò",
+  allow_location: "Gba ipò ibi láàyè",
+  waiting_to_send: "wọ́n ń dúró láti fi ránṣẹ́",
   walkthrough_unreached: "Àpẹẹrẹ ni èyí. A kò lè dé ọ̀dọ̀ sáfà láti wá tìrẹ.",
   and_word: "àti",
   needs_a_note: "ó nílò àkọsílẹ̀",
@@ -2527,6 +2559,14 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  location_blocked: "Agbanyụọla ebe maka Backhaul. Anaghị edekọ njem gị — gbanye ya na Ntọala.",
+  location_denied: "Backhaul chọrọ ebe ị nọ iji dekọọ njem a. Anaghị edekọ ihe ọ bụla ruo mgbe ị kwere.",
+  notifications_missing: "Ma ọ bụrụ na enweghị ọkwa, ekwentị gị nwere ike ịkwụsị ndekọ n’azụ. Njem gị nwere ike inwe oghere.",
+  tracking_not_available: "Ekwentị a enweghị ike idekọ njem. Jụọ ọfịs maka ekwentị nwere ike ime ya.",
+  phone_is_holding_back: "Ekwentị gị na-egbochi Backhaul idekọ nke ọma. Lelee ntọala ebe na batrị.",
+  open_settings: "Mepee Ntọala",
+  allow_location: "Kwe ka e jiri ebe ị nọ",
+  waiting_to_send: "na-echere iziga",
   walkthrough_unreached: "Nke a bụ ihe ngosi. Anyị enweghị ike iru sava ka anyị chọọ nke gị.",
   and_word: "na",
   needs_a_note: "ọ chọrọ ihe odide",

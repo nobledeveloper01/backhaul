@@ -32,6 +32,8 @@ import { demoNow, demoTrips } from '../state/demo';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useMine } from '../state/server';
+import { useTracking } from '../state/tracking';
+import { openSettings } from '../native/permissions';
 import { map } from '../api/client';
 import type { Words } from '../components/PositionAge';
 
@@ -175,9 +177,24 @@ export function DriverScreen({
   const state = history[history.length - 1]?.state ?? 'open';
   const tracking = shouldTrack(state);
 
-  // The same policy the native loop follows. Rendered so the driver can see
-  // it rather than infer it.
-  const plan = decide({ speed: tracking ? 18 : 0, battery: 0.42, online, queued: 18 }, now);
+  /*
+    The loop itself, not a picture of it.
+
+    This screen used to render `decide({ speed: 18, battery: 0.42, queued: 18 })`
+    — the real policy fed three constants — under a card that says "we are
+    recording your trip". `Tracker` was written and tested and nothing ever
+    called `start()`, so the sentence was true of nothing.
+
+    The walkthrough keeps the constants, because there is no trip to record and
+    a demonstration of the cadence ladder is the honest thing to show a
+    reviewer. A live trip gets the loop.
+  */
+  const loop = useTracking(api, live?.id ?? null, tracking, online);
+
+  const plan =
+    loop.report === null
+      ? decide({ speed: tracking ? 18 : 0, battery: 0.42, online, queued: 0 }, now)
+      : { sampleIn: loop.report.sampleIn, because: loop.report.because };
 
   // Three exclusions, each for its own reason. `signal_lost` and `stalled` are
   // observations the tracker raises — asking a driver to tap "signal lost" is
@@ -354,6 +371,63 @@ export function DriverScreen({
         </Text>
       </Press>
 
+      {/*
+        What is stopping the recording, above everything about it.
+
+        A driver whose location is switched off must be told that their trip is
+        not being recorded. The failure this whole subsystem exists to prevent
+        is a stretch of road nobody can account for, and its worst form is the
+        one nobody knew was happening — so this is a card with a way forward on
+        it, not a line of grey text.
+      */}
+      {loop.blocker !== null ? (
+        <Card overline={t('tracking_off')} icon="alert" emphasis="accent">
+          <Text variant="bodyDriver">{t(loop.blocker)}</Text>
+          <Press
+            onPress={() => {
+              if (loop.blocker === 'location_blocked') void openSettings();
+              else loop.recheck();
+            }}
+            accessibilityLabel={t(
+              loop.blocker === 'location_blocked' ? 'open_settings' : 'allow_location',
+            )}
+            style={[styles.blockerAction, { backgroundColor: colours.accent }]}
+          >
+            <Text variant="title" style={{ color: colours.onAccent }}>
+              {t(loop.blocker === 'location_blocked' ? 'open_settings' : 'allow_location')}
+            </Text>
+          </Press>
+        </Card>
+      ) : null}
+
+      {/*
+        The OS throttling the service, said out loud rather than logged. On a
+        Transsion handset this is the difference between a trip that records
+        and one that quietly does not, and the app's own log is the last place
+        anybody looks. See ADR-0002.
+      */}
+      {loop.restricted ? (
+        <Card overline={t('tracking_off')} icon="alert" emphasis="accent">
+          <Text variant="bodyDriver">{t('phone_is_holding_back')}</Text>
+          {/*
+            A way out, because there is one. On iOS this state covers both a
+            revoked location authorisation — which records nothing — and Low
+            Power Mode, which throttles it; the native side reports them as one
+            because they mean the same thing to a driver, and Settings is where
+            both are fixed. The sentence says the stronger of the two truths.
+          */}
+          <Press
+            onPress={() => void openSettings()}
+            accessibilityLabel={t('open_settings')}
+            style={[styles.blockerAction, { backgroundColor: colours.accent }]}
+          >
+            <Text variant="title" style={{ color: colours.onAccent }}>
+              {t('open_settings')}
+            </Text>
+          </Press>
+        </Card>
+      ) : null}
+
       {tracking ? (
         <Card overline={t('battery')} icon="battery">
           {/*
@@ -373,6 +447,17 @@ export function DriverScreen({
           {plan.sampleIn >= INTERVAL.conserving ? (
             <Text variant="bodyDriver" tone="stopped" style={styles.gap}>
               {t('battery_low_note')}
+            </Text>
+          ) : null}
+          {/*
+            What is still on the phone, waiting for a signal. The count first,
+            then the phrase — and nothing at all when there is nothing waiting,
+            because "0 waiting to send" is a sentence about a problem the
+            driver does not have.
+          */}
+          {loop.report !== null && loop.report.queued > 0 ? (
+            <Text variant="bodyDriver" tone="stale" style={styles.gap}>
+              {loop.report.queued} {t('waiting_to_send')}
             </Text>
           ) : null}
         </Card>
@@ -588,6 +673,13 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: space.lg, gap: space.lg },
   flex: { flex: 1 },
   gap: { marginTop: space.sm },
+  blockerAction: {
+    minHeight: target.driver,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: space.md,
+  },
   route: { gap: space.xs },
   metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginTop: space.xs },
   consent: {
