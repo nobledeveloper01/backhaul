@@ -52,6 +52,14 @@ places** — the domain's tests, the endpoint tests and the round trip. Copy is
 a rule like any other, and a holder who reads one sentence in the app and a
 different one on the web has found a seam.
 
+**A value import broke CI where a type import never had.** The client's default
+share window is `DEFAULT_SHARE_DAYS` from the domain — a policy belongs in one
+place — and that made `client.ts` import a *value* for the first time. Node's
+type stripping erases type imports and needs nothing; a value import resolves
+to `packages/domain/dist/index.js`, which a clean checkout does not have. It
+passed locally on a leftover `dist` and failed in CI, which is the correct way
+round for that class of mistake to be found.
+
 **Two tests that passed only in one order were one test.** The rate-limit
 suite split the "a flood is refused" and "and the rest of the API still works"
 claims into two `[Fact]`s sharing one application — and a fixed-window limiter

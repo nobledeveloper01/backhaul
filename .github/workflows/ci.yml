@@ -103,6 +103,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The round trip runs `client.ts` through Node's type stripping, with no
+      # bundler. Type-only imports from `@backhaul/domain` are erased and need
+      # nothing; a *value* import — the client's default share window is the
+      # domain's `DEFAULT_SHARE_DAYS`, because a policy should live in one
+      # place — resolves to `dist/index.js` at runtime and has to exist.
+      #
+      # It failed here first, not locally, because a local checkout has a
+      # `dist` left over from an earlier build.
+      - name: Build the domain, which the client imports at runtime
+        run: pnpm --filter @backhaul/domain build
+
       - name: Start the API
         run: |
           cd server
