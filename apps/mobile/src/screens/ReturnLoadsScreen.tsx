@@ -228,18 +228,24 @@ export function ReturnLoadsScreen({
         accessibilityLabel="Chain three legs"
         accessibilityHint="Strings return loads together so the truck never runs empty"
         feedback="opacity"
-        style={[styles.chain, { backgroundColor: colours.accentWash, borderColor: colours.accent }]}
+        /*
+          Quiet, deliberately. The ranked "best fit" load is this screen's one
+          primary; a second accent-washed card above it left the screen with
+          two things shouting and therefore none.
+        */
+        style={[
+          styles.chain,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
       >
         <Icon name="swap" size="md" colour={colours.accent} />
         <View style={styles.flex}>
-          <Text variant="title" tone="accent">
-            Chain three legs
-          </Text>
+          <Text variant="title">Chain three legs</Text>
           <Text variant="label" tone="secondary">
             Kano → Kaduna → Lagos, loaded the whole way
           </Text>
         </View>
-        <Icon name="chevron-right" size="md" colour={colours.accent} />
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
 
       {ranked.length === 0 ? (
@@ -371,7 +377,7 @@ const styles = StyleSheet.create({
     gap: space.md,
     padding: space.lg,
     borderRadius: radius.xl,
-    borderWidth: 1.5,
+    borderWidth: StyleSheet.hairlineWidth * 2,
   },
   screen: { flex: 1 },
   content: { paddingHorizontal: space.lg, gap: space.md },

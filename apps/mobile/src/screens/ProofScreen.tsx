@@ -25,6 +25,8 @@ import { demoDelivery, demoWaypoints } from '../state/product';
 interface Props {
   readonly trip: DemoTrip;
   readonly onBack: () => void;
+  /** Absent on the driver's copy — a driver does not review themselves. */
+  readonly onReview?: (() => void) | undefined;
 }
 
 const stamp = (at: Date) =>
@@ -43,7 +45,7 @@ const stamp = (at: Date) =>
  * `seal()` decides when it is enough. The refusal is the interesting state: it
  * has to say what is missing without making the driver read a checklist.
  */
-export function ProofScreen({ trip, onBack }: Props) {
+export function ProofScreen({ trip, onBack, onReview }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
@@ -198,6 +200,25 @@ export function ProofScreen({ trip, onBack }: Props) {
             version of this document, not three.
           </Text>
         </Card>
+
+        {/*
+          The review is offered here rather than as a notification a week
+          later, because this is the moment somebody has an opinion and the
+          document they are forming it about is on the screen.
+        */}
+        {onReview !== undefined && sealed.ok ? (
+          <Press
+            onPress={onReview}
+            accessibilityLabel="Say how the carrier did"
+            style={[styles.review, { borderColor: colours.outline }]}
+          >
+            <Icon name="pen" size="md" colour={colours.textSecondary} />
+            <Text variant="title" style={styles.flex}>
+              How did they do?
+            </Text>
+            <Icon name="chevron-right" size="md" colour={colours.outline} />
+          </Press>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -230,5 +251,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   lineLabel: { width: 110 },
+  review: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: target.standard,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
   lineValue: { flex: 1 },
 });

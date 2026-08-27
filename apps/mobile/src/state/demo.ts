@@ -76,10 +76,24 @@ const PH = { lat: 4.8156, lon: 7.0498 };
  * the thing the tracker detects and the thing they cannot report. `isSystemRaised`
  * decides the actor rather than the caller, so the two cannot drift.
  */
+/**
+ * Who did it.
+ *
+ * The tracker raises the two observed states; a **shipper** posts a load and
+ * accepts a bid; a driver does everything on the road. The first version
+ * attributed every non-system event to the driver, which put "open · driver"
+ * in a rendered history — a driver posting their own cargo.
+ */
+function actorFor(state: Parameters<typeof transition>[1]): TripEvent['actor'] {
+  if (isSystemRaised(state)) return 'system';
+  if (state === 'open' || state === 'assigned' || state === 'cancelled') return 'shipper';
+  return 'driver';
+}
+
 function walk(steps: readonly [Parameters<typeof transition>[1], Date][]): TripEvent[] {
   const events: TripEvent[] = [];
   for (const [state, at] of steps) {
-    const actor = isSystemRaised(state) ? 'system' : 'driver';
+    const actor = actorFor(state);
     const result = transition(events, state, at, actor);
     if (!result.ok) {
       throw new Error(`demo trip is not walkable: ${result.detail}`);

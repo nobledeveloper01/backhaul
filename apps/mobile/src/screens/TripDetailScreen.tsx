@@ -108,8 +108,15 @@ export function TripDetailScreen({
           </View>
           <View style={styles.identityRow}>
             <Icon name="truck" size="sm" colour={colours.textSecondary} />
+            {/*
+              An owner-driver is one person, and printing their name twice —
+              "Tunde Adeyemi · Tunde Adeyemi" — reads as a bug rather than as a
+              one-truck business, which is most of this market.
+            */}
             <Text variant="body" tone="secondary" style={styles.flex}>
-              {trip.carrier} · {trip.driver}
+              {trip.carrier === trip.driver
+                ? `${trip.driver} · owner-driver`
+                : `${trip.carrier} · ${trip.driver}`}
             </Text>
           </View>
           <View style={styles.statusRow}>

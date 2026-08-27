@@ -313,15 +313,37 @@ export function demoChain(now: Date) {
     pool,
     start,
     cargoOf,
-    /** The legs the engine turned down, and the sentence explaining each. */
+    /**
+     * The legs the engine turned down, and why.
+     *
+     * Tested against **every** leg the chain took, not only the last one. The
+     * first version compared each rejected load with the final leg, which put
+     * "841 km empty from Lagos to Kano" under a Kano load the truck was
+     * standing next to — the right arithmetic asked at the wrong point in the
+     * chain, and a carrier would have stopped believing the screen there.
+     */
     rejected: pool
       .filter((candidate) => !built.legs.some((taken) => taken.loadId === candidate.loadId))
       .map((candidate) => {
-        const last = built.legs.at(-1);
-        const fit = last === undefined ? null : canFollow(last, candidate);
+        const fits = built.legs.map((taken) => ({ taken, fit: canFollow(taken, candidate) }));
+
+        const reachable = fits.find((entry) => entry.fit.ok);
+        if (reachable !== undefined) {
+          return {
+            leg: candidate,
+            detail: `Another load paid better per kilometre out of ${reachable.taken.toName}.`,
+          };
+        }
+
+        // Of the refusals, the one from the leg it came closest to following.
+        const nearest = [...fits].sort(
+          (a, b) =>
+            distance(a.taken.to, candidate.from) - distance(b.taken.to, candidate.from),
+        )[0];
+
         return {
           leg: candidate,
-          detail: fit === null || fit.ok ? 'Already carrying a load then.' : fit.detail,
+          detail: nearest?.fit.ok === false ? nearest.fit.detail : 'Already carrying a load then.',
         };
       }),
     /** What the same truck would have earned running home empty. */

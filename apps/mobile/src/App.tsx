@@ -116,7 +116,13 @@ function Shell() {
         {current.name === 'incident' ? (
           <IncidentScreen trip={current.trip} onBack={pop} />
         ) : null}
-        {current.name === 'pod' ? <ProofScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'pod' ? (
+          <ProofScreen
+            trip={current.trip}
+            onBack={pop}
+            onReview={() => push({ name: 'review', trip: current.trip })}
+          />
+        ) : null}
         {current.name === 'review' ? <ReviewScreen trip={current.trip} onBack={pop} /> : null}
 
         {current.name === 'loads' ? (

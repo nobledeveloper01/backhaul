@@ -170,8 +170,10 @@ export function demoAlerts(now: Date): Alert[] {
         trip,
         title: `${trip.plate} may miss its window`,
         detail:
-          `Due by ${clock(dueBy)}; arriving between ${clock(arrival.earliest)} and ` +
-          `${clock(arrival.latest)}.`,
+          `Due by ${stamp(dueBy, now)}; ` +
+          (clock(arrival.earliest) === clock(arrival.latest)
+            ? `arriving ${stamp(arrival.latest, now)}.`
+            : `arriving between ${clock(arrival.earliest)} and ${stamp(arrival.latest, now)}.`),
         at: now,
       });
     }
@@ -191,6 +193,23 @@ export function drivenSoFar(now: Date): string {
 }
 
 export { format };
+
+/**
+ * A time, with the day when the day is not today.
+ *
+ * "Due by 23:48; arriving between 03:08 and 03:08" was on the fleet screen: a
+ * truck arriving five hours *before* its deadline, flagged as late. Both times
+ * were right and both were missing the day — the arrival was tomorrow. A bare
+ * clock is only unambiguous within one day, and nothing on this corridor is.
+ */
+function stamp(when: Date, now: Date): string {
+  const day = (at: Date) => Math.floor((at.getTime() - now.getTimezoneOffset() * 60_000) / 86_400_000);
+  const difference = day(when) - day(now);
+  if (difference === 0) return `${clock(when)} today`;
+  if (difference === 1) return `${clock(when)} tomorrow`;
+  if (difference === -1) return `${clock(when)} yesterday`;
+  return `${clock(when)} on ${when.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`;
+}
 
 function clock(when: Date): string {
   return when.toLocaleTimeString('en-NG', {

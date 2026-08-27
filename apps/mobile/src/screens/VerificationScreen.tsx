@@ -65,7 +65,9 @@ export function VerificationScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="Sahel Haulage" icon="shield">
+        {/* No icon on the overline: the badge below is already a shield, and two
+            of the same mark in one card is one too many. */}
+        <Card emphasis="accent" overline="Sahel Haulage">
           <View style={styles.badgeRow}>
             <View style={[styles.badge, { backgroundColor: washFor(tier, colours) }]}>
               <Icon name="shield" size="lg" colour={tintFor(tier, colours)} />
@@ -155,7 +157,10 @@ export function VerificationScreen({ onBack }: Props) {
                 styles.paper,
                 {
                   backgroundColor: colours.surfaceRaised,
-                  borderColor: held ? colours.moving : colours.outline,
+                  // The tick carries the state; a green border on every paper
+                  // on file turned the list into a wall of green with nothing
+                  // standing out.
+                  borderColor: colours.outline,
                 },
               ]}
             >

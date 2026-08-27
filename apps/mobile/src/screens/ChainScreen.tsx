@@ -98,7 +98,7 @@ export function ChainScreen({ onBack }: Props) {
                 <View style={[styles.hopLine, { backgroundColor: colours.outline }]} />
                 <Text variant="label" tone="secondary">
                   {empty < 1_000
-                    ? 'Loads where the last one dropped — nothing empty'
+                    ? 'Loads where the last one dropped'
                     : `${km(empty)} km empty to get there`}
                 </Text>
               </View>
