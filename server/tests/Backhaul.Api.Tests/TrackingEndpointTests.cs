@@ -166,13 +166,17 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
 
     private static readonly DateTimeOffset T0 = new(2026, 3, 4, 6, 0, 0, TimeSpan.Zero);
 
-    private static object Sample(double lat, double lon, int minutes) => new
+    private static object Sample(double lat, double lon, int minutes) =>
+        Sample(lat, lon, T0.AddMinutes(minutes), 10.0);
+
+    /// <summary>The same fix with an accuracy worth naming.</summary>
+    private static object Sample(double lat, double lon, DateTimeOffset at, double accuracy) => new
     {
         id = Guid.NewGuid(),
         lat,
         lon,
-        accuracy = 10.0,
-        at = T0.AddMinutes(minutes),
+        accuracy,
+        at,
     };
 
     /// <summary>Walks a trip to <c>in_transit</c>, which is where it records.</summary>
@@ -219,4 +223,65 @@ public sealed class TrackingEndpointTests(ApiFactory factory) : IClassFixture<Ap
         long DistanceMetres,
         string Observation,
         long? SilentForMs);
+
+    [Fact]
+    public async Task The_fixes_route_hands_back_what_a_corridor_is_drawn_from()
+    {
+        // The summary route answers "is it moving". This one answers "draw
+        // it", and a corridor, a pace chart and the stops cannot be
+        // reconstructed from five numbers.
+        var (client, trip) = await OnATripAsync();
+        // The ingest endpoint refuses a trip that is not recording, and rightly.
+        await DriveAsync(client, trip);
+
+        var batch = await client.PostAsJsonAsync(
+            "/v1/tracking/batch",
+            new
+            {
+                batchId = Guid.NewGuid(),
+                tripId = trip,
+                samples = new[]
+                {
+                    Sample(6.45, 3.36, T0.AddMinutes(0), 10),
+                    Sample(6.60, 3.50, T0.AddMinutes(20), 10),
+                    // The OS itself saying it does not know where the phone is.
+                    Sample(6.70, 3.60, T0.AddMinutes(40), 5_000),
+                },
+            });
+        batch.EnsureSuccessStatusCode();
+
+        var track = await client.GetFromJsonAsync<CleanedTrackView>(
+            $"/v1/tracking/trip/{trip}/fixes", Json);
+
+        Assert.Equal(2, track!.Kept.Count);
+        Assert.Single(track.Dropped);
+
+        // Accuracy travels with every fix. Without it a client redrawing the
+        // corridor would draw the parked-truck jitter the movement rule exists
+        // to exclude.
+        Assert.All(track.Kept, fix => Assert.True(fix.Accuracy > 0));
+
+        // And the reason travels with what was thrown away: a driver whose
+        // distance is disputed is owed the answer to "what did you drop?".
+        Assert.Equal("too_imprecise", track.Dropped[0].Problem);
+    }
+
+    [Fact]
+    public async Task Somebody_elses_fixes_are_a_404()
+    {
+        var (_, trip) = await OnATripAsync();
+
+        var stranger = await Identities.IssueAsync(factory, Role.Shipper);
+        var response = await stranger.Carrying(factory.CreateClient())
+            .GetAsync($"/v1/tracking/trip/{trip}/fixes");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private sealed record CleanedTrackView(List<FixView> Kept, List<DroppedFixView> Dropped);
+
+    private sealed record FixView(double Lat, double Lon, double Accuracy, DateTimeOffset At);
+
+    private sealed record DroppedFixView(FixView Fix, string Problem);
+
 }

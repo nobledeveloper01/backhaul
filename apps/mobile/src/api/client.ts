@@ -1,5 +1,12 @@
 import { DEFAULT_SHARE_DAYS } from '@backhaul/domain';
-import type { Position, ShareScope, TripEvent, TripState } from '@backhaul/domain';
+import type {
+  CleanedTrack,
+  FixProblem,
+  Position,
+  ShareScope,
+  TripEvent,
+  TripState,
+} from '@backhaul/domain';
 
 /**
  * The API client.
@@ -548,6 +555,20 @@ export class BackhaulApi {
     return map(
       await this.request<RawDelivery>('POST', `/v1/trips/${tripId}/delivery/seal`),
       toDelivery,
+    );
+  }
+
+  /**
+   * Every cleaned fix on a trip, with what was dropped and why.
+   *
+   * `track` is the summary a list draws a chip from; this is what a corridor,
+   * a pace chart and the stops are drawn from, and none of them can be
+   * reconstructed from five numbers.
+   */
+  async fixes(tripId: string): Promise<ApiResult<CleanedTrack>> {
+    return map(
+      await this.request<RawCleanedTrack>('GET', `/v1/tracking/trip/${tripId}/fixes`),
+      toCleanedTrack,
     );
   }
 
@@ -1215,6 +1236,39 @@ function toPack(raw: RawPack): PackView {
       receivedAt: item.receivedAt === null ? null : new Date(item.receivedAt),
     })),
     gaps: raw.gaps.map((gap) => ({ ...gap, from: new Date(gap.from), to: new Date(gap.to) })),
+  };
+}
+
+interface RawFix {
+  lat: number;
+  lon: number;
+  accuracy: number;
+  at: string;
+  speed: number | null;
+}
+
+interface RawCleanedTrack {
+  kept: RawFix[];
+  dropped: { fix: RawFix; problem: string }[];
+}
+
+function toFix(raw: RawFix): Position {
+  return {
+    lat: raw.lat,
+    lon: raw.lon,
+    accuracy: raw.accuracy,
+    at: new Date(raw.at),
+    ...(raw.speed === null ? {} : { speed: raw.speed }),
+  };
+}
+
+function toCleanedTrack(raw: RawCleanedTrack): CleanedTrack {
+  return {
+    kept: raw.kept.map(toFix),
+    dropped: raw.dropped.map((entry) => ({
+      fix: toFix(entry.fix),
+      problem: entry.problem as FixProblem,
+    })),
   };
 }
 

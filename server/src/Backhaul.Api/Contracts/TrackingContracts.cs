@@ -89,6 +89,59 @@ public sealed class TrackingBatchResponse
     public bool Replayed { get; set; }
 }
 
+/// <summary>One cleaned fix, as a screen draws it.</summary>
+/// <remarks>
+/// Accuracy travels with every fix and is not decoration: the movement rule
+/// requires a step to clear the combined accuracy of both ends, and a client
+/// that redraws a corridor without it would draw the parked-truck jitter that
+/// rule exists to exclude.
+/// </remarks>
+public sealed class FixResponse
+{
+    public double Lat { get; set; }
+
+    public double Lon { get; set; }
+
+    public double Accuracy { get; set; }
+
+    public DateTimeOffset At { get; set; }
+
+    public double? Speed { get; set; }
+}
+
+/// <summary>Why one fix was thrown away.</summary>
+public sealed class DroppedFixResponse
+{
+    public FixResponse Fix { get; set; } = new();
+
+    /// <summary>too_imprecise, out_of_order or implausible_jump.</summary>
+    public string Problem { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// The whole cleaned track, fix by fix.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Separate from <see cref="TrackResponse"/>, which is a summary. A list draws
+/// a status chip from the summary and must not pay for two thousand fixes to
+/// do it; a trip screen draws a corridor, a pace chart and the stops, and
+/// cannot do any of that from five numbers.
+/// </para>
+/// <para>
+/// <b>The dropped fixes travel too.</b> A driver whose distance is disputed is
+/// owed the answer to "what did you throw away?", and a screen that shows a
+/// distance without the share of fixes it came from is a screen presenting an
+/// estimate as a measurement.
+/// </para>
+/// </remarks>
+public sealed class CleanedTrackResponse
+{
+    public List<FixResponse> Kept { get; set; } = [];
+
+    public List<DroppedFixResponse> Dropped { get; set; } = [];
+}
+
 public sealed class TrackResponse
 {
     public int Kept { get; set; }

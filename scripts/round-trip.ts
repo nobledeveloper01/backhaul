@@ -324,6 +324,22 @@ async function main(): Promise<void> {
   }
 
   {
+    // What a corridor is drawn from, as against the summary a chip is drawn
+    // from. The claim is the same one the summary makes and stronger: run the
+    // server's own fixes back through the TypeScript cleaner and demand the
+    // same verdict on each.
+    const fixes = await api.fixes(tripId);
+    check('the cleaned fixes read back', fixes.ok, fixes.ok ? '' : fixes.failure.detail);
+    if (fixes.ok) {
+      check('with two kept and one thrown away', fixes.value.kept.length === 2 && fixes.value.dropped.length === 1);
+      check('every fix carrying its accuracy', fixes.value.kept.every((f) => f.accuracy > 0));
+      check(
+        'and the reason the tower fix went',
+        fixes.value.dropped[0]?.problem === 'implausible_jump',
+        fixes.value.dropped[0]?.problem,
+      );
+    }
+
     const pack = await api.disputePack(tripId);
     check('the dispute pack assembles', pack.ok, pack.ok ? '' : pack.failure.detail);
     if (pack.ok) {

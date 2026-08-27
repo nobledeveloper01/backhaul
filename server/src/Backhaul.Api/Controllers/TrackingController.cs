@@ -98,6 +98,57 @@ public sealed class TrackingController(
         };
     }
 
+    /// <summary>
+    /// Every cleaned fix on a trip, with what was dropped and why.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The summary route above answers "is it moving"; this answers "draw it".
+    /// A corridor, a pace chart and the stops all need the fixes themselves,
+    /// and none of them can be reconstructed from five numbers.
+    /// </para>
+    /// <para>
+    /// Unpaged, deliberately. A three-day Lagos–Kano run at the moving interval
+    /// is a couple of thousand fixes, which is a payload a phone on a Nigerian
+    /// network can take once per trip screen. Paging it would mean a screen
+    /// that draws a corridor in instalments, and half a corridor is worse than
+    /// a slow one.
+    /// </para>
+    /// </remarks>
+    [HttpGet("trip/{tripId:guid}/fixes")]
+    [ProducesResponseType<CleanedTrackResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CleanedTrackResponse>> Fixes(Guid tripId, CancellationToken ct)
+    {
+        if (!await trips.ExistsAsync(tripId, Caller, ct))
+        {
+            return NotFound("No such trip.");
+        }
+
+        var cleaned = Geo.Clean(await positions.ForTripAsync(tripId, Caller, ct));
+
+        return new CleanedTrackResponse
+        {
+            Kept = cleaned.Kept.Select(ToResponse).ToList(),
+            Dropped = cleaned.Dropped
+                .Select(entry => new DroppedFixResponse
+                {
+                    Fix = ToResponse(entry.Fix),
+                    Problem = FixProblems.ToWire(entry.Problem),
+                })
+                .ToList(),
+        };
+    }
+
+    private static FixResponse ToResponse(Position fix) => new()
+    {
+        Lat = fix.Lat,
+        Lon = fix.Lon,
+        Accuracy = fix.Accuracy,
+        At = fix.At,
+        Speed = fix.Speed,
+    };
+
     /// <summary>The cleaned track for a trip.</summary>
     /// <remarks>
     /// Distance always travels with the share of fixes it was computed from. A

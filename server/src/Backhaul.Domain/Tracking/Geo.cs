@@ -28,6 +28,23 @@ public enum FixProblem
 
 public sealed record DroppedFix(Position Fix, FixProblem Problem);
 
+/// <summary>The wire names for a dropped fix's reason.</summary>
+/// <remarks>
+/// Named rather than derived from the enum, because a client renders a sentence
+/// per reason and a rename here would silently change the wire. Same shape as
+/// <c>packages/domain/src/geo.ts</c>.
+/// </remarks>
+public static class FixProblems
+{
+    public static string ToWire(FixProblem problem) => problem switch
+    {
+        FixProblem.TooImprecise => "too_imprecise",
+        FixProblem.OutOfOrder => "out_of_order",
+        FixProblem.ImplausibleJump => "implausible_jump",
+        _ => throw new InvalidOperationException($"unmapped problem {problem}"),
+    };
+}
+
 public sealed record CleanedTrack(
     IReadOnlyList<Position> Kept,
     IReadOnlyList<DroppedFix> Dropped);

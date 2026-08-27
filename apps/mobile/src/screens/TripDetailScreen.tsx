@@ -27,6 +27,12 @@ import {
   type Visit,
   completed,
   nextDrop,
+  type CleanedTrack,
+  type Message,
+  type Incident,
+  type Release,
+  type Waypoint,
+  visits,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -44,6 +50,9 @@ import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { whereTheDropsAre } from '../state/words';
 import {
   demoDrops,
@@ -69,6 +78,9 @@ interface Props {
   readonly onDrops: () => void;
 }
 
+/** Nothing recorded, which is not the same as nothing to record. */
+const EMPTY_TRACK: CleanedTrack = { kept: [], dropped: [] };
+
 export function TripDetailScreen({
   trip,
   now,
@@ -92,24 +104,162 @@ export function TripDetailScreen({
 
   const state = trip.history[trip.history.length - 1]?.state ?? 'open';
   const quality = fixQuality(trip.track);
-  const travelled = distanceTravelled(trip.track);
-  const observation = observe(trip.track.kept, now);
-  const silence = silentFor(trip.track.kept, now);
+  const { api } = useSession();
 
-  const tripStops = useMemo(() => stops(trip.track.kept), [trip]);
-  const waypoints = useMemo(() => demoWaypoints(trip), [trip]);
-  const visited = useMemo(() => demoVisits(trip), [trip]);
-  const ahead = useMemo(() => remaining(visited, waypoints), [visited, waypoints]);
-  const messages = useMemo(() => demoMessages(trip, now), [trip, now]);
-  const incidents = useMemo(() => demoIncidents(trip, now), [trip, now]);
-  const openIncident = headline(incidents);
-  const waiting = chargeableWaiting(visited);
-  const course = useMemo(
-    () => deviation(trip.track.kept, trip.destination, now),
-    [trip, now],
+  /*
+    Six reads, not one.
+
+    A trip screen is six questions — where is it, what is on the route, what
+    has been said, what has gone wrong, when does the money move, and what is
+    still to be dropped — and each has its own route because each has its own
+    write path. Rolling them into one endpoint would make every screen that
+    needs one of them pay for all six.
+
+    They fire together and settle independently, so the corridor draws as soon
+    as the fixes land rather than waiting on the slowest of six.
+  */
+  const fixes = useTripData(
+    trip.live,
+    () => api.fixes(trip.id),
+    () => trip.track,
+    [api, trip.id, trip.track],
+  ).query;
+
+  const route = useTripData(
+    trip.live,
+    async () =>
+      map(await api.waypoints(trip.id), (view) => ({
+        waypoints: view.waypoints.map<Waypoint>((w) => ({
+          id: w.id,
+          name: w.name,
+          kind: w.kind as Waypoint['kind'],
+          at: { lat: w.lat, lon: w.lon, accuracy: 0, at: now },
+          radius: w.radiusM,
+        })),
+        visits: view.visits,
+        chargeableWaitingMs: view.chargeableWaitingMs,
+      })),
+    () => ({
+      waypoints: [...demoWaypoints(trip)],
+      visits: [],
+      chargeableWaitingMs: chargeableWaiting(demoVisits(trip)),
+    }),
+    [api, trip.id, trip, now],
+  ).query;
+
+  const thread = useTripData(
+    trip.live,
+    async () =>
+      map(await api.messages(trip.id), (rows) =>
+        rows.map<Message>((row) => ({
+          id: row.id,
+          tripId: trip.id,
+          from: row.from as Message['from'],
+          body: row.body,
+          at: row.at,
+          receivedAt: row.receivedAt,
+          readBy: row.readBy as Message['readBy'],
+        })),
+      ),
+    () => demoMessages(trip, now),
+    [api, trip.id, now],
+  ).query;
+
+  const trouble = useTripData(
+    trip.live,
+    async () =>
+      map(await api.incidents(trip.id), (rows) =>
+        rows.map<Incident>((row) => ({
+          id: row.id,
+          tripId: trip.id,
+          kind: row.kind as Incident['kind'],
+          severity: row.severity as Incident['severity'],
+          at: row.at,
+          near: null,
+          note: row.note,
+          reportedBy: row.reportedBy as Incident['reportedBy'],
+          photoIds: row.photoIds,
+          resolvedAt: row.resolvedAt,
+        })),
+      ),
+    () => demoIncidents(trip, now),
+    [api, trip.id, now],
+  ).query;
+
+  const escrow = useTripData(
+    trip.live,
+    async () =>
+      map(await api.escrow(trip.id), (view) =>
+        view.releases.map((release) => ({
+          milestone: {
+            kind: release.kind as Release['milestone']['kind'],
+            pct: release.pct,
+            condition: release.condition,
+          },
+          amount: release.amountKobo as Release['amount'],
+          met: release.met,
+        })),
+      ),
+    () => demoEscrow(trip, now),
+    [api, trip.id, now],
+  ).query;
+
+  /*
+    Three numbers, not the drops themselves.
+
+    This screen renders one line — "2/4 signed for · next Kano market" — and
+    the drops screen renders the rest. Mapping every drop into the domain's
+    shape here would mean inventing a fence per drop for a sentence that never
+    draws one.
+  */
+  const dropList = useTripData(
+    trip.live,
+    async () =>
+      map(await api.drops(trip.id), (view) => ({
+        done: view.drops.filter((drop) => drop.deliveredAt !== null).length,
+        total: view.drops.length,
+        nextName:
+          view.drops.find((drop) => drop.deliveredAt === null)?.consignee ?? null,
+      })),
+    () => {
+      const demo = demoDrops(trip, now);
+      return {
+        done: completed(demo).length,
+        total: demo.length,
+        nextName: nextDrop(demo)?.at.name ?? null,
+      };
+    },
+    [api, trip.id, now],
+  ).query;
+
+  // The walkthrough's own track when there is nothing else; the server's when
+  // there is. Never a mix — a corridor drawn half from each is a corridor of
+  // neither trip.
+  const track = fixes.state === 'ready' ? fixes.value : EMPTY_TRACK;
+
+  const travelled = distanceTravelled(track);
+  const observation = observe(track.kept, now);
+  const silence = silentFor(track.kept, now);
+
+  const tripStops = useMemo(() => stops(track.kept), [track]);
+  const waypoints = route.state === 'ready' ? route.value.waypoints : [];
+  const visited = useMemo(
+    () => (route.state === 'ready' ? visits(track.kept, waypoints) : []),
+    [route.state, track, waypoints],
   );
-  const money = useMemo(() => demoEscrow(trip, now), [trip, now]);
-  const drops = useMemo(() => demoDrops(trip, now), [trip, now]);
+  const ahead = useMemo(() => remaining(visited, waypoints), [visited, waypoints]);
+  const messages = thread.state === 'ready' ? thread.value : [];
+  const incidents = trouble.state === 'ready' ? trouble.value : [];
+  const openIncident = headline(incidents);
+  const waiting = route.state === 'ready' ? route.value.chargeableWaitingMs : 0;
+  const course = useMemo(
+    () => deviation(track.kept, trip.destination, now),
+    [track, trip.destination, now],
+  );
+  const money = escrow.state === 'ready' ? escrow.value : [];
+  const drops = dropList.state === 'ready'
+    ? dropList.value
+    : { done: 0, total: 0, nextName: null };
   const nextMoney = nextRelease(money);
   const waited = demurrage(trip.truck, trip.waitedMinutes * 60_000);
   const settlement = settle(fromNaira(trip.agreedNaira), waited.amount, fromNaira(trip.advanceNaira));
@@ -226,7 +376,7 @@ export function TripDetailScreen({
         <Press
           onPress={onDrops}
           accessibilityLabel={t('drops_on_this_trip')}
-          accessibilityHint={whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}
+          accessibilityHint={whereTheDropsAre(drops.done, drops.total, drops.nextName, t)}
           feedback="opacity"
           style={[styles.rowLink, { borderColor: colours.outline }]}
         >
@@ -234,7 +384,7 @@ export function TripDetailScreen({
           <View style={styles.flex}>
             <Text variant="title">{t('drops')}</Text>
             <Text variant="label" tone="secondary">
-              {whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}
+              {whereTheDropsAre(drops.done, drops.total, drops.nextName, t)}
             </Text>
           </View>
           <Icon name="chevron-right" size="md" colour={colours.outline} />

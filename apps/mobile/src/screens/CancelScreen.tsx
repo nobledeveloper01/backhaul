@@ -9,6 +9,7 @@ import {
   fromNaira,
   subtract,
   type CancelledBy,
+  type CancelOutcome,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -19,6 +20,9 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { useSession } from '../state/session';
+import { useTripData } from '../state/server';
+import { map } from '../api/client';
 import { demoNow, type DemoTrip } from '../state/demo';
 
 interface Props {
@@ -46,11 +50,43 @@ export function CancelScreen({ trip, onBack }: Props) {
   const [by, setBy] = useState<CancelledBy>('shipper');
   const [done, setDone] = useState(false);
 
+  const { api } = useSession();
+
   const state = trip.history.at(-1)?.state ?? 'open';
   const acceptedAt = trip.history.find((event) => event.state === 'assigned')?.at ?? now;
   const agreed = fromNaira(trip.agreedNaira);
 
-  const outcome = cancel({ by, state, agreed, acceptedAt, now });
+  /*
+    The fee comes from the server, and the wording with it.
+
+    Both sides implement `cancel` and the parity fixtures hold them to the same
+    number *and* the same sentence — but the fee depends on the agreed fare and
+    on when the bid was accepted, and both live in the trip's terms, which this
+    phone does not hold. Computing it locally from `trip.agreedNaira` was
+    computing it from the walkthrough.
+  */
+  const { query } = useTripData(
+    trip.live,
+    async () =>
+      map(await api.cancellation(trip.id, by), (view) =>
+        view.ok
+          ? ({
+              ok: true,
+              feePct: view.feePct ?? 0,
+              fee: (view.feeKobo ?? 0) as ReturnType<typeof fromNaira>,
+              withinGrace: view.withinGrace ?? false,
+              detail: view.detail,
+            } as const)
+          : ({ ok: false, reason: 'terminal', detail: view.detail } as const),
+      ),
+    () => cancel({ by, state, agreed, acceptedAt, now }),
+    [api, trip.id, by, state, agreed, acceptedAt, now],
+  );
+
+  const outcome: CancelOutcome =
+    query.state === 'ready'
+      ? query.value
+      : cancel({ by, state, agreed, acceptedAt, now });
 
   if (done && outcome.ok) {
     return (
