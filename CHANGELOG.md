@@ -61,6 +61,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   app being killed and the phone rebooting. The notification says who can see
   the driver rather than apologising for existing, and the app reports when the
   operating system is throttling it instead of quietly recording nothing.
+- **Proof of delivery, drops and the checkpoint ledger are served.** A
+  delivery is a draft while a driver is filling it in at a gate and evidence
+  the moment it is sealed — and the seal runs the same rule the app runs, so
+  nobody is told one thing by their phone and another by the server. Drops
+  cannot be reordered once one has been signed for. The levy ledger goes
+  negative when a driver is out of pocket, because that is the number they
+  care about.
 - **Messages, incidents and routes are served.** The thread on a trip, in the
   order the conversation happened and carrying both times — when a message was
   written and when the server took it. Incidents with the kind's own default

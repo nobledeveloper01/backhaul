@@ -28,6 +28,12 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<WaypointEntity> Waypoints => Set<WaypointEntity>();
 
+    public DbSet<DeliveryEntity> Deliveries => Set<DeliveryEntity>();
+
+    public DbSet<DropEntity> Drops => Set<DropEntity>();
+
+    public DbSet<LevyEntity> Levies => Set<LevyEntity>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<TripEntity>(trip =>
@@ -93,6 +99,27 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // A route's order, and a guard against two waypoints claiming the
             // same position in it.
             waypoint.HasIndex(w => new { w.TripId, w.Sequence }).IsUnique();
+        });
+
+        model.Entity<DeliveryEntity>(delivery =>
+        {
+            // One per trip, keyed by it. Two deliveries for one handover is
+            // not a state anybody should have to reason about.
+            delivery.HasKey(d => d.TripId);
+        });
+
+        model.Entity<DropEntity>(drop =>
+        {
+            drop.HasKey(d => d.Id);
+            drop.HasIndex(d => new { d.TripId, d.Sequence }).IsUnique();
+        });
+
+        model.Entity<LevyEntity>(levy =>
+        {
+            // The client-generated id is the key, so a driver retrying from a
+            // checkpoint with no signal does not pay twice on paper.
+            levy.HasKey(l => l.Id);
+            levy.HasIndex(l => new { l.TripId, l.At });
         });
 
         model.Entity<SignInChallengeEntity>(challenge =>

@@ -76,7 +76,9 @@ public sealed record ParityFixtures(
     TrackingFixtures Tracking,
     AuthFixtures Auth,
     WaypointFixtures Waypoints,
-    IReadOnlyList<IncidentRow> Incidents);
+    IReadOnlyList<IncidentRow> Incidents,
+    PodFixtures Pod,
+    DropFixtures Drops);
 
 public sealed record ParityConstants(
     int CommissionPct,
@@ -196,6 +198,26 @@ public sealed record IncidentRow(
     string Severity,
     bool RaisesDispute,
     bool NeedsPhoto);
+
+public sealed record PodFixtures(
+    int MinimumPhotos,
+    IReadOnlyList<PodRow> Cases,
+    IReadOnlyList<ExceptionRow> Exceptions);
+
+public sealed record PodRow(
+    string Name,
+    int Photos,
+    bool HasSignature,
+    string? SignatureName,
+    bool Ok,
+    string? Reason,
+    string? Detail);
+
+public sealed record ExceptionRow(string Kind, bool Settles);
+
+public sealed record DropFixtures(long PerDropKobo, IReadOnlyList<DropFeeRow> Fees);
+
+public sealed record DropFeeRow(int Drops, long FeeKobo);
 
 public sealed record CodeRow(
     string Name,

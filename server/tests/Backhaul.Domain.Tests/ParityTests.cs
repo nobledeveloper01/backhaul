@@ -417,6 +417,66 @@ public sealed class ParityTests
         }
     }
 
+    [Fact]
+    public void Both_sides_seal_a_delivery_on_the_same_evidence_and_say_the_same_words()
+    {
+        // A driver standing in a market with a queue behind them, told one
+        // thing by the app and another by the server, will conclude the app is
+        // broken — and they will be right.
+        foreach (var row in Fixtures.Parity.Pod.Cases)
+        {
+            var delivery = new Delivery(
+                DateTimeOffset.UnixEpoch,
+                [.. Enumerable.Range(0, row.Photos).Select(i => $"p{i}")],
+                row.HasSignature ? new Signature(row.SignatureName!, "storekeeper", "s1") : null,
+                null,
+                string.Empty,
+                null);
+
+            var result = Pod.Seal(delivery);
+
+            if (row.Ok)
+            {
+                Assert.IsType<PodResult.Sealed>(result);
+                continue;
+            }
+
+            var refused = Assert.IsType<PodResult.Refused>(result);
+            Assert.Equal(row.Reason, Pod.ToWire(refused.Reason));
+            Assert.Equal(row.Detail, refused.Detail);
+        }
+    }
+
+    [Fact]
+    public void Both_sides_agree_which_exceptions_still_settle()
+    {
+        // A short delivery is a delivery. Holding the whole payment until a
+        // quantity dispute resolves punishes a carrier for a discrepancy that
+        // is usually the loading end's.
+        foreach (var row in Fixtures.Parity.Pod.Exceptions)
+        {
+            var kind = Pod.ExceptionFromWire(row.Kind);
+            Assert.NotNull(kind);
+
+            var settles = Pod.SettlesDespite(new DeliveryException(kind!.Value, null, string.Empty));
+            Assert.Equal(row.Settles, settles);
+        }
+    }
+
+    [Fact]
+    public void Both_sides_charge_the_same_for_extra_stops()
+    {
+        // The first drop is the delivery; every one after it is a detour, a
+        // wait and a second set of papers. A trip with one drop costs what a
+        // trip has always cost.
+        Assert.Equal(Fixtures.Parity.Drops.PerDropKobo, Drops.PerDrop.Value);
+
+        foreach (var row in Fixtures.Parity.Drops.Fees)
+        {
+            Assert.Equal(row.FeeKobo, Drops.Fee(row.Drops).Value);
+        }
+    }
+
     private static string Wire(CodeRefusal reason) => reason switch
     {
         CodeRefusal.Unknown => "unknown",

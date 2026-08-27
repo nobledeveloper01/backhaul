@@ -69,6 +69,13 @@ import {
   raisesDispute,
   type IncidentKind,
 } from '../packages/domain/src/incidents.ts';
+import {
+  MINIMUM_PHOTOS,
+  seal,
+  settlesDespite,
+  type Delivery,
+} from '../packages/domain/src/pod.ts';
+import { PER_DROP, dropFee } from '../packages/domain/src/drops.ts';
 
 const CLASSES: readonly TruckClass[] = [
   'pickup',
@@ -580,6 +587,76 @@ const incidentCases = INCIDENT_KINDS.map((kind) => ({
   needsPhoto: needsPhoto(kind),
 }));
 
+/**
+ * Proof of delivery.
+ *
+ * The wording is the point. A driver standing in a market with a queue behind
+ * them, told one thing by the app and another by the server, will conclude the
+ * app is broken — and they will be right.
+ */
+const POD_T0 = new Date('2026-03-06T14:20:00Z');
+
+const podCases = (
+  [
+    ['complete', 2, { name: 'Ibrahim Sani', role: 'storekeeper' }],
+    ['one photograph', 1, { name: 'Ibrahim Sani', role: 'storekeeper' }],
+    ['no photographs', 0, { name: 'Ibrahim Sani', role: 'storekeeper' }],
+    ['no signature', 2, null],
+    ['a signature with no name', 2, { name: '   ', role: 'storekeeper' }],
+  ] as const
+).map(([name, photos, signature]) => {
+  const delivery: Delivery = {
+    tripId: 'trip-1',
+    at: POD_T0,
+    photoIds: Array.from({ length: photos }, (_, i) => `p${i}`),
+    signature:
+      signature === null
+        ? null
+        : { name: signature.name, role: signature.role, imageId: 's1' },
+    capturedAt: null,
+    note: '',
+    exception: null,
+  };
+
+  const result = seal(delivery);
+
+  return {
+    name,
+    photos,
+    hasSignature: signature !== null,
+    signatureName: signature?.name ?? null,
+    ok: result.ok,
+    reason: result.ok ? null : result.reason,
+    detail: result.ok ? null : result.detail,
+  };
+});
+
+const exceptionCases = (['short', 'damaged', 'refused'] as const).map((kind) => ({
+  kind,
+  settles: settlesDespite({ kind, quantity: null, note: '', photoIds: [] }),
+}));
+
+/** What extra stops add. The first drop is the delivery. */
+const dropFeeCases = [0, 1, 2, 3, 4].map((drops) => ({
+  drops,
+  feeKobo: dropFee(Array.from({ length: drops }, (_, i) => ({
+    id: `d${i}`,
+    at: {
+      id: `w${i}`,
+      name: `w${i}`,
+      at: { lat: 0, lon: 0, accuracy: 0, at: POD_T0 },
+      kind: 'destination' as const,
+      radius: 400,
+    },
+    consignee: '',
+    goods: '',
+    units: null,
+    weightKg: 1_000,
+    deliveredAt: null,
+    exception: null,
+  }))),
+}));
+
 const fixtures = {
   // Bumped whenever the shape changes, so a server built against an older
   // shape fails loudly rather than reading a field that moved.
@@ -605,6 +682,12 @@ const fixtures = {
   auth: { phones, codes },
   waypoints: { minimumRadiusM: MINIMUM_RADIUS_M, cases: waypointCases },
   incidents: incidentCases,
+  pod: {
+    minimumPhotos: MINIMUM_PHOTOS,
+    cases: podCases,
+    exceptions: exceptionCases,
+  },
+  drops: { perDropKobo: PER_DROP, fees: dropFeeCases },
 };
 
 writeFileSync('fixtures/parity.json', JSON.stringify(fixtures, null, 2) + '\n');
@@ -626,6 +709,8 @@ process.stdout.write(
       `${codes.length} codes`,
       `${waypointCases.length} waypoint tracks`,
       `${incidentCases.length} incident kinds`,
+      `${podCases.length} deliveries`,
+      `${dropFeeCases.length} drop fees`,
     ].join(', ')
   }\n`,
 );

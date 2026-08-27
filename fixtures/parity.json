@@ -1783,5 +1783,94 @@
       "raisesDispute": true,
       "needsPhoto": true
     }
-  ]
+  ],
+  "pod": {
+    "minimumPhotos": 2,
+    "cases": [
+      {
+        "name": "complete",
+        "photos": 2,
+        "hasSignature": true,
+        "signatureName": "Ibrahim Sani",
+        "ok": true,
+        "reason": null,
+        "detail": null
+      },
+      {
+        "name": "one photograph",
+        "photos": 1,
+        "hasSignature": true,
+        "signatureName": "Ibrahim Sani",
+        "ok": false,
+        "reason": "no_photos",
+        "detail": "Take 1 more photo — the goods, and where you are."
+      },
+      {
+        "name": "no photographs",
+        "photos": 0,
+        "hasSignature": true,
+        "signatureName": "Ibrahim Sani",
+        "ok": false,
+        "reason": "no_photos",
+        "detail": "Take 2 more photos — the goods, and where you are."
+      },
+      {
+        "name": "no signature",
+        "photos": 2,
+        "hasSignature": false,
+        "signatureName": null,
+        "ok": false,
+        "reason": "no_signature",
+        "detail": "Ask whoever is receiving to sign."
+      },
+      {
+        "name": "a signature with no name",
+        "photos": 2,
+        "hasSignature": true,
+        "signatureName": "   ",
+        "ok": false,
+        "reason": "no_name",
+        "detail": "Write the name of the person signing."
+      }
+    ],
+    "exceptions": [
+      {
+        "kind": "short",
+        "settles": true
+      },
+      {
+        "kind": "damaged",
+        "settles": true
+      },
+      {
+        "kind": "refused",
+        "settles": false
+      }
+    ]
+  },
+  "drops": {
+    "perDropKobo": 2500000,
+    "fees": [
+      {
+        "drops": 0,
+        "feeKobo": 0
+      },
+      {
+        "drops": 1,
+        "feeKobo": 0
+      },
+      {
+        "drops": 2,
+        "feeKobo": 2500000
+      },
+      {
+        "drops": 3,
+        "feeKobo": 5000000
+      },
+      {
+        "drops": 4,
+        "feeKobo": 7500000
+      }
+    ]
+  }
 }

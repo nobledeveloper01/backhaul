@@ -90,6 +90,19 @@ refuses: there is no off-trip tracking and the server enforces it rather than
 trusting the client. The failure surfaced as an empty visit list, which is the
 symptom of a completely different bug.
 
+**A delivery is the one record that is neither append-only nor replaceable.**
+A driver adds a photograph, then a signature, then a name, over a few minutes
+at a gate — versioning that produces four "deliveries" for one handover, and
+refusing to let it change means the first photograph locks the record. The
+answer is a **draft with a one-way door**: it moves freely until `seal`, and
+never afterwards. Written down because it is the only place in the product that
+works that way.
+
+**Drops refuse reordering once one is signed for, and the route does not.**
+Both are plans. The difference is that a half-unloaded trailer is a physical
+fact — the last drop is at the front of the box — so reordering it is not a
+plan change, it is a mistake.
+
 ### Still open
 
 - **Neither native implementation has run on a physical handset.** Phase 1's

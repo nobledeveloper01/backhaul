@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ShareRepository>();
         services.AddScoped<SignInRepository>();
         services.AddScoped<TripDetailRepository>();
+        services.AddScoped<DeliveryRepository>();
 
         // Replaced by a real gateway in production; `Program.cs` refuses to
         // start with this one against a real database.
