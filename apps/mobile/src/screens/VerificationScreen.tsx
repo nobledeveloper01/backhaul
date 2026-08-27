@@ -18,6 +18,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -107,192 +108,205 @@ export function VerificationScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        {/* No icon on the overline: the badge below is already a shield, and two
-            of the same mark in one card is one too many. */}
         {/*
-          The carrier's own name, from the session — not a constant.
+          Nothing derived from the answer until there is one.
 
-          A verification card headed with somebody else's company was the one
-          thing on this screen that could not be true, and it was the heading.
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
         */}
-        <Card emphasis="accent" overline={who?.name.trim() || t('no_name_yet')}>
-          <View style={styles.badgeRow}>
-            <View style={[styles.badge, { backgroundColor: washFor(tier, colours) }]}>
-              <Icon name="shield" size="lg" colour={tintFor(tier, colours)} />
-            </View>
-            <View style={styles.flex}>
-              <Text variant="headline">{t(TIER_WORDS[tier])}</Text>
-              {/*
-                `record`, not `DEMO_RECORD`.
+        <Unready query={query} onRetry={refresh} />
 
-                This line read the walkthrough's trip counts on every render,
-                including when the server had already answered with the real
-                ones — so a carrier's badge came from the API and the evidence
-                under it came from a fixture, and the two could disagree
-                without either looking wrong.
-              */}
-              <Text variant="body" tone="secondary">
-                {record.tripsCompleted} {t('trips_completed')}
-                {rate === null
-                  ? ` · ${t('too_few_for_on_time')}`
-                  : ` · ${record.tripsOnTime} ${t('of_count')} ${record.tripsCompleted} ${t('on_time')}`}
-              </Text>
-            </View>
-          </View>
-
-          {/*
-            A percentage from a handful of trips is true and misleading, and it
-            is the number a shipper decides on. Below five, there is no figure.
-          */}
-          {rate === null ? (
-            <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {t('under_answers')} {MINIMUM_TRIPS_FOR_RATE} {t('trips_completed')}
-            </Text>
-          ) : null}
-        </Card>
-
-        {step !== null ? (
-          <Card overline={`${t('to_reach')} ${t(TIER_WORDS[step.tier])}`} icon="route">
+        {query.state !== 'ready' ? null : (
+          <>
+            {/* No icon on the overline: the badge below is already a shield, and two
+                of the same mark in one card is one too many. */}
             {/*
-              The documents, from the enum rather than from the sentence.
+              The carrier's own name, from the session — not a constant.
 
-              `nextStep().missing` is a list of English phrases — the domain
-              writes them because that is what the server says and what the
-              parity fixtures pin, and rendering them straight put "a
-              government ID" under a Yorùbá heading. The enum crosses the
-              boundary; the words do not.
+              A verification card headed with somebody else's company was the one
+              thing on this screen that could not be true, and it was the heading.
             */}
-            {REQUIREMENTS[step.tier].docs
-              .filter((doc) => !documents[doc])
-              .map((doc) => (
-                <View key={doc} style={styles.missing}>
-                  <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
-                  <Text variant="body" style={styles.flex}>
-                    {t(DOCUMENT_WORDS[doc])}
+            <Card emphasis="accent" overline={who?.name.trim() || t('no_name_yet')}>
+              <View style={styles.badgeRow}>
+                <View style={[styles.badge, { backgroundColor: washFor(tier, colours) }]}>
+                  <Icon name="shield" size="lg" colour={tintFor(tier, colours)} />
+                </View>
+                <View style={styles.flex}>
+                  <Text variant="headline">{t(TIER_WORDS[tier])}</Text>
+                  {/*
+                    `record`, not `DEMO_RECORD`.
+
+                    This line read the walkthrough's trip counts on every render,
+                    including when the server had already answered with the real
+                    ones — so a carrier's badge came from the API and the evidence
+                    under it came from a fixture, and the two could disagree
+                    without either looking wrong.
+                  */}
+                  <Text variant="body" tone="secondary">
+                    {record.tripsCompleted} {t('trips_completed')}
+                    {rate === null
+                      ? ` · ${t('too_few_for_on_time')}`
+                      : ` · ${record.tripsOnTime} ${t('of_count')} ${record.tripsCompleted} ${t('on_time')}`}
                   </Text>
                 </View>
-              ))}
+              </View>
+
+              {/*
+                A percentage from a handful of trips is true and misleading, and it
+                is the number a shipper decides on. Below five, there is no figure.
+              */}
+              {rate === null ? (
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('under_answers')} {MINIMUM_TRIPS_FOR_RATE} {t('trips_completed')}
+                </Text>
+              ) : null}
+            </Card>
+
+            {step !== null ? (
+              <Card overline={`${t('to_reach')} ${t(TIER_WORDS[step.tier])}`} icon="route">
+                {/*
+                  The documents, from the enum rather than from the sentence.
+
+                  `nextStep().missing` is a list of English phrases — the domain
+                  writes them because that is what the server says and what the
+                  parity fixtures pin, and rendering them straight put "a
+                  government ID" under a Yorùbá heading. The enum crosses the
+                  boundary; the words do not.
+                */}
+                {REQUIREMENTS[step.tier].docs
+                  .filter((doc) => !documents[doc])
+                  .map((doc) => (
+                    <View key={doc} style={styles.missing}>
+                      <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
+                      <Text variant="body" style={styles.flex}>
+                        {t(DOCUMENT_WORDS[doc])}
+                      </Text>
+                    </View>
+                  ))}
+                {/*
+                  And the two that are counts rather than documents, each with its
+                  number beside the phrase rather than inside it.
+                */}
+                {record.tripsCompleted < REQUIREMENTS[step.tier].trips ? (
+                  <View style={styles.missing}>
+                    <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
+                    <Text variant="body" style={styles.flex}>
+                      {REQUIREMENTS[step.tier].trips - record.tripsCompleted}{' '}
+                      {t('more_completed_trips')}
+                    </Text>
+                  </View>
+                ) : null}
+                {REQUIREMENTS[step.tier].onTime > 0 && record.tripsCompleted > 0 ? (
+                  <View style={styles.missing}>
+                    <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
+                    <Text variant="body" style={styles.flex}>
+                      {Math.round(REQUIREMENTS[step.tier].onTime * 100)}%{' '}
+                      {t('on_time_delivery')}
+                    </Text>
+                  </View>
+                ) : null}
+              </Card>
+            ) : (
+              <Card overline={t('top_of_the_ladder')} icon="check">
+                <Text variant="body">
+                  {t('nothing_left_to_prove')}
+                </Text>
+              </Card>
+            )}
+
             {/*
-              And the two that are counts rather than documents, each with its
-              number beside the phrase rather than inside it.
+              Expiry dates are the walkthrough's, and the card says so.
+
+              `VerificationView` carries four booleans and no dates: the server
+              knows a licence is on file and not when it stops being valid. The
+              expiry a truck's papers have lives on the vehicle and is served —
+              this card is about the *carrier's* four documents, which is a
+              different set and has nowhere to read a date from. Labelled rather
+              than dropped, because the warning window is the thing worth
+              explaining and the rule behind it is real.
             */}
-            {record.tripsCompleted < REQUIREMENTS[step.tier].trips ? (
-              <View style={styles.missing}>
-                <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
-                <Text variant="body" style={styles.flex}>
-                  {REQUIREMENTS[step.tier].trips - record.tripsCompleted}{' '}
-                  {t('more_completed_trips')}
+            {soon.length > 0 ? (
+              <Card overline={t('expiring')} icon="clock" emphasis="plain">
+                <Text variant="label" tone="stale" style={styles.gapBottom}>
+                  {t('walkthrough_figures')}
                 </Text>
-              </View>
-            ) : null}
-            {REQUIREMENTS[step.tier].onTime > 0 && record.tripsCompleted > 0 ? (
-              <View style={styles.missing}>
-                <Icon name="plus" size="sm" colour={colours.accent} beside="body" />
-                <Text variant="body" style={styles.flex}>
-                  {Math.round(REQUIREMENTS[step.tier].onTime * 100)}%{' '}
-                  {t('on_time_delivery')}
+                {soon.map((entry) => (
+                  <View key={entry.kind} style={styles.missing}>
+                    <Icon
+                      name={entry.days < 0 ? 'alert' : 'clock'}
+                      size="sm"
+                      colour={entry.days < 0 ? colours.exception : colours.stopped}
+                    />
+                    <Text variant="body" style={styles.flex}>
+                      {t(DOCUMENT_WORDS[entry.kind])}
+                      {entry.days < 0
+                        ? ` · ${Math.abs(entry.days)} ${t('days_ago_expired')}`
+                        : ` · ${entry.days} ${t('expires_in_days')}`}
+                    </Text>
+                  </View>
+                ))}
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {EXPIRY_WARNING_DAYS} {t('warned_days_ahead')}
                 </Text>
-              </View>
+              </Card>
             ) : null}
-          </Card>
-        ) : (
-          <Card overline={t('top_of_the_ladder')} icon="check">
-            <Text variant="body">
-              {t('nothing_left_to_prove')}
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('trucks_and_papers').toUpperCase()}
             </Text>
-          </Card>
+
+            {PAPERS.map((paper) => {
+              const held = documents[paper];
+              return (
+                <Press
+                  key={paper}
+                  /*
+                    Records that a paper is held, not that it is genuine.
+
+                    Verification is a human step, and a tick that put a Trusted
+                    badge on an upload nobody looked at would be the platform
+                    vouching for something it has not seen. The server says the
+                    same thing in its own documentation.
+                  */
+                  onPress={() => {
+                    void api.recordPaper(paper, !held).then(() => refresh());
+                  }}
+                  accessibilityLabel={t(DOCUMENT_WORDS[paper])}
+                  accessibilityHint={held ? t('on_file_tap_to_remove') : t('tap_to_upload')}
+                  feedback="opacity"
+                  style={[
+                    styles.paper,
+                    {
+                      backgroundColor: colours.surfaceRaised,
+                      // The tick carries the state; a green border on every paper
+                      // on file turned the list into a wall of green with nothing
+                      // standing out.
+                      borderColor: colours.outline,
+                    },
+                  ]}
+                >
+                  <Icon
+                    name={held ? 'check' : 'camera'}
+                    size="md"
+                    colour={held ? colours.moving : colours.textSecondary}
+                  />
+                  <View style={styles.flex}>
+                    <Text variant="body">{t(DOCUMENT_WORDS[paper])}</Text>
+                    <Text variant="label" tone="secondary">
+                      {t(held ? 'on_file' : 'not_uploaded')}
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size="md" colour={colours.outline} />
+                </Press>
+              );
+            })}
+
+            <Text variant="label" tone="secondary">
+              {t('tier_note')}
+            </Text>
+          </>
         )}
-
-        {/*
-          Expiry dates are the walkthrough's, and the card says so.
-
-          `VerificationView` carries four booleans and no dates: the server
-          knows a licence is on file and not when it stops being valid. The
-          expiry a truck's papers have lives on the vehicle and is served —
-          this card is about the *carrier's* four documents, which is a
-          different set and has nowhere to read a date from. Labelled rather
-          than dropped, because the warning window is the thing worth
-          explaining and the rule behind it is real.
-        */}
-        {soon.length > 0 ? (
-          <Card overline={t('expiring')} icon="clock" emphasis="plain">
-            <Text variant="label" tone="stale" style={styles.gapBottom}>
-              {t('walkthrough_figures')}
-            </Text>
-            {soon.map((entry) => (
-              <View key={entry.kind} style={styles.missing}>
-                <Icon
-                  name={entry.days < 0 ? 'alert' : 'clock'}
-                  size="sm"
-                  colour={entry.days < 0 ? colours.exception : colours.stopped}
-                />
-                <Text variant="body" style={styles.flex}>
-                  {t(DOCUMENT_WORDS[entry.kind])}
-                  {entry.days < 0
-                    ? ` · ${Math.abs(entry.days)} ${t('days_ago_expired')}`
-                    : ` · ${entry.days} ${t('expires_in_days')}`}
-                </Text>
-              </View>
-            ))}
-            <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {EXPIRY_WARNING_DAYS} {t('warned_days_ahead')}
-            </Text>
-          </Card>
-        ) : null}
-
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('trucks_and_papers').toUpperCase()}
-        </Text>
-
-        {PAPERS.map((paper) => {
-          const held = documents[paper];
-          return (
-            <Press
-              key={paper}
-              /*
-                Records that a paper is held, not that it is genuine.
-
-                Verification is a human step, and a tick that put a Trusted
-                badge on an upload nobody looked at would be the platform
-                vouching for something it has not seen. The server says the
-                same thing in its own documentation.
-              */
-              onPress={() => {
-                void api.recordPaper(paper, !held).then(() => refresh());
-              }}
-              accessibilityLabel={t(DOCUMENT_WORDS[paper])}
-              accessibilityHint={held ? t('on_file_tap_to_remove') : t('tap_to_upload')}
-              feedback="opacity"
-              style={[
-                styles.paper,
-                {
-                  backgroundColor: colours.surfaceRaised,
-                  // The tick carries the state; a green border on every paper
-                  // on file turned the list into a wall of green with nothing
-                  // standing out.
-                  borderColor: colours.outline,
-                },
-              ]}
-            >
-              <Icon
-                name={held ? 'check' : 'camera'}
-                size="md"
-                colour={held ? colours.moving : colours.textSecondary}
-              />
-              <View style={styles.flex}>
-                <Text variant="body">{t(DOCUMENT_WORDS[paper])}</Text>
-                <Text variant="label" tone="secondary">
-                  {t(held ? 'on_file' : 'not_uploaded')}
-                </Text>
-              </View>
-              <Icon name="chevron-right" size="md" colour={colours.outline} />
-            </Press>
-          );
-        })}
-
-        <Text variant="label" tone="secondary">
-          {t('tier_note')}
-        </Text>
       </ScrollView>
     </View>
   );

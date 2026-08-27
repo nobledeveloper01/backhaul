@@ -15,6 +15,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -105,84 +106,96 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline={t('what_they_will_see')} icon="link">
-          {/*
-            Full-width rows rather than chips. As chips the second option — the
-            longer sentence — wrapped onto its own line and the pair read as two
-            unrelated buttons of different sizes rather than a choice between
-            two things.
-          */}
-          <Option
-            title={t('where_it_is_only')}
-            detail={t('position_and_arrival_only')}
-            selected={scope === 'position'}
-            onPress={() => setScope('position')}
-          />
-          <Option
-            title={t('where_it_has_been_too')}
-            detail={t('adds_the_full_track')}
-            selected={scope === 'evidence'}
-            onPress={() => setScope('evidence')}
-          />
+        {/*
+          Nothing derived from the answer until there is one. A total of ₦0, a
+          count of zero drops or an empty list of links are all statements
+          about somebody's trip, and a server this phone could not reach has
+          not made any of them.
+        */}
+        <Unready query={query} onRetry={refresh} />
 
-          <View style={styles.rules}>
-            <Rule on={visible.position} label={t('where_the_truck_is_now')} />
-            <Rule on={visible.eta} label={t('when_it_should_arrive')} />
-            <Rule on={visible.history} label={t('everywhere_it_has_been')} />
-            <Rule on={visible.trackQuality} label={t('what_the_track_dropped')} />
-          </View>
+        {query.state !== 'ready' ? null : (
+          <>
+            <Card emphasis="accent" overline={t('what_they_will_see')} icon="link">
+              {/*
+                Full-width rows rather than chips. As chips the second option — the
+                longer sentence — wrapped onto its own line and the pair read as two
+                unrelated buttons of different sizes rather than a choice between
+                two things.
+              */}
+              <Option
+                title={t('where_it_is_only')}
+                detail={t('position_and_arrival_only')}
+                selected={scope === 'position'}
+                onPress={() => setScope('position')}
+              />
+              <Option
+                title={t('where_it_has_been_too')}
+                detail={t('adds_the_full_track')}
+                selected={scope === 'evidence'}
+                onPress={() => setScope('evidence')}
+              />
 
-          {/*
-            Below the line, and separated on purpose. The two `false`s are typed
-            `false` in the domain, not `boolean` — no scope turns them on. Mixed
-            in with the rest they looked like two more things the toggle
-            controls, and the sentence that actually gets a link sent is "it
-            cannot show them your number".
-          */}
-          <View style={[styles.never, { borderTopColor: colours.accent }]}>
-            <Text variant="overline" tone="secondary">
-              {t('never_shown').toUpperCase()}
-            </Text>
-            <Rule on={visible.contactDetails} label={t('anybodys_phone_number')} />
-            <Rule on={visible.money} label={t('what_the_load_is_worth')} />
-          </View>
-        </Card>
-
-        <Card overline={t('the_message')} icon="message">
-          <View style={[styles.sms, { backgroundColor: colours.surfaceDim }]}>
-            <Text variant="body">{message}</Text>
-          </View>
-          <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {message.length} {t('one_sms_and_it_says_who')}
-          </Text>
-
-          <View style={styles.actions}>
-            <Press
-              onPress={onPreview}
-              accessibilityLabel={t('see_what_they_see')}
-              style={[styles.primary, { backgroundColor: colours.accent }]}
-            >
-              <View style={styles.centreRow}>
-                <Icon name="link" size="md" colour={colours.onAccent} />
-                <Text variant="title" style={{ color: colours.onAccent }}>
-                  {t('see_what_they_see')}
-                </Text>
+              <View style={styles.rules}>
+                <Rule on={visible.position} label={t('where_the_truck_is_now')} />
+                <Rule on={visible.eta} label={t('when_it_should_arrive')} />
+                <Rule on={visible.history} label={t('everywhere_it_has_been')} />
+                <Rule on={visible.trackQuality} label={t('what_the_track_dropped')} />
               </View>
-            </Press>
-          </View>
 
-          <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {DEFAULT_SHARE_DAYS} {t('days_unless_you_turn_it_off')}
-          </Text>
-        </Card>
+              {/*
+                Below the line, and separated on purpose. The two `false`s are typed
+                `false` in the domain, not `boolean` — no scope turns them on. Mixed
+                in with the rest they looked like two more things the toggle
+                controls, and the sentence that actually gets a link sent is "it
+                cannot show them your number".
+              */}
+              <View style={[styles.never, { borderTopColor: colours.accent }]}>
+                <Text variant="overline" tone="secondary">
+                  {t('never_shown').toUpperCase()}
+                </Text>
+                <Rule on={visible.contactDetails} label={t('anybodys_phone_number')} />
+                <Rule on={visible.money} label={t('what_the_load_is_worth')} />
+              </View>
+            </Card>
 
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('links_on_this_trip').toUpperCase()}
-        </Text>
+            <Card overline={t('the_message')} icon="message">
+              <View style={[styles.sms, { backgroundColor: colours.surfaceDim }]}>
+                <Text variant="body">{message}</Text>
+              </View>
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {message.length} {t('one_sms_and_it_says_who')}
+              </Text>
 
-        {links.map((link) => (
-          <LinkRow key={link.token} link={link} now={now} onRevoke={() => revoke(link.token)} />
-        ))}
+              <View style={styles.actions}>
+                <Press
+                  onPress={onPreview}
+                  accessibilityLabel={t('see_what_they_see')}
+                  style={[styles.primary, { backgroundColor: colours.accent }]}
+                >
+                  <View style={styles.centreRow}>
+                    <Icon name="link" size="md" colour={colours.onAccent} />
+                    <Text variant="title" style={{ color: colours.onAccent }}>
+                      {t('see_what_they_see')}
+                    </Text>
+                  </View>
+                </Press>
+              </View>
+
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {DEFAULT_SHARE_DAYS} {t('days_unless_you_turn_it_off')}
+              </Text>
+            </Card>
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('links_on_this_trip').toUpperCase()}
+            </Text>
+
+            {links.map((link) => (
+              <LinkRow key={link.token} link={link} now={now} onRevoke={() => revoke(link.token)} />
+            ))}
+          </>
+        )}
       </ScrollView>
     </View>
   );

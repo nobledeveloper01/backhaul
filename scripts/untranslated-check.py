@@ -78,6 +78,10 @@ KEYWORD = re.compile(r'\b(?:void|const|let|return|await|if|else|import|export|ne
 # Two or more English words in a row, which is prose rather than a token.
 PROSE = re.compile(r"[A-Za-z][a-z]+(?:[ ,.'’—–:?!·]+[A-Za-z][a-z]*){1,}[.?!]?")
 
+# Two or more lower-case words is prose too. `needs a note` never starts with a
+# capital and is read by a driver at a checkpoint like anything else here.
+LOWER = re.compile(r"[a-z]+(?: [a-z]+){1,}[.?!]?")
+
 WORDS = re.compile(r"[A-Z][a-z]+(?:[ ,.'’—–:?!]+[A-Za-z][a-z]*)*[.?!]?")
 
 # A marker for the handful of places where English is the right answer: a
@@ -161,10 +165,14 @@ def sweep(paths):
             # 'Not uploaded'}` is two labels a reader sees, and every check
             # above blanks the braces out before looking.
             for m in re.finditer(LITERAL, line):
-                v = (m.group(1) or m.group(2)).strip()
+                # Leading separators stripped before the shape is judged.
+                # `' · needs a note'` is a label with a middot glued to the
+                # front of it, and it walked past a rule that wanted the first
+                # character to be a letter.
+                v = (m.group(1) or m.group(2)).strip().lstrip('· ').strip()
                 if '/' in v or v in NAMES:
                     continue
-                if WORDS.fullmatch(v):
+                if WORDS.fullmatch(v) or LOWER.fullmatch(v):
                     found[p].append((i, v))
 
             # And prose inside a template literal, which is how the same text

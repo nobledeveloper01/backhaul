@@ -12,6 +12,7 @@ import {
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -72,7 +73,7 @@ export function VehiclesScreen({ onBack }: Props) {
     So the standing, the lapsed list and the expiring list are read, and the
     ordering — the part that is presentation rather than fact — is done here.
   */
-  const { query } = useMine(() => api.vehicles(), [api]);
+  const { query, refresh } = useMine(() => api.vehicles(), [api]);
 
   const fleet = useMemo(() => {
     const rows = query.state === 'ready' ? query.value : [];
@@ -107,35 +108,48 @@ export function VehiclesScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <View style={styles.lede}>
-          <Icon
-            name={grounded === 0 ? 'check' : 'alert'}
-            size="sm"
-            colour={grounded === 0 ? colours.moving : colours.exception}
-          />
-          <Text
-            variant="body"
-            tone={grounded === 0 ? 'moving' : 'exception'}
-            style={styles.flex}
-          >
-            {grounded === 0
-              ? `${fleet.length} ${t('all_trucks_can_take_work')}`
-              : `${grounded} ${t('of_count')} ${fleet.length} ${t('cannot_be_given_a_new_trip')}`}
-          </Text>
-        </View>
+        {/*
+          Nothing derived from the answer until there is one.
 
-        {fleet.map(({ vehicle, assessment, mayCarry }) => (
-          <Row
-            key={vehicle.id}
-            vehicle={vehicle}
-            assessment={assessment}
-            mayCarry={mayCarry}
-          />
-        ))}
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
+        */}
+        <Unready query={query} onRetry={refresh} />
 
-        <Text variant="label" tone="secondary">
-          {t('lapsed_paper_note')}
-        </Text>
+        {query.state !== 'ready' ? null : (
+          <>
+            <View style={styles.lede}>
+              <Icon
+                name={grounded === 0 ? 'check' : 'alert'}
+                size="sm"
+                colour={grounded === 0 ? colours.moving : colours.exception}
+              />
+              <Text
+                variant="body"
+                tone={grounded === 0 ? 'moving' : 'exception'}
+                style={styles.flex}
+              >
+                {grounded === 0
+                  ? `${fleet.length} ${t('all_trucks_can_take_work')}`
+                  : `${grounded} ${t('of_count')} ${fleet.length} ${t('cannot_be_given_a_new_trip')}`}
+              </Text>
+            </View>
+
+            {fleet.map(({ vehicle, assessment, mayCarry }) => (
+              <Row
+                key={vehicle.id}
+                vehicle={vehicle}
+                assessment={assessment}
+                mayCarry={mayCarry}
+              />
+            ))}
+
+            <Text variant="label" tone="secondary">
+              {t('lapsed_paper_note')}
+            </Text>
+          </>
+        )}
       </ScrollView>
     </View>
   );

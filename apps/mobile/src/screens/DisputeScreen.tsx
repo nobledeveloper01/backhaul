@@ -6,6 +6,7 @@ import { isThin, type Evidence, type Pack, type Weight } from '@backhaul/domain'
 import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { humanDuration } from '../components/PositionAge';
 import { mono, radius, space } from '../design/tokens';
@@ -42,8 +43,15 @@ const day = (at: Date) =>
  * **It takes no side.** No summary, no fault, no "the evidence suggests". Each
  * item says how it got here and the humans do the rest.
  */
-/** What a pack looks like before one has arrived. Not a pack with nothing in
- * it — a pack that has not been read yet, which the screen says out loud. */
+/**
+ * A shape to hold until a pack arrives, and never a thing that is rendered.
+ *
+ * It used to be rendered, under a one-line note about the network — so the
+ * document written to settle an argument reported zero of everything and "0%
+ * of the trip is covered by tracking". The screen now draws nothing of the
+ * pack until it has one, and this exists only so the binding below has a type
+ * before the guard.
+ */
 const EMPTY_PACK: Pack = {
   tripId: '',
   assembledAt: new Date(0),
@@ -69,7 +77,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
     holds at most a slice of any of them. A pack assembled from what one device
     happens to have cached is a pack that is missing whatever it missed.
   */
-  const { query } = useTripData(
+  const { query, refresh } = useTripData(
     trip.live,
     async () =>
       map(await api.disputePack(trip.id), (view) => ({
@@ -105,124 +113,135 @@ export function DisputeScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        {query.state !== 'ready' ? (
-          <Text variant="body" tone="stale" style={styles.gapTight}>
-            {query.state === 'loading' ? t('loading_state') : t('could_not_load')}
-          </Text>
-        ) : null}
+        {/*
+          Nothing of the pack until the pack has arrived.
 
-        <Card emphasis="accent" overline={t('the_pack')} icon="document">
-          <Text variant="title">{whatThePackHolds(
-              pack.items.length,
-              pack.counts.measured,
-              pack.counts.late_attested,
-              Math.round(pack.gaps.reduce((sum, gap) => sum + gap.ms, 0) / 3_600_000),
-              t,
-            )}</Text>
+          This used to render a one-line "could not load" *above* a fully drawn
+          pack built from `EMPTY_PACK` — so the document written to settle an
+          argument said "0% of the trip is covered by tracking" and showed
+          zero of everything, next to a line somebody could easily read as a
+          note about the network. A pack that could not be read is not a pack
+          holding nothing, and this is the one screen where the difference is
+          the entire point.
+        */}
+        <Unready query={query} onRetry={refresh} />
 
-          <View style={styles.counts}>
-            <Count
-              label={t('measured_word')}
-              value={pack.counts.measured}
-              detail={t('by_the_tracker')}
-              colour={colours.moving}
-            />
-            <Count
-              label={t('reported_word')}
-              value={pack.counts.attested}
-              detail={t('by_a_person')}
-              colour={colours.accent}
-            />
-            {/*
-              "1 / Reported late / hours afterwards" was what this said, and
-              the third line read as part of the number. A column's detail has
-              to finish the sentence its label started, not start a new one.
-            */}
-            <Count
-              label={t('reported_late_word')}
-              value={pack.counts.late_attested}
-              detail={t('hours_after_the_fact')}
-              colour={colours.stale}
-            />
-          </View>
+        {query.state !== 'ready' ? null : (
+          <>
+            <Card emphasis="accent" overline={t('the_pack')} icon="document">
+              <Text variant="title">{whatThePackHolds(
+                  pack.items.length,
+                  pack.counts.measured,
+                  pack.counts.late_attested,
+                  Math.round(pack.gaps.reduce((sum, gap) => sum + gap.ms, 0) / 3_600_000),
+                  t,
+                )}</Text>
 
-          <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {humanDuration(pack.coveredMs, t)} {t('of_the_trip_is_covered')}
-          </Text>
-
-          {isThin(pack) ? (
-            <Text variant="label" tone="stopped" style={styles.gapTight}>
-              {t('not_much_here')}
-            </Text>
-          ) : null}
-        </Card>
-
-        {pack.gaps.length > 0 ? (
-          <Card overline={t('nothing_recorded')} icon="signal-off" emphasis="plain">
-            {pack.gaps.map((gap) => (
-              <View key={gap.from.toISOString()} style={styles.line}>
-                <Text variant="body" style={styles.flex}>
-                  {humanDuration(gap.ms, t)} · {clock(gap.from)} – {clock(gap.to)}
-                </Text>
+              <View style={styles.counts}>
+                <Count
+                  label={t('measured_word')}
+                  value={pack.counts.measured}
+                  detail={t('by_the_tracker')}
+                  colour={colours.moving}
+                />
+                <Count
+                  label={t('reported_word')}
+                  value={pack.counts.attested}
+                  detail={t('by_a_person')}
+                  colour={colours.accent}
+                />
+                {/*
+                  "1 / Reported late / hours afterwards" was what this said, and
+                  the third line read as part of the number. A column's detail has
+                  to finish the sentence its label started, not start a new one.
+                */}
+                <Count
+                  label={t('reported_late_word')}
+                  value={pack.counts.late_attested}
+                  detail={t('hours_after_the_fact')}
+                  colour={colours.stale}
+                />
               </View>
-            ))}
-            <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {t('hole_note')}
-            </Text>
-          </Card>
-        ) : null}
 
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('in_the_order_it_happened').toUpperCase()}
-        </Text>
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {humanDuration(pack.coveredMs, t)} {t('of_the_trip_is_covered')}
+              </Text>
 
-        {pack.items.map((item, index) => {
-          const previous = pack.items[index - 1];
-          const newDay = previous === undefined || day(previous.at) !== day(item.at);
-
-          return (
-            <View key={`${item.at.toISOString()}-${index}`}>
-              {newDay ? (
-                <Text variant="overline" tone="secondary" style={styles.dayHead}>
-                  {day(item.at).toUpperCase()}
+              {isThin(pack) ? (
+                <Text variant="label" tone="stopped" style={styles.gapTight}>
+                  {t('not_much_here')}
                 </Text>
               ) : null}
+            </Card>
 
-              <View style={styles.item}>
-                <Text variant="label" tone="secondary" style={[styles.time, mono]}>
-                  {clock(item.at)}
-                </Text>
-
-                <View
-                  style={[
-                    styles.pip,
-                    { backgroundColor: weightColour(item.weight, colours) },
-                  ]}
-                />
-
-                <View style={styles.flex}>
-                  <Text variant="body">{item.summary}</Text>
-                  <View style={styles.meta}>
-                    <Icon
-                      name={weightIcon(item.weight)}
-                      size="sm"
-                      colour={colours.textSecondary}
-                    />
-                    <Text variant="label" tone="secondary">
-                      {weightLabel(item.weight, t)}
-                      {item.weight === 'late_attested' && item.receivedAt !== null
-                        ? ` · ${humanDuration(
-                            item.receivedAt.getTime() - item.at.getTime(),
-                            t,
-                          )} ${t('later')}`
-                        : ''}
+            {pack.gaps.length > 0 ? (
+              <Card overline={t('nothing_recorded')} icon="signal-off" emphasis="plain">
+                {pack.gaps.map((gap) => (
+                  <View key={gap.from.toISOString()} style={styles.line}>
+                    <Text variant="body" style={styles.flex}>
+                      {humanDuration(gap.ms, t)} · {clock(gap.from)} – {clock(gap.to)}
                     </Text>
                   </View>
+                ))}
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('hole_note')}
+                </Text>
+              </Card>
+            ) : null}
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('in_the_order_it_happened').toUpperCase()}
+            </Text>
+
+            {pack.items.map((item, index) => {
+              const previous = pack.items[index - 1];
+              const newDay = previous === undefined || day(previous.at) !== day(item.at);
+
+              return (
+                <View key={`${item.at.toISOString()}-${index}`}>
+                  {newDay ? (
+                    <Text variant="overline" tone="secondary" style={styles.dayHead}>
+                      {day(item.at).toUpperCase()}
+                    </Text>
+                  ) : null}
+
+                  <View style={styles.item}>
+                    <Text variant="label" tone="secondary" style={[styles.time, mono]}>
+                      {clock(item.at)}
+                    </Text>
+
+                    <View
+                      style={[
+                        styles.pip,
+                        { backgroundColor: weightColour(item.weight, colours) },
+                      ]}
+                    />
+
+                    <View style={styles.flex}>
+                      <Text variant="body">{item.summary}</Text>
+                      <View style={styles.meta}>
+                        <Icon
+                          name={weightIcon(item.weight)}
+                          size="sm"
+                          colour={colours.textSecondary}
+                        />
+                        <Text variant="label" tone="secondary">
+                          {weightLabel(item.weight, t)}
+                          {item.weight === 'late_attested' && item.receivedAt !== null
+                            ? ` · ${humanDuration(
+                                item.receivedAt.getTime() - item.at.getTime(),
+                                t,
+                              )} ${t('later')}`
+                            : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          );
-        })}
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </View>
   );

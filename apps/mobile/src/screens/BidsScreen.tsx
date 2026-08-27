@@ -6,6 +6,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -40,7 +41,7 @@ export function BidsScreen({ onBack }: Props) {
     loads will want to move between them, and a route that answered "the bids
     on my newest load" would have to be replaced the day that screen exists.
   */
-  const { query: mine } = useMine(() => api.myLoads(), [api]);
+  const { query: mine, refresh: refreshMine } = useMine(() => api.myLoads(), [api]);
   const load = mine.state === 'ready' ? (mine.value[0] ?? null) : null;
 
   const { query: bidQuery, refresh } = useMine(
@@ -70,28 +71,41 @@ export function BidsScreen({ onBack }: Props) {
           { paddingBottom: insets.bottom + space.xxl },
         ]}
       >
-        <View style={styles.lede}>
-          <Icon name="package" size="sm" colour={colours.textSecondary} />
-          <Text variant="body" tone="secondary" style={styles.flex}>
-            {load === null
-              ? t('no_loads_posted')
-              : `${load.originName} → ${load.destinationName} · ${load.cargo} · ${ranked.length} ${t('carriers_have_bid')}`}
-          </Text>
-        </View>
+        {/*
+          Nothing derived from the answer until there is one.
 
-        {ranked.map((scored, index) => (
-          <BidRow
-            key={scored.bid.id}
-            scored={scored}
-            rank={index + 1}
-            isCheapest={scored.bid.amountKobo === cheapest}
-            onAward={() => award(scored.bid.id)}
-          />
-        ))}
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
+        */}
+        <Unready query={mine} onRetry={refreshMine} />
 
-        <Text variant="label" tone="secondary" style={styles.footer}>
-          {t('bids_note')}
-        </Text>
+        {mine.state !== 'ready' ? null : (
+          <>
+            <View style={styles.lede}>
+              <Icon name="package" size="sm" colour={colours.textSecondary} />
+              <Text variant="body" tone="secondary" style={styles.flex}>
+                {load === null
+                  ? t('no_loads_posted')
+                  : `${load.originName} → ${load.destinationName} · ${load.cargo} · ${ranked.length} ${t('carriers_have_bid')}`}
+              </Text>
+            </View>
+
+            {ranked.map((scored, index) => (
+              <BidRow
+                key={scored.bid.id}
+                scored={scored}
+                rank={index + 1}
+                isCheapest={scored.bid.amountKobo === cheapest}
+                onAward={() => award(scored.bid.id)}
+              />
+            ))}
+
+            <Text variant="label" tone="secondary" style={styles.footer}>
+              {t('bids_note')}
+            </Text>
+          </>
+        )}
       </ScrollView>
     </View>
   );

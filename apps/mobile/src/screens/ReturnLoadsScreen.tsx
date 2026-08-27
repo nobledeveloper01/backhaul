@@ -23,6 +23,7 @@ import { Empty } from '../components/Empty';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { SearchField } from '../components/SearchField';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -87,7 +88,7 @@ export function ReturnLoadsScreen({
     ranked here: ranking a load out of a search the carrier typed leaves "1."
     missing from the list with no explanation.
   */
-  const { query } = useMine(
+  const { query, refresh } = useMine(
     () =>
       api.loads({
         lat: KANO.lat,
@@ -223,29 +224,45 @@ export function ReturnLoadsScreen({
         />
       </View>
 
-      {ranked.length === 0 ? (
-        <Empty
-          icon="search"
-          title={t('nothing_on_the_board_for_that')}
-          detail={whyNoLoads(filter, t)}
-          action={{ label: t('clear_the_filter'), onPress: () => setFilter(NO_LOAD_FILTER) }}
-        />
-      ) : null}
+      {/*
+        The chrome above stays; only the results wait.
 
-      {takeable.map((scored, index) => (
-        <LoadRow key={scored.load.id} scored={scored} rank={index + 1} />
-      ))}
+        A carrier can still type into the search and change a filter while the
+        board is on its way — what they must not read is "nothing on the board
+        for that" when the phone never reached the board. `ranked` fell back to
+        an empty list on every outcome that was not a value, so an unreachable
+        server rendered as a market with nothing in it, under a sentence
+        explaining which of *their* filters was to blame.
+      */}
+      <Unready query={query} onRetry={refresh} />
 
-      {blocked.length > 0 ? (
+      {query.state !== 'ready' ? null : (
         <>
-          <Text variant="overline" tone="secondary" style={styles.blockedHead}>
-            {t('not_for_this_truck').toUpperCase()}
-          </Text>
-          {blocked.map((scored) => (
-        <LoadRow key={scored.load.id} scored={scored} rank={0} />
+          {ranked.length === 0 ? (
+            <Empty
+              icon="search"
+              title={t('nothing_on_the_board_for_that')}
+              detail={whyNoLoads(filter, t)}
+              action={{ label: t('clear_the_filter'), onPress: () => setFilter(NO_LOAD_FILTER) }}
+            />
+          ) : null}
+
+          {takeable.map((scored, index) => (
+            <LoadRow key={scored.load.id} scored={scored} rank={index + 1} />
           ))}
+
+          {blocked.length > 0 ? (
+            <>
+              <Text variant="overline" tone="secondary" style={styles.blockedHead}>
+                {t('not_for_this_truck').toUpperCase()}
+              </Text>
+              {blocked.map((scored) => (
+                <LoadRow key={scored.load.id} scored={scored} rank={0} />
+              ))}
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
 
       <Text variant="label" tone="secondary" style={styles.footer}>
         {t('ranking_note')}

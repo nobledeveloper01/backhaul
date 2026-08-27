@@ -9,6 +9,7 @@ import { Card } from '../components/Card';
 import { Empty } from '../components/Empty';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -47,7 +48,7 @@ export function PairsScreen({ onBack }: Props) {
     same reason the chain's are: a carrier looking at two loads that nearly fit
     needs to know which of the five things is wrong.
   */
-  const { query: pairs } = useMine(() => api.pairs('trailer_30t'), [api]);
+  const { query: pairs, refresh } = useMine(() => api.pairs('trailer_30t'), [api]);
   const { query: refusals } = useMine(() => api.pairRefusals('trailer_30t'), [api]);
 
   const found = pairs.state === 'ready' ? pairs.value : [];
@@ -60,88 +61,101 @@ export function PairsScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        {found.length === 0 ? (
-          <Empty
-            icon="package"
-            title={t('no_pairs_on_the_board')}
-            detail={t('nothing_fits_together')}
-          />
-        ) : (
+        {/*
+          Nothing derived from the answer until there is one.
+
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
+        */}
+        <Unready query={pairs} onRetry={refresh} />
+
+        {pairs.state !== 'ready' ? null : (
           <>
-            <Text variant="body" tone="secondary">
-              Both shippers pay {SHIPPER_DISCOUNT_PCT}% less than a whole truck.
-              {t('pairs_note')}
-            </Text>
+            {found.length === 0 ? (
+              <Empty
+                icon="package"
+                title={t('no_pairs_on_the_board')}
+                detail={t('nothing_fits_together')}
+              />
+            ) : (
+              <>
+                <Text variant="body" tone="secondary">
+                  Both shippers pay {SHIPPER_DISCOUNT_PCT}% less than a whole truck.
+                  {t('pairs_note')}
+                </Text>
 
-            {found.map((pairing, index) => (
-              <Card
-                key={`${pairing.a.id}-${pairing.b.id}`}
-                emphasis={index === 0 ? 'accent' : 'raised'}
-                overline={index === 0 ? t('best_fit') : undefined}
-                icon={index === 0 ? 'package' : undefined}
-              >
-                <View style={styles.fill}>
-                  <Text variant="display" tabular>
-                    {pairing.fillPct}%
-                  </Text>
-                  <Text variant="body" tone="secondary" style={styles.flex}>
-                    {t('of_the_trailer_used')}
-                  </Text>
-                </View>
+                {found.map((pairing, index) => (
+                  <Card
+                    key={`${pairing.a.id}-${pairing.b.id}`}
+                    emphasis={index === 0 ? 'accent' : 'raised'}
+                    overline={index === 0 ? t('best_fit') : undefined}
+                    icon={index === 0 ? 'package' : undefined}
+                  >
+                    <View style={styles.fill}>
+                      <Text variant="display" tabular>
+                        {pairing.fillPct}%
+                      </Text>
+                      <Text variant="body" tone="secondary" style={styles.flex}>
+                        {t('of_the_trailer_used')}
+                      </Text>
+                    </View>
 
-                <View style={[styles.bar, { backgroundColor: colours.surfaceDim }]}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      {
-                        width: `${pairing.fillPct}%`,
-                        backgroundColor: colours.moving,
-                      },
-                    ]}
-                  />
-                </View>
+                    <View style={[styles.bar, { backgroundColor: colours.surfaceDim }]}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          {
+                            width: `${pairing.fillPct}%`,
+                            backgroundColor: colours.moving,
+                          },
+                        ]}
+                      />
+                    </View>
 
-                <Half load={pairing.a} pays={pairing.paysANaira} />
-                <Half load={pairing.b} pays={pairing.paysBNaira} />
+                    <Half load={pairing.a} pays={pairing.paysANaira} />
+                    <Half load={pairing.b} pays={pairing.paysBNaira} />
 
-                <View style={[styles.total, { borderTopColor: colours.outline }]}>
-                  <Text variant="title" style={styles.flex}>
-                    {t('you_collect')}
-                  </Text>
-                  <Text variant="title" tabular>
-                    {pairing.carrierGetsNaira}
-                  </Text>
-                </View>
-              </Card>
-            ))}
+                    <View style={[styles.total, { borderTopColor: colours.outline }]}>
+                      <Text variant="title" style={styles.flex}>
+                        {t('you_collect')}
+                      </Text>
+                      <Text variant="title" tabular>
+                        {pairing.carrierGetsNaira}
+                      </Text>
+                    </View>
+                  </Card>
+                ))}
+              </>
+            )}
+
+            {refused.length > 0 ? (
+              <>
+                <Text variant="overline" tone="secondary" style={styles.heading}>
+                  {t('wont_fit_together').toUpperCase()}
+                </Text>
+
+                {refused.map((entry) => (
+                  <Card key={`${entry.a.id}-${entry.b.id}`} emphasis="plain">
+                    <View style={styles.refusedTop}>
+                      <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
+                      <Text variant="body" tone="secondary" style={styles.flex}>
+                        {entry.a.cargo} + {entry.b.cargo}
+                      </Text>
+                    </View>
+                    <Text variant="label" tone="secondary" style={styles.gapTight}>
+                      {entry.detail}
+                    </Text>
+                  </Card>
+                ))}
+
+                <Text variant="label" tone="secondary">
+                  {Math.round(MINIMUM_FILL * 100)}% {t('of_the_truck_is_refused')}
+                </Text>
+              </>
+            ) : null}
           </>
         )}
-
-        {refused.length > 0 ? (
-          <>
-            <Text variant="overline" tone="secondary" style={styles.heading}>
-              {t('wont_fit_together').toUpperCase()}
-            </Text>
-
-            {refused.map((entry) => (
-              <Card key={`${entry.a.id}-${entry.b.id}`} emphasis="plain">
-                <View style={styles.refusedTop}>
-                  <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
-                  <Text variant="body" tone="secondary" style={styles.flex}>
-                    {entry.a.cargo} + {entry.b.cargo}
-                  </Text>
-                </View>
-                <Text variant="label" tone="secondary" style={styles.gapTight}>
-                  {entry.detail}
-                </Text>
-              </Card>
-            ))}
-
-            <Text variant="label" tone="secondary">
-              {Math.round(MINIMUM_FILL * 100)}% {t('of_the_truck_is_refused')}
-            </Text>
-          </>
-        ) : null}
       </ScrollView>
     </View>
   );

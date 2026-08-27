@@ -8,6 +8,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -50,7 +51,7 @@ export function LanesScreen({ onBack, onPost }: Props) {
     already done, by the same engine, held to the same answer by the parity
     fixtures. What is left is the ordering, which is presentation.
   */
-  const { query } = useMine(() => api.lanes(), [api]);
+  const { query, refresh } = useMine(() => api.lanes(), [api]);
 
   const lanes = query.state === 'ready' ? query.value : [];
   // `due()` rather than a filter: it sorts most-overdue first, which is what
@@ -69,38 +70,51 @@ export function LanesScreen({ onBack, onPost }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        {dueNow.length > 0 ? (
+        {/*
+          Nothing derived from the answer until there is one.
+
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
+        */}
+        <Unready query={query} onRetry={refresh} />
+
+        {query.state !== 'ready' ? null : (
           <>
-            <Text variant="overline" tone="secondary">
-              {t('coming_round_again').toUpperCase()}
+            {dueNow.length > 0 ? (
+              <>
+                <Text variant="overline" tone="secondary">
+                  {t('coming_round_again').toUpperCase()}
+                </Text>
+                {/*
+                  Only the first due lane gets a filled button. Two of them side by
+                  side is a screen with two primaries, which is a screen with none —
+                  and the one that is overdue should be the one being pointed at.
+                */}
+                {dueNow.map((lane, index) => (
+                  <Row
+                    key={lane.id}
+                    lane={lane}
+                    onPost={onPost}
+                    due
+                    lead={index === 0}
+                  />
+                ))}
+                <Text variant="label" tone="secondary">
+                  {t('two_days_warning_note')}
+                </Text>
+              </>
+            ) : null}
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              SAVED
             </Text>
-            {/*
-              Only the first due lane gets a filled button. Two of them side by
-              side is a screen with two primaries, which is a screen with none —
-              and the one that is overdue should be the one being pointed at.
-            */}
-            {dueNow.map((lane, index) => (
-              <Row
-                key={lane.id}
-                lane={lane}
-                onPost={onPost}
-                due
-                lead={index === 0}
-              />
+
+            {rest.map((lane) => (
+              <Row key={lane.id} lane={lane} onPost={onPost} due={false} lead={false} />
             ))}
-            <Text variant="label" tone="secondary">
-              {t('two_days_warning_note')}
-            </Text>
           </>
-        ) : null}
-
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          SAVED
-        </Text>
-
-        {rest.map((lane) => (
-          <Row key={lane.id} lane={lane} onPost={onPost} due={false} lead={false} />
-        ))}
+        )}
       </ScrollView>
     </View>
   );

@@ -20,6 +20,7 @@ import {
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { agoLabel, humanDuration } from '../components/PositionAge';
 import { radius, space, target, type } from '../design/tokens';
@@ -27,7 +28,6 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useTripData } from '../state/server';
-import { refusalWords } from '../state/words';
 import { map } from '../api/client';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoMessages } from '../state/product';
@@ -143,24 +143,11 @@ export function MessagesScreen({ trip, onBack }: Props) {
         {/*
           Four answers, not two. A thread that cannot be loaded is not an empty
           thread — the messages are there and this phone cannot see them.
+
+          Was written out here, correctly, and with no way forward: three
+          sentences and nothing to press. `Unready` carries the retry.
         */}
-        {query.state === 'loading' ? (
-          <Text variant="body" tone="secondary">
-            {t('loading_state')}
-          </Text>
-        ) : query.state === 'unreachable' ? (
-          <Text variant="body" tone="stale">
-            {t('cannot_reach_the_server')}
-          </Text>
-        ) : query.state === 'refused' ? (
-          <Text variant="body" tone="stale">
-            {refusalWords(
-              query.failure.kind === 'refused' ? query.failure.code : null,
-              query.failure.detail,
-              t,
-            )}
-          </Text>
-        ) : null}
+        <Unready query={query} onRetry={refresh} />
 
         {ordered.map((message) => (
           <Bubble key={message.id} message={message} now={now} />

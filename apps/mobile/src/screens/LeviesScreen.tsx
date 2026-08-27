@@ -15,6 +15,7 @@ import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { agoLabel } from '../components/PositionAge';
 import { mono, radius, space, target } from '../design/tokens';
@@ -125,108 +126,122 @@ export function LeviesScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline={t('this_trip')} icon="naira">
-          <Text variant="display" tabular>
-            {format(spent)}
-          </Text>
+        {/*
+          Nothing derived from the answer until there is one. A total of ₦0, a
+          count of zero drops or an empty list of links are all statements
+          about somebody's trip, and a server this phone could not reach has
+          not made any of them.
+        */}
+        <Unready query={query} onRetry={refresh} />
 
-          <View style={[styles.balance, { borderTopColor: colours.accent }]}>
-            <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
-              {owedToDriver ? t('you_are_owed') : t('left_of_advance')}
-            </Text>
-            <Text
-              variant="title"
-              tabular
-              tone={owedToDriver ? 'exception' : 'primary'}
-            >
-              {format(Math.abs(balance) as typeof balance)}
-            </Text>
-          </View>
-
-          {owedToDriver ? (
-            <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {t('spent_more_note')}
-            </Text>
-          ) : null}
-        </Card>
-
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('add_what_you_paid').toUpperCase()}
-        </Text>
-
-        <View style={styles.grid}>
-          {QUICK.map((option) => (
-            <Press
-              key={`${option.kind}-${option.naira}`}
-              onPress={() => add(option.kind, option.naira)}
-              accessibilityLabel={`${t(LEVY_WORDS[option.kind])}, ${option.naira} naira`}
-              style={[styles.tile, { borderColor: colours.outline }]}
-            >
-              <Icon name={option.icon} size="md" colour={colours.textSecondary} />
-              <Text variant="bodyDriver" tabular>
-                ₦{(option.naira / 1_000).toFixed(option.naira % 1_000 === 0 ? 0 : 1)}k
+        {query.state !== 'ready' ? null : (
+          <>
+            <Card emphasis="accent" overline={t('this_trip')} icon="naira">
+              <Text variant="display" tabular>
+                {format(spent)}
               </Text>
-              {/*
-                Two lines. "Police checkpoint" is the longest of the six and
-                came out as "Police check…" on a button whose only job is to
-                say what the money went to.
-              */}
-              <Text variant="label" tone="secondary" numberOfLines={2} style={styles.centred}>
-                {t(LEVY_WORDS[option.kind])}
-              </Text>
-            </Press>
-          ))}
-        </View>
 
-        <Text variant="label" tone="secondary">
-          {format(fromNaira(20_000))} {t('asks_what_it_was_for')}
-        </Text>
-
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('where_it_went').toUpperCase()}
-        </Text>
-
-        <Card emphasis="plain">
-          {grouped.map((row) => (
-            <View key={row.kind} style={styles.summaryRow}>
-              <Text variant="body" style={styles.flex}>
-                {t(LEVY_WORDS[row.kind])}
-                <Text variant="label" tone="secondary">
-                  {'  '}×{row.count}
+              <View style={[styles.balance, { borderTopColor: colours.accent }]}>
+                <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
+                  {owedToDriver ? t('you_are_owed') : t('left_of_advance')}
                 </Text>
-              </Text>
-              <Text variant="body" tabular>
-                {format(row.amount)}
-              </Text>
-            </View>
-          ))}
-        </Card>
-
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('every_stop').toUpperCase()}
-        </Text>
-
-        {[...levies]
-          .sort((a, b) => b.at.getTime() - a.at.getTime())
-          .map((levy) => (
-            <View key={levy.id} style={[styles.entry, { borderBottomColor: colours.outline }]}>
-              <View style={styles.flex}>
-                <Text variant="body">{t(LEVY_WORDS[levy.kind])}</Text>
-                <Text variant="label" tone="secondary">
-                  {agoLabel(now.getTime() - levy.at.getTime(), t)}
-                  {levy.note.length > 0 ? ` · ${levy.note}` : ''}
-                  {needsNote(levy.amount) && levy.note.length === 0 ? ' · needs a note' : ''}
+                <Text
+                  variant="title"
+                  tabular
+                  tone={owedToDriver ? 'exception' : 'primary'}
+                >
+                  {format(Math.abs(balance) as typeof balance)}
                 </Text>
               </View>
-              <Text variant="body" tabular style={mono}>
-                {format(levy.amount)}
-              </Text>
-            </View>
-          ))}
 
-        <Text variant="label" tone="secondary">
-          {t('lane_middle_note')}
-        </Text>
+              {owedToDriver ? (
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('spent_more_note')}
+                </Text>
+              ) : null}
+            </Card>
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('add_what_you_paid').toUpperCase()}
+            </Text>
+
+            <View style={styles.grid}>
+              {QUICK.map((option) => (
+                <Press
+                  key={`${option.kind}-${option.naira}`}
+                  onPress={() => add(option.kind, option.naira)}
+                  accessibilityLabel={`${t(LEVY_WORDS[option.kind])}, ${option.naira} naira`}
+                  style={[styles.tile, { borderColor: colours.outline }]}
+                >
+                  <Icon name={option.icon} size="md" colour={colours.textSecondary} />
+                  <Text variant="bodyDriver" tabular>
+                    ₦{(option.naira / 1_000).toFixed(option.naira % 1_000 === 0 ? 0 : 1)}k
+                  </Text>
+                  {/*
+                    Two lines. "Police checkpoint" is the longest of the six and
+                    came out as "Police check…" on a button whose only job is to
+                    say what the money went to.
+                  */}
+                  <Text variant="label" tone="secondary" numberOfLines={2} style={styles.centred}>
+                    {t(LEVY_WORDS[option.kind])}
+                  </Text>
+                </Press>
+              ))}
+            </View>
+
+            <Text variant="label" tone="secondary">
+              {format(fromNaira(20_000))} {t('asks_what_it_was_for')}
+            </Text>
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('where_it_went').toUpperCase()}
+            </Text>
+
+            <Card emphasis="plain">
+              {grouped.map((row) => (
+                <View key={row.kind} style={styles.summaryRow}>
+                  <Text variant="body" style={styles.flex}>
+                    {t(LEVY_WORDS[row.kind])}
+                    <Text variant="label" tone="secondary">
+                      {'  '}×{row.count}
+                    </Text>
+                  </Text>
+                  <Text variant="body" tabular>
+                    {format(row.amount)}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+
+            <Text variant="overline" tone="secondary" style={styles.heading}>
+              {t('every_stop').toUpperCase()}
+            </Text>
+
+            {[...levies]
+              .sort((a, b) => b.at.getTime() - a.at.getTime())
+              .map((levy) => (
+                <View key={levy.id} style={[styles.entry, { borderBottomColor: colours.outline }]}>
+                  <View style={styles.flex}>
+                    <Text variant="body">{t(LEVY_WORDS[levy.kind])}</Text>
+                    <Text variant="label" tone="secondary">
+                      {agoLabel(now.getTime() - levy.at.getTime(), t)}
+                      {levy.note.length > 0 ? ` · ${levy.note}` : ''}
+                      {needsNote(levy.amount) && levy.note.length === 0
+                        ? ` · ${t('needs_a_note')}`
+                        : ''}
+                    </Text>
+                  </View>
+                  <Text variant="body" tabular style={mono}>
+                    {format(levy.amount)}
+                  </Text>
+                </View>
+              ))}
+
+            <Text variant="label" tone="secondary">
+              {t('lane_middle_note')}
+            </Text>
+          </>
+        )}
       </ScrollView>
     </View>
   );

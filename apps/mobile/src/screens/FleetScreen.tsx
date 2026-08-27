@@ -11,6 +11,7 @@ import {
 
 import { Card } from '../components/Card';
 import { Empty } from '../components/Empty';
+import { Unready } from '../components/Unready';
 import { Icon, type IconName } from '../components/Icon';
 import { Press } from '../components/Press';
 import { Text } from '../components/Text';
@@ -63,7 +64,7 @@ export function FleetScreen({
     ships from Accra — so the server takes the hour as a parameter and this
     screen is the thing that knows it.
   */
-  const { query: alertQuery } = useMine(
+  const { query: alertQuery, refresh: refreshAlerts } = useMine(
     () => api.alerts(now.getHours()),
     [api, now],
   );
@@ -242,11 +243,19 @@ export function FleetScreen({
             while the screen it opened said two — a summary that disagrees
             with the thing it summarises is worse than no summary.
           */}
-          <Text variant="label" tone="secondary">
-            {grounded === 0
-              ? `${trucks.length} · ${t('trucks_can_take_work')}`
-              : `${grounded}/${trucks.length} · ${t('cannot_be_given_a_trip')}`}
-          </Text>
+          {/*
+            Nothing rather than a count, until there is one. `trucks` fell back
+            to `[]` on every outcome that was not a value, so a carrier whose
+            phone could not reach the server read "0 · trucks can take work" —
+            which is not a loading state, it is a fleet that has been grounded.
+          */}
+          {fleetQuery.state !== 'ready' ? null : (
+            <Text variant="label" tone="secondary">
+              {grounded === 0
+                ? `${trucks.length} · ${t('trucks_can_take_work')}`
+                : `${grounded}/${trucks.length} · ${t('cannot_be_given_a_trip')}`}
+            </Text>
+          )}
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
@@ -275,7 +284,17 @@ export function FleetScreen({
         {t('needs_a_look_head').toUpperCase()}
       </Text>
 
-      {alerts.length === 0 ? (
+      {/*
+        "Nothing needs you" is a claim, and it was being made about a fleet the
+        app could not see. `alerts` fell back to `[]` on every outcome that was
+        not a value, so a carrier on a bad stretch of road was told their
+        trucks were fine — by an app that had not managed to ask.
+      */}
+      {alertQuery.state !== 'ready' ? (
+        <Card emphasis="plain">
+          <Unready query={alertQuery} onRetry={refreshAlerts} />
+        </Card>
+      ) : alerts.length === 0 ? (
         <Card emphasis="plain">
           <Empty
             icon="check"

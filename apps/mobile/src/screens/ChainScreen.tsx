@@ -9,6 +9,7 @@ import {
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -69,7 +70,7 @@ export function ChainScreen({ onBack }: Props) {
     ? (board.value.find((row) => row.blocked === null)?.load ?? null)
     : null;
 
-  const { query: chain } = useMine<ChainView | null>(
+  const { query: chain, refresh } = useMine<ChainView | null>(
     async () => (start === null ? { ok: true, value: null } : api.chain(start.id)),
     [api, start],
   );
@@ -95,119 +96,132 @@ export function ChainScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline={t('if_you_take_all_three')} icon="swap">
-          <View style={styles.figureRow}>
-            <View style={styles.flex}>
-              <Text variant="display" tabular>
-                {Math.round(laden * 100)}%
-              </Text>
-              <Text variant="body" tone="secondary">
-                {t('of_the_km_paid_for')}
-              </Text>
-            </View>
-            <View style={styles.flex}>
-              <Text variant="title" tabular>
-                {format(extra)}
-              </Text>
-              <Text variant="body" tone="secondary">
-                {t('more_than_running_home_empty')}
-              </Text>
-            </View>
-          </View>
+        {/*
+          Nothing derived from the answer until there is one.
 
-          <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {built?.deadheadKm ?? 0} {t('km_empty_across_the_chain')}
-          </Text>
-        </Card>
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
+        */}
+        <Unready query={chain} onRetry={refresh} />
 
-        <Text variant="overline" tone="secondary" style={styles.heading}>
-          {t('the_chain').toUpperCase()}
-        </Text>
-
-        {built === null ? (
-          <Text variant="body" tone="secondary">
-            {t('nothing_to_chain')}
-          </Text>
-        ) : null}
-
-        {(built?.legs ?? []).map((leg, index) => {
-          /*
-            The empty run between one leg dropping and the next loading.
-
-            The server's chain carries a total rather than a per-hop figure, so
-            this is the total shared out — which is honest for one hop and a
-            lie for three. It is the total on the first hop and zero after,
-            rather than an average that would put a plausible-looking number
-            against every gap.
-          */
-          const empty = index === 1 ? (built?.deadheadKm ?? 0) * 1_000 : 0;
-
-          return (
-          <View key={leg.loadId}>
-            {index > 0 ? (
-              <View style={styles.hop}>
-                <View style={[styles.hopLine, { backgroundColor: colours.outline }]} />
-                <Text variant="label" tone="secondary">
-                  {empty < 1_000
-                    ? t('loads_where_last_dropped')
-                    : `${km(empty)} ${t('km_empty_to_get_there')}`}
-                </Text>
-              </View>
-            ) : null}
-
-            <Card emphasis={index === 0 ? 'plain' : 'raised'}>
-              <View style={styles.legTop}>
-                <View
-                  style={[
-                    styles.pip,
-                    {
-                      backgroundColor: index === 0 ? colours.outline : colours.accent,
-                    },
-                  ]}
-                >
-                  <Text variant="overline" style={{ color: colours.onAccent }}>
-                    {index + 1}
+        {chain.state !== 'ready' ? null : (
+          <>
+            <Card emphasis="accent" overline={t('if_you_take_all_three')} icon="swap">
+              <View style={styles.figureRow}>
+                <View style={styles.flex}>
+                  <Text variant="display" tabular>
+                    {Math.round(laden * 100)}%
+                  </Text>
+                  <Text variant="body" tone="secondary">
+                    {t('of_the_km_paid_for')}
                   </Text>
                 </View>
-                <Text variant="title" style={styles.flex}>
-                  {leg.fromName} → {leg.toName}
-                </Text>
-                <Text variant="body" tabular>
-                  {leg.paysNaira}
-                </Text>
+                <View style={styles.flex}>
+                  <Text variant="title" tabular>
+                    {format(extra)}
+                  </Text>
+                  <Text variant="body" tone="secondary">
+                    {t('more_than_running_home_empty')}
+                  </Text>
+                </View>
               </View>
 
-              <Text variant="body" tone="secondary" style={styles.gapTight}>
-                {leg.distanceKm} km
-                {index === 0 ? ` · ${t('already_carrying_this')}` : ''}
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {built?.deadheadKm ?? 0} {t('km_empty_across_the_chain')}
               </Text>
             </Card>
-          </View>
-          );
-        })}
 
-        {rejected.length > 0 ? (
-          <>
             <Text variant="overline" tone="secondary" style={styles.heading}>
-              {t('passed_over').toUpperCase()}
+              {t('the_chain').toUpperCase()}
             </Text>
 
-            {rejected.map((entry) => (
-              <Card key={entry.loadId} emphasis="plain">
-                <View style={styles.legTop}>
-                  <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
-                  <Text variant="body" tone="secondary" style={styles.flex}>
-                    {entry.detail}
+            {built === null ? (
+              <Text variant="body" tone="secondary">
+                {t('nothing_to_chain')}
+              </Text>
+            ) : null}
+
+            {(built?.legs ?? []).map((leg, index) => {
+              /*
+                The empty run between one leg dropping and the next loading.
+
+                The server's chain carries a total rather than a per-hop figure, so
+                this is the total shared out — which is honest for one hop and a
+                lie for three. It is the total on the first hop and zero after,
+                rather than an average that would put a plausible-looking number
+                against every gap.
+              */
+              const empty = index === 1 ? (built?.deadheadKm ?? 0) * 1_000 : 0;
+
+              return (
+              <View key={leg.loadId}>
+                {index > 0 ? (
+                  <View style={styles.hop}>
+                    <View style={[styles.hopLine, { backgroundColor: colours.outline }]} />
+                    <Text variant="label" tone="secondary">
+                      {empty < 1_000
+                        ? t('loads_where_last_dropped')
+                        : `${km(empty)} ${t('km_empty_to_get_there')}`}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Card emphasis={index === 0 ? 'plain' : 'raised'}>
+                  <View style={styles.legTop}>
+                    <View
+                      style={[
+                        styles.pip,
+                        {
+                          backgroundColor: index === 0 ? colours.outline : colours.accent,
+                        },
+                      ]}
+                    >
+                      <Text variant="overline" style={{ color: colours.onAccent }}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <Text variant="title" style={styles.flex}>
+                      {leg.fromName} → {leg.toName}
+                    </Text>
+                    <Text variant="body" tabular>
+                      {leg.paysNaira}
+                    </Text>
+                  </View>
+
+                  <Text variant="body" tone="secondary" style={styles.gapTight}>
+                    {leg.distanceKm} km
+                    {index === 0 ? ` · ${t('already_carrying_this')}` : ''}
                   </Text>
-                </View>
-              </Card>
-            ))}
+                </Card>
+              </View>
+              );
+            })}
 
-            <Text variant="label" tone="secondary">
-              {km(MAX_REPOSITION_M)} {t('km_of_empty_repositioning')}
-            </Text>
+            {rejected.length > 0 ? (
+              <>
+                <Text variant="overline" tone="secondary" style={styles.heading}>
+                  {t('passed_over').toUpperCase()}
+                </Text>
+
+                {rejected.map((entry) => (
+                  <Card key={entry.loadId} emphasis="plain">
+                    <View style={styles.legTop}>
+                      <Icon name="close" size="sm" colour={colours.textSecondary} beside="body" />
+                      <Text variant="body" tone="secondary" style={styles.flex}>
+                        {entry.detail}
+                      </Text>
+                    </View>
+                  </Card>
+                ))}
+
+                <Text variant="label" tone="secondary">
+                  {km(MAX_REPOSITION_M)} {t('km_of_empty_repositioning')}
+                </Text>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </ScrollView>
     </View>
   );

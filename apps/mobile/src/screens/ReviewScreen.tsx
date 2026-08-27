@@ -12,6 +12,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
@@ -156,10 +157,21 @@ export function ReviewScreen({ trip, onBack }: Props) {
           </Card>
         ))}
 
+        {/*
+          The four questions above stay answerable; only the tally waits.
+
+          Somebody can say what happened on their trip whether or not the app
+          can reach the record of everybody else's — and what they must not
+          read is a tally of zero presented as what other shippers see. `held`
+          fell back to an empty list on every outcome that was not a value.
+        */}
         <Text variant="overline" tone="secondary" style={styles.heading}>
           {t('what_other_shippers_see').toUpperCase()}
         </Text>
 
+        <Unready query={query} onRetry={refresh} />
+
+        {query.state !== 'ready' ? null : (
         <Card>
           {counted.map((row) => (
             <View key={row.claim} style={styles.tally}>
@@ -183,6 +195,7 @@ export function ReviewScreen({ trip, onBack }: Props) {
             </View>
           ))}
         </Card>
+        )}
 
         <Press
           onPress={send}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -42,6 +42,7 @@ import { Icon } from '../components/Icon';
 import { PositionAge, agoLabel, humanDuration } from '../components/PositionAge';
 import type { Words } from '../components/PositionAge';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Press } from '../components/Press';
 import { Sparkline } from '../components/Sparkline';
 import { StatusChip } from '../components/StatusChip';
@@ -118,11 +119,23 @@ export function TripDetailScreen({
     They fire together and settle independently, so the corridor draws as soon
     as the fixes land rather than waiting on the slowest of six.
   */
+  /*
+    One reload for the whole screen.
+
+    Six reads describe one trip, and each `useTripData` has its own refresh —
+    so a retry button under the money card would have refetched the money and
+    left the corridor as stale as it found it. "Try again" on this screen means
+    the trip. Bumping a counter every read depends on is the smallest thing
+    that means that.
+  */
+  const [reloads, setReloads] = useState(0);
+  const reload = useCallback(() => setReloads((was) => was + 1), []);
+
   const fixes = useTripData(
     trip.live,
     () => api.fixes(trip.id),
     () => trip.track,
-    [api, trip.id, trip.track],
+    [api, trip.id, trip.track, reloads],
   ).query;
 
   const route = useTripData(
@@ -144,7 +157,7 @@ export function TripDetailScreen({
       visits: [],
       chargeableWaitingMs: chargeableWaiting(demoVisits(trip)),
     }),
-    [api, trip.id, trip, now],
+    [api, trip.id, trip, now, reloads],
   ).query;
 
   const thread = useTripData(
@@ -162,7 +175,7 @@ export function TripDetailScreen({
         })),
       ),
     () => demoMessages(trip, now),
-    [api, trip.id, now],
+    [api, trip.id, now, reloads],
   ).query;
 
   const trouble = useTripData(
@@ -183,7 +196,7 @@ export function TripDetailScreen({
         })),
       ),
     () => demoIncidents(trip, now),
-    [api, trip.id, now],
+    [api, trip.id, now, reloads],
   ).query;
 
   const escrow = useTripData(
@@ -201,7 +214,7 @@ export function TripDetailScreen({
         })),
       ),
     () => demoEscrow(trip, now),
-    [api, trip.id, now],
+    [api, trip.id, now, reloads],
   ).query;
 
   /*
@@ -229,7 +242,7 @@ export function TripDetailScreen({
         nextName: nextDrop(demo)?.at.name ?? null,
       };
     },
-    [api, trip.id, now],
+    [api, trip.id, now, reloads],
   ).query;
 
   // The walkthrough's own track when there is nothing else; the server's when
@@ -360,17 +373,34 @@ export function TripDetailScreen({
         <EtaRange eta={arrival} />
 
         <Card overline={t('along_the_way')} icon="pin">
+          {/*
+            Each card waits on its own read. "Every point reached" is a claim,
+            and a route this phone could not fetch has not reached anything —
+            the fallback was an empty list of waypoints, which made the
+            sentence come out true.
+          */}
+          <Unready query={route} onRetry={reload} />
+          {route.state !== 'ready' ? null : (
+          <>
           {waypoints.map((waypoint) => {
             const visit = visited.find((v) => v.waypoint.id === waypoint.id);
             return <WaypointRow key={waypoint.id} name={waypoint.name} visit={visit} now={now} />;
           })}
           <Text variant="body" tone="secondary" style={styles.note}>
             {waiting > 0
-              ? `${humanDuration(waiting, t)} · ${chargeablePlaces(visited)} — ${t('waiting_note')}`
+              ? [
+                  humanDuration(waiting, t),
+                  chargeablePlaces(visited, t),
+                  t('waiting_note'),
+                ]
+                  .filter((part): part is string => part !== null)
+                  .join(' · ')
               : ahead.length > 0
                 ? `${ahead.length} ${t('still_ahead_note')}`
                 : t('every_point_reached')}
           </Text>
+          </>
+          )}
         </Card>
 
         <Press
@@ -383,9 +413,15 @@ export function TripDetailScreen({
           <Icon name="package" size="md" colour={colours.textSecondary} />
           <View style={styles.flex}>
             <Text variant="title">{t('drops')}</Text>
-            <Text variant="label" tone="secondary">
-              {whereTheDropsAre(drops.done, drops.total, drops.nextName, t)}
-            </Text>
+            {/*
+              Nothing rather than "0 of 0 signed for", which is what the
+              fallback rendered and which reads as a trip with no drops on it.
+            */}
+            {dropList.state !== 'ready' ? null : (
+              <Text variant="label" tone="secondary">
+                {whereTheDropsAre(drops.done, drops.total, drops.nextName, t)}
+              </Text>
+            )}
           </View>
           <Icon name="chevron-right" size="md" colour={colours.outline} />
         </Press>
@@ -403,6 +439,15 @@ export function TripDetailScreen({
           should be shown it without knowing — the same rule the API applies.
         */}
         <Card overline={t('distance_covered')} icon="pin">
+          {/*
+            An empty track travels zero kilometres, and zero is a statement
+            about a truck. `observe()` on the same empty track correctly
+            answers `unknown` — the distance had no such answer to give, so it
+            gave a number instead.
+          */}
+          <Unready query={fixes} onRetry={reload} />
+          {fixes.state !== 'ready' ? null : (
+          <>
           <View style={styles.figure}>
             <Text variant="display" tabular>
               {Math.round(travelled / 1000)}
@@ -429,6 +474,8 @@ export function TripDetailScreen({
               ))}
             </View>
           ) : null}
+          </>
+          )}
         </Card>
 
         {tripStops.length > 0 ? (
@@ -443,6 +490,15 @@ export function TripDetailScreen({
         ) : null}
 
         <Card overline={t('money_released')} icon="naira">
+          {/*
+            ₦0 released and nothing owed is a settlement, not a loading state.
+            `money` fell back to an empty schedule, which reads as a trip on
+            which nothing has been paid — the opposite claim from "we could not
+            read the schedule".
+          */}
+          <Unready query={escrow} onRetry={reload} />
+          {escrow.state !== 'ready' ? null : (
+          <>
           <Text variant="display" tabular>
             {format(released(money))}
           </Text>
@@ -480,6 +536,8 @@ export function TripDetailScreen({
               </View>
             ))}
           </View>
+          </>
+          )}
         </Card>
 
         <Card overline={t('what_is_owed')} icon="naira">
@@ -663,8 +721,13 @@ function milestoneLabel(
  * "waiting at the depot and the market" was written flat, and printed on a
  * trip that had only reached the depot. A sentence that names somewhere the
  * truck has never been is the screen inventing evidence for a demurrage claim.
+ *
+ * Null rather than "the depot" when there is nothing to name. The fallback was
+ * the same defect this function exists to prevent, one layer down: a place
+ * name for a trip that had reached nowhere — and in English, on a screen read
+ * in four languages.
  */
-function chargeablePlaces(visited: readonly Visit[]): string {
+function chargeablePlaces(visited: readonly Visit[], t: Words): string | null {
   const names = [
     ...new Set(
       visited
@@ -675,9 +738,9 @@ function chargeablePlaces(visited: readonly Visit[]): string {
         .map((visit) => visit.waypoint.name),
     ),
   ];
-  if (names.length === 0) return 'the depot';
-  if (names.length === 1) return names[0] ?? 'the depot';
-  return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+  if (names.length === 0) return null;
+  if (names.length === 1) return names[0] ?? null;
+  return `${names.slice(0, -1).join(', ')} ${t('and_word')} ${names.at(-1)}`;
 }
 
 /**

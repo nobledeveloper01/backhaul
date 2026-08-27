@@ -95,6 +95,37 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**The guard against the worst defect in this product was used by one screen
+out of nineteen.** `emptiness()` exists to keep *nothing here* apart from *we
+could not ask*, it has a docstring saying why, it is named in the changelog as
+the thing that stops a shipper being told their trucks are idle — and the other
+eighteen screens wrote `query.state === 'ready' ? query.value : []`.
+
+That line is the trap. It is one line, it obviously compiles, it reads as
+defensive, and it is wrong on three of the four outcomes. Nothing catches it:
+not a type, not a test, not a review, because there is nothing there to catch.
+The only thing that found it was killing the server and looking at the screens.
+
+The pick of what it produced, all in a language somebody trusts:
+
+| Screen | With the server unreachable |
+|---|---|
+| Fleet | "Nothing needs you", and "0 · trucks can take work" |
+| Trips | "0 · all moving", in green with a tick, above "cannot reach the server" |
+| Load board | "nothing on the board for that", blaming the carrier's filters |
+| Verification | the walkthrough's documents, as somebody's own tier |
+| **Dispute pack** | **"0% of the trip is covered by tracking"** |
+
+The last one is the one I would not want to explain. It is the document this
+product exists to produce when two people disagree about what happened, and it
+was prepared to say the tracking covered none of the trip because a fetch had
+failed.
+
+`Unready` is now the one place the three non-answers are rendered, and every
+one of them carries a retry — the definition of done has said "every error path
+has a forward path" since the first week, and these paths did not previously
+exist to have ends.
+
 **The check that catches wire mismatches was not a gate; it was a chore.**
 `make round-trip` needed a server in another shell and a token copied out of a
 log, so it ran when I thought of it. Both defects it has ever caught — the levy

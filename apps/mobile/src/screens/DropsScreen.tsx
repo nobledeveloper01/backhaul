@@ -17,6 +17,7 @@ import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { agoLabel } from '../components/PositionAge';
 import { radius, space, target } from '../design/tokens';
@@ -108,134 +109,146 @@ export function DropsScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline={t('where_the_truck_is_up_to')} icon="package">
-          <Text variant="title">{whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}</Text>
+        {/*
+          Nothing derived from the answer until there is one. A total of ₦0, a
+          count of zero drops or an empty list of links are all statements
+          about somebody's trip, and a server this phone could not reach has
+          not made any of them.
+        */}
+        <Unready query={query} onRetry={refresh} />
 
-          <View style={styles.facts}>
-            <View style={styles.fact}>
-              <Text variant="headline" tabular>
-                {Math.round(aboard / 1_000)} t
-              </Text>
-              <Text variant="label" tone="secondary">
-                {t('still_aboard')}
-              </Text>
-            </View>
-            <View style={styles.fact}>
-              <Text variant="headline" tabular>
-                {format(dropFee(drops))}
-              </Text>
-              <Text variant="label" tone="secondary">
-                {t('added_for_extra_stops')}
-              </Text>
-            </View>
-          </View>
+        {query.state !== 'ready' ? null : (
+          <>
+            <Card emphasis="accent" overline={t('where_the_truck_is_up_to')} icon="package">
+              <Text variant="title">{whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}</Text>
 
-          <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {t('first_drop_is_delivery')}
-          </Text>
-        </Card>
-
-        {isComplete(drops) ? (
-          <Card overline={t('finished')} icon="check" emphasis="plain">
-            <Text variant="body">
-              {t('every_drop_signed_note')}
-            </Text>
-          </Card>
-        ) : null}
-
-        {late.length > 0 ? (
-          <Card overline={t('out_of_order_card')} icon="swap" emphasis="plain">
-            {late.map((drop) => (
-              <Text key={drop.id} variant="body">
-                {drop.at.name} {t('delivered_out_of_order')}
-              </Text>
-            ))}
-            <Text variant="label" tone="secondary" style={styles.gapTop}>
-              {t('out_of_order_note')}
-            </Text>
-          </Card>
-        ) : null}
-
-        {drops.map((drop, index) => {
-          const done = drop.deliveredAt !== null;
-          const isNext = next?.id === drop.id;
-
-          return (
-            <Card key={drop.id} emphasis={isNext ? 'raised' : 'plain'}>
-              <View style={styles.top}>
-                <View
-                  style={[
-                    styles.pip,
-                    {
-                      backgroundColor: done ? colours.moving : colours.surfaceDim,
-                      borderColor: done ? colours.moving : colours.outline,
-                    },
-                  ]}
-                >
-                  <Text
-                    variant="overline"
-                    style={{ color: done ? colours.onAccent : colours.textSecondary }}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
-
-                <View style={styles.flex}>
-                  <Text variant="title">{drop.at.name}</Text>
-                  <Text variant="body" tone="secondary">
-                    {drop.consignee}
+              <View style={styles.facts}>
+                <View style={styles.fact}>
+                  <Text variant="headline" tabular>
+                    {Math.round(aboard / 1_000)} t
                   </Text>
                   <Text variant="label" tone="secondary">
-                    {drop.goods}
-                    {drop.units === null ? '' : ` · ${drop.units} units`}
+                    {t('still_aboard')}
                   </Text>
                 </View>
-
-                {isNext ? (
-                  <View style={[styles.nextBadge, { borderColor: colours.accent }]}>
-                    <Text variant="label" tone="accent">
-                      Next
-                    </Text>
-                  </View>
-                ) : null}
+                <View style={styles.fact}>
+                  <Text variant="headline" tabular>
+                    {format(dropFee(drops))}
+                  </Text>
+                  <Text variant="label" tone="secondary">
+                    {t('added_for_extra_stops')}
+                  </Text>
+                </View>
               </View>
 
-              {done ? (
-                <View style={styles.signed}>
-                  <Icon name="check" size="sm" colour={colours.moving} />
-                  <Text variant="label" tone="moving">
-                    {agoLabel(now.getTime() - (drop.deliveredAt?.getTime() ?? 0), t)} ·{' '}
-                    {t('signed_for')}
-                  </Text>
-                </View>
-              ) : (
-                <Press
-                  onPress={() => sign(drop.id)}
-                  accessibilityLabel={`${t('hand_over_at')} ${drop.at.name}`}
-                  style={[
-                    styles.sign,
-                    {
-                      backgroundColor: isNext ? colours.accent : 'transparent',
-                      borderColor: isNext ? colours.accent : colours.outline,
-                    },
-                  ]}
-                >
-                  <Icon
-                    name="pen"
-                    size="sm"
-                    colour={isNext ? colours.onAccent : colours.textSecondary}
-                  />
-                  <Text
-                    variant="label"
-                    style={{ color: isNext ? colours.onAccent : colours.textSecondary }}
-                  >
-                    {t('hand_over_here_button')}
-                  </Text>
-                </Press>
-              )}
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {t('first_drop_is_delivery')}
+              </Text>
             </Card>
-          );
-        })}
+
+            {isComplete(drops) ? (
+              <Card overline={t('finished')} icon="check" emphasis="plain">
+                <Text variant="body">
+                  {t('every_drop_signed_note')}
+                </Text>
+              </Card>
+            ) : null}
+
+            {late.length > 0 ? (
+              <Card overline={t('out_of_order_card')} icon="swap" emphasis="plain">
+                {late.map((drop) => (
+                  <Text key={drop.id} variant="body">
+                    {drop.at.name} {t('delivered_out_of_order')}
+                  </Text>
+                ))}
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('out_of_order_note')}
+                </Text>
+              </Card>
+            ) : null}
+
+            {drops.map((drop, index) => {
+              const done = drop.deliveredAt !== null;
+              const isNext = next?.id === drop.id;
+
+              return (
+                <Card key={drop.id} emphasis={isNext ? 'raised' : 'plain'}>
+                  <View style={styles.top}>
+                    <View
+                      style={[
+                        styles.pip,
+                        {
+                          backgroundColor: done ? colours.moving : colours.surfaceDim,
+                          borderColor: done ? colours.moving : colours.outline,
+                        },
+                      ]}
+                    >
+                      <Text
+                        variant="overline"
+                        style={{ color: done ? colours.onAccent : colours.textSecondary }}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+
+                    <View style={styles.flex}>
+                      <Text variant="title">{drop.at.name}</Text>
+                      <Text variant="body" tone="secondary">
+                        {drop.consignee}
+                      </Text>
+                      <Text variant="label" tone="secondary">
+                        {drop.goods}
+                        {drop.units === null ? '' : ` · ${drop.units} units`}
+                      </Text>
+                    </View>
+
+                    {isNext ? (
+                      <View style={[styles.nextBadge, { borderColor: colours.accent }]}>
+                        <Text variant="label" tone="accent">
+                          Next
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {done ? (
+                    <View style={styles.signed}>
+                      <Icon name="check" size="sm" colour={colours.moving} />
+                      <Text variant="label" tone="moving">
+                        {agoLabel(now.getTime() - (drop.deliveredAt?.getTime() ?? 0), t)} ·{' '}
+                        {t('signed_for')}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Press
+                      onPress={() => sign(drop.id)}
+                      accessibilityLabel={`${t('hand_over_at')} ${drop.at.name}`}
+                      style={[
+                        styles.sign,
+                        {
+                          backgroundColor: isNext ? colours.accent : 'transparent',
+                          borderColor: isNext ? colours.accent : colours.outline,
+                        },
+                      ]}
+                    >
+                      <Icon
+                        name="pen"
+                        size="sm"
+                        colour={isNext ? colours.onAccent : colours.textSecondary}
+                      />
+                      <Text
+                        variant="label"
+                        style={{ color: isNext ? colours.onAccent : colours.textSecondary }}
+                      >
+                        {t('hand_over_here_button')}
+                      </Text>
+                    </Press>
+                  )}
+                </Card>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </View>
   );

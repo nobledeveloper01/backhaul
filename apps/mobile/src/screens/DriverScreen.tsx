@@ -257,7 +257,14 @@ export function DriverScreen({
         */}
         {live === null ? (
           <Text variant="label" tone="stale">
-            {t('showing_the_walkthrough')}
+            {/*
+              Which kind of "no trip", because there are two and they are not
+              the same admission. "The server has none for you" is a fact about
+              the server; a phone that never reached it has learned nothing
+              about what is or is not there, and saying so anyway is the app
+              vouching for a read it did not make.
+            */}
+            {t(mine.state === 'ready' ? 'showing_the_walkthrough' : 'walkthrough_unreached')}
           </Text>
         ) : null}
         <Text variant="headline">

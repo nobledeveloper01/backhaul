@@ -57,6 +57,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Nineteen screens said "nothing here" when they meant "we could not ask".**
+  The helper that tells those apart was written, documented and used by exactly
+  one screen. Everywhere else the line was `query.state === 'ready' ?
+  query.value : []` — one line, obviously correct, and a lie on three of the
+  four outcomes.
+
+  What it produced, with the server unreachable: the fleet screen said
+  **"Nothing needs you"** about a fleet it had not seen, above a trucks row
+  reading "0 · trucks can take work". The trips list said **"0 · all moving"**
+  in green with a tick, directly above "we cannot reach the server". The load
+  board said "nothing on the board for that" and explained which of the
+  carrier's own filters was to blame. The verification screen showed the
+  walkthrough's documents as somebody's own tier. And the dispute pack — the
+  document written to settle an argument — reported zero of everything and
+  **"0% of the trip is covered by tracking"**.
+
+  Every screen now renders the answer it actually got, and every one of those
+  answers has a way forward: a retry that re-reads, and on a trip screen one
+  that re-reads the whole trip rather than whichever card the button sat under.
+  The driver's walkthrough label distinguishes the two admissions too — "the
+  server has none for you" is a claim about the server, and a phone that never
+  reached it has not earned that sentence.
+
 - **The one check that catches wire mismatches only ran when somebody
   remembered.** `make round-trip` wanted a server running in another shell and
   a driver token copied out of its log by hand, so it was a thing you did

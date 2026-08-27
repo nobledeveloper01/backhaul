@@ -187,6 +187,12 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'walkthrough_unreached'
+  | 'and_word'
+  | 'needs_a_note'
+  | 'it_is_still_there'
+  | 'the_server_said_no'
+  | 'reading'
   | 'told_and_under_dispute'
   | 'told_keep_driving'
   | 'eta_stops_showing'
@@ -701,6 +707,12 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  walkthrough_unreached: "This is the walkthrough. We could not reach the server to look for yours.",
+  and_word: "and",
+  needs_a_note: "needs a note",
+  it_is_still_there: "It is still there. This phone cannot see it right now.",
+  the_server_said_no: "The server would not answer",
+  reading: "Reading",
   told_and_under_dispute: "The shipper and the carrier have been told, and the trip is now under dispute.",
   told_keep_driving: "The shipper and the carrier have been told. Keep driving when you can.",
   eta_stops_showing: "The arrival estimate stops showing until this clears — an estimate beside a stopped truck is a contradiction.",
@@ -1299,6 +1311,12 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  walkthrough_unreached: "Wannan nuni ne kawai. Ba mu iya isa ga uwar garken don neman naka ba.",
+  and_word: "da",
+  needs_a_note: "yana buƙatar bayani",
+  it_is_still_there: "Yana nan. Wannan wayar ba ta iya ganinsa a yanzu ba.",
+  the_server_said_no: "Uwar garke ba ta amsa ba",
+  reading: "Ana karantawa",
   told_and_under_dispute: "An sanar da mai kaya da mai mota, kuma yanzu ana jayayya kan tafiyar.",
   told_keep_driving: "An sanar da mai kaya da mai mota. Ka ci gaba da tuƙi idan za ka iya.",
   eta_stops_showing: "Ba za a nuna hasashen lokacin isowa ba sai wannan ya wuce — hasashe kusa da mota da ta tsaya ya saɓa wa juna.",
@@ -1901,6 +1919,12 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  walkthrough_unreached: "Àpẹẹrẹ ni èyí. A kò lè dé ọ̀dọ̀ sáfà láti wá tìrẹ.",
+  and_word: "àti",
+  needs_a_note: "ó nílò àkọsílẹ̀",
+  it_is_still_there: "Ó ṣì wà níbẹ̀. Fóònù yìí kò lè rí i ní àkókò yìí.",
+  the_server_said_no: "Sáfà kò dáhùn",
+  reading: "À ń kà á",
   told_and_under_dispute: "A ti sọ fún olówó ẹrù àti olówó ọkọ̀, ìjà sì ti wà lórí ìrìn náà.",
   told_keep_driving: "A ti sọ fún olówó ẹrù àti olówó ọkọ̀. Máa wakọ̀ nígbà tí o bá lè ṣe.",
   eta_stops_showing: "A kò ní fi àkókò ìdé tí a fojú bù hàn títí èyí yóò fi kúrò — àfojúbù lẹ́gbẹ̀ẹ́ ọkọ̀ tí ó dúró jẹ́ ìtakora.",
@@ -2503,6 +2527,12 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  walkthrough_unreached: "Nke a bụ ihe ngosi. Anyị enweghị ike iru sava ka anyị chọọ nke gị.",
+  and_word: "na",
+  needs_a_note: "ọ chọrọ ihe odide",
+  it_is_still_there: "Ọ ka dị. Ekwentị a enweghị ike ịhụ ya ugbu a.",
+  the_server_said_no: "Sava ekwenyeghị ịza",
+  reading: "Na-agụ ya",
   told_and_under_dispute: "A gwara onye nwe ngwaahịa na onye na-ebu ibu, esemokwu adịkwala na njem ahụ.",
   told_keep_driving: "A gwara onye nwe ngwaahịa na onye na-ebu ibu. Nọgide na-anya ụgbọ mgbe ị nwere ike.",
   eta_stops_showing: "Agaghị egosi oge nrute a tụrụ anya ya ruo mgbe nke a gafere — atụmatụ n’akụkụ ụgbọ kwụsịrị bụ nkwenye na-emegiderịta onwe ya.",

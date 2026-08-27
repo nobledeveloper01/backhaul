@@ -276,6 +276,16 @@ export function TripsScreen({ onOpen }: Props) {
               </Text>
             ) : null}
 
+            {/*
+              No summary until there is something to summarise.
+
+              This read "0 · all moving", in green with a tick, directly above
+              "we cannot reach the server" — because `trips` is an empty list
+              until the answer arrives and nothing is wrong with none of them.
+              The list below already says which of the five facts it is; the
+              summary is only entitled to speak when the answer is one of them.
+            */}
+            {query.state !== 'ready' ? null : (
             <View style={styles.summary}>
               {/*
                 Top-aligned, not centre. At the largest text size this line
@@ -305,6 +315,7 @@ export function TripsScreen({ onOpen }: Props) {
                   : `${attention}/${trips.length} · ${t('need_a_look')}`}
               </Text>
             </View>
+            )}
           </View>
         }
         ListEmptyComponent={

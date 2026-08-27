@@ -11,6 +11,7 @@ import { Card } from '../components/Card';
 import { Empty } from '../components/Empty';
 import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { agoLabel, humanDuration, plural } from '../components/PositionAge';
 import { radius, space } from '../design/tokens';
@@ -100,7 +101,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
     driver rather than what it means to a calendar.
   */
   const from = useMemo(() => new Date(now.getTime() - 30 * 86_400_000), [now]);
-  const { query } = useMine(() => api.earnings(from, now), [api, from, now]);
+  const { query, refresh } = useMine(() => api.earnings(from, now), [api, from, now]);
 
   const month = query.state === 'ready' ? query.value : null;
   const owed = month?.unpaid ?? [];
@@ -120,103 +121,116 @@ export function DriverHistoryScreen({ onBack }: Props) {
           { paddingBottom: insets.bottom + space.xxl },
         ]}
       >
-        <Card overline={t('this_month')} icon="naira" emphasis="accent">
-          <Text variant="display">{format(totalEarned)}</Text>
-          <Text variant="bodyDriver" tone="secondary" style={styles.gap}>
-            {trips.length} {t('trips_word')} · {totalKm.toLocaleString('en-NG')} km ·{' '}
-            {onTime}/{trips.length} {t('on_time_word')}
-          </Text>
-        </Card>
-
         {/*
-          The statement.
+          Nothing derived from the answer until there is one.
 
-          A driver's relationship with this product is asymmetric: they carry
-          the tracking, they take the risk on the road, and until now the app
-          told them nothing they could use. What a kilometre earned is a figure
-          nobody has ever been able to give them.
+          The binding above fell back to an empty list (or the walkthrough) on
+          every outcome that was not a value, so a server this phone could not
+          reach rendered as a fact about somebody's own records. See `Unready`.
         */}
-        <Card overline={t('what_you_are_owed')} icon="document">
-          <View style={styles.figures}>
-            <View style={styles.figure}>
-              <Text variant="headline" tabular>
-                {month?.outstandingNaira ?? '—'}
-              </Text>
-              <Text variant="label" tone="secondary">
-                {t('still_to_come')}
-              </Text>
-            </View>
-            <View style={styles.figure}>
-              <Text variant="headline" tabular>
-                {perKm === null ? '—' : format(perKm as Kobo)}
-              </Text>
-              <Text variant="label" tone="secondary">
-                a kilometre
-              </Text>
-            </View>
-          </View>
+        <Unready query={query} onRetry={refresh} />
 
-          {(month?.outOfPocketKobo ?? 0) > 0 ? (
-            <View style={[styles.pocket, { borderTopColor: colours.outline }]}>
-              <Icon name="alert" size="sm" colour={colours.stopped} />
-              <Text variant="bodyDriver" tone="stopped" style={styles.flex}>
-                {format((month?.outOfPocketKobo ?? 0) as Kobo)}{' '}
-                {t('of_that_is_your_own_money')}
-              </Text>
-            </View>
-          ) : null}
-
-          {waiting !== null ? (
-            <Text variant="label" tone="secondary" style={styles.gap}>
-              {humanDuration(waiting, t)} — {t('oldest_unpaid_waiting')}{' '}
-              {t('oldest_unpaid_note')}
-            </Text>
-          ) : (
-            <Text variant="label" tone="secondary" style={styles.gap}>
-              {t('every_trip_settled')}
-            </Text>
-          )}
-        </Card>
-
-        {owed.length > 0 ? (
+        {query.state !== 'ready' ? null : (
           <>
-            <Text variant="overline" tone="secondary" style={styles.sectionHead}>
-              {t('not_paid_yet').toUpperCase()}
-            </Text>
+            <Card overline={t('this_month')} icon="naira" emphasis="accent">
+              <Text variant="display">{format(totalEarned)}</Text>
+              <Text variant="bodyDriver" tone="secondary" style={styles.gap}>
+                {trips.length} {t('trips_word')} · {totalKm.toLocaleString('en-NG')} km ·{' '}
+                {onTime}/{trips.length} {t('on_time_word')}
+              </Text>
+            </Card>
 
-            {owed.map((earning) => (
-              <View
-                key={earning.tripId}
-                style={[styles.owedRow, { borderBottomColor: colours.outline }]}
-              >
-                <View style={styles.flex}>
-                  <Text variant="bodyDriver">{earning.corridor}</Text>
+            {/*
+              The statement.
+
+              A driver's relationship with this product is asymmetric: they carry
+              the tracking, they take the risk on the road, and until now the app
+              told them nothing they could use. What a kilometre earned is a figure
+              nobody has ever been able to give them.
+            */}
+            <Card overline={t('what_you_are_owed')} icon="document">
+              <View style={styles.figures}>
+                <View style={styles.figure}>
+                  <Text variant="headline" tabular>
+                    {month?.outstandingNaira ?? '—'}
+                  </Text>
                   <Text variant="label" tone="secondary">
-                    {agoLabel(now.getTime() - earning.deliveredAt.getTime(), t)} ·{' '}
-                    {t('delivered_lower')}
+                    {t('still_to_come')}
                   </Text>
                 </View>
-                <Text variant="bodyDriver" tabular>
-                  {earning.payNaira}
-                </Text>
+                <View style={styles.figure}>
+                  <Text variant="headline" tabular>
+                    {perKm === null ? '—' : format(perKm as Kobo)}
+                  </Text>
+                  <Text variant="label" tone="secondary">
+                    a kilometre
+                  </Text>
+                </View>
               </View>
-            ))}
+
+              {(month?.outOfPocketKobo ?? 0) > 0 ? (
+                <View style={[styles.pocket, { borderTopColor: colours.outline }]}>
+                  <Icon name="alert" size="sm" colour={colours.stopped} />
+                  <Text variant="bodyDriver" tone="stopped" style={styles.flex}>
+                    {format((month?.outOfPocketKobo ?? 0) as Kobo)}{' '}
+                    {t('of_that_is_your_own_money')}
+                  </Text>
+                </View>
+              ) : null}
+
+              {waiting !== null ? (
+                <Text variant="label" tone="secondary" style={styles.gap}>
+                  {humanDuration(waiting, t)} — {t('oldest_unpaid_waiting')}{' '}
+                  {t('oldest_unpaid_note')}
+                </Text>
+              ) : (
+                <Text variant="label" tone="secondary" style={styles.gap}>
+                  {t('every_trip_settled')}
+                </Text>
+              )}
+            </Card>
+
+            {owed.length > 0 ? (
+              <>
+                <Text variant="overline" tone="secondary" style={styles.sectionHead}>
+                  {t('not_paid_yet').toUpperCase()}
+                </Text>
+
+                {owed.map((earning) => (
+                  <View
+                    key={earning.tripId}
+                    style={[styles.owedRow, { borderBottomColor: colours.outline }]}
+                  >
+                    <View style={styles.flex}>
+                      <Text variant="bodyDriver">{earning.corridor}</Text>
+                      <Text variant="label" tone="secondary">
+                        {agoLabel(now.getTime() - earning.deliveredAt.getTime(), t)} ·{' '}
+                        {t('delivered_lower')}
+                      </Text>
+                    </View>
+                    <Text variant="bodyDriver" tabular>
+                      {earning.payNaira}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            ) : null}
+
+            {trips.length === 0 ? (
+              <Empty
+                icon="truck"
+                title={t('no_trips_yet_history')}
+                detail={t('history_empty_detail')}
+              />
+            ) : (
+              trips.map((trip) => <PastRow key={trip.id} trip={trip} />)
+            )}
+
+            <Text variant="label" tone="secondary" style={styles.footer}>
+              {t('on_time_note')}
+            </Text>
           </>
-        ) : null}
-
-        {trips.length === 0 ? (
-          <Empty
-            icon="truck"
-            title={t('no_trips_yet_history')}
-            detail={t('history_empty_detail')}
-          />
-        ) : (
-          trips.map((trip) => <PastRow key={trip.id} trip={trip} />)
         )}
-
-        <Text variant="label" tone="secondary" style={styles.footer}>
-          {t('on_time_note')}
-        </Text>
       </ScrollView>
     </View>
   );
