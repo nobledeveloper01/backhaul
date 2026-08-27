@@ -1,0 +1,49 @@
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath("com.android.tools.build:gradle:8.9.1")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+// The app pins these; a library that hard-codes its own drifts away from the
+// app the first time either moves. `rootProject.ext` is where React Native's
+// own template puts them.
+def safeExt(name, fallback) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+}
+
+android {
+  namespace "com.backhaul.tracking"
+  compileSdk safeExt("compileSdkVersion", 36)
+
+  defaultConfig {
+    minSdk safeExt("minSdkVersion", 26)
+    targetSdk safeExt("targetSdkVersion", 36)
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+}

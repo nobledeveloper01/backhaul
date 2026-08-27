@@ -12,7 +12,7 @@ import {
 } from '@backhaul/domain';
 
 import type { BackhaulApi } from '../api/client';
-import NativeTracking, { type NativeFix, type Spec } from './NativeTracking';
+import { NativeTracking, type NativeFix, type Spec } from '@backhaul/tracking-native';
 
 /**
  * The upload loop.

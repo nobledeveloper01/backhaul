@@ -34,7 +34,13 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
+	<string>Backhaul records where your truck is during a trip, so your carrier and the cargo owner can see it. Recording stops when the trip ends.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Backhaul keeps recording your trip while the app is in the background, so a delivery has a record even when your phone is in your pocket. Recording stops when the trip ends.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

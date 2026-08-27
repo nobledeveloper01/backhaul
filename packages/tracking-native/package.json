@@ -1,0 +1,35 @@
+{
+  "name": "@backhaul/tracking-native",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The capture loop. Android foreground service and iOS background location, over a native SQLite queue.",
+  "main": "src/index.ts",
+  "files": [
+    "src",
+    "android",
+    "ios",
+    "BackhaulTracking.podspec"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "react": "19.2.3",
+    "react-native": "0.87.1",
+    "typescript": "^6.0.3"
+  },
+  "codegenConfig": {
+    "name": "BackhaulTrackingSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.backhaul.tracking"
+    }
+  }
+}

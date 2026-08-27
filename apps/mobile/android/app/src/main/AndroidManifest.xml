@@ -2,6 +2,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+      The capture loop's permissions are declared by
+      `@backhaul/tracking-native` and merged in from its own manifest. The one
+      that has to be here is the runtime prompt's companion: without
+      POST_NOTIFICATIONS on Android 13+, the foreground service starts and its
+      notification is silently dropped, which on some OEM builds is grounds for
+      killing the service.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"

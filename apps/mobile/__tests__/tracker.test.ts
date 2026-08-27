@@ -1,6 +1,6 @@
 import { BackhaulApi } from '../src/api/client';
 import { Tracker } from '../src/native/tracker';
-import type { NativeFix, Spec, TrackingStatus } from '../src/native/NativeTracking';
+import type { NativeFix, Spec, TrackingStatus } from '@backhaul/tracking-native';
 
 /**
  * The upload loop, against a native module that behaves like the real one.

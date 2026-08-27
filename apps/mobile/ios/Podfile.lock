@@ -21,6 +21,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - BackhaulTracking (0.0.1):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-bridging
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - boost (1.84.0):
     - ReactNativeDependencies
   - DoubleConversion (1.1.6):
@@ -1794,6 +1816,7 @@ PODS:
 
 DEPENDENCIES:
   - "AsyncStorage (from `../../../node_modules/@react-native-async-storage/async-storage`)"
+  - "BackhaulTracking (from `../node_modules/@backhaul/tracking-native`)"
   - boost (from `build/rndeps-facades/boost`)
   - DoubleConversion (from `build/rndeps-facades/DoubleConversion`)
   - fast_float (from `build/rndeps-facades/fast_float`)
@@ -1887,6 +1910,8 @@ DEPENDENCIES:
 EXTERNAL SOURCES:
   AsyncStorage:
     :path: "../../../node_modules/@react-native-async-storage/async-storage"
+  BackhaulTracking:
+    :path: "../node_modules/@backhaul/tracking-native"
   boost:
     :path: build/rndeps-facades/boost
   DoubleConversion:
@@ -2067,6 +2092,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AsyncStorage: f0453c14a52d22d3f6184284c55f2117fbfd9954
+  BackhaulTracking: a4921a3dc4899a461d41182e908d0621e481f92e
   boost: 8502bfdc46e2804408af2e163049ece181009af4
   DoubleConversion: 501a575c40c0b50c89685762dd3e415e6bb26fb0
   fast_float: 7c925d1cebf8328d4018d061f49377e9f887e3b4
@@ -2158,4 +2184,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 0413a54bdcd3ce377321084f219a911e8bf53fa6
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

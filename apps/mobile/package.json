@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@backhaul/domain": "workspace:*",
+    "@backhaul/tracking-native": "workspace:*",
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native/new-app-screen": "0.87.1",
     "@react-navigation/bottom-tabs": "^7.4.9",
