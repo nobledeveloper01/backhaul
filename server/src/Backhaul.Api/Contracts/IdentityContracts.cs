@@ -28,6 +28,9 @@ public sealed class VerificationResponse
 
     public int TripsCompleted { get; set; }
 
+    /// <summary>Of the completed trips, those with a promised arrival to be judged against.</summary>
+    public int TripsPromised { get; set; }
+
     public int TripsOnTime { get; set; }
 
     public int Incidents { get; set; }

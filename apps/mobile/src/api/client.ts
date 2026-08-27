@@ -622,11 +622,18 @@ export class BackhaulApi {
   }
 
   async saveTerms(tripId: string, terms: TermsDraft): Promise<ApiResult<TermsView>> {
-    return this.request<TermsView>('PUT', `/v1/trips/${tripId}/terms`, {
-      ...terms,
-      acceptedAt: terms.acceptedAt.toISOString(),
-      driverPaidAt: terms.driverPaidAt?.toISOString() ?? null,
-    });
+    return map(
+      await this.request<RawTerms>('PUT', `/v1/trips/${tripId}/terms`, {
+        ...terms,
+        acceptedAt: terms.acceptedAt.toISOString(),
+        driverPaidAt: terms.driverPaidAt?.toISOString() ?? null,
+        deliverBy: terms.deliverBy?.toISOString() ?? null,
+      }),
+      (raw) => ({
+        ...raw,
+        deliverBy: raw.deliverBy === null ? null : new Date(raw.deliverBy),
+      }),
+    );
   }
 
   // --- the person signed in ----------------------------------------------
@@ -1396,6 +1403,17 @@ export interface TermsDraft {
   readonly driverPayKobo: number;
   readonly driverAdvanceKobo: number;
   readonly driverPaidAt: Date | null;
+  /**
+   * When the shipper was promised it, or null if nobody said.
+   *
+   * The only thing a carrier's punctuality is measured against, and the reason
+   * this field exists: without it the server counted every delivered trip as
+   * on time, which put every carrier at a hundred per cent.
+   *
+   * Null is a real answer. A trip that is tracked and not traded has no
+   * promise on it and counts towards neither side of the figure.
+   */
+  readonly deliverBy: Date | null;
 }
 
 export interface TermsView {
@@ -1405,6 +1423,18 @@ export interface TermsView {
   readonly distanceM: number;
   readonly driverPayKobo: number;
   readonly driverAdvanceKobo: number;
+  /** When the shipper was promised it, or null if nobody said. */
+  readonly deliverBy: Date | null;
+}
+
+interface RawTerms {
+  truck: string;
+  agreedKobo: number;
+  agreedNaira: string;
+  distanceM: number;
+  driverPayKobo: number;
+  driverAdvanceKobo: number;
+  deliverBy: string | null;
 }
 
 export interface UnpaidTripView {
@@ -1493,6 +1523,8 @@ export interface VerificationView {
   readonly hasRegistration: boolean;
   readonly hasInsurance: boolean;
   readonly tripsCompleted: number;
+  /** Of those, the ones that had a promised arrival to be judged against. */
+  readonly tripsPromised: number;
   readonly tripsOnTime: number;
   readonly incidents: number;
   /** Null below five trips. */

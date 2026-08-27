@@ -25,12 +25,6 @@ public sealed class CarrierProfileEntity
     [MaxLength(200)]
     public string Expiries { get; set; } = string.Empty;
 
-    public int TripsCompleted { get; set; }
-
-    public int TripsOnTime { get; set; }
-
-    /// <summary>Upheld incidents. One costs a tier; it does not zero the record.</summary>
-    public int Incidents { get; set; }
 }
 
 /// <summary>A truck, and the papers that let it work.</summary>

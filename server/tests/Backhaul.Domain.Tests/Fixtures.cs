@@ -253,7 +253,11 @@ public sealed record DocumentsRow(
     bool Registration,
     bool Insurance);
 
-public sealed record RecordRow(int TripsCompleted, int TripsOnTime, int Incidents);
+public sealed record RecordRow(
+    int TripsCompleted,
+    int TripsPromised,
+    int TripsOnTime,
+    int Incidents);
 
 public sealed record VehicleRow(
     string Name,
@@ -412,6 +416,7 @@ public sealed record BidRow(
     string Id,
     long AmountKobo,
     int TripsCompleted,
+    int TripsPromised,
     int TripsOnTime,
     double AtLat,
     double AtLon);

@@ -35,11 +35,27 @@ public sealed record LoadScore(
     string Because);
 
 /// <summary>One carrier's offer on a load.</summary>
+/// <summary>One carrier's offer on a load.</summary>
+/// <param name="Id">The bid.</param>
+/// <param name="CarrierId">Who placed it.</param>
+/// <param name="Amount">What they want for the run.</param>
+/// <param name="TripsCompleted">Deliveries, all of them.</param>
+/// <param name="TripsPromised">
+/// Of the completed trips, the ones that had a promised arrival to be judged
+/// against — the denominator of the reliability term, and not
+/// <paramref name="TripsCompleted"/>. A carrier whose trips were tracked but
+/// never traded has no punctuality record, which is a different thing from a
+/// bad one and from a perfect one.
+/// </param>
+/// <param name="TripsOnTime">Of the promised ones, how many arrived by the promise.</param>
+/// <param name="At">Where the truck is now.</param>
+/// <param name="PlacedAt">When the bid was placed.</param>
 public sealed record Bid(
     Guid Id,
     Guid CarrierId,
     Kobo Amount,
     int TripsCompleted,
+    int TripsPromised,
     int TripsOnTime,
     Position At,
     DateTimeOffset PlacedAt);
@@ -234,8 +250,12 @@ public static class Matching
                 var premium = cheapest == 0 ? 0 : (double)(bid.Amount.Value - cheapest) / cheapest;
                 var price = Clamp(1 - premium / PremiumTolerance);
 
-                double? reliability = bid.TripsCompleted >= MinimumTripsForReliability
-                    ? Clamp((double)bid.TripsOnTime / bid.TripsCompleted)
+                // Null, not zero, when there is no record to read. Null falls
+                // through to the neutral prior below; zero would score a
+                // carrier nobody has ever held to a deadline as the least
+                // reliable bidder on the board.
+                double? reliability = bid.TripsPromised >= MinimumTripsForReliability
+                    ? Clamp((double)bid.TripsOnTime / bid.TripsPromised)
                     : null;
 
                 var kmToPickup = Geo.Distance(bid.At, pickup) / 1000.0;
@@ -250,11 +270,18 @@ public static class Matching
                     score,
                     reliability,
                     (int)Round(kmToPickup),
+                    // Two different reasons for having no figure, and only
+                    // one of them is "new". A carrier with twelve deliveries
+                    // and no agreed delivery date among them read "New to
+                    // Backhaul — 12 completed trips", which is a sentence a
+                    // shipper can see is wrong.
                     reliability is null
-                        ? $"New to Backhaul — {bid.TripsCompleted} completed trip" +
-                          $"{(bid.TripsCompleted == 1 ? "" : "s")}, no record yet."
+                        ? bid.TripsCompleted == 0
+                            ? "New to Backhaul — no completed trips yet."
+                            : $"{bid.TripsCompleted} completed trip" +
+                              $"{(bid.TripsCompleted == 1 ? "" : "s")}, none with an agreed delivery date."
                         : $"{Round(reliability.Value * 100)}% on time across " +
-                          $"{bid.TripsCompleted} trips.");
+                          $"{bid.TripsPromised} trip{(bid.TripsPromised == 1 ? "" : "s")} with a delivery date.");
             })
             .OrderByDescending(s => s.Score)
             .ToList();

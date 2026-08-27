@@ -99,6 +99,7 @@ export function FleetScreen({
           };
           const record = {
             tripsCompleted: held.tripsCompleted,
+            tripsPromised: held.tripsPromised,
             tripsOnTime: held.tripsOnTime,
             incidents: held.incidents,
           };

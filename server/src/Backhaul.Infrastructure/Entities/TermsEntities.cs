@@ -50,4 +50,22 @@ public sealed class TripTermsEntity
 
     /// <summary>When the driver was settled, or null while it is still owed.</summary>
     public DateTimeOffset? DriverPaidAt { get; set; }
+
+    /// <summary>When the shipper was promised it, or null if nobody said.</summary>
+    /// <remarks>
+    /// <para>
+    /// The only thing in this product a carrier's punctuality can honestly be
+    /// measured against. Nullable, and nullable on purpose: a trip that is
+    /// tracked and not traded has no promise on it — that is the wedge working
+    /// as intended — and such a trip counts towards neither side of the
+    /// on-time figure.
+    /// </para>
+    /// <para>
+    /// It did not exist, so the repositories counted every delivered trip as
+    /// on time. Every carrier sat at a hundred per cent, which walked them up
+    /// the trust ladder on document count alone and made the reliability term
+    /// in the bid ranking the same number for every bidder.
+    /// </para>
+    /// </remarks>
+    public DateTimeOffset? DeliverBy { get; set; }
 }

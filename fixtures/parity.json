@@ -1887,6 +1887,7 @@
         },
         "record": {
           "tripsCompleted": 0,
+          "tripsPromised": 0,
           "tripsOnTime": 0,
           "incidents": 0
         },
@@ -1903,6 +1904,7 @@
         },
         "record": {
           "tripsCompleted": 0,
+          "tripsPromised": 0,
           "tripsOnTime": 0,
           "incidents": 0
         },
@@ -1919,6 +1921,7 @@
         },
         "record": {
           "tripsCompleted": 5,
+          "tripsPromised": 5,
           "tripsOnTime": 4,
           "incidents": 0
         },
@@ -1935,6 +1938,7 @@
         },
         "record": {
           "tripsCompleted": 4,
+          "tripsPromised": 4,
           "tripsOnTime": 4,
           "incidents": 0
         },
@@ -1951,6 +1955,7 @@
         },
         "record": {
           "tripsCompleted": 5,
+          "tripsPromised": 5,
           "tripsOnTime": 3,
           "incidents": 0
         },
@@ -1967,6 +1972,7 @@
         },
         "record": {
           "tripsCompleted": 20,
+          "tripsPromised": 20,
           "tripsOnTime": 18,
           "incidents": 0
         },
@@ -1983,6 +1989,7 @@
         },
         "record": {
           "tripsCompleted": 20,
+          "tripsPromised": 20,
           "tripsOnTime": 17,
           "incidents": 0
         },
@@ -1999,6 +2006,7 @@
         },
         "record": {
           "tripsCompleted": 20,
+          "tripsPromised": 20,
           "tripsOnTime": 19,
           "incidents": 1
         },
@@ -2015,6 +2023,7 @@
         },
         "record": {
           "tripsCompleted": 20,
+          "tripsPromised": 20,
           "tripsOnTime": 19,
           "incidents": 2
         },
@@ -2031,11 +2040,63 @@
         },
         "record": {
           "tripsCompleted": 20,
+          "tripsPromised": 20,
           "tripsOnTime": 19,
           "incidents": 9
         },
         "tier": "unverified",
         "onTimeRate": 0.95
+      },
+      {
+        "name": "every paper, no deadline ever set",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsPromised": 0,
+          "tripsOnTime": 0,
+          "incidents": 0
+        },
+        "tier": "verified",
+        "onTimeRate": null
+      },
+      {
+        "name": "one promise kept is not a record",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsPromised": 1,
+          "tripsOnTime": 1,
+          "incidents": 0
+        },
+        "tier": "verified",
+        "onTimeRate": null
+      },
+      {
+        "name": "five promises kept is",
+        "documents": {
+          "identity": true,
+          "licence": true,
+          "registration": true,
+          "insurance": true
+        },
+        "record": {
+          "tripsCompleted": 20,
+          "tripsPromised": 5,
+          "tripsOnTime": 5,
+          "incidents": 0
+        },
+        "tier": "trusted",
+        "onTimeRate": 1
       }
     ]
   },
@@ -3174,6 +3235,7 @@
         "id": "cheapest-and-new",
         "amountKobo": 180000000,
         "tripsCompleted": 0,
+        "tripsPromised": 0,
         "tripsOnTime": 0,
         "atLat": 6.4531,
         "atLon": 3.3958
@@ -3182,6 +3244,7 @@
         "id": "dearer-with-a-record",
         "amountKobo": 198000000,
         "tripsCompleted": 40,
+        "tripsPromised": 40,
         "tripsOnTime": 38,
         "atLat": 7.3775,
         "atLon": 3.947
@@ -3190,6 +3253,7 @@
         "id": "one-trip-completed",
         "amountKobo": 185000000,
         "tripsCompleted": 1,
+        "tripsPromised": 1,
         "tripsOnTime": 1,
         "atLat": 6.4531,
         "atLon": 3.3958
@@ -3198,9 +3262,19 @@
         "id": "far-away",
         "amountKobo": 182000000,
         "tripsCompleted": 12,
+        "tripsPromised": 12,
         "tripsOnTime": 6,
         "atLat": 12.0022,
         "atLon": 8.5919
+      },
+      {
+        "id": "tracked-never-traded",
+        "amountKobo": 190000000,
+        "tripsCompleted": 12,
+        "tripsPromised": 0,
+        "tripsOnTime": 0,
+        "atLat": 7.3775,
+        "atLon": 3.947
       }
     ],
     "rankedBids": [
@@ -3209,28 +3283,35 @@
         "scoreThousandths": 840,
         "reliabilityThousandths": null,
         "kmToPickup": 0,
-        "because": "New to Backhaul — 0 completed trips, no record yet."
+        "because": "New to Backhaul — no completed trips yet."
       },
       {
         "bidId": "one-trip-completed",
         "scoreThousandths": 796,
         "reliabilityThousandths": null,
         "kmToPickup": 0,
-        "because": "New to Backhaul — 1 completed trip, no record yet."
+        "because": "1 completed trip, none with an agreed delivery date."
       },
       {
         "bidId": "dearer-with-a-record",
         "scoreThousandths": 764,
         "reliabilityThousandths": 950,
         "kmToPickup": 119,
-        "because": "95% on time across 40 trips."
+        "because": "95% on time across 40 trips with a delivery date."
+      },
+      {
+        "bidId": "tracked-never-traded",
+        "scoreThousandths": 696,
+        "reliabilityThousandths": null,
+        "kmToPickup": 119,
+        "because": "12 completed trips, none with an agreed delivery date."
       },
       {
         "bidId": "far-away",
         "scoreThousandths": 582,
         "reliabilityThousandths": 500,
         "kmToPickup": 840,
-        "because": "50% on time across 12 trips."
+        "because": "50% on time across 12 trips with a delivery date."
       }
     ]
   },

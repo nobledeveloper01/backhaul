@@ -494,6 +494,7 @@ public sealed class ParityTests
 
             var record = new TrackRecord(
                 row.Record.TripsCompleted,
+                row.Record.TripsPromised,
                 row.Record.TripsOnTime,
                 row.Record.Incidents);
 
@@ -831,6 +832,7 @@ public sealed class ParityTests
                 Guid.Empty,
                 new Kobo(row.AmountKobo),
                 row.TripsCompleted,
+                row.TripsPromised,
                 row.TripsOnTime,
                 At(row.AtLat, row.AtLon, now),
                 now))

@@ -405,8 +405,34 @@ async function main(): Promise<void> {
       driverPayKobo: 18_000_000,
       driverAdvanceKobo: 8_000_000,
       driverPaidAt: null,
+      deliverBy: at(2_880),
     });
     check('terms save', terms.ok, terms.ok ? '' : terms.failure.detail);
+    if (terms.ok) {
+      // The promised arrival, back as a Date. It is the only thing a carrier's
+      // punctuality is measured against, and it is the sort of field that goes
+      // missing in a serialiser without breaking anything visible — the
+      // punctuality figure just quietly becomes "no record" for everybody.
+      check(
+        'and the promised arrival comes back as a date',
+        terms.value.deliverBy?.toISOString() === at(2_880).toISOString(),
+        String(terms.value.deliverBy),
+      );
+    }
+
+    // A deadline before the trip was agreed is not a deadline. Refused rather
+    // than counted as a trip the carrier was always going to miss.
+    const backwards = await api.saveTerms(tripId, {
+      truck: 'trailer_30t',
+      agreedKobo: 224_000_000,
+      acceptedAt: at(-60),
+      distanceM: 830_000,
+      driverPayKobo: 18_000_000,
+      driverAdvanceKobo: 8_000_000,
+      driverPaidAt: null,
+      deliverBy: at(-120),
+    });
+    check('a delivery date before the trip was agreed is refused', !backwards.ok);
 
     const escrow = await api.escrow(tripId);
     check('and then escrow answers', escrow.ok, escrow.ok ? '' : escrow.failure.detail);

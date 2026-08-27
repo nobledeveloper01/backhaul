@@ -88,6 +88,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Every carrier was 100% on time.** The server counted a delivered trip as a
+  trip delivered on time, because the promised arrival did not exist in the
+  schema — and the comment saying so was honest and three lines long and had
+  been true for a while. What it produced: a carrier walked up the trust ladder
+  to Trusted on document count alone, and the reliability term in the bid
+  ranking was the same number for every bidder, which is the same as having no
+  term at all. It is the number a shipper picks a carrier on.
+
+  A trip's terms now carry **when the shipper was promised it**, and a
+  delivered trip counts towards punctuality only if it had a promise *and* a
+  sealed delivery. Missing either, it is unjudged — not late, not on time, and
+  in neither half of the fraction, because a trip that was tracked and never
+  traded has no deadline to have kept and counting it either way is a lie.
+
+  Judged on the handover rather than on the paperwork: a driver who arrives at
+  five and seals the proof at seven, because the storekeeper had gone to find a
+  pen, was on time.
+
+  **No evidence is not a perfect score, and it is not a bad one either.** A
+  tier naming a punctuality bar cannot be earned without five judged trips, and
+  a carrier short of that is told they need trips with an agreed delivery date
+  rather than accused of missing deadlines nobody set. On the load board they
+  fall through to the neutral prior instead of scoring zero — and the sentence
+  under their bid says "12 completed trips, none with an agreed delivery date"
+  rather than "New to Backhaul — 12 completed trips", which is a sentence a
+  shipper could see was wrong.
+
+  Two things fell out of this. `CarrierProfileEntity` had three columns for
+  these counts and nothing ever wrote them, so a carrier's own verification
+  screen read three zeroes while the bid ranking counted for real; both now
+  read from one place. And the incident count is explicitly zero, with the
+  reason written down: there is no upholding in this product and there is not
+  going to be one, and counting *raised* incidents would drop a carrier's tier
+  every time a driver reported a robbery — an incentive to stay quiet, in a
+  product whose evidence depends on drivers speaking up.
+
 - **Nineteen screens said "nothing here" when they meant "we could not ask".**
   The helper that tells those apart was written, documented and used by exactly
   one screen. Everywhere else the line was `query.state === 'ready' ?

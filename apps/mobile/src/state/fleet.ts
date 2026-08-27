@@ -45,6 +45,7 @@ export function demoBids(now: Date): { pickup: Position; bids: Bid[] } {
         carrierId: 'Sahel Haulage',
         amount: fromNaira(1_780_000),
         tripsCompleted: 6,
+        tripsPromised: 6,
         tripsOnTime: 2,
         at: at(11.9, 8.5, now),
         placedAt: new Date(now.getTime() - 40 * 60_000),
@@ -54,6 +55,7 @@ export function demoBids(now: Date): { pickup: Position; bids: Bid[] } {
         carrierId: 'Kano Freight Co-operative',
         amount: fromNaira(1_940_000),
         tripsCompleted: 41,
+        tripsPromised: 41,
         tripsOnTime: 39,
         at: at(12.01, 8.60, now),
         placedAt: new Date(now.getTime() - 25 * 60_000),
@@ -63,6 +65,7 @@ export function demoBids(now: Date): { pickup: Position; bids: Bid[] } {
         carrierId: 'Adebayo & Sons',
         amount: fromNaira(1_860_000),
         tripsCompleted: 0,
+        tripsPromised: 0,
         tripsOnTime: 0,
         at: at(11.7, 8.4, now),
         placedAt: new Date(now.getTime() - 8 * 60_000),
@@ -71,8 +74,13 @@ export function demoBids(now: Date): { pickup: Position; bids: Bid[] } {
         id: 'b4',
         carrierId: 'Delta Line Logistics',
         amount: fromNaira(2_050_000),
+        // Twenty-eight deliveries and not one agreed delivery date. The
+        // walkthrough carries this case on purpose: it is what most carriers
+        // look like before the marketplace exists, and the board has to say
+        // "no punctuality record" rather than "perfectly reliable".
         tripsCompleted: 28,
-        tripsOnTime: 21,
+        tripsPromised: 0,
+        tripsOnTime: 0,
         at: at(6.5, 3.4, now),
         placedAt: new Date(now.getTime() - 90 * 60_000),
       },

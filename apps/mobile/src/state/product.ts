@@ -206,7 +206,11 @@ export const DEMO_DOCUMENTS: Documents = {
 
 export const DEMO_RECORD: Record_ = {
   tripsCompleted: 34,
-  tripsOnTime: 31,
+  // Thirty of the thirty-four were traded and had a delivery date on them;
+  // four were tracked for a shipper who never posted a load. The punctuality
+  // figure is over the thirty.
+  tripsPromised: 30,
+  tripsOnTime: 27,
   incidents: 0,
 };
 

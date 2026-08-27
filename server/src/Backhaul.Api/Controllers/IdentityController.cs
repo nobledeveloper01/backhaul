@@ -1,6 +1,7 @@
 using Backhaul.Api.Auth;
 using Backhaul.Api.Contracts;
 using Backhaul.Domain.Access;
+using Backhaul.Infrastructure;
 using Backhaul.Infrastructure.Entities;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +17,16 @@ namespace Backhaul.Api.Controllers;
 [ApiController]
 [Route("v1/me/verification")]
 [Tags("identity")]
-public sealed class VerificationController(IdentityRepository identity) : AuthorisedController
+public sealed class VerificationController(
+    IdentityRepository identity,
+    BackhaulDbContext db) : AuthorisedController
 {
     [HttpGet]
     [ProducesResponseType<VerificationResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<VerificationResponse>> Get(CancellationToken ct) =>
-        ToResponse(await identity.ProfileAsync(Caller.UserId, ct));
+        ToResponse(
+            await identity.ProfileAsync(Caller.UserId, ct),
+            await CarrierRecord.ForAsync(db, Caller.UserId, ct));
 
     /// <summary>
     /// Say a paper is held.
@@ -51,13 +56,20 @@ public sealed class VerificationController(IdentityRepository identity) : Author
         if (which is null) return BadRequest($"Unknown paper '{paper}'.");
 
         var row = await identity.SetPaperAsync(Caller.UserId, which.Value, body.Held, ct);
-        return ToResponse(row);
+        return ToResponse(row, await CarrierRecord.ForAsync(db, Caller.UserId, ct));
     }
 
-    private static VerificationResponse ToResponse(CarrierProfileEntity row)
+    /*
+        The record is counted, not read off the profile.
+
+        `CarrierProfileEntity` had three columns for these and nothing ever
+        wrote them, so a carrier's own verification screen showed three zeroes
+        while the bid ranking a shipper sees counted for real. One reader now
+        answers both — see `CarrierRecord`.
+    */
+    private static VerificationResponse ToResponse(CarrierProfileEntity row, TrackRecord record)
     {
         var papers = new Papers(row.HasIdentity, row.HasLicence, row.HasRegistration, row.HasInsurance);
-        var record = new TrackRecord(row.TripsCompleted, row.TripsOnTime, row.Incidents);
 
         return new VerificationResponse
         {
@@ -66,9 +78,10 @@ public sealed class VerificationController(IdentityRepository identity) : Author
             HasLicence = row.HasLicence,
             HasRegistration = row.HasRegistration,
             HasInsurance = row.HasInsurance,
-            TripsCompleted = row.TripsCompleted,
-            TripsOnTime = row.TripsOnTime,
-            Incidents = row.Incidents,
+            TripsCompleted = record.TripsCompleted,
+            TripsPromised = record.TripsPromised,
+            TripsOnTime = record.TripsOnTime,
+            Incidents = record.Incidents,
             // Null below five trips. "100% on time" from one delivery is true
             // and completely misleading, and it is the number a shipper
             // decides on.

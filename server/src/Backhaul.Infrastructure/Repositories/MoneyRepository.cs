@@ -14,7 +14,10 @@ public sealed record TermsRecord(
     double DistanceM,
     long DriverPayKobo,
     long DriverAdvanceKobo,
-    DateTimeOffset? DriverPaidAt);
+    DateTimeOffset? DriverPaidAt,
+    // When the shipper was promised it, or null if nobody said. The only thing
+    // a carrier's punctuality can honestly be measured against.
+    DateTimeOffset? DeliverBy);
 
 /// <summary>What the platform already knows when a release is being decided.</summary>
 public sealed record EvidenceRecord(
@@ -93,7 +96,8 @@ public sealed class MoneyRepository(BackhaulDbContext db)
             row.DistanceM,
             row.DriverPayKobo,
             row.DriverAdvanceKobo,
-            row.DriverPaidAt);
+            row.DriverPaidAt,
+            row.DeliverBy);
     }
 
     public async Task<TermsRecord?> TermsAsync(Guid tripId, Principal principal, CancellationToken ct = default)
@@ -114,7 +118,8 @@ public sealed class MoneyRepository(BackhaulDbContext db)
                 found.DistanceM,
                 found.DriverPayKobo,
                 found.DriverAdvanceKobo,
-                found.DriverPaidAt);
+                found.DriverPaidAt,
+                found.DeliverBy);
     }
 
     /// <summary>

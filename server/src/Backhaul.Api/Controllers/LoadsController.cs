@@ -283,6 +283,7 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         row.CarrierId,
         new Kobo(row.AmountKobo),
         row.TripsCompleted,
+        row.TripsPromised,
         row.TripsOnTime,
         new Position(row.AtLat, row.AtLon, 10, row.PlacedAt),
         row.PlacedAt);

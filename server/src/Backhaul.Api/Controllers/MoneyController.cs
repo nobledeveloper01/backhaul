@@ -59,6 +59,14 @@ public sealed class MoneyController(MoneyRepository money, TimeProvider clock) :
             return BadRequest("A fare cannot be negative.");
         }
 
+        // A deadline before the trip was agreed is not a deadline, and a
+        // carrier's punctuality record is built from these — so it is refused
+        // here rather than counted as a trip they were always going to miss.
+        if (body.DeliverBy is { } by && by < body.AcceptedAt)
+        {
+            return BadRequest("A delivery date cannot be before the trip was agreed.");
+        }
+
         var saved = await money.SaveTermsAsync(
             tripId,
             Caller,
@@ -71,6 +79,7 @@ public sealed class MoneyController(MoneyRepository money, TimeProvider clock) :
                 row.DriverPayKobo = body.DriverPayKobo;
                 row.DriverAdvanceKobo = body.DriverAdvanceKobo;
                 row.DriverPaidAt = body.DriverPaidAt;
+                row.DeliverBy = body.DeliverBy;
             },
             ct);
 
@@ -84,7 +93,8 @@ public sealed class MoneyController(MoneyRepository money, TimeProvider clock) :
             saved.DistanceM,
             saved.DriverPayKobo,
             saved.DriverAdvanceKobo,
-            saved.DriverPaidAt);
+            saved.DriverPaidAt,
+            saved.DeliverBy);
     }
 
     /// <summary>When each part of the fare changes hands.</summary>

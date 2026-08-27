@@ -8,7 +8,11 @@ public sealed record TermsRequest(
     double DistanceM,
     long DriverPayKobo,
     long DriverAdvanceKobo,
-    DateTimeOffset? DriverPaidAt);
+    DateTimeOffset? DriverPaidAt,
+    // When the shipper was promised it, or null if nobody said. The only thing
+    // a carrier's punctuality is measured against, and optional because a trip
+    // that is tracked and not traded has no promise on it.
+    DateTimeOffset? DeliverBy);
 
 public sealed record TermsResponse(
     string Truck,
@@ -18,7 +22,8 @@ public sealed record TermsResponse(
     double DistanceM,
     long DriverPayKobo,
     long DriverAdvanceKobo,
-    DateTimeOffset? DriverPaidAt);
+    DateTimeOffset? DriverPaidAt,
+    DateTimeOffset? DeliverBy);
 
 public sealed record ReleaseResponse(
     string Kind,

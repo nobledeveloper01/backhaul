@@ -26,12 +26,23 @@ const docs = (over: Partial<Documents> = {}): Documents => ({
 
 const all = docs({ identity: true, licence: true, registration: true, insurance: true });
 
-const record = (over: Partial<Record_> = {}): Record_ => ({
-  tripsCompleted: 0,
-  tripsOnTime: 0,
-  incidents: 0,
-  ...over,
-});
+/**
+ * A record, with the punctuality denominator following the numerator.
+ *
+ * `tripsPromised` defaults to `tripsCompleted` so the cases below read as they
+ * did — a carrier with 20 trips and 19 on time — and any case that wants a
+ * carrier with deliveries but no deadlines says so explicitly.
+ */
+const record = (over: Partial<Record_> = {}): Record_ => {
+  const completed = over.tripsCompleted ?? 0;
+  return {
+    tripsCompleted: completed,
+    tripsPromised: completed,
+    tripsOnTime: 0,
+    incidents: 0,
+    ...over,
+  };
+};
 
 describe('tierOf', () => {
   test('a carrier with nothing is unverified', () => {
@@ -103,6 +114,66 @@ describe('nextStep', () => {
 
   test('the top of the ladder has no next step', () => {
     assert.equal(nextStep(all, record({ tripsCompleted: 20, tripsOnTime: 20 })), null);
+  });
+});
+
+describe('a trip nobody set a deadline for', () => {
+  /*
+    The defect this shape exists to prevent.
+
+    The server counted every delivered trip as on time, because the promised
+    arrival lives with the commercial terms and not every trip has them. So a
+    carrier who had never been held to a deadline scored 100%, walked the
+    punctuality bar on both tiers above Verified, and made the reliability term
+    in the bid ranking the same number for everybody.
+  */
+  test('does not carry a carrier past a tier that names punctuality', () => {
+    // Twenty deliveries, all four documents, and not one deadline among them.
+    // Both Business and Trusted name a punctuality bar, and there is no
+    // evidence of any punctuality — so the ladder stops at Verified.
+    //
+    // This is the trade, stated: a carrier who is never given a delivery date
+    // cannot climb, and a shipper is never shown a badge that was earned on no
+    // evidence. The second is worse, and the first has a fix inside the
+    // product — a shipper who posts a load says when they want it.
+    const noPromises = record({ tripsCompleted: 20, tripsPromised: 0, tripsOnTime: 0 });
+    assert.equal(tierOf(all, noPromises), 'verified');
+
+    // The same twenty, judged and kept, is the tier.
+    const kept = record({ tripsCompleted: 20, tripsPromised: 20, tripsOnTime: 20 });
+    assert.equal(tierOf(all, kept), 'trusted');
+  });
+
+  test('and names the evidence rather than accusing them of lateness', () => {
+    // The other half of the same rule, and the thing that keeps it from being
+    // a dead end. A missing deadline must not read as a missed one.
+    const step = nextStep(all, record({ tripsCompleted: 20, tripsPromised: 0, tripsOnTime: 0 }));
+    assert.deepEqual(step?.missing, ['5 more trips with an agreed delivery date']);
+
+    // One short of enough evidence still asks for evidence, singular.
+    const nearly = nextStep(all, record({ tripsCompleted: 20, tripsPromised: 4, tripsOnTime: 4 }));
+    assert.deepEqual(nearly?.missing, ['1 more trip with an agreed delivery date']);
+
+    // Enough evidence and a poor record names the record.
+    const late = nextStep(all, record({ tripsCompleted: 20, tripsPromised: 10, tripsOnTime: 5 }));
+    assert.deepEqual(late?.missing, ['70% on-time delivery']);
+  });
+
+  test('and shows no rate at all rather than a flattering one', () => {
+    // Five deliveries is the bar for showing a figure, and five deliveries
+    // with no deadlines between them is not five pieces of evidence.
+    assert.equal(
+      onTimeRate(record({ tripsCompleted: 20, tripsPromised: 0, tripsOnTime: 0 })),
+      null,
+    );
+    assert.equal(
+      onTimeRate(record({ tripsCompleted: 20, tripsPromised: 4, tripsOnTime: 4 })),
+      null,
+    );
+    assert.equal(
+      onTimeRate(record({ tripsCompleted: 20, tripsPromised: 10, tripsOnTime: 9 })),
+      0.9,
+    );
   });
 });
 

@@ -204,6 +204,9 @@ describe('ranking bids for a shipper', () => {
     carrierId: over.id,
     amount: fromNaira(2_000_000),
     tripsCompleted: 40,
+    // Promised follows completed unless a case says otherwise: these bidders
+    // have a punctuality record, which is what the reliability term is for.
+    tripsPromised: over.tripsCompleted ?? 40,
     tripsOnTime: 38,
     at: KANO,
     placedAt: NOW,
@@ -234,7 +237,7 @@ describe('ranking bids for a shipper', () => {
     );
     assert.equal(ranked[0]?.bid.id, 'new');
     assert.equal(ranked[0]?.reliability, null);
-    assert.match(ranked[0]?.because ?? '', /no record yet/);
+    assert.match(ranked[0]?.because ?? '', /New to Backhaul/);
   });
 
   test('reliability needs a record before it is claimed', () => {
@@ -242,6 +245,50 @@ describe('ranking bids for a shipper', () => {
     const enough = rankBids([bid({ id: 'enough', tripsCompleted: MINIMUM_TRIPS_FOR_RELIABILITY, tripsOnTime: 5 })], KANO);
     assert.equal(thin[0]?.reliability, null);
     assert.equal(enough[0]?.reliability, 1);
+  });
+
+  test('and the record is the promised trips, not every delivery', () => {
+    /*
+      The defect this closes. The server sent `onTime = completed` for every
+      carrier, because the promised arrival lives with the commercial terms and
+      not every trip has them — so this term was 1.0 for everybody and stopped
+      being a term at all.
+
+      Forty deliveries with no deadline among them is no evidence about
+      punctuality. Null, and not a perfect score.
+    */
+    const untraded = rankBids(
+      [bid({ id: 'untraded', tripsCompleted: 40, tripsPromised: 0, tripsOnTime: 0 })],
+      KANO,
+    );
+    assert.equal(untraded[0]?.reliability, null);
+
+    // And null is not zero either. A carrier nobody has held to a deadline
+    // must not be scored the least reliable bidder on the board — they fall
+    // through to the neutral prior, which is what `null` is for.
+    const [best] = rankBids(
+      [
+        bid({ id: 'untraded', tripsCompleted: 40, tripsPromised: 0, tripsOnTime: 0 }),
+        bid({ id: 'late', tripsCompleted: 40, tripsPromised: 40, tripsOnTime: 4 }),
+      ],
+      KANO,
+    );
+    assert.equal(best?.bid.id, 'untraded');
+
+    // Ten promised and nine kept is a record, and it is read as one.
+    const traded = rankBids(
+      [bid({ id: 'traded', tripsCompleted: 40, tripsPromised: 10, tripsOnTime: 9 })],
+      KANO,
+    );
+    assert.equal(traded[0]?.reliability, 0.9);
+
+    // And the sentence tells a shipper which of the two it is. "New to
+    // Backhaul — 12 completed trips" is a sentence they can see is wrong.
+    assert.match(untraded[0]?.because ?? '', /none with an agreed delivery date/);
+    assert.doesNotMatch(untraded[0]?.because ?? '', /New to Backhaul/);
+
+    // The figure counts over what it was judged on, not over every delivery.
+    assert.match(traded[0]?.because ?? '', /90% on time across 10 trips/);
   });
 
   test('price is judged against the other bids, not an absolute scale', () => {

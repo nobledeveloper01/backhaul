@@ -24,6 +24,21 @@ export interface Documents {
 
 export interface Record_ {
   readonly tripsCompleted: number;
+  /**
+   * Of those, the ones that had a promised arrival to be judged against.
+   *
+   * The denominator of the punctuality figure, and not the same number as
+   * `tripsCompleted`. A trip that was tracked but never traded has no promise
+   * on it, and counting it either way is a lie: as on time it flatters a
+   * carrier who was never held to anything, and as late it punishes them for
+   * a deadline nobody set.
+   *
+   * The server had `onTime = completed` — every carrier, every trip, one
+   * hundred per cent — which sailed a carrier to Trusted on document count
+   * alone and made the reliability term in the bid ranking a constant.
+   */
+  readonly tripsPromised: number;
+  /** Of the promised ones, how many arrived by the promise. */
   readonly tripsOnTime: number;
   /** Reports upheld against them. One is a bad day; three is a pattern. */
   readonly incidents: number;
@@ -59,7 +74,16 @@ export const REQUIREMENTS = {
  * treats one bad trip as career-ending is one that carriers will lie to.
  */
 export function tierOf(documents: Documents, record: Record_): Tier {
-  const onTime = record.tripsCompleted === 0 ? 0 : record.tripsOnTime / record.tripsCompleted;
+  /*
+    One answer about punctuality, and it can be "not enough to say".
+
+    `onTimeRate` is the same function the screen shows a percentage from, and
+    it returns null below five promised trips — so a tier that names a
+    punctuality bar is not earned on one kept promise any more than a badge is
+    printed from one. A tier is a claim this platform makes to a shipper about
+    a stranger, and the ladder fails closed rather than making it on nothing.
+  */
+  const rate = onTimeRate(record);
 
   const ladder: readonly Tier[] = ['trusted', 'business', 'verified', 'unverified'];
 
@@ -69,7 +93,7 @@ export function tierOf(documents: Documents, record: Record_): Tier {
       return (
         need.docs.every((doc) => documents[doc]) &&
         record.tripsCompleted >= need.trips &&
-        onTime >= need.onTime
+        (need.onTime === 0 || (rate !== null && rate >= need.onTime))
       );
     }) ?? 'unverified';
 
@@ -92,7 +116,7 @@ export function nextStep(
   if (next === undefined) return null;
 
   const need = REQUIREMENTS[next];
-  const onTime = record.tripsCompleted === 0 ? 0 : record.tripsOnTime / record.tripsCompleted;
+  const rate = onTimeRate(record);
   const missing: string[] = [];
 
   const names: Record<keyof Documents, string> = {
@@ -109,7 +133,23 @@ export function nextStep(
     const short = need.trips - record.tripsCompleted;
     missing.push(`${short} more completed trip${short === 1 ? '' : 's'}`);
   }
-  if (onTime < need.onTime && record.tripsCompleted > 0) {
+  /*
+    Punctuality, and the two different things standing in its way.
+
+    A tier that names a punctuality bar cannot be earned without punctuality
+    evidence — otherwise a carrier nobody ever gave a deadline to walks into
+    Trusted, which is the defect this whole shape exists to close. But being
+    short of evidence is not the same as being late, and telling somebody they
+    need "90% on-time delivery" when they have never been given a delivery date
+    is an accusation and a dead end.
+
+    So: too little evidence names the evidence; enough evidence and a poor
+    record names the record.
+  */
+  if (need.onTime > 0 && rate === null) {
+    const short = MINIMUM_TRIPS_FOR_RATE - record.tripsPromised;
+    missing.push(`${short} more trip${short === 1 ? '' : 's'} with an agreed delivery date`);
+  } else if (rate !== null && rate < need.onTime) {
     missing.push(`${Math.round(need.onTime * 100)}% on-time delivery`);
   }
 
@@ -148,8 +188,12 @@ export function expiringSoon(
 export const MINIMUM_TRIPS_FOR_RATE = 5;
 
 export function onTimeRate(record: Record_): number | null {
-  if (record.tripsCompleted < MINIMUM_TRIPS_FOR_RATE) return null;
-  return record.tripsOnTime / record.tripsCompleted;
+  // Counted over trips that had a promise. Five *deliveries* with no deadline
+  // between them is not five pieces of evidence about punctuality, and the
+  // shape of this answer — a rate or nothing — is what stops a screen showing
+  // a percentage nobody earned.
+  if (record.tripsPromised < MINIMUM_TRIPS_FOR_RATE) return null;
+  return record.tripsOnTime / record.tripsPromised;
 }
 
 /** "Verified", "Business", "Trusted" — for a badge. */

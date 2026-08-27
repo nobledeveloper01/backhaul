@@ -92,6 +92,7 @@ export function VerificationScreen({ onBack }: Props) {
     ? DEMO_RECORD
     : {
         tripsCompleted: held.tripsCompleted,
+        tripsPromised: held.tripsPromised,
         tripsOnTime: held.tripsOnTime,
         incidents: held.incidents,
       };

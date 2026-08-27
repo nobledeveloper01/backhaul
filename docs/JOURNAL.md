@@ -95,6 +95,73 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**Every carrier was one hundred per cent on time.**
+
+```csharp
+// On time is not yet derivable from what is stored — it needs the
+// promised arrival, which lives with the terms and only for trips that
+// have them. Until every trip carries terms this counts a delivered
+// trip as on time, and the count is honest about being a count.
+var onTime = completed;
+```
+
+An honest comment on a dishonest number, which is the most persuasive kind.
+Nothing about it looks like a defect: it explains itself, it names its own
+limitation, and it sits in a repository nobody reads while the number it
+produces walks into two engines. A carrier reached Trusted on document count
+alone, and the reliability term in the bid ranking was 1.0 for every bidder —
+the same as having no term, in the ranking a shipper picks a carrier from.
+
+**The promised arrival did not exist, so I added it**, on the trip's terms,
+nullable and nullable on purpose: a trip that is tracked and not traded has no
+promise on it, and that is the wedge working as intended rather than a gap.
+
+The rule that came out of it is the one worth keeping: **a trip counts towards
+punctuality only if there was a promise and a proof.** Missing either it is
+unjudged — in neither half of the fraction. Which forced the denominator apart
+from `tripsCompleted`, and that split is the whole fix.
+
+**Two follow-on decisions, both of which I got wrong first.**
+
+*Judged on the seal.* The endpoint test failed and I assumed a clock problem.
+`SealedAt` is when the driver finished the paperwork; `At` is when the goods
+changed hands. A driver who arrives at five and seals at seven — the storekeeper
+had gone to find a pen — is on time, and scoring the seal counts the queue at
+the gate against them.
+
+*No evidence fails closed.* First version let a carrier with one kept promise
+show 100% and walk into Trusted. Same hole one level down. Now every
+punctuality judgement goes through `onTimeRate`, which returns null below five
+judged trips, and null fails any bar above zero. The trade is real and worth
+stating: a carrier nobody gives a delivery date to cannot climb. That is worse
+for them and better for the shipper reading the badge, and the fix is inside the
+product — a shipper posting a load says when they want it.
+
+But failing closed with nothing to do about it is a dead end, so `nextStep`
+distinguishes the two: too little evidence names the evidence, enough evidence
+and a poor record names the record. "90% on-time delivery" to somebody who has
+never been given a delivery date is an accusation.
+
+**The parity fixture caught the thing I forgot.** I added `tripsPromised` to
+the bid fixtures' source array and not to the emitter that writes them, so the
+JSON had the field on the trust cases and not on the bids. C# read zero for
+everybody, every bid came back with a neutral prior, and the ranking swapped
+two rows. That is exactly the failure mode the fixtures exist for and it took
+one run.
+
+**And two things fell out that I was not looking for.** `CarrierProfileEntity`
+had three columns for these counts and nothing had ever written them — a
+carrier's own verification screen read three zeroes while a shipper's bid list
+counted for real. Both read from one place now, and the columns are dropped.
+
+The other is `incidents`, which the domain documents as *upheld* reports. There
+is no upholding in this product and there is not going to be one; the dispute
+pack takes no side on purpose. Counting *raised* incidents instead would drop a
+carrier's tier every time a driver reported a breakdown or a robbery — the
+exact thing `tierOf`'s own comment says is wrong, and an incentive to stay quiet
+in a product whose evidence depends on drivers speaking up. So it is zero, with
+the reason written where the zero is.
+
 **The loop that is the product was never started.**
 
 `Tracker` — 200 lines, seven tests, the one rule the whole subsystem is

@@ -226,8 +226,18 @@ export interface Bid {
   readonly id: string;
   readonly carrierId: string;
   readonly amount: Kobo;
-  /** Completed trips, and how many of them arrived when promised. */
   readonly tripsCompleted: number;
+  /**
+   * Of those, the ones that had a promised arrival to be judged against.
+   *
+   * The denominator of the reliability term, and not `tripsCompleted`. A
+   * carrier whose trips were tracked but never traded has no punctuality
+   * record — which is a different thing from a bad one, and from a perfect
+   * one. The server used to send `onTime = completed`, which made this term
+   * the same number for every bidder and therefore no term at all.
+   */
+  readonly tripsPromised: number;
+  /** Of the promised ones, how many arrived by the promise. */
   readonly tripsOnTime: number;
   /** Where the truck is now. */
   readonly at: Position;
@@ -291,9 +301,12 @@ export function rankBids(bids: readonly Bid[], pickup: Position): readonly BidSc
       const premium = cheapest === 0 ? 0 : (bid.amount - cheapest) / cheapest;
       const price = clamp(1 - premium / PREMIUM_TOLERANCE);
 
+      // Null, not zero, when there is no record to read. `null` falls through
+      // to the neutral prior below; zero would score a carrier nobody has ever
+      // held to a deadline as the least reliable bidder on the board.
       const reliability =
-        bid.tripsCompleted >= MINIMUM_TRIPS_FOR_RELIABILITY
-          ? clamp(bid.tripsOnTime / bid.tripsCompleted)
+        bid.tripsPromised >= MINIMUM_TRIPS_FOR_RELIABILITY
+          ? clamp(bid.tripsOnTime / bid.tripsPromised)
           : null;
 
       const kmToPickup = distance(bid.at, pickup) / 1000;
@@ -310,12 +323,28 @@ export function rankBids(bids: readonly Bid[], pickup: Position): readonly BidSc
         score,
         reliability,
         kmToPickup: Math.round(kmToPickup),
+        /*
+          Two different reasons for having no punctuality figure, and only one
+          of them is "new".
+
+          A carrier with twelve deliveries and no agreed delivery date among
+          them read "New to Backhaul — 12 completed trips, no record yet",
+          which is a sentence a shipper can see is wrong. They are not new;
+          nobody has ever given them a deadline to keep. Saying so is also the
+          more useful thing, because it tells the shipper what to do about it.
+
+          And the denominator in the figure is the promised trips, not every
+          delivery — "95% on time across 40 trips" over a carrier who was
+          judged on ten of them is a bigger claim than the evidence supports.
+        */
         because:
           reliability === null
-            ? `New to Backhaul — ${bid.tripsCompleted} completed trip` +
-              `${bid.tripsCompleted === 1 ? '' : 's'}, no record yet.`
+            ? bid.tripsCompleted === 0
+              ? 'New to Backhaul — no completed trips yet.'
+              : `${bid.tripsCompleted} completed trip` +
+                `${bid.tripsCompleted === 1 ? '' : 's'}, none with an agreed delivery date.`
             : `${Math.round(reliability * 100)}% on time across ` +
-              `${bid.tripsCompleted} trips.`,
+              `${bid.tripsPromised} trip${bid.tripsPromised === 1 ? '' : 's'} with a delivery date.`,
       };
     })
     .sort((a, b) => b.score - a.score);

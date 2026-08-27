@@ -31,7 +31,26 @@ public sealed record Papers(bool Identity, bool Licence, bool Registration, bool
     };
 }
 
-public sealed record TrackRecord(int TripsCompleted, int TripsOnTime, int Incidents);
+/// <summary>What a carrier's history says about them.</summary>
+/// <param name="TripsCompleted">Deliveries, all of them.</param>
+/// <param name="TripsPromised">
+/// Of those, the ones that had a promised arrival to be judged against.
+/// <para>
+/// The denominator of the punctuality figure, and not the same number as
+/// <paramref name="TripsCompleted"/>. A trip that was tracked but never traded
+/// has no promise on it, and counting it either way is a lie: as on time it
+/// flatters a carrier who was never held to anything, and as late it punishes
+/// them for a deadline nobody set. This repository used to send
+/// <c>onTime = completed</c>, which put every carrier at a hundred per cent.
+/// </para>
+/// </param>
+/// <param name="TripsOnTime">Of the promised ones, how many arrived by the promise.</param>
+/// <param name="Incidents">Upheld reports. One is a bad day; three is a pattern.</param>
+public sealed record TrackRecord(
+    int TripsCompleted,
+    int TripsPromised,
+    int TripsOnTime,
+    int Incidents);
 
 /// <summary>
 /// Whether a stranger with a truck can be trusted with eight million naira of
@@ -76,9 +95,12 @@ public static class Trust
     /// </remarks>
     public static Tier TierOf(Papers papers, TrackRecord record)
     {
-        var onTime = record.TripsCompleted == 0
-            ? 0
-            : (double)record.TripsOnTime / record.TripsCompleted;
+        // One answer about punctuality, and it can be "not enough to say".
+        // `OnTimeRate` is the same function the screen shows a percentage
+        // from, and it is null below five promised trips — so a tier naming a
+        // punctuality bar is not earned on one kept promise any more than a
+        // badge is printed from one. The ladder fails closed.
+        var rate = OnTimeRate(record);
 
         var ladder = new[] { Tier.Trusted, Tier.Business, Tier.Verified, Tier.Unverified };
 
@@ -88,7 +110,7 @@ public static class Trust
                 var need = Requirements[tier];
                 return need.Docs.All(papers.Has)
                     && record.TripsCompleted >= need.Trips
-                    && onTime >= need.OnTime;
+                    && (need.OnTime == 0 || (rate is { } got && got >= need.OnTime));
             },
             Tier.Unverified);
 
@@ -100,10 +122,16 @@ public static class Trust
     }
 
     /// <summary>On-time as a fraction, or null below the threshold.</summary>
+    /// <remarks>
+    /// Counted over trips that had a promise. Five deliveries with no deadline
+    /// between them is not five pieces of evidence about punctuality, and the
+    /// shape of this answer — a rate or nothing — is what stops a screen
+    /// showing a percentage nobody earned.
+    /// </remarks>
     public static double? OnTimeRate(TrackRecord record) =>
-        record.TripsCompleted < MinimumTripsForRate
+        record.TripsPromised < MinimumTripsForRate
             ? null
-            : (double)record.TripsOnTime / record.TripsCompleted;
+            : (double)record.TripsOnTime / record.TripsPromised;
 
     public static string ToWire(Tier tier) => tier switch
     {

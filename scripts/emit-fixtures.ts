@@ -804,16 +804,23 @@ const dropFeeCases = [0, 1, 2, 3, 4].map((drops) => ({
  */
 const trustCases = (
   [
-    ['nothing at all', [false, false, false, false], [0, 0, 0]],
-    ['id and licence only', [true, true, false, false], [0, 0, 0]],
-    ['business, just', [true, true, true, false], [5, 4, 0]],
-    ['business, one trip short', [true, true, true, false], [4, 4, 0]],
-    ['business, on-time too low', [true, true, true, false], [5, 3, 0]],
-    ['trusted', [true, true, true, true], [20, 18, 0]],
-    ['trusted, one point short', [true, true, true, true], [20, 17, 0]],
-    ['trusted with one incident', [true, true, true, true], [20, 19, 1]],
-    ['trusted with two', [true, true, true, true], [20, 19, 2]],
-    ['floors rather than falling off', [true, true, true, true], [20, 19, 9]],
+    // completed, promised, on time, incidents
+    ['nothing at all', [false, false, false, false], [0, 0, 0, 0]],
+    ['id and licence only', [true, true, false, false], [0, 0, 0, 0]],
+    ['business, just', [true, true, true, false], [5, 5, 4, 0]],
+    ['business, one trip short', [true, true, true, false], [4, 4, 4, 0]],
+    ['business, on-time too low', [true, true, true, false], [5, 5, 3, 0]],
+    ['trusted', [true, true, true, true], [20, 20, 18, 0]],
+    ['trusted, one point short', [true, true, true, true], [20, 20, 17, 0]],
+    ['trusted with one incident', [true, true, true, true], [20, 20, 19, 1]],
+    ['trusted with two', [true, true, true, true], [20, 20, 19, 2]],
+    ['floors rather than falling off', [true, true, true, true], [20, 20, 19, 9]],
+    // The three that the promised/completed split exists for. A carrier whose
+    // trips were tracked and never traded has no punctuality record, which is
+    // neither a good one nor a bad one.
+    ['every paper, no deadline ever set', [true, true, true, true], [20, 0, 0, 0]],
+    ['one promise kept is not a record', [true, true, true, true], [20, 1, 1, 0]],
+    ['five promises kept is', [true, true, true, true], [20, 5, 5, 0]],
   ] as const
 ).map(([name, docs, record]) => {
   const documents: Documents = {
@@ -824,8 +831,9 @@ const trustCases = (
   };
   const held: Record_ = {
     tripsCompleted: record[0],
-    tripsOnTime: record[1],
-    incidents: record[2],
+    tripsPromised: record[1],
+    tripsOnTime: record[2],
+    incidents: record[3],
   };
 
   return {
@@ -1200,6 +1208,7 @@ const bids: readonly Bid[] = [
     carrierId: 'c1',
     amount: fromNaira(1_800_000),
     tripsCompleted: 0,
+    tripsPromised: 0,
     tripsOnTime: 0,
     at: LAGOS,
     placedAt: MATCH_NOW,
@@ -1209,6 +1218,7 @@ const bids: readonly Bid[] = [
     carrierId: 'c2',
     amount: fromNaira(1_980_000),
     tripsCompleted: 40,
+    tripsPromised: 40,
     tripsOnTime: 38,
     at: IBADAN,
     placedAt: MATCH_NOW,
@@ -1218,6 +1228,7 @@ const bids: readonly Bid[] = [
     carrierId: 'c3',
     amount: fromNaira(1_850_000),
     tripsCompleted: 1,
+    tripsPromised: 1,
     tripsOnTime: 1,
     at: LAGOS,
     placedAt: MATCH_NOW,
@@ -1227,8 +1238,21 @@ const bids: readonly Bid[] = [
     carrierId: 'c4',
     amount: fromNaira(1_820_000),
     tripsCompleted: 12,
+    tripsPromised: 12,
     tripsOnTime: 6,
     at: KANO,
+    placedAt: MATCH_NOW,
+  },
+  {
+    // Twelve deliveries and not one deadline. The reliability term has to come
+    // back null rather than 1.0, which is what the server used to make it.
+    id: 'tracked-never-traded',
+    carrierId: 'c5',
+    amount: fromNaira(1_900_000),
+    tripsCompleted: 12,
+    tripsPromised: 0,
+    tripsOnTime: 0,
+    at: IBADAN,
     placedAt: MATCH_NOW,
   },
 ];
@@ -2015,6 +2039,7 @@ const fixtures = {
       id: bid.id,
       amountKobo: bid.amount,
       tripsCompleted: bid.tripsCompleted,
+      tripsPromised: bid.tripsPromised,
       tripsOnTime: bid.tripsOnTime,
       atLat: bid.at.lat,
       atLon: bid.at.lon,

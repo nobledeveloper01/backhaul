@@ -173,7 +173,8 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
 
         var only = Assert.Single(bids!);
         Assert.Null(only.ReliabilityPct);
-        Assert.Contains("no record yet", only.Because, StringComparison.Ordinal);
+        Assert.Contains("New to Backhaul", only.Because, StringComparison.Ordinal);
+        // Unknown, not bad: the neutral prior still leaves them a real score.
         Assert.True(only.ScorePct > 0);
     }
 

@@ -30,6 +30,7 @@ public sealed record BidRecord(
     double AtLon,
     DateTimeOffset PlacedAt,
     int TripsCompleted,
+    int TripsPromised,
     int TripsOnTime);
 
 /// <summary>
@@ -238,14 +239,7 @@ public sealed class MarketRepository(BackhaulDbContext db)
     /// </remarks>
     private async Task<BidRecord> RecordAsync(BidEntity row, CancellationToken ct)
     {
-        var completed = await db.Trips
-            .CountAsync(t => t.CarrierId == row.CarrierId && t.State == "delivered", ct);
-
-        // On time is not yet derivable from what is stored — it needs the
-        // promised arrival, which lives with the terms and only for trips that
-        // have them. Until every trip carries terms this counts a delivered
-        // trip as on time, and the count is honest about being a count.
-        var onTime = completed;
+        var record = await CarrierRecord.ForAsync(db, row.CarrierId, ct);
 
         return new BidRecord(
             row.Id,
@@ -255,8 +249,9 @@ public sealed class MarketRepository(BackhaulDbContext db)
             row.AtLat,
             row.AtLon,
             row.PlacedAt,
-            completed,
-            onTime);
+            record.TripsCompleted,
+            record.TripsPromised,
+            record.TripsOnTime);
     }
 
     private static LoadRecord ToRecord(LoadEntity row) => new(
