@@ -10,16 +10,30 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CODE_LENGTH, RESEND_AFTER_MS, formatPhone, normalisePhone } from '@backhaul/domain';
 
+import { useLanguage } from '../state/language';
+
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { Text } from '../components/Text';
 import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 
+/**
+ * What came back.
+ *
+ * `null` worked. A string is **the server's own sentence**, written to be read
+ * by a driver and held to the parity fixtures — it is shown verbatim.
+ * `'unreachable'` is the case where there is no sentence, because there was no
+ * server: this screen writes that one itself, in the reader's language.
+ */
+export type Answer =
+  | null
+  | { readonly kind: 'refused'; readonly sentence: string }
+  | { readonly kind: 'unreachable' };
+
 interface Props {
-  /** Returns the server's refusal sentence, or null when it worked. */
-  readonly onRequestCode: (phone: string) => Promise<string | null>;
-  readonly onVerify: (phone: string, code: string) => Promise<string | null>;
+  readonly onRequestCode: (phone: string) => Promise<Answer>;
+  readonly onVerify: (phone: string, code: string) => Promise<Answer>;
 }
 
 type Step = 'phone' | 'code';
@@ -42,12 +56,13 @@ type Step = 'phone' | 'code';
 export function SignInScreen({ onRequestCode, onVerify }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   const [step, setStep] = useState<Step>('phone');
   const [typed, setTyped] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
-  const [refusal, setRefusal] = useState<string | null>(null);
+  const [refusal, setRefusal] = useState<Answer>(null);
   const [resendIn, setResendIn] = useState(0);
 
   const phone = useMemo(() => normalisePhone(typed), [typed]);
@@ -115,9 +130,9 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
 
         {step === 'phone' ? (
           <>
-            <Text variant="title">What is your phone number?</Text>
+            <Text variant="title">{t('your_phone_number')}</Text>
             <Text variant="body" tone="secondary">
-              We will send you a code. There is no password to remember.
+              {t('we_will_send_a_code')}
             </Text>
 
             <TextInput
@@ -157,26 +172,31 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
               </View>
             ) : typed.length > 3 ? (
               <Text variant="label" tone="stopped">
-                That does not look like a Nigerian mobile number.
+                {t('not_a_nigerian_number')}
               </Text>
             ) : null}
 
             <Press
               onPress={() => void ask()}
               disabled={phone === null || busy}
-              accessibilityLabel="Send me a code"
+              accessibilityLabel={t('send_me_a_code')}
               style={[styles.primary, { backgroundColor: colours.accent }]}
             >
               <Text variant="title" style={{ color: colours.onAccent }}>
-                {busy ? 'Sending…' : 'Send me a code'}
+                {busy ? t('sending') : t('send_me_a_code')}
               </Text>
             </Press>
           </>
         ) : (
           <>
-            <Text variant="title">Enter the code</Text>
+            <Text variant="title">{t('enter_the_code')}</Text>
+            {/*
+              The number is rendered *beside* the phrase rather than inside
+              it. Word order differs between these four languages, and a
+              template with a hole in it assumes it does not.
+            */}
             <Text variant="body" tone="secondary">
-              Sent to {phone === null ? typed : formatPhone(phone)} by SMS.
+              {phone === null ? typed : formatPhone(phone)} · {t('sent_by_sms')}
             </Text>
 
             <TextInput
@@ -210,18 +230,23 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
 
             <View style={styles.resendRow}>
               {resendIn > 0 ? (
+                // The count first, then the action it becomes, in the same
+                // shape as the phone number above. "Another code in 55s" needs
+                // a hole in the middle of a sentence, and word order differs
+                // across the four languages — so the number sits beside the
+                // phrase rather than inside it.
                 <Text variant="label" tone="secondary">
-                  Another code in {Math.ceil(resendIn / 1_000)}s
+                  {Math.ceil(resendIn / 1_000)}s · {t('send_another_code')}
                 </Text>
               ) : (
                 <Press
                   onPress={() => void ask()}
-                  accessibilityLabel="Send another code"
+                  accessibilityLabel={t('send_another_code')}
                   feedback="opacity"
                   style={styles.resend}
                 >
                   <Text variant="label" tone="accent">
-                    Send another code
+                    {t('send_another_code')}
                   </Text>
                 </Press>
               )}
@@ -232,12 +257,12 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
                   setCode('');
                   setRefusal(null);
                 }}
-                accessibilityLabel="Change the number"
+                accessibilityLabel={t('change_number')}
                 feedback="opacity"
                 style={styles.resend}
               >
                 <Text variant="label" tone="secondary">
-                  Change number
+                  {t('change_number')}
                 </Text>
               </Press>
             </View>
@@ -250,12 +275,18 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
           It knows things this screen cannot — how many tries are left, whether
           the code was already used — and `otp.ts` holds both sides to the same
           wording through the parity fixtures.
+
+          The one exception is the case where there is no sentence because
+          there was no server. That used to render `error.message`, which put
+          "Network request failed" in front of somebody reading Yorùbá: English,
+          written for whoever wrote the fetch call, and no use to the person
+          holding the phone. The kind is the fact; the words are this screen's.
         */}
         {refusal !== null ? (
           <View style={[styles.refusal, { backgroundColor: colours.exceptionWash }]}>
             <Icon name="alert" size="sm" colour={colours.exception} />
             <Text variant="body" tone="exception" style={styles.flex}>
-              {refusal}
+              {refusal.kind === 'unreachable' ? t('could_not_reach') : refusal.sentence}
             </Text>
           </View>
         ) : null}

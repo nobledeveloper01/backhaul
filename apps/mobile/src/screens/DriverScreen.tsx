@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   HOLD_MS,
   INTERVAL,
-  LANGUAGES,
   allowedFrom,
   decide,
   UPLOAD_EVERY_MS,
@@ -52,6 +51,7 @@ interface Props {
   readonly onReport: () => void;
   readonly onDeliver: () => void;
   readonly onLevies: () => void;
+  readonly onLanguage: () => void;
 }
 
 export function DriverScreen({
@@ -61,6 +61,7 @@ export function DriverScreen({
   onReport,
   onDeliver,
   onLevies,
+  onLanguage,
 }: Props) {
   const colours = useColours();
   const elevation = useElevation();
@@ -81,7 +82,7 @@ export function DriverScreen({
     doing it. A picker rather than the device locale, because a phone bought
     second-hand carries the last owner's.
   */
-  const { language, setLanguage } = useLanguage();
+  const { language, t } = useLanguage();
 
   /*
     In the product this queues a duress signal and switches the tracker to the
@@ -144,7 +145,7 @@ export function DriverScreen({
     >
       <View style={styles.route}>
         <Text variant="overline" tone="secondary">
-          YOUR TRIP
+          {t('your_trip').toUpperCase()}
         </Text>
         <Text variant="headline">
           {base.originName} → {base.destinationName}
@@ -243,7 +244,7 @@ export function DriverScreen({
       </Press>
 
       {tracking ? (
-        <Card overline="Battery" icon="battery">
+        <Card overline={t('battery')} icon="battery">
           {/*
             Two fixed sentences rather than one with the interval poured into
             it. The cadence ladder has four rungs and Hausa does not put the
@@ -290,31 +291,26 @@ export function DriverScreen({
         is about fifteen kobo — so this is not a warning, it is the answer to
         the fear, and it sits beside the battery line for the same reason.
       */}
-      <View style={styles.languageRow}>
-        {LANGUAGES.map((option) => (
-          <Pressable
-            key={option}
-            onPress={() => setLanguage(option)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: language === option }}
-            accessibilityLabel={describeLanguage(option)}
-            style={[
-              styles.language,
-              {
-                backgroundColor: language === option ? colours.accentWash : 'transparent',
-                borderColor: language === option ? colours.accent : colours.outline,
-              },
-            ]}
-          >
-            <Text
-              variant="label"
-              style={{ color: language === option ? colours.accent : colours.textSecondary }}
-            >
-              {describeLanguage(option)}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      {/*
+        One place to change this, not two.
+        
+        This was four chips inline — fine at two languages and a row that wraps
+        to three lines at four. It is now a link to the same screen the app
+        opens with, which also means somebody who picked wrongly at launch
+        finds it where they would look for it.
+      */}
+      <Press
+        onPress={onLanguage}
+        accessibilityLabel={describeLanguage(language)}
+        feedback="opacity"
+        style={[styles.link, { borderColor: colours.outline }]}
+      >
+        <Icon name="message" size="sm" colour={colours.textSecondary} />
+        <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
+          {describeLanguage(language)}
+        </Text>
+        <Icon name="chevron-right" size="sm" colour={colours.textSecondary} />
+      </Press>
 
       <View style={styles.dataRow}>
         <Icon name="signal" size="sm" colour={colours.textSecondary} />
@@ -457,13 +453,6 @@ const styles = StyleSheet.create({
   dataRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   centred: { textAlign: 'center' },
   plateRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
-  language: {
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-  },
-  languageRow: { flexDirection: 'row', gap: space.sm, alignSelf: 'flex-start' },
   pair: { flexDirection: 'row', gap: space.md },
   half: {
     flex: 1,

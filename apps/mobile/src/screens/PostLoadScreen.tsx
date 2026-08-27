@@ -16,6 +16,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly onBack: () => void;
@@ -44,6 +45,7 @@ const CORRIDORS: readonly { from: string; to: string; metres: number }[] = [
  */
 export function PostLoadScreen({ onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [corridorIndex, setCorridorIndex] = useState(2);
@@ -67,7 +69,7 @@ export function PostLoadScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Post a load" onBack={onBack} />
+      <ScreenHeader title={t('post_a_load')} onBack={onBack} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -114,7 +116,7 @@ export function PostLoadScreen({ onBack }: Props) {
           <TextInput
             value={cargo}
             onChangeText={setCargo}
-            accessibilityLabel="What the cargo is"
+            accessibilityLabel={t('what_the_cargo_is')}
             style={[
               styles.input,
               { borderColor: colours.outline, color: colours.textPrimary },
@@ -129,7 +131,7 @@ export function PostLoadScreen({ onBack }: Props) {
             value={weightText}
             onChangeText={setWeightText}
             keyboardType="decimal-pad"
-            accessibilityLabel="Weight in tonnes"
+            accessibilityLabel={t('weight_in_tonnes')}
             style={[
               styles.input,
               {
@@ -190,13 +192,13 @@ export function PostLoadScreen({ onBack }: Props) {
 
         <Press
           onPress={() => {}}
-          accessibilityLabel="Post this load"
+          accessibilityLabel={t('post_this_load')}
           accessibilityHint="Opens it to bids from verified carriers"
           disabled={estimate === null || cargo.trim() === ''}
           style={[styles.post, { backgroundColor: colours.accent }]}
         >
           <Text variant="title" style={{ color: colours.onAccent }}>
-            Post it for bids
+            {t('post_this_load')}
           </Text>
         </Press>
       </ScrollView>

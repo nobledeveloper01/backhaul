@@ -19,6 +19,7 @@ import { Text } from '../components/Text';
 import { agoLabel, humanDuration, plural } from '../components/PositionAge';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow } from '../state/demo';
 import { demoEarnings } from '../state/product';
 
@@ -48,6 +49,7 @@ interface PastTrip {
  */
 export function DriverHistoryScreen({ onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const trips = useMemo<PastTrip[]>(
@@ -104,7 +106,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Your trips" onBack={onBack} />
+      <ScreenHeader title={t('your_trips')} onBack={onBack} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -159,7 +161,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
 
           {waiting !== null ? (
             <Text variant="label" tone="secondary" style={styles.gap}>
-              The oldest unpaid trip has been waiting {humanDuration(waiting)}.
+              The oldest unpaid trip has been waiting {humanDuration(waiting, t)}.
               It is at the top of the list below, because that is the one to ask
               about.
             </Text>
@@ -184,7 +186,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
                 <View style={styles.flex}>
                   <Text variant="bodyDriver">{earning.corridor}</Text>
                   <Text variant="label" tone="secondary">
-                    delivered {agoLabel(now.getTime() - earning.deliveredAt.getTime())}
+                    delivered {agoLabel(now.getTime() - earning.deliveredAt.getTime(), t)}
                   </Text>
                 </View>
                 <Text variant="bodyDriver" tabular>

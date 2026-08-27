@@ -41,6 +41,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
+import { useLanguage } from '../state/language';
 import {
   demoDrops,
   demoEscrow,
@@ -78,6 +79,7 @@ export function TripDetailScreen({
 }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   const arrival = useMemo(
     () => eta({ track: trip.track.kept, destination: trip.destination, now, truckClass: trip.truck }),
@@ -150,18 +152,18 @@ export function TripDetailScreen({
           wedge depends on — was four hundred pixels below the thing it shares.
         */}
         <View style={styles.actions}>
-          <Action icon="link" label="Share" onPress={onShare} primary />
+          <Action icon="link" label={t('share')} onPress={onShare} primary />
           <Action
             icon="message"
-            label="Messages"
+            label={t('messages')}
             onPress={onMessages}
             badge={unread(messages, 'shipper').length}
           />
-          <Action icon="flag" label="Report" onPress={onReport} />
+          <Action icon="flag" label={t('report')} onPress={onReport} />
         </View>
 
         {/* The one card per screen that leads the eye. */}
-        <Card overline="Where it is" icon="route" emphasis="accent">
+        <Card overline={t('where_it_is')} icon="route" emphasis="accent">
           <Corridor
             origin={trip.origin}
             destination={trip.destination}
@@ -180,7 +182,7 @@ export function TripDetailScreen({
           <Card overline="Reported" icon="flag" emphasis="plain">
             <Text variant="title">{openIncident.note}</Text>
             <Text variant="body" tone="secondary" style={styles.note}>
-              Reported by the {openIncident.reportedBy} · {agoLabel(now.getTime() - openIncident.at.getTime())}
+              Reported by the {openIncident.reportedBy} · {agoLabel(now.getTime() - openIncident.at.getTime(), t)}
             </Text>
           </Card>
         ) : null}
@@ -191,7 +193,7 @@ export function TripDetailScreen({
           whether the truck has been getting *further away* for long enough.
         */}
         {course.kind === 'deviating' ? (
-          <Card overline="Off course" icon="alert" emphasis="plain">
+          <Card overline={t('off_course')} icon="alert" emphasis="plain">
             <Text variant="title" tone="stopped">
               {course.detail}
             </Text>
@@ -205,14 +207,14 @@ export function TripDetailScreen({
 
         <EtaRange eta={arrival} />
 
-        <Card overline="Along the way" icon="pin">
+        <Card overline={t('along_the_way')} icon="pin">
           {waypoints.map((waypoint) => {
             const visit = visited.find((v) => v.waypoint.id === waypoint.id);
             return <WaypointRow key={waypoint.id} name={waypoint.name} visit={visit} now={now} />;
           })}
           <Text variant="body" tone="secondary" style={styles.note}>
             {waiting > 0
-              ? `${humanDuration(waiting)} waiting at ${chargeablePlaces(visited)} so far — the part a demurrage claim is made of. Time at the weighbridge is not counted.`
+              ? `${humanDuration(waiting, t)} waiting at ${chargeablePlaces(visited)} so far — the part a demurrage claim is made of. Time at the weighbridge is not counted.`
               : ahead.length > 0
                 ? `${ahead.length} still ahead. Arrival is measured against each place's own radius, not one distance for the whole trip — a depot yard is 400 m and a weighbridge queue can be a kilometre.`
                 : 'Every point on the route was reached.'}
@@ -228,7 +230,7 @@ export function TripDetailScreen({
         >
           <Icon name="package" size="md" colour={colours.textSecondary} />
           <View style={styles.flex}>
-            <Text variant="title">Drops</Text>
+            <Text variant="title">{t('drops')}</Text>
             <Text variant="label" tone="secondary">
               {describeProgress(drops)}
             </Text>
@@ -236,7 +238,7 @@ export function TripDetailScreen({
           <Icon name="chevron-right" size="md" colour={colours.outline} />
         </Press>
 
-        <Card overline="Pace" icon="truck">
+        <Card overline={t('pace')} icon="truck">
           <Sparkline series={paceSeries(trip.track.kept)} />
           <Text variant="body" tone="secondary" style={styles.note}>
             Door to door, including every stop. Not the speedometer — a trailer
@@ -251,7 +253,7 @@ export function TripDetailScreen({
           from. A figure derived from 60% of the track is not wrong, but nobody
           should be shown it without knowing — the same rule the API applies.
         */}
-        <Card overline="Distance covered" icon="pin">
+        <Card overline={t('distance_covered')} icon="pin">
           <View style={styles.figure}>
             <Text variant="display" tabular>
               {Math.round(travelled / 1000)}
@@ -292,7 +294,7 @@ export function TripDetailScreen({
           </Card>
         ) : null}
 
-        <Card overline="Money released so far" icon="naira">
+        <Card overline={t('money_released')} icon="naira">
           <Text variant="display" tabular>
             {format(released(money))}
           </Text>
@@ -325,7 +327,7 @@ export function TripDetailScreen({
           </View>
         </Card>
 
-        <Card overline="What is owed" icon="naira">
+        <Card overline={t('what_is_owed')} icon="naira">
           <Line label="Agreed fare" amount={settlement.agreed} />
           <Line label="Demurrage" amount={settlement.demurrage} />
           <Line label="Backhaul commission" amount={settlement.commission} deduction />
@@ -357,7 +359,7 @@ export function TripDetailScreen({
               <View style={styles.eventBody}>
                 <Text variant="body">{event.state.replace(/_/g, ' ')}</Text>
                 <Text variant="label" tone="secondary">
-                  {agoLabel(now.getTime() - event.at.getTime())} · {event.actor}
+                  {agoLabel(now.getTime() - event.at.getTime(), t)} · {event.actor}
                 </Text>
               </View>
             </View>
@@ -374,7 +376,7 @@ export function TripDetailScreen({
         >
           <Icon name="list" size="md" colour={colours.textSecondary} />
           <Text variant="title" style={styles.flex}>
-            What the record shows
+            {t('what_the_record_shows')}
           </Text>
           <Icon name="chevron-right" size="md" colour={colours.outline} />
         </Press>
@@ -387,7 +389,7 @@ export function TripDetailScreen({
           style={[styles.cancel, { borderColor: colours.outline }]}
         >
           <Text variant="label" tone="secondary">
-            Call this trip off
+            {t('call_this_trip_off')}
           </Text>
         </Press>
 
@@ -399,7 +401,7 @@ export function TripDetailScreen({
         >
           <Icon name="document" size="md" colour={colours.textSecondary} />
           <Text variant="title" style={styles.flex}>
-            Delivery document
+            {t('delivery_document')}
           </Text>
           <Icon name="chevron-right" size="md" colour={colours.outline} />
         </Press>
@@ -529,6 +531,7 @@ function WaypointRow({
   now: Date;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const reached = visit !== undefined;
   const stillThere = visit?.left === null;
 
@@ -556,10 +559,10 @@ function WaypointRow({
             the depot as "0.3 hours". Nobody has ever said that out loud.
           */}
           {visit === undefined
-            ? 'Ahead'
+            ? t('ahead')
             : stillThere
-              ? `There now · ${humanDuration(visit.durationMs)} so far`
-              : `Arrived ${agoLabel(now.getTime() - visit.arrived.getTime())} · stayed ${humanDuration(visit.durationMs)}`}
+              ? `${t('there_now')} · ${humanDuration(visit.durationMs, t)} ${t('so_far')}`
+              : `${agoLabel(now.getTime() - visit.arrived.getTime(), t)} · ${t('stayed')} ${humanDuration(visit.durationMs, t)}`}
         </Text>
       </View>
     </View>

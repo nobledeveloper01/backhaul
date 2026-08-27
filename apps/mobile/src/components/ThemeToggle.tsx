@@ -4,13 +4,15 @@ import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours, useTheme, type ThemePreference } from '../design/theme';
+import { useLanguage } from '../state/language';
+import type { Phrase } from '@backhaul/domain';
 
 const ORDER: readonly ThemePreference[] = ['light', 'dark', 'system'];
 
-const LABEL: Record<ThemePreference, string> = {
-  light: 'Light',
-  dark: 'Dark',
-  system: 'Auto',
+const LABEL: Record<ThemePreference, Phrase> = {
+  light: 'appearance_light',
+  dark: 'appearance_dark',
+  system: 'appearance_auto',
 };
 
 const GLYPH: Record<ThemePreference, IconName> = {
@@ -32,6 +34,7 @@ const GLYPH: Record<ThemePreference, IconName> = {
  */
 export function ThemeToggle() {
   const colours = useColours();
+  const { t } = useLanguage();
   const { preference, setPreference } = useTheme();
 
   const next = ORDER[(ORDER.indexOf(preference) + 1) % ORDER.length] ?? 'light';
@@ -40,8 +43,8 @@ export function ThemeToggle() {
     <Pressable
       onPress={() => setPreference(next)}
       accessibilityRole="button"
-      accessibilityLabel={`Appearance: ${LABEL[preference]}`}
-      accessibilityHint={`Switches to ${LABEL[next]}`}
+      accessibilityLabel={t(LABEL[preference])}
+      accessibilityHint={t(LABEL[next])}
       hitSlop={space.sm}
       style={({ pressed }) => [
         styles.button,
@@ -55,7 +58,7 @@ export function ThemeToggle() {
       <View style={styles.row}>
         <Icon name={GLYPH[preference]} size="sm" colour={colours.textSecondary} />
         <Text variant="label" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
-          {LABEL[preference]}
+          {t(LABEL[preference])}
         </Text>
       </View>
     </Pressable>

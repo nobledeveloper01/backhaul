@@ -12,6 +12,7 @@ import {
   type Observation,
   type TripFilter,
   type TripState,
+  type Phrase,
   type TripSummary,
 } from '@backhaul/domain';
 
@@ -27,6 +28,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips, type DemoTrip } from '../state/demo';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly onOpen: (trip: DemoTrip) => void;
@@ -66,17 +68,17 @@ function summarise(trip: DemoTrip, now: Date): TripSummary {
  * on a phone, and the four here are the four a fleet owner actually sorts by.
  */
 const STATE_FILTERS: readonly {
-  readonly label: string;
+  readonly label: Phrase;
   readonly icon: IconName;
   readonly states: readonly TripState[];
 }[] = [
   // A different icon each, or none. The first version gave all four the same
   // route glyph, which rendered as a row of identical marks carrying no
   // information and taking the space a longer label needed.
-  { label: 'On the road', icon: 'truck', states: ['in_transit', 'signal_lost', 'stalled'] },
-  { label: 'Loading', icon: 'package', states: ['loading'] },
-  { label: 'Arrived', icon: 'pin', states: ['arrived'] },
-  { label: 'Delivered', icon: 'check', states: ['delivered'] },
+  { label: 'on_the_road', icon: 'truck', states: ['in_transit', 'signal_lost', 'stalled'] },
+  { label: 'loading_state', icon: 'package', states: ['loading'] },
+  { label: 'arrived_state', icon: 'pin', states: ['arrived'] },
+  { label: 'delivered_state', icon: 'check', states: ['delivered'] },
 ];
 
 /** The shipper's list. Every row answers "where is it and is it moving?". */
@@ -85,6 +87,7 @@ export function TripsScreen({ onOpen }: Props) {
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
   const trips = useMemo(() => demoTrips(now), [now]);
+  const { t } = useLanguage();
 
   const [filter, setFilter] = useState<TripFilter>(NO_TRIP_FILTER);
 
@@ -125,7 +128,7 @@ export function TripsScreen({ onOpen }: Props) {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <Text variant="headline" style={styles.flex}>
-                On the road
+                {t('on_the_road')}
               </Text>
               <ThemeToggle />
             </View>
@@ -140,7 +143,7 @@ export function TripsScreen({ onOpen }: Props) {
               onChange={(text) => setFilter((was) => ({ ...was, text }))}
               // Three words, not four: at the largest text size the longer
               // version ran off the right edge of the field.
-              placeholder="Plate, town, cargo"
+              placeholder={t('search_trips')}
               accessibilityLabel="Search trips"
             />
 
@@ -158,21 +161,21 @@ export function TripsScreen({ onOpen }: Props) {
               {STATE_FILTERS.map((option) => (
                 <Chip
                   key={option.label}
-                  label={option.label}
+                  label={t(option.label)}
                   icon={option.icon}
                   selected={option.states.every((state) => filter.states.includes(state))}
                   onPress={() => toggleStates(option.states)}
                 />
               ))}
               <Chip
-                label="Needs a look"
+                label={t('needs_a_look')}
                 icon="alert"
                 selected={filter.onlyLate}
                 onPress={() => setFilter((was) => ({ ...was, onlyLate: !was.onlyLate }))}
               />
               {filtering ? (
                 <Chip
-                  label="Clear"
+                  label={t('clear')}
                   icon="close"
                   selected={false}
                   onPress={() => setFilter(NO_TRIP_FILTER)}
@@ -210,9 +213,16 @@ export function TripsScreen({ onOpen }: Props) {
                 tone={attention === 0 ? 'moving' : 'stopped'}
                 style={styles.flex}
               >
+                {/*
+                  The count first, then the phrase — "1 of 3 need a look" puts
+                  two numbers inside a sentence, and this app is read in four
+                  languages that do not agree on where the middle of a sentence
+                  is. A fraction and a phrase say the same thing and survive
+                  translation.
+                */}
                 {attention === 0
-                  ? `All ${trips.length} moving as expected`
-                  : `${attention} of ${trips.length} need a look`}
+                  ? `${trips.length} · ${t('all_moving')}`
+                  : `${attention}/${trips.length} · ${t('need_a_look')}`}
               </Text>
             </View>
           </View>
@@ -228,7 +238,7 @@ export function TripsScreen({ onOpen }: Props) {
           ) : (
             <Empty
               icon="truck"
-              title="No trips yet"
+              title={t('no_trips_yet')}
               detail="Already got a truck on the road? Track it in a minute, even if you arranged it somewhere else."
             />
           )

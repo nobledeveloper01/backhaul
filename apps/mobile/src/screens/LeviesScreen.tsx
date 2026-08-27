@@ -90,14 +90,14 @@ export function LeviesScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="This trip" icon="naira">
+        <Card emphasis="accent" overline={t('this_trip')} icon="naira">
           <Text variant="display" tabular>
             {format(spent)}
           </Text>
 
           <View style={[styles.balance, { borderTopColor: colours.accent }]}>
             <Text variant="bodyDriver" tone="secondary" style={styles.flex}>
-              {owedToDriver ? 'You are owed' : 'Left of your advance'}
+              {owedToDriver ? t('you_are_owed') : t('left_of_advance')}
             </Text>
             <Text
               variant="title"
@@ -117,7 +117,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
         </Card>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          ADD WHAT YOU JUST PAID
+          {t('add_what_you_paid').toUpperCase()}
         </Text>
 
         <View style={styles.grid}>
@@ -151,7 +151,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
         </Text>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          WHERE IT WENT
+          {t('where_it_went').toUpperCase()}
         </Text>
 
         <Card emphasis="plain">
@@ -171,7 +171,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
         </Card>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          EVERY STOP
+          {t('every_stop').toUpperCase()}
         </Text>
 
         {[...levies]
@@ -181,7 +181,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
               <View style={styles.flex}>
                 <Text variant="body">{describeLevy(levy.kind)}</Text>
                 <Text variant="label" tone="secondary">
-                  {agoLabel(now.getTime() - levy.at.getTime())}
+                  {agoLabel(now.getTime() - levy.at.getTime(), t)}
                   {levy.note.length > 0 ? ` · ${levy.note}` : ''}
                   {needsNote(levy.amount) && levy.note.length === 0 ? ' · needs a note' : ''}
                 </Text>

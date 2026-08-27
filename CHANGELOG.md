@@ -9,6 +9,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Four languages, chosen before anything else.** Hausa, Yorùbá, Igbo and
+  English. The question is the first screen in the app — before the phone
+  number, because a sign-in screen in the wrong language is the first thing a
+  person cannot get past — and every option is written in its own language,
+  with the question itself asked in that language on the row. The choice is
+  saved on the phone and can be changed from the driver screen.
+
+  Nothing is a template. A phrase never contains a number or a name, because
+  the middle of a sentence is in a different place in each of these four
+  languages: counts, times and plates are rendered *beside* the words. The
+  duration helper takes the reader's words as an argument rather than reaching
+  for them, so a screen that renders an age without having asked what language
+  it is in no longer compiles — that was how "45 min ago" ended up underneath
+  four lines of Yorùbá.
+
+  There is no fallback chain. A missing phrase is a build error, never quietly
+  English.
+
 - **Shareable tracking links.** A trip can be followed by somebody with no
   account, through a link that expires after fourteen days and can be turned
   off at any time. A link shows where the truck is and when it should arrive —

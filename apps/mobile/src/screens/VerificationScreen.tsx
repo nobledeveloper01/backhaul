@@ -20,6 +20,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow } from '../state/demo';
 import { DEMO_DOCUMENTS, DEMO_RECORD, demoExpiries } from '../state/product';
 
@@ -50,6 +51,7 @@ export function VerificationScreen({ onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
+  const { t } = useLanguage();
 
   const [documents, setDocuments] = useState<Documents>(DEMO_DOCUMENTS);
 
@@ -60,7 +62,7 @@ export function VerificationScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Verification" onBack={onBack} />
+      <ScreenHeader title={t('verification')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}

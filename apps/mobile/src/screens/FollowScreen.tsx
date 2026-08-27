@@ -24,6 +24,7 @@ import { StatusChip } from '../components/StatusChip';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoShareLinks } from '../state/product';
 
@@ -46,6 +47,7 @@ interface Props {
  */
 export function FollowScreen({ trip, onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -78,7 +80,7 @@ export function FollowScreen({ trip, onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Following a delivery" onBack={onBack} />
+      <ScreenHeader title={t('following_a_delivery')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}

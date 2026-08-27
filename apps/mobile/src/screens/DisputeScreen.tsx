@@ -10,6 +10,7 @@ import { Text } from '../components/Text';
 import { humanDuration } from '../components/PositionAge';
 import { mono, radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDispute } from '../state/product';
 
@@ -38,6 +39,7 @@ const day = (at: Date) =>
  */
 export function DisputeScreen({ trip, onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -45,7 +47,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="What the record shows" onBack={onBack} />
+      <ScreenHeader title={t('what_the_record_shows')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -80,7 +82,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            {humanDuration(pack.coveredMs)} of the trip is covered by tracking.
+            {humanDuration(pack.coveredMs, t)} of the trip is covered by tracking.
           </Text>
 
           {isThin(pack) ? (
@@ -96,7 +98,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
             {pack.gaps.map((gap) => (
               <View key={gap.from.toISOString()} style={styles.line}>
                 <Text variant="body" style={styles.flex}>
-                  {humanDuration(gap.ms)} between {clock(gap.from)} and {clock(gap.to)}
+                  {humanDuration(gap.ms, t)} between {clock(gap.from)} and {clock(gap.to)}
                 </Text>
               </View>
             ))}
@@ -146,9 +148,10 @@ export function DisputeScreen({ trip, onBack }: Props) {
                     <Text variant="label" tone="secondary">
                       {weightLabel(item.weight)}
                       {item.weight === 'late_attested' && item.receivedAt !== null
-                        ? ` · arrived ${humanDuration(
+                        ? ` · ${humanDuration(
                             item.receivedAt.getTime() - item.at.getTime(),
-                          )} later`
+                            t,
+                          )} ${t('later')}`
                         : ''}
                     </Text>
                   </View>

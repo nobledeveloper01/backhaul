@@ -18,6 +18,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoCarrierReviews } from '../state/product';
 
@@ -41,6 +42,7 @@ interface Props {
  */
 export function ReviewScreen({ trip, onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -71,21 +73,21 @@ export function ReviewScreen({ trip, onBack }: Props) {
             <Text variant="title">{askCarrier(claim)}</Text>
             <View style={styles.answers}>
               <Answer
-                label="Yes"
+                label={t('yes')}
                 icon="check"
                 chosen={answers[claim] === true}
                 tone={colours.moving}
                 onPress={() => setAnswers((was) => ({ ...was, [claim]: true }))}
               />
               <Answer
-                label="No"
+                label={t('no')}
                 icon="close"
                 chosen={answers[claim] === false}
                 tone={colours.exception}
                 onPress={() => setAnswers((was) => ({ ...was, [claim]: false }))}
               />
               <Answer
-                label="Didn't come up"
+                label={t('didnt_come_up')}
                 icon="clock"
                 chosen={false}
                 tone={colours.textSecondary}

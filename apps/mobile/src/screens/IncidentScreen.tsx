@@ -124,7 +124,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
       // keyboard, on the one screen where the thing being typed is the point.
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScreenHeader title="What happened?" onBack={onBack} />
+      <ScreenHeader title={t('what_happened')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -242,11 +242,11 @@ export function IncidentScreen({ trip, onBack }: Props) {
             <Press
               onPress={() => setFiled(true)}
               disabled={short}
-              accessibilityLabel="Send the report"
+              accessibilityLabel={t('send_the_report')}
               style={[styles.send, { backgroundColor: colours.accent }]}
             >
               <Text variant="title" style={{ color: colours.onAccent }}>
-                Send the report
+                {t('send_the_report')}
               </Text>
             </Press>
           </>

@@ -200,3 +200,25 @@ describe('a response with no body', () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe('an unreachable server', () => {
+  /*
+    This is the failure that has no sentence.
+
+    Everywhere else the server's own wording is shown verbatim, because it
+    knows things the screen does not and `otp.ts` holds both sides to the same
+    words. When the request never arrives there is no server and no wording,
+    and the client used to fill the hole with `error.message` — which put
+    "Network request failed" in front of somebody reading Yorùbá.
+
+    The kind is what the screen needs. The detail is for a log.
+  */
+  test('is reported as a kind, not as a sentence to show anybody', async () => {
+    const api = new BackhaulApi('http://127.0.0.1:9', null);
+    const result = await api.requestCode('+2348031234567');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.kind).toBe('unreachable');
+  });
+});

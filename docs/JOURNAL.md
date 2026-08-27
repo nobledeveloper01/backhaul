@@ -6,6 +6,63 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (evening) — Four languages, and the helper that could not be told
+
+**Did.** Hausa, Yorùbá, Igbo and English across the whole app, asked at the
+first screen and saved on the phone. `packages/domain/src/language.ts` holds
+four full tables grouped by screen; fifteen tests hold them to the same keys,
+to no empty strings, to nothing that is an untranslated copy of the English,
+and to keeping the letters that are letters — `ɓɗƙ` in Hausa, `ẹọṣ` in Yorùbá,
+`ịọụ` in Igbo. A `LanguageScreen` renders before sign-in and again from the
+driver screen, so the one place to change it is the place somebody would look.
+
+Also: the dev server now binds `:5111`, which is where `round-trip` and the
+mobile client's `DEFAULT_BASE_URL` have always said it would be. It was
+listening on 5063 from `launchSettings.json`, so following the instruction in
+the `round-trip` target produced a connection refused and no hint as to why.
+
+### What surprised us
+
+**Three defects that only a rendered screen could show.** The suite was green
+throughout, as it has been for every one of these.
+
+*The sign-in screen printed a JavaScript error at a driver.* With no server
+reachable, the refusal panel rendered `error.message` — "Network request
+failed" — in English, under four lines of Yorùbá. Everywhere else the server's
+own sentence is shown verbatim and that is right, because it knows things the
+screen does not and the parity fixtures hold both sides to the same words. But
+when the request never arrives there is no server and no sentence, and the
+client was filling the hole with a string written for whoever wrote the fetch
+call. The kind is now the fact and the screen writes the words.
+
+*The language screen wrote English to somebody who had not chosen it yet.* The
+footer said "You can change this later" under four rows that had each just gone
+to the trouble of asking in their own language — because at first launch there
+is no answer to "which language", and the fallback was English. It is now shown
+only when reached from settings, where the language is known. Every row already
+carries its own question, which is the whole job of that screen.
+
+*"45 min ago" survived under a fully translated card.* `humanDuration` was a
+plain function, and a plain function cannot see a React context, so nothing
+stopped a screen from rendering an age it had never asked the language of. It
+now takes the reader's words as an argument. The compiler found twenty-five
+call sites across eight files in one pass, which is the entire argument for
+making it impossible rather than remembering.
+
+**Word order is the constraint, not vocabulary.** "Another code in 55s", "1 of
+3 need a look", "No signal for 45 min" and "Arrived 20 min ago · stayed 3 h"
+all put a number in the middle of a sentence, and the middle is somewhere
+different in each of these four languages. Writing the count first and the
+phrase after it — `45 ìṣẹ́jú sẹ́yìn`, `1/3 · nílò àyẹ̀wò` — gives each language
+a sentence that is its own rather than English with the words swapped. The
+phrase tables are tested to contain no `{}`, no `%s` and no `${` for that
+reason: a hole in a phrase is an assumption about grammar that only holds in
+the language it was written in.
+
+**Every unit is abbreviated now, English included.** "1 h" rather than "1 hour".
+That drops English's plural, which is a small loss, and drops the question of
+how to pluralise in three languages that do not do it by suffix, which is not.
+
 ## 2026-08-28 (later) — The capture loop, and a way in
 
 **Did.** The two things the roadmap said were missing and that nothing else

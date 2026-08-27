@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly title: string;
@@ -23,6 +24,9 @@ interface Props {
 export function ScreenHeader({ title, onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
+  // Every back button in the app comes through here, which makes it the
+  // cheapest place in the product to translate and the most-read.
+  const { t } = useLanguage();
 
   return (
     <View
@@ -40,12 +44,12 @@ export function ScreenHeader({ title, onBack }: Props) {
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('back')}
             hitSlop={space.md}
             style={styles.back}
           >
             <Text variant="body" tone="accent">
-              ‹ Back
+              ‹ {t('back')}
             </Text>
           </Pressable>
         ) : null}

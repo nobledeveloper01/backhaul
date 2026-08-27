@@ -19,6 +19,7 @@ import { Press } from '../components/Press';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoAlerts, demoLegs, type Alert, type AlertKind } from '../state/fleet';
 import { demoVehicles } from '../state/product';
 import { agoLabel } from '../components/PositionAge';
@@ -47,6 +48,7 @@ export function FleetScreen({
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
+  const { t } = useLanguage();
 
   const legs = useMemo(demoLegs, []);
   const used = useMemo(() => utilisation(legs), [legs]);
@@ -122,7 +124,7 @@ export function FleetScreen({
       */}
       <Press
         onPress={onOpenVerification}
-        accessibilityLabel="Verification and papers"
+        accessibilityLabel={t('verification')}
         accessibilityHint="What this carrier has proved, and what is left"
         feedback="opacity"
         style={[
@@ -132,7 +134,7 @@ export function FleetScreen({
       >
         <Icon name="shield" size="md" colour={colours.textSecondary} />
         <View style={styles.verifyBody}>
-          <Text variant="title">Verification</Text>
+          <Text variant="title">{t('verification')}</Text>
           <Text variant="label" tone="secondary">
             One document short of Trusted · a licence expires in 18 days
           </Text>
@@ -142,7 +144,7 @@ export function FleetScreen({
 
       <Press
         onPress={onOpenVehicles}
-        accessibilityLabel="Trucks and papers"
+        accessibilityLabel={t('trucks_and_papers')}
         accessibilityHint="Licence, roadworthiness, insurance and permit, per truck"
         feedback="opacity"
         style={[
@@ -152,7 +154,7 @@ export function FleetScreen({
       >
         <Icon name="truck" size="md" colour={colours.textSecondary} />
         <View style={styles.verifyBody}>
-          <Text variant="title">Trucks and papers</Text>
+          <Text variant="title">{t('trucks_and_papers')}</Text>
           {/*
             Counted, not written. The hard-coded version said "one truck"
             while the screen it opened said two — a summary that disagrees
@@ -169,7 +171,7 @@ export function FleetScreen({
 
       <Press
         onPress={onOpenAlerts}
-        accessibilityLabel="What reaches your phone"
+        accessibilityLabel={t('what_reaches_your_phone')}
         accessibilityHint="Who is told what, and what is allowed to wake you"
         feedback="opacity"
         style={[
@@ -179,7 +181,7 @@ export function FleetScreen({
       >
         <Icon name="signal" size="md" colour={colours.textSecondary} />
         <View style={styles.verifyBody}>
-          <Text variant="title">What reaches your phone</Text>
+          <Text variant="title">{t('what_reaches_your_phone')}</Text>
           <Text variant="label" tone="secondary">
             One thing wakes you at 3am. Everything else waits until six.
           </Text>
@@ -260,6 +262,7 @@ function Figure({
 
 function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   // Silence is grey. A coverage gap is a fact about Nigerian network
   // infrastructure, not the driver's fault, and colouring it as an alarm
@@ -282,7 +285,7 @@ function AlertRow({ alert, now }: { alert: Alert; now: Date }) {
           {alert.detail}
         </Text>
         <Text variant="label" tone="secondary" style={styles.gap}>
-          {agoLabel(now.getTime() - alert.at.getTime())}
+          {agoLabel(now.getTime() - alert.at.getTime(), t)}
         </Text>
       </View>
     </View>

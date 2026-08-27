@@ -24,6 +24,7 @@ import { Text } from '../components/Text';
 import { agoLabel, humanDuration } from '../components/PositionAge';
 import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoMessages } from '../state/product';
 
@@ -51,6 +52,7 @@ export function MessagesScreen({ trip, onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
+  const { t } = useLanguage();
 
   const [messages, setMessages] = useState<readonly Message[]>(() => demoMessages(trip, now));
   const [draft, setDraft] = useState('');
@@ -84,8 +86,7 @@ export function MessagesScreen({ trip, onBack }: Props) {
 
       <ScrollView contentContainerStyle={styles.thread}>
         <Text variant="label" tone="secondary" style={styles.lede}>
-          Everyone on this trip sees these. They stay with the trip after it is
-          delivered.
+          {t('everyone_sees_these')}
         </Text>
 
         {ordered.map((message) => (
@@ -113,9 +114,9 @@ export function MessagesScreen({ trip, onBack }: Props) {
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Message the driver and carrier"
+            placeholder={t('write_a_message')}
             placeholderTextColor={colours.textSecondary}
-            accessibilityLabel="Write a message"
+            accessibilityLabel={t('write_a_message')}
             multiline
             style={[
               styles.input,
@@ -131,7 +132,7 @@ export function MessagesScreen({ trip, onBack }: Props) {
           <Press
             onPress={send}
             disabled={!attempt.ok}
-            accessibilityLabel="Send"
+            accessibilityLabel={t('send')}
             style={[styles.send, { backgroundColor: colours.accent }]}
           >
             <Icon name="chevron-right" size="md" colour={colours.onAccent} />
@@ -144,6 +145,7 @@ export function MessagesScreen({ trip, onBack }: Props) {
 
 function Bubble({ message, now }: { message: Message; now: Date }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const mine = message.from === ME;
   const held = delayed(message);
   const pending = message.receivedAt === null;
@@ -169,7 +171,7 @@ function Bubble({ message, now }: { message: Message; now: Date }) {
 
         <View style={styles.bubbleFooter}>
           <Text variant="label" tone="secondary">
-            {agoLabel(now.getTime() - message.at.getTime())}
+            {agoLabel(now.getTime() - message.at.getTime(), t)}
           </Text>
 
           {/*
@@ -181,7 +183,7 @@ function Bubble({ message, now }: { message: Message; now: Date }) {
             <View style={styles.pending}>
               <Icon name="clock" size="sm" colour={colours.stale} />
               <Text variant="label" tone="stale">
-                Waiting for signal
+                {t('waiting_for_signal')}
               </Text>
             </View>
           ) : null}
@@ -194,7 +196,7 @@ function Bubble({ message, now }: { message: Message; now: Date }) {
         */}
         {held !== null ? (
           <Text variant="label" tone="secondary" style={styles.held}>
-            Written in a dead zone · arrived {humanDuration(held)} later
+            Written in a dead zone · arrived {humanDuration(held, t)} later
           </Text>
         ) : null}
       </View>

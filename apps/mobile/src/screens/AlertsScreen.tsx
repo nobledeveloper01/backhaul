@@ -19,6 +19,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly onBack: () => void;
@@ -42,6 +43,7 @@ const HOURS = [3, 9, 14, 23];
  */
 export function AlertsScreen({ onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [hour, setHour] = useState(14);
@@ -64,7 +66,7 @@ export function AlertsScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="What reaches your phone" onBack={onBack} />
+      <ScreenHeader title={t('what_reaches_your_phone')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}

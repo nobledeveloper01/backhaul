@@ -19,6 +19,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDelivery, demoWaypoints } from '../state/product';
 
@@ -49,6 +50,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
+  const { t } = useLanguage();
 
   const captured = useMemo(() => demoDelivery(trip, now), [trip, now]);
   const destination = useMemo(
@@ -76,7 +78,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Proof of delivery" onBack={onBack} />
+      <ScreenHeader title={t('proof_of_delivery')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -93,7 +95,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
               colour={sealed.ok ? colours.moving : colours.accent}
             />
             <Text variant="title" style={styles.flex}>
-              {sealed.ok ? 'Signed for' : sealed.detail}
+              {sealed.ok ? t('signed_for') : sealed.detail}
             </Text>
           </View>
 
@@ -105,7 +107,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                   photoIds: [...was.photoIds, `p${was.photoIds.length + 1}`],
                 }))
               }
-              accessibilityLabel="Take a photograph"
+              accessibilityLabel={t('take_photo')}
               style={[styles.tile, { borderColor: colours.outline }]}
             >
               <Icon name="camera" size="lg" colour={colours.textSecondary} />
@@ -118,7 +120,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
               onPress={() =>
                 setDelivery((was) => ({ ...was, signature: captured.signature }))
               }
-              accessibilityLabel="Capture a signature"
+              accessibilityLabel={t('ask_for_signature')}
               style={[styles.tile, { borderColor: colours.outline }]}
             >
               <Icon
@@ -175,7 +177,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
         ) : null}
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          THE DELIVERY NOTE
+          {t('the_delivery_note').toUpperCase()}
         </Text>
 
         <Card emphasis="plain">

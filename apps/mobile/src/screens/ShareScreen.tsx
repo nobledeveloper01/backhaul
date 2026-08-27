@@ -18,6 +18,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoShareLinks } from '../state/product';
 
@@ -43,6 +44,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
+  const { t } = useLanguage();
 
   const [scope, setScope] = useState<ShareScope>('position');
   const [links, setLinks] = useState<readonly ShareLink[]>(() => demoShareLinks(trip, now));
@@ -64,12 +66,12 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Share this trip" onBack={onBack} />
+      <ScreenHeader title={t('share_this_trip')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="What they will see" icon="link">
+        <Card emphasis="accent" overline={t('what_they_will_see')} icon="link">
           {/*
             Full-width rows rather than chips. As chips the second option — the
             longer sentence — wrapped onto its own line and the pair read as two
@@ -77,13 +79,13 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
             two things.
           */}
           <Option
-            title="Where it is"
+            title={t('where_it_is_only')}
             detail="Position and arrival, nothing else."
             selected={scope === 'position'}
             onPress={() => setScope('position')}
           />
           <Option
-            title="Where it has been, too"
+            title={t('where_it_has_been_too')}
             detail="Adds the full track and what the tracker dropped from it."
             selected={scope === 'evidence'}
             onPress={() => setScope('evidence')}
@@ -105,14 +107,14 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
           */}
           <View style={[styles.never, { borderTopColor: colours.accent }]}>
             <Text variant="overline" tone="secondary">
-              NEVER, WHICHEVER YOU CHOOSE
+              {t('never_shown').toUpperCase()}
             </Text>
             <Rule on={visible.contactDetails} label="Anybody's phone number" />
             <Rule on={visible.money} label="What the load is worth" />
           </View>
         </Card>
 
-        <Card overline="The message" icon="message">
+        <Card overline={t('the_message')} icon="message">
           <View style={[styles.sms, { backgroundColor: colours.surfaceDim }]}>
             <Text variant="body">{message}</Text>
           </View>
@@ -130,7 +132,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
               <View style={styles.centreRow}>
                 <Icon name="link" size="md" colour={colours.onAccent} />
                 <Text variant="title" style={{ color: colours.onAccent }}>
-                  See what they see
+                  {t('see_what_they_see')}
                 </Text>
               </View>
             </Press>
@@ -228,6 +230,7 @@ function LinkRow({
   onRevoke: () => void;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const state = check(link, now);
   const left = daysLeft(link, now);
 
@@ -282,7 +285,7 @@ function LinkRow({
             style={[styles.revoke, { borderColor: colours.outline }]}
           >
             <Text variant="label" tone="exception">
-              Turn off
+              {t('turn_off')}
             </Text>
           </Press>
         ) : null}

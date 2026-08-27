@@ -18,6 +18,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 
 interface Props {
@@ -38,6 +39,7 @@ interface Props {
  */
 export function CancelScreen({ trip, onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -53,7 +55,7 @@ export function CancelScreen({ trip, onBack }: Props) {
   if (done && outcome.ok) {
     return (
       <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-        <ScreenHeader title="Cancelled" onBack={onBack} />
+        <ScreenHeader title={t('cancelled')} onBack={onBack} />
         <View style={styles.finished}>
           <Text variant="headline" style={styles.centred}>
             The trip is cancelled
@@ -70,7 +72,7 @@ export function CancelScreen({ trip, onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Call this trip off" onBack={onBack} />
+      <ScreenHeader title={t('call_this_trip_off')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -152,23 +154,23 @@ export function CancelScreen({ trip, onBack }: Props) {
             */}
             <Press
               onPress={() => setDone(true)}
-              accessibilityLabel="Cancel this trip"
+              accessibilityLabel={t('cancel_this_trip')}
               accessibilityHint={outcome.detail}
               style={[styles.destructive, { borderColor: colours.exception }]}
             >
               <Icon name="close" size="md" colour={colours.exception} />
               <Text variant="title" tone="exception">
-                Cancel the trip
+                {t('cancel_this_trip')}
               </Text>
             </Press>
 
             <Press
               onPress={onBack}
-              accessibilityLabel="Keep the trip"
+              accessibilityLabel={t('keep_the_trip')}
               style={[styles.keep, { backgroundColor: colours.accent }]}
             >
               <Text variant="title" style={{ color: colours.onAccent }}>
-                Keep it
+                {t('keep_the_trip')}
               </Text>
             </Press>
           </>

@@ -15,6 +15,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow } from '../state/demo';
 import { demoChain } from '../state/product';
 
@@ -38,6 +39,7 @@ const km = (metres: number) => Math.round(metres / 1_000);
  */
 export function ChainScreen({ onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -48,7 +50,7 @@ export function ChainScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Chain this trip" onBack={onBack} />
+      <ScreenHeader title={t('chain_this_trip')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}

@@ -28,6 +28,7 @@ import { SearchField } from '../components/SearchField';
 import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 const at = (lat: number, lon: number, when: Date): Position => ({
   lat,
@@ -63,6 +64,7 @@ export function ReturnLoadsScreen({
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(() => new Date(), []);
+  const { t } = useLanguage();
 
   const KANO = at(12.0022, 8.592, now);
   const LAGOS = at(6.455, 3.3841, now);
@@ -159,7 +161,7 @@ export function ReturnLoadsScreen({
     >
       <View style={styles.headerRow}>
         <Text variant="headline" style={styles.flex}>
-          Loads going your way
+          {t('loads_going_your_way')}
         </Text>
         <Press
           onPress={onPost}
@@ -185,7 +187,7 @@ export function ReturnLoadsScreen({
       <SearchField
         value={filter.text}
         onChange={(text) => setFilter((was) => ({ ...was, text }))}
-        placeholder="Town or cargo"
+        placeholder={t('search_loads')}
         accessibilityLabel="Search the load board"
       />
 
@@ -230,7 +232,7 @@ export function ReturnLoadsScreen({
       */}
       <Press
         onPress={onChain}
-        accessibilityLabel="Chain three legs"
+        accessibilityLabel={t('chain_three_legs')}
         accessibilityHint="Strings return loads together so the truck never runs empty"
         feedback="opacity"
         /*
@@ -245,7 +247,7 @@ export function ReturnLoadsScreen({
       >
         <Icon name="swap" size="md" colour={colours.accent} />
         <View style={styles.flex}>
-          <Text variant="title">Chain three legs</Text>
+          <Text variant="title">{t('chain_three_legs')}</Text>
           <Text variant="label" tone="secondary">
             Kano → Kaduna → Lagos, loaded the whole way
           </Text>
@@ -256,13 +258,13 @@ export function ReturnLoadsScreen({
       <View style={styles.shortcuts}>
         <Shortcut
           icon="swap"
-          title="Share a trailer"
+          title={t('share_a_trailer')}
           detail="Two part-loads, one run"
           onPress={onPairs}
         />
         <Shortcut
           icon="route"
-          title="Your lanes"
+          title={t('your_lanes')}
           detail="Runs you make again"
           onPress={onLanes}
         />

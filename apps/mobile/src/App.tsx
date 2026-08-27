@@ -33,7 +33,8 @@ import { TripsScreen } from './screens/TripsScreen';
 import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
-import { LanguageProvider } from './state/language';
+import { LanguageProvider, useLanguage } from './state/language';
+import { LanguageScreen } from './screens/LanguageScreen';
 import { SessionProvider, useSession } from './state/session';
 import { SignInScreen } from './screens/SignInScreen';
 import { demoNow, demoTrips } from './state/demo';
@@ -58,6 +59,7 @@ function Shell() {
 
   const insets = useSafeAreaInsets();
   const { face, current, push, pop, select } = useStacks();
+  const { t, language, setLanguage } = useLanguage();
 
   /*
     The driver face is one trip, not a list — a driver has exactly one load on
@@ -186,6 +188,7 @@ function Shell() {
             onLevies={() =>
               driverTrip !== undefined ? push({ name: 'levies', trip: driverTrip }) : undefined
             }
+            onLanguage={() => push({ name: 'language' })}
           />
         ) : null}
         {current.name === 'history' ? <DriverHistoryScreen onBack={pop} /> : null}
@@ -196,6 +199,16 @@ function Shell() {
           <ProofScreen trip={current.trip} onBack={pop} />
         ) : null}
         {current.name === 'levies' ? <LeviesScreen trip={current.trip} onBack={pop} /> : null}
+        {current.name === 'language' ? (
+          <LanguageScreen
+            current={language}
+            onChoose={(next) => {
+              setLanguage(next);
+              pop();
+            }}
+            onBack={pop}
+          />
+        ) : null}
       </View>
 
       {/*
@@ -215,17 +228,22 @@ function Shell() {
           },
         ]}
       >
+        {/*
+          The tab bar is the one piece of chrome on every screen, so it is the
+          first thing that has to speak the reader's language — a person who
+          cannot find "Loads" cannot use the rest of what was translated.
+        */}
         {(
           [
-            ['shipper', 'Trips', 'list'],
-            ['loads', 'Loads', 'swap'],
-            ['fleet', 'Fleet', 'truck'],
-            ['driver', 'Driver', 'wheel'],
+            ['shipper', 'trips', 'list'],
+            ['loads', 'loads', 'swap'],
+            ['fleet', 'fleet', 'truck'],
+            ['driver', 'driver', 'wheel'],
           ] as const
-        ).map(([value, label, icon]) => (
+        ).map(([value, phrase, icon]) => (
           <Tab
             key={value}
-            label={label}
+            label={t(phrase)}
             icon={icon}
             active={face === value}
             onPress={() => select(value)}
@@ -304,10 +322,19 @@ function Tab({
  */
 function Gate() {
   const { who, ready, api, signIn } = useSession();
+  const { chosen, ready: languageReady, setLanguage } = useLanguage();
   const colours = useColours();
 
-  if (!ready) {
+  // A frame of nothing while storage answers. Showing either screen before
+  // then flashes the wrong one at somebody.
+  if (!ready || !languageReady) {
     return <View style={[styles.root, { backgroundColor: colours.surface }]} />;
+  }
+
+  // Before the phone number, before anything. A sign-in screen in the wrong
+  // language is the first thing a person cannot get past.
+  if (!chosen) {
+    return <LanguageScreen onChoose={setLanguage} />;
   }
 
   if (who === null) {
@@ -315,11 +342,18 @@ function Gate() {
       <SignInScreen
         onRequestCode={async (phone) => {
           const result = await api.requestCode(phone);
-          return result.ok ? null : result.failure.detail;
+          if (result.ok) return null;
+          return result.failure.kind === 'unreachable'
+            ? { kind: 'unreachable' }
+            : { kind: 'refused', sentence: result.failure.detail };
         }}
         onVerify={async (phone, code) => {
           const result = await api.verifyCode(phone, code);
-          if (!result.ok) return result.failure.detail;
+          if (!result.ok) {
+            return result.failure.kind === 'unreachable'
+              ? { kind: 'unreachable' }
+              : { kind: 'refused', sentence: result.failure.detail };
+          }
           signIn(result.value);
           return null;
         }}

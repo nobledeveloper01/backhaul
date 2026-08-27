@@ -1,9 +1,14 @@
 import { StyleSheet, View } from 'react-native';
+import type { Phrase } from '@backhaul/domain';
 
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
+
+/** The reader's own words. Passed in, never reached for — see `humanDuration`. */
+export type Words = (phrase: Phrase) => string;
 
 /** Past this, the age is what gets emphasised — not the position. */
 const STALE_AFTER_MS = 30 * 60_000;
@@ -35,13 +40,14 @@ interface Props {
  */
 export function PositionAge({ silentForMs, compact = false }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   if (silentForMs === null) {
     return compact ? null : (
       <View style={styles.row}>
         <Icon name="clock" size="sm" colour={colours.textSecondary} />
         <Text variant="label" tone="secondary">
-          Not started
+          {t('not_started')}
         </Text>
       </View>
     );
@@ -60,11 +66,18 @@ export function PositionAge({ silentForMs, compact = false }: Props) {
       )}
       {compact ? <Icon name="clock" size="sm" colour={colours.textSecondary} /> : null}
       <Text variant="label" tone={stale ? 'stale' : 'secondary'} numberOfLines={1}>
-        {compact
-          ? agoLabel(silentForMs)
-          : stale
-            ? `No signal for ${humanDuration(silentForMs)}`
-            : `Updated ${agoLabel(silentForMs)}`}
+        {/*
+          The number first, then the words.
+
+          "No signal for 45 min" and "Updated 45 min ago" both put the number
+          in the middle of a sentence, and the middle is somewhere different in
+          each of the four languages this app is read in. Written the other way
+          round — the count, then the phrase — every language gets a sentence
+          that is its own rather than English with the words swapped.
+        */}
+        {stale && !compact
+          ? `${humanDuration(silentForMs, t)} · ${t('no_signal')}`
+          : agoLabel(silentForMs, t)}
       </Text>
     </View>
   );
@@ -81,30 +94,33 @@ export function PositionAge({ silentForMs, compact = false }: Props) {
  * Down, because "no signal for 2 hours" when it has been 2 hours 50 is a
  * shipper who is less alarmed than the facts warrant only briefly; rounding up
  * makes every gap sound worse than it is and the chip stops being believed.
+ *
+ * The words come in as an argument rather than being reached for, because this
+ * is a plain function and the language lives in a React context. Anything that
+ * renders a duration therefore has to have asked what language it is in, which
+ * is the point: it used to be impossible to forget, and it produced "45 min
+ * ago" underneath four lines of Yorùbá.
+ *
+ * Every unit is abbreviated, English included — "1 h" rather than "1 hour" and
+ * "3 h" rather than "3 hours". That drops English's plural, which is a small
+ * loss, and drops the question of how to pluralise in three languages that do
+ * not do it by suffix, which is a large one.
  */
-export function humanDuration(ms: number): string {
+export function humanDuration(ms: number, t: Words): string {
   const minutes = Math.floor(ms / 60_000);
   if (minutes < 1) {
-    return 'just now';
+    return t('just_now');
   }
   if (minutes < 60) {
-    return `${minutes} min`;
+    return `${minutes} ${t('unit_minute')}`;
   }
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
-    return hours === 1 ? '1 hour' : `${hours} hours`;
+    return `${hours} ${t('unit_hour')}`;
   }
-  const days = Math.floor(hours / 24);
-  return days === 1 ? '1 day' : `${days} days`;
+  return `${Math.floor(hours / 24)} ${t('unit_day')}`;
 }
 
-/**
- * "12 min ago", "just now".
- *
- * `humanDuration` returns a *duration*; most of them take "ago", and "just
- * now" does not — "just now ago" appeared on the fleet screen. One helper so
- * every caller gets it right.
- */
 /**
  * "1 hour", "3 hours", "45 minutes".
  *
@@ -118,9 +134,16 @@ export function plural(count: number, singular: string, plural_?: string): strin
   return `${rounded % 1 === 0 ? rounded : rounded.toFixed(1)} ${word}`;
 }
 
-export function agoLabel(ms: number): string {
-  const duration = humanDuration(ms);
-  return duration === 'just now' ? duration : `${duration} ago`;
+/**
+ * "12 min ago", "just now".
+ *
+ * `humanDuration` returns a *duration*; most of them take "ago", and "just
+ * now" does not — "just now ago" appeared on the fleet screen. One helper so
+ * every caller gets it right.
+ */
+export function agoLabel(ms: number, t: Words): string {
+  const duration = humanDuration(ms, t);
+  return duration === t('just_now') ? duration : `${duration} ${t('ago')}`;
 }
 
 const styles = StyleSheet.create({

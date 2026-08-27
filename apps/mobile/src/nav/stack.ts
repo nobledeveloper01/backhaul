@@ -37,7 +37,8 @@ export type Route =
   | { readonly name: 'history' }
   | { readonly name: 'driver-report'; readonly trip: DemoTrip }
   | { readonly name: 'driver-delivery'; readonly trip: DemoTrip }
-  | { readonly name: 'levies'; readonly trip: DemoTrip };
+  | { readonly name: 'levies'; readonly trip: DemoTrip }
+  | { readonly name: 'language' };
 
 export type Face = 'shipper' | 'loads' | 'fleet' | 'driver';
 

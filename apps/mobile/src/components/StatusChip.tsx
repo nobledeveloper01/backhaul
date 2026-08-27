@@ -5,6 +5,7 @@ import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly observation: Observation;
@@ -26,18 +27,19 @@ interface Props {
  */
 export function StatusChip({ observation, tracking }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
 
   const [label, colour, wash, icon]: [string, string, string, IconName] = !tracking
-    ? ['Not started', colours.textSecondary, colours.surfaceDim, 'clock']
+    ? [t('not_started'), colours.textSecondary, colours.surfaceDim, 'clock']
     : observation === 'moving'
-      ? ['Moving', colours.moving, colours.movingWash, 'truck']
+      ? [t('moving'), colours.moving, colours.movingWash, 'truck']
       : observation === 'stopped'
-        ? ['Stopped', colours.stopped, colours.stoppedWash, 'pin']
+        ? [t('stopped'), colours.stopped, colours.stoppedWash, 'pin']
         : observation === 'stalled'
-          ? ['Stalled', colours.exception, colours.exceptionWash, 'alert']
+          ? [t('stalled'), colours.exception, colours.exceptionWash, 'alert']
           : observation === 'silent'
-            ? ['No signal', colours.stale, colours.staleWash, 'signal-off']
-            : ['No data yet', colours.textSecondary, colours.surfaceDim, 'clock'];
+            ? [t('no_signal'), colours.stale, colours.staleWash, 'signal-off']
+            : [t('no_data_yet'), colours.textSecondary, colours.surfaceDim, 'clock'];
 
   return (
     <View style={[styles.chip, { backgroundColor: wash, borderColor: colour }]}>

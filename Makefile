@@ -85,9 +85,13 @@ server-build:
 server-test:
 	cd server && $(DOTNET) test
 
-## server-run: the API on an in-memory store; Swagger at /swagger
+## server-run: the API on an in-memory store, on :5111; Swagger at /swagger
+##   The port is named here rather than left to launchSettings.json, which
+##   picks 5063. `round-trip` and the mobile client's DEFAULT_BASE_URL both
+##   expect 5111, so following the instruction in `round-trip` produced a
+##   connection refused and no hint as to why.
 server-run:
-	cd server && $(DOTNET) run --project src/Backhaul.Api
+	cd server && $(DOTNET) run --project src/Backhaul.Api --urls http://127.0.0.1:5111
 
 ## server-up: the API against a real PostgreSQL, in Docker
 server-up:

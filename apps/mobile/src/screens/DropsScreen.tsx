@@ -20,6 +20,7 @@ import { Text } from '../components/Text';
 import { agoLabel } from '../components/PositionAge';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDrops } from '../state/product';
 
@@ -42,6 +43,7 @@ interface Props {
  */
 export function DropsScreen({ trip, onBack }: Props) {
   const colours = useColours();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
 
@@ -59,7 +61,7 @@ export function DropsScreen({ trip, onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Drops on this trip" onBack={onBack} />
+      <ScreenHeader title={t('drops_on_this_trip')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
@@ -164,7 +166,8 @@ export function DropsScreen({ trip, onBack }: Props) {
                 <View style={styles.signed}>
                   <Icon name="check" size="sm" colour={colours.moving} />
                   <Text variant="label" tone="moving">
-                    Signed for {agoLabel(now.getTime() - (drop.deliveredAt?.getTime() ?? 0))}
+                    {agoLabel(now.getTime() - (drop.deliveredAt?.getTime() ?? 0), t)} ·{' '}
+                    {t('signed_for')}
                   </Text>
                 </View>
               ) : (
