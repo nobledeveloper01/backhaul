@@ -21,6 +21,7 @@ import { agoLabel } from '../components/PositionAge';
 import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { demoNow, type DemoTrip } from '../state/demo';
+import { useLanguage } from '../state/language';
 import { demoLevies } from '../state/product';
 
 interface Props {
@@ -53,6 +54,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
+  const { t } = useLanguage();
 
   const [levies, setLevies] = useState<readonly Levy[]>(() => demoLevies(trip, now));
 
@@ -78,7 +80,12 @@ export function LeviesScreen({ trip, onBack }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
-      <ScreenHeader title="Money on the road" onBack={onBack} />
+      {/*
+        The driver's own language, chosen once on their screen and applied
+        everywhere on this face. It was per-screen state first, which meant the
+        app agreed to speak Hausa and then did not.
+      */}
+      <ScreenHeader title={t('money_on_the_road')} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}

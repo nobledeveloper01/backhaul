@@ -25,6 +25,7 @@ import { Text } from '../components/Text';
 import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly trip: DemoTrip;
@@ -66,6 +67,7 @@ const KINDS: readonly {
 export function IncidentScreen({ trip, onBack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   const [kind, setKind] = useState<IncidentKind | null>(null);
   const [note, setNote] = useState('');
@@ -107,7 +109,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
             style={[styles.send, styles.wide, { backgroundColor: colours.accent }]}
           >
             <Text variant="title" style={{ color: colours.onAccent }}>
-              Back to the trip
+              {t('back_to_trip')}
             </Text>
           </Press>
         </View>

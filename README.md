@@ -173,6 +173,23 @@ invites a phone call about trust.
 No account, no install, no navigation. One thing on the screen, and the ask is
 at the bottom *after* the answer has been given.
 
+### When the argument starts
+
+![The dispute pack](docs/screenshots/37-dispute.png)
+
+Everything the trip recorded, in the order it happened, each item marked as
+**measured by the tracker**, **reported by a person**, or **reported late**.
+The pack adds nothing and decides nothing — a platform that adjudicates its own
+disputes is one both sides stop trusting.
+
+Getting it honest took three passes over the same screen. It first reported
+*fifty-one hours of missing evidence* on a trip whose coverage was continuous,
+because it read a run of position fixes as a series of instants; then it
+counted the quiet before the truck loaded as a hole; then it treated a
+signal-loss event — measured, but the very absence of coverage — as though it
+were coverage. The engine now measures how much of the trip is *covered*, which
+is what the question was always about.
+
 ### The conversation, attached to the trip
 
 ![Messages on a trip](docs/screenshots/19-messages.png)
@@ -204,6 +221,20 @@ capture more than a kilometre from the destination is **flagged on the
 document, not refused**: a market address in Kano is a district, not a gate, and
 a driver who cannot close a delivery they actually made stops using the app
 before the day is out.
+
+| Drops | Payment milestones |
+|---|---|
+| ![Multi-drop](docs/screenshots/30-drops.png) | ![Payment milestones](docs/screenshots/36-milestones.png) |
+
+One truck, several deliveries, in the order the trailer was loaded — the last
+drop is at the front of the box, so a route that reorders them requires
+emptying the whole thing at the first stop. The trip finishes on the last
+signature, not on arriving at the last address.
+
+Money moves against conditions the platform can **verify from evidence it
+already holds**: 30% when loading starts, 20% after six hours of arriving
+positions, 40% on the *proof* of delivery rather than on somebody saying the
+trip is done, and 10% held for a week against a shortage.
 
 | The delivery note | Afterwards |
 |---|---|
@@ -242,6 +273,11 @@ bad: a marketplace that never surfaces a new carrier never gets a second one.
 |---|---|
 | ![Return loads](docs/screenshots/04-return-loads.png) | ![A chained run](docs/screenshots/25-chain.png) |
 
+Every row says what the load leaves **this** carrier after diesel at today's
+price, the running cost of the truck and what the road takes — and it will say
+to walk away, with the figure in litres. The going rate is what a shipper
+should pay; this is whether to say yes, and they are different questions.
+
 The reason the product is called Backhaul. An empty truck running 830 km home
 earns nothing, so a load going that way at ₦1,850,000 beats one going the wrong
 way at ₦2,600,000 — and the row says *why*, in empty kilometres and kilometres
@@ -254,7 +290,33 @@ loads it **passed over** are shown too, each with the reason — either which le
 out-earned it, or the shortest empty reposition that was still too far. A
 proposal you cannot argue with is a proposal nobody acts on.
 
-![Verification](docs/screenshots/24-verification.png)
+| Sharing a trailer | The runs you make again |
+|---|---|
+| ![Part-load consolidation](docs/screenshots/34-pairs.png) | ![Saved lanes](docs/screenshots/35-lanes.png) |
+
+A 12-tonne consignment on a 30-tonne trailer pays for the trailer and wastes
+eighteen tonnes of it. Two part-loads share the run when the pickups are within
+50 km, the deliveries within 80, and the pair actually fills the truck — both
+shippers pay 30% less than a whole truck and the carrier collects more than one
+fare. The pairs that were **refused** are listed underneath with the reason.
+
+A lane is the same run, named and saved, with what it has actually gone for —
+the median of the recent runs, because a mean over two years anchors a shipper
+to a number that stopped being true.
+
+| Verification | Trucks and papers |
+|---|---|
+| ![Verification](docs/screenshots/24-verification.png) | ![Trucks and papers](docs/screenshots/29-vehicles.png) |
+
+`trust.ts` verifies a carrier; `vehicles.ts` verifies the thing that actually
+carries the goods. Conflating them is how a Trusted carrier ends up moving
+somebody's cargo on a trailer whose roadworthiness lapsed in March. Sorted worst
+first, because a fleet list sorted by plate is one nobody scrolls to the bottom
+of — and the truck at the bottom is the one with the lapsed certificate.
+
+**A paper that lapses mid-trip never strands a driver.** It blocks the next
+assignment instead: the pressure belongs on the office, not on somebody eight
+hundred kilometres from home.
 
 A tier is never something a carrier types in: it comes out of documents and a
 delivery record neither side can edit. An upheld incident costs **one tier, not
@@ -263,7 +325,48 @@ a system that treats one bad trip as career-ending is one carriers will lie to.
 What is missing between here and the next tier is named exactly, because a
 badge with no path to the one above it is a locked door.
 
+### What reaches your phone
+
+![The alert policy](docs/screenshots/28-alerts.png)
+
+Six engines can each produce something worth knowing; **none of them decides
+whether to interrupt you**. Exactly one kind of alert overrides quiet hours —
+a driver in trouble. Everything else waits until six and arrives as one line,
+because four buzzes in a minute reads as a malfunction rather than as a summary.
+
+The hour selector re-runs the real decision for every kind, so the screen shows
+the policy rather than describing it.
+
 ### The driver
+
+| The trip, and what it costs them | The same screen in Hausa | The checkpoint ledger |
+|---|---|---|
+| ![Driver, with the data cost](docs/screenshots/31-driver-data.png) | ![Driver, in Hausa](docs/screenshots/32-driver-hausa.png) | ![Money paid on the road](docs/screenshots/33-levies.png) |
+
+Two things a driver has never been told by a tracking app: **what it costs
+them**, and **their own language**.
+
+The data figure was built as a warning and turned out to be a reassurance — a
+day of recording is about fifteen kobo, and a three-day Lagos–Kano run costs
+under a naira. Writing that engine is what established that *battery*, not
+data, is the price a driver pays.
+
+Hausa covers the driver face and only the driver face: the tracking card, the
+battery line, the buttons and the ledger. The carrier's name is deliberately
+dropped from the translated sentence rather than poured into it — word order
+differs between the two languages, and a template with a hole in it assumes it
+does not.
+
+The ledger is what the road actually takes: police, union, state revenue,
+weighbridge, park. One tap per payment, because a driver at a checkpoint has
+one hand and thirty seconds. It reconciles against the advance and **goes
+negative** when they are out of pocket, which is the common case on a long run
+and the number they care about.
+
+There is also a duress alarm, and it is not in these screenshots on purpose:
+a long press on the cargo line sends it, and **nothing happens on screen**. No
+toast, no sound, no changed state. `visibleConfirmation()` returns null and is
+tested, because whoever is standing over the driver must not be able to tell.
 
 | On the road | Arrived | Done |
 |---|---|---|

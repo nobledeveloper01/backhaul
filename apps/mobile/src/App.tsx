@@ -33,6 +33,7 @@ import { TripsScreen } from './screens/TripsScreen';
 import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
+import { LanguageProvider } from './state/language';
 import { demoNow, demoTrips } from './state/demo';
 
 /**
@@ -289,7 +290,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <Shell />
+        <LanguageProvider>
+          <Shell />
+        </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

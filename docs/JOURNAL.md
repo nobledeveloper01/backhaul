@@ -68,6 +68,13 @@ grew by six; the carrier's *name* is deliberately dropped from the Hausa
 sentence rather than interpolated, because word order differs and a template
 with a hole in it assumes it does not.
 
+**A language chosen on one screen is not a language.** The picker was state
+inside `DriverScreen`, so a driver who chose Hausa saw Hausa there and English
+the moment they opened the checkpoint ledger — the app agreeing to speak
+somebody's language and then not doing it. It is a provider now, persisted like
+the theme, because a language is a property of the person rather than of a
+screen.
+
 ### Still open
 
 - **The data-cost sentence is English only.** `describeCost` builds it in the

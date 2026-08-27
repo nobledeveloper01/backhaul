@@ -245,6 +245,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The fleet screen said "one truck cannot take work" above a list of two.
 - A saved lane due tomorrow was listed above one five days overdue, and both
   carried the same call to action.
+- The driver's language applied to one screen and not to the rest of their
+  face; it is now remembered across the app, like the light or dark choice.
 - The driver's buttons truncated in Hausa — "Ba da rahoton m…" — and the
   checkpoint buttons truncated in English.
 - Revoking a share link reported a failure on a revoke that had succeeded: the

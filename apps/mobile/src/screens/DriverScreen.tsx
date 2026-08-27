@@ -19,7 +19,6 @@ import {
   transition,
   usage,
   visibleConfirmation,
-  type Language,
   type TripEvent,
   type TripState,
 } from '@backhaul/domain';
@@ -31,6 +30,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips } from '../state/demo';
+import { useLanguage } from '../state/language';
 
 /**
  * The driver's whole app.
@@ -76,10 +76,12 @@ export function DriverScreen({
     using — a shipper chose this app, a driver was handed a phone. Hausa is the
     working language of the corridors it is built around.
 
-    A picker rather than the device locale: a phone bought second-hand is set to
-    whatever the last owner had.
+    Shared through a provider rather than held here: a choice that applies to
+    one screen is the app agreeing to speak somebody's language and then not
+    doing it. A picker rather than the device locale, because a phone bought
+    second-hand carries the last owner's.
   */
-  const [language, setLanguage] = useState<Language>('en');
+  const { language, setLanguage } = useLanguage();
 
   /*
     In the product this queues a duress signal and switches the tracker to the
