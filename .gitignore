@@ -54,3 +54,10 @@ apps/mobile/android/.gradle/
 apps/mobile/android/build/
 apps/mobile/android/app/build/
 apps/mobile/.xcode.env.local
+
+# Local development tokens and the log of the server that seeded them. Both are
+# written by `make round-trip`, both die with that process, and neither belongs
+# anywhere near a commit.
+.dev-tokens.json
+.round-trip-server.log
+.round-trip-server.pid

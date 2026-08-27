@@ -95,6 +95,21 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**The check that catches wire mismatches was not a gate; it was a chore.**
+`make round-trip` needed a server in another shell and a token copied out of a
+log, so it ran when I thought of it. Both defects it has ever caught — the levy
+route returning the levy rather than the ledger, and the quote route spelling
+its fields without the `Kobo` suffix — were found on a first run, which is
+exactly the profile of a check that should not depend on anybody remembering.
+
+It starts its own server now. The server writes the tokens it seeds to a path
+named by `BACKHAUL_DEV_TOKENS`, opt-in rather than a file that always appears,
+because a secret written somewhere nobody asked for is a secret somebody
+commits — and it only happens on the in-memory branch, where the same three
+tokens are already on the console and die with the process. It is the last step
+of `make ci` and the only step that is not hermetic, so a failure there is
+either the diff or port 5111.
+
 **200% text scaling passed, and looking at it found something else.** The
 definition of done says to check it rather than assume it, so I did: no
 truncation anywhere, every container grows, and the per-variant caps in `Text`

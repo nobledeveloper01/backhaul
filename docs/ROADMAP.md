@@ -141,10 +141,15 @@ notification policy rather than reporting alerts, **follow** is the preview of
 what a link-holder sees and therefore carries no token (ADR-0010), **language**
 is a device preference, and **sign-in** takes its callbacks from the shell.
 
-`scripts/round-trip.ts` is the gate on the wire itself. The client's tests mock
-the server and the parity fixtures hold the two *domains* rather than the two
-*serialisers*, so a field the server spells differently passes both and reaches
-a screen. Two did.
+`scripts/round-trip.ts` is the gate on the wire itself, and it is part of
+`make ci`. The client's tests mock the server and the parity fixtures hold the
+two *domains* rather than the two *serialisers*, so a field the server spells
+differently passes both and reaches a screen. Two did.
+
+It starts its own server and reads the token that server seeds. It used to want
+one running in another shell with a token copied out of its log by hand, which
+meant it ran when somebody remembered — and both defects it has caught were
+found on a first run.
 
 **The rule for closing that gap** is the one ADR-0005 already sets: a rule that
 exists on both sides gets a parity case before it gets an endpoint. Thirty-two

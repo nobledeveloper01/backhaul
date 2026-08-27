@@ -234,6 +234,7 @@ static async Task SeedDevelopmentTokensAsync(IServiceProvider services, ILogger 
     ];
 
     var lines = new List<string>();
+    var seeded = new Dictionary<string, string>();
     foreach (var (role, id) in people)
     {
         var token = await tokens.IssueAsync(
@@ -242,7 +243,10 @@ static async Task SeedDevelopmentTokensAsync(IServiceProvider services, ILogger 
             label: "development seed — in-memory store only",
             issuedAt: now,
             expiresAt: now.AddDays(1));
-        lines.Add($"  {role.ToString().ToLowerInvariant(),-8} {id}  {token}");
+        var name = role.ToString().ToLowerInvariant();
+        lines.Add($"  {name,-8} {id}  {token}");
+        seeded[name] = token;
+        seeded[$"{name}Id"] = id.ToString();
     }
 
     await db.SaveChangesAsync();
@@ -250,6 +254,42 @@ static async Task SeedDevelopmentTokensAsync(IServiceProvider services, ILogger 
     logger.LogWarning(
         "DEVELOPMENT TOKENS — in-memory store only, gone when this process ends:\n{Tokens}",
         string.Join('\n', lines));
+
+    await WriteDevelopmentTokensAsync(seeded, logger);
+}
+
+// Writes the seeded tokens where a local script can read them.
+//
+// Only when BACKHAUL_DEV_TOKENS names a path, and only from the branch above —
+// which already requires an in-memory store, so these are tokens that die with
+// the process and unlock a database that does the same.
+//
+// Opt-in rather than a file that always appears, because a secret written
+// somewhere nobody asked for is a secret somebody commits. The same three
+// tokens are already on the console at this point; this is the same disclosure
+// in a form `scripts/round-trip.ts` can read, so proving the two wire formats
+// agree stops depending on somebody copying three hex strings out of a log by
+// hand.
+static async Task WriteDevelopmentTokensAsync(
+    Dictionary<string, string> seeded,
+    ILogger logger)
+{
+    var path = Environment.GetEnvironmentVariable("BACKHAUL_DEV_TOKENS");
+    if (string.IsNullOrWhiteSpace(path)) return;
+
+    try
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(seeded);
+        await File.WriteAllTextAsync(path, json);
+        logger.LogWarning("Development tokens written to {Path}. Do not commit it.", path);
+    }
+    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+    {
+        // Not fatal. The tokens are on the console either way, and a server
+        // that will not start because a convenience file could not be written
+        // is worse than the inconvenience.
+        logger.LogWarning("Could not write {Path}: {Reason}", path, error.Message);
+    }
 }
 
 static async Task<int> IssueTokenAsync(WebApplication app, string[] args)

@@ -62,6 +62,9 @@ wrong regardless of what it delivers.
 ## Working on this repo
 
 - `make ci` is the gate. `make gates` runs the blocking ones alone.
+- **`make round-trip` starts its own server and stops it again.** It is the
+  last step of `make ci` and the only one that is not hermetic — it wants port
+  5111. Against a server you are already running, `make round-trip-only`.
 - **Node 22.18 or newer.** The domain package runs its tests through Node's own
   type stripping — no build step, no loader, no jest. Source imports carry the
   `.ts` extension for that reason, and `rewriteRelativeImportExtensions` turns

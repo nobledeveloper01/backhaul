@@ -13,6 +13,8 @@
  *   make round-trip     # starts nothing; expects a server on :5111
  */
 
+import { readFileSync } from 'node:fs';
+
 import { BackhaulApi } from '../apps/mobile/src/api/client.ts';
 import { clean, distanceTravelled, observe } from '../packages/domain/src/index.ts';
 import type { Position } from '../packages/domain/src/index.ts';
@@ -22,17 +24,39 @@ const BASE = process.env['BACKHAUL_API'] ?? 'http://127.0.0.1:5111';
 /**
  * A driver token.
  *
- * The server seeds three when it runs on the in-memory store and prints them
- * at start-up; against a real database, mint one with
- * `--issue-token driver <guid>` and pass it in `BACKHAUL_TOKEN`.
+ * Three ways in, in order of how much anybody has to do:
+ *
+ * 1. `BACKHAUL_DEV_TOKENS` names the file the server writes at start-up when
+ *    it is on the in-memory store. `make round-trip` sets it on both sides, so
+ *    the usual case is that nobody types a token at all.
+ * 2. `BACKHAUL_TOKEN`, for a token minted by hand.
+ * 3. Nothing, and the run stops with a sentence saying which of the two to do.
+ *
+ * It used to be only (2), which meant proving the two wire formats agree
+ * depended on somebody copying a hex string out of a log — so it was run when
+ * somebody remembered rather than when something changed.
  */
-const TOKEN = process.env['BACKHAUL_TOKEN'] ?? null;
+function seeded(): Record<string, string> {
+  const path = process.env['BACKHAUL_DEV_TOKENS'];
+  if (path === undefined || path === '') return {};
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>;
+  } catch {
+    // Absent or unreadable is the ordinary case when the server was started
+    // some other way. The message below says what to do about it.
+    return {};
+  }
+}
+
+const SEEDED = seeded();
+const TOKEN = process.env['BACKHAUL_TOKEN'] ?? SEEDED['driver'] ?? null;
 
 const api = new BackhaulApi(BASE, TOKEN);
 
 /** The seeded driver, whose id the server fixes so a restart is repeatable. */
 const SEEDED_DRIVER = 'd0000000-0000-4000-8000-000000000001';
-const DRIVER_ID = process.env['BACKHAUL_DRIVER_ID'] ?? SEEDED_DRIVER;
+const DRIVER_ID =
+  process.env['BACKHAUL_DRIVER_ID'] ?? SEEDED['driverId'] ?? SEEDED_DRIVER;
 
 let failures = 0;
 
@@ -91,7 +115,9 @@ async function main(): Promise<void> {
 
   if (TOKEN === null) {
     process.stdout.write(
-      '  FAIL  no BACKHAUL_TOKEN — take a driver token from the server log\n',
+      '  FAIL  no token. Either run `make round-trip`, which starts a server and\n' +
+        '        reads the one it seeds, or set BACKHAUL_TOKEN to one you minted\n' +
+        '        with `--issue-token driver <guid>`.\n',
     );
     process.exit(1);
   }

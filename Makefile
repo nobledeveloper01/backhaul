@@ -100,8 +100,25 @@ server-up:
 ## round-trip: drive the real server through the app's own client
 ##   Proves the two wire formats agree, which the parity fixtures cannot: they
 ##   hold the two domains to the same answers, not the two serialisers.
-##   Expects a server on :5111 — `make server-run` in another shell.
+##
+##   Starts its own server, uses the token that server seeds, and stops it
+##   again. It used to want one running in another shell and a token copied out
+##   of its log by hand, which meant it ran when somebody remembered rather than
+##   when something changed — and the two defects it has caught were both found
+##   on a first run.
+##
+##   Against a server you are already running: `make round-trip-only`, with
+##   BACKHAUL_TOKEN set, or BACKHAUL_DEV_TOKENS pointing at the file it wrote.
+ROUND_TRIP_TOKENS := $(CURDIR)/.dev-tokens.json
+ROUND_TRIP_LOG := $(CURDIR)/.round-trip-server.log
+
 round-trip:
+	@rm -f "$(ROUND_TRIP_TOKENS)" "$(ROUND_TRIP_LOG)"
+	@BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" $(MAKE) --no-print-directory server-run 		> "$(ROUND_TRIP_LOG)" 2>&1 & echo $$! > "$(CURDIR)/.round-trip-server.pid"
+	@trap 'kill $$(cat "$(CURDIR)/.round-trip-server.pid" 2>/dev/null) 2>/dev/null; 		pkill -f "Backhaul.Api" 2>/dev/null; 		rm -f "$(ROUND_TRIP_TOKENS)" "$(CURDIR)/.round-trip-server.pid"' EXIT; 	for i in $$(seq 1 90); do 		if [ -s "$(ROUND_TRIP_TOKENS)" ] && curl -fsS http://127.0.0.1:5111/healthz >/dev/null 2>&1; then 			break; 		fi; 		sleep 1; 	done; 	if [ ! -s "$(ROUND_TRIP_TOKENS)" ]; then 		echo "the server did not start — its output:"; 		tail -30 "$(ROUND_TRIP_LOG)"; 		exit 1; 	fi; 	BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" node scripts/round-trip.ts
+
+## round-trip-only: the same checks against a server you started yourself
+round-trip-only:
 	node scripts/round-trip.ts
 
 ## server-down: stop it and drop its scratch database
@@ -125,7 +142,14 @@ fixtures-check:
 gates: typecheck app-typecheck lint boundary doc-check fixtures-check
 
 ## ci: everything
-ci: gates test app-test server-test
+##   `round-trip` is last because it is the only step that starts a server, and
+##   the only one that can fail for a reason outside the code — port 5111 held
+##   by something else. Everything before it is hermetic, so a failure there is
+##   always the diff. It earns its place regardless: the parity fixtures hold
+##   the two *domains* to the same answers and the client's own tests mock the
+##   server, so a field the two spell differently passes both and reaches a
+##   screen. Two did.
+ci: gates test app-test server-test round-trip
 
 ## adr: new decision record — make adr T="the decision"
 adr:

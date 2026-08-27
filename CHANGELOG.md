@@ -57,6 +57,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **The one check that catches wire mismatches only ran when somebody
+  remembered.** `make round-trip` wanted a server running in another shell and
+  a driver token copied out of its log by hand, so it was a thing you did
+  rather than a thing that happened. It starts its own server now, reads the
+  token that server seeds, stops it again, and runs as the last step of
+  `make ci`. Both defects it has ever caught were found on a first run, which
+  is the argument for it running every time.
+
 - **Icons beside text floated in the middle of it.** Twenty-three rows across
   fifteen screens centred a small icon against a whole paragraph, so a line
   that wrapped left the icon hanging in the gap between lines two and three
