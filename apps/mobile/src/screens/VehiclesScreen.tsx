@@ -3,9 +3,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   byUrgency,
-  describePaper,
-  describeTruckClass,
-  describeStanding,
   mayCarry,
   type Assessment,
   type Standing,
@@ -19,6 +16,7 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { PAPER_WORDS, STANDING_WORDS, TRUCK_WORDS } from '../state/words';
 import { demoNow } from '../state/demo';
 import { demoVehicles } from '../state/product';
 
@@ -75,9 +73,7 @@ export function VehiclesScreen({ onBack }: Props) {
         ))}
 
         <Text variant="label" tone="secondary">
-          A paper that lapses while a truck is on the road never strands it. It
-          blocks the next trip instead — the pressure belongs on the office, not
-          on a driver eight hundred kilometres from home.
+          {t('lapsed_paper_note')}
         </Text>
       </ScrollView>
     </View>
@@ -86,6 +82,7 @@ export function VehiclesScreen({ onBack }: Props) {
 
 function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const tint = tintFor(assessment.standing, colours);
 
   return (
@@ -94,12 +91,12 @@ function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment
         <View style={styles.flex}>
           <Text variant="title">{vehicle.plate}</Text>
           <Text variant="label" tone="secondary">
-            {describeTruckClass(vehicle.truck)}
+            {t(TRUCK_WORDS[vehicle.truck])}
           </Text>
         </View>
         <View style={[styles.badge, { borderColor: tint }]}>
           <Text variant="label" style={{ color: tint }}>
-            {describeStanding(assessment.standing)}
+            {t(STANDING_WORDS[assessment.standing])}
           </Text>
         </View>
       </View>
@@ -109,7 +106,7 @@ function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment
           key={entry.paper}
           icon="alert"
           colour={colours.exception}
-          text={`${describePaper(entry.paper)} — ${Math.abs(entry.days)} days out of date`}
+          text={`${t(PAPER_WORDS[entry.paper])} — ${Math.abs(entry.days)} ${t('days_out_of_date')}`}
         />
       ))}
 
@@ -118,7 +115,7 @@ function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment
           key={paper}
           icon="close"
           colour={colours.textSecondary}
-          text={`${describePaper(paper)} — never uploaded`}
+          text={`${t(PAPER_WORDS[paper])} — ${t('never_uploaded')}`}
         />
       ))}
 
@@ -127,12 +124,12 @@ function Row({ vehicle, assessment }: { vehicle: Vehicle; assessment: Assessment
           key={entry.paper}
           icon="clock"
           colour={colours.stopped}
-          text={`${describePaper(entry.paper)} — ${entry.days} days left`}
+          text={`${t(PAPER_WORDS[entry.paper])} — ${entry.days} ${t('days_left')}`}
         />
       ))}
 
       {assessment.standing === 'road_legal' ? (
-        <Line icon="check" colour={colours.moving} text="Every paper in date" />
+        <Line icon="check" colour={colours.moving} text={t('every_paper_in_date')} />
       ) : null}
     </Card>
   );

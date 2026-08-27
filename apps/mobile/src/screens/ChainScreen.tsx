@@ -55,7 +55,7 @@ export function ChainScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="If you take all three" icon="swap">
+        <Card emphasis="accent" overline={t('if_you_take_all_three')} icon="swap">
           <View style={styles.figureRow}>
             <View style={styles.flex}>
               <Text variant="display" tabular>
@@ -83,7 +83,7 @@ export function ChainScreen({ onBack }: Props) {
         </Card>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          THE CHAIN
+          {t('the_chain').toUpperCase()}
         </Text>
 
         {built.legs.map((leg, index) => {
@@ -140,7 +140,7 @@ export function ChainScreen({ onBack }: Props) {
         {rejected.length > 0 ? (
           <>
             <Text variant="overline" tone="secondary" style={styles.heading}>
-              PASSED OVER
+              {t('passed_over').toUpperCase()}
             </Text>
 
             {rejected.map((entry) => (

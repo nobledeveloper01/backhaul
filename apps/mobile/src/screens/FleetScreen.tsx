@@ -4,8 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import {
   byUrgency,
-  describeRate,
-  describeRatio,
   format,
   mayCarry,
   utilisation,
@@ -71,9 +69,9 @@ export function FleetScreen({
       <Text variant="headline">Your fleet</Text>
 
       <Card overline="Utilisation" icon="truck" emphasis="accent">
-        <Text variant="display">{describeRatio(used)}</Text>
+        <Text variant="display">{Math.round(used.ratio * 100)}%</Text>
         <Text variant="body" tone="secondary" style={styles.gap}>
-          {describeRate(used)} · {used.legs} legs this month
+          {format(used.perKmDriven)} {t('a_kilometre_driven')} · {used.legs} {t('legs_this_month')}
         </Text>
 
         <UtilisationBar
@@ -98,19 +96,18 @@ export function FleetScreen({
       </Card>
 
       {worth !== null ? (
-        <Card overline="One more return leg" icon="swap">
+        <Card overline={t('one_more_return_leg')} icon="swap">
           <Text variant="display">{format(worth)}</Text>
           <Text variant="body" tone="secondary" style={styles.gap}>
-            What filling one of those empty runs would have earned, at your own
-            realised rate. Not a quote — your own last {used.legs} legs, read back.
+            {t('return_leg_note')} {used.legs}
           </Text>
           <Press
             onPress={onOpenBids}
-            accessibilityLabel="See bids on a posted load"
+            accessibilityLabel={t('see_bids')}
             style={[styles.action, { backgroundColor: colours.accent }]}
           >
             <Text variant="title" style={{ color: colours.onAccent }}>
-              See who is bidding
+              {t('see_who_is_bidding')}
             </Text>
           </Press>
         </Card>
@@ -125,7 +122,7 @@ export function FleetScreen({
       <Press
         onPress={onOpenVerification}
         accessibilityLabel={t('verification')}
-        accessibilityHint="What this carrier has proved, and what is left"
+        accessibilityHint={t('verification_hint')}
         feedback="opacity"
         style={[
           styles.verify,
@@ -145,7 +142,7 @@ export function FleetScreen({
       <Press
         onPress={onOpenVehicles}
         accessibilityLabel={t('trucks_and_papers')}
-        accessibilityHint="Licence, roadworthiness, insurance and permit, per truck"
+        accessibilityHint={t('vehicles_hint')}
         feedback="opacity"
         style={[
           styles.verify,
@@ -172,7 +169,7 @@ export function FleetScreen({
       <Press
         onPress={onOpenAlerts}
         accessibilityLabel={t('what_reaches_your_phone')}
-        accessibilityHint="Who is told what, and what is allowed to wake you"
+        accessibilityHint={t('alerts_hint')}
         feedback="opacity"
         style={[
           styles.verify,
@@ -183,22 +180,22 @@ export function FleetScreen({
         <View style={styles.verifyBody}>
           <Text variant="title">{t('what_reaches_your_phone')}</Text>
           <Text variant="label" tone="secondary">
-            One thing wakes you at 3am. Everything else waits until six.
+            {t('one_thing_wakes_you')}
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
 
       <Text variant="overline" tone="secondary" style={styles.sectionHead}>
-        NEEDS A LOOK
+        {t('needs_a_look_head').toUpperCase()}
       </Text>
 
       {alerts.length === 0 ? (
         <Card emphasis="plain">
           <Empty
             icon="check"
-            title="Nothing needs you"
-            detail="Every truck is moving and reporting. This is what a good morning looks like."
+            title={t('nothing_needs_you')}
+            detail={t('good_morning_note')}
           />
         </Card>
       ) : (

@@ -4,8 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   CARRIER_CLAIMS,
   MINIMUM_ANSWERS,
-  askCarrier,
-  labelCarrier,
   tally,
   worthShowing,
   type CarrierClaim,
@@ -19,6 +17,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { CARRIER_CLAIM_WORDS, CARRIER_QUESTIONS } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoCarrierReviews } from '../state/product';
 
@@ -64,13 +63,12 @@ export function ReviewScreen({ trip, onBack }: Props) {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
         <Text variant="body" tone="secondary">
-          Four questions, and you can skip any of them. Nothing here is a score —
-          what other shippers see is how often each was true.
+          {t('four_questions_note')}
         </Text>
 
         {CARRIER_CLAIMS.map((claim) => (
           <Card key={claim} emphasis={answers[claim] === undefined ? 'plain' : 'raised'}>
-            <Text variant="title">{askCarrier(claim)}</Text>
+            <Text variant="title">{t(CARRIER_QUESTIONS[claim])}</Text>
             <View style={styles.answers}>
               <Answer
                 label={t('yes')}
@@ -104,14 +102,14 @@ export function ReviewScreen({ trip, onBack }: Props) {
         ))}
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          WHAT OTHER SHIPPERS WILL SEE
+          {t('what_other_shippers_see').toUpperCase()}
         </Text>
 
         <Card>
           {counted.map((row) => (
             <View key={row.claim} style={styles.tally}>
               <Text variant="body" style={styles.flex}>
-                {labelCarrier(row.claim as CarrierClaim)}
+                {t(CARRIER_CLAIM_WORDS[row.claim as CarrierClaim])}
               </Text>
               {/*
                 Counts, never a percentage. "2 of 2" and "34 of 34" are the same
@@ -134,7 +132,7 @@ export function ReviewScreen({ trip, onBack }: Props) {
         <Press
           onPress={onBack}
           disabled={answered === 0}
-          accessibilityLabel="Send the review"
+          accessibilityLabel={t('send_the_review')}
           style={[styles.send, { backgroundColor: colours.accent }]}
         >
           <Text variant="title" style={{ color: colours.onAccent }}>

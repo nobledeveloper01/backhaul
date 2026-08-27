@@ -2,8 +2,6 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  describeCadence,
-  describeDue,
   due,
   dueIn,
   format,
@@ -20,6 +18,8 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { whenDue } from '../state/words';
+import { CADENCE_WORDS } from '../state/words';
 import { demoNow } from '../state/demo';
 import { demoLanes } from '../state/product';
 
@@ -62,7 +62,7 @@ export function LanesScreen({ onBack, onPost }: Props) {
         {dueNow.length > 0 ? (
           <>
             <Text variant="overline" tone="secondary">
-              COMING ROUND AGAIN
+              {t('coming_round_again').toUpperCase()}
             </Text>
             {/*
               Only the first due lane gets a filled button. Two of them side by
@@ -80,9 +80,7 @@ export function LanesScreen({ onBack, onPost }: Props) {
               />
             ))}
             <Text variant="label" tone="secondary">
-              Two days of warning, so a load is posted before the day rather than
-              on it — a load posted the morning it must move goes to whoever is
-              nearest rather than to whoever is best.
+              {t('two_days_warning_note')}
             </Text>
           </>
         ) : null}
@@ -113,6 +111,7 @@ function Row({
   lead: boolean;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const typical = typicalPrice(lane);
 
   // Overdue is a different fact from due, and reading them in the same colour
@@ -129,7 +128,7 @@ function Row({
           </Text>
         </View>
         <Text variant="label" tone={overdue ? 'stopped' : due ? 'accent' : 'secondary'}>
-          {describeDue(lane, now)}
+          {whenDue(dueIn(lane, now), lane.cadence, t)}
         </Text>
       </View>
 
@@ -155,16 +154,16 @@ function Row({
 
         <View style={styles.fact}>
           <Text variant="label" tone="secondary">
-            How often
+            {t('how_often')}
           </Text>
-          <Text variant="title">{describeCadence(lane.cadence)}</Text>
+          <Text variant="title">{t(CADENCE_WORDS[lane.cadence])}</Text>
         </View>
       </View>
 
       <Press
         onPress={onPost}
         accessibilityLabel={`Post ${lane.name}`}
-        accessibilityHint="Opens it to bids with this lane's details already filled in"
+        accessibilityHint={t('lane_post_hint')}
         feedback="opacity"
         style={[
           styles.post,
@@ -179,7 +178,7 @@ function Row({
           variant="label"
           style={{ color: lead ? colours.onAccent : colours.textSecondary }}
         >
-          Post this run
+          {t('post_this_run')}
         </Text>
       </Press>
     </Card>

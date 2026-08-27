@@ -62,10 +62,7 @@ export function BidsScreen({ onBack }: Props) {
         ))}
 
         <Text variant="label" tone="secondary" style={styles.footer}>
-          Ranked on price against the cheapest offer, the carrier's record, and
-          how far they are from the pickup. A carrier with no history ranks as
-          unknown, not as bad — a marketplace that never surfaces a new carrier
-          never gets a second one.
+          {t('bids_note')}
         </Text>
       </ScrollView>
     </View>
@@ -82,6 +79,7 @@ function BidRow({
   isCheapest: boolean;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const best = rank === 1;
 
   return (
@@ -156,7 +154,7 @@ function BidRow({
       <Press
         onPress={() => {}}
         accessibilityLabel={`Award to ${scored.bid.carrierId}`}
-        accessibilityHint="Assigns the load to this carrier"
+        accessibilityHint={t('assigns_the_load')}
         style={[
           styles.award,
           best

@@ -6,7 +6,6 @@ import {
   QUIET_FROM_HOUR,
   QUIET_TO_HOUR,
   decideAlert,
-  describeAlert,
   digest,
   type AlertKind,
   type Urgency,
@@ -20,6 +19,7 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { ALERT_WORDS } from '../state/words';
 
 interface Props {
   readonly onBack: () => void;
@@ -72,13 +72,10 @@ export function AlertsScreen({ onBack }: Props) {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
         <Text variant="body" tone="secondary">
-          Six engines can each produce something worth knowing. None of them
-          decides whether to interrupt you — this does, in one place, because
-          the way an app loses its notifications is by sending a reasonable
-          number of them six times over.
+          {t('alerts_lede')}
         </Text>
 
-        <Card overline="At what time?" icon="clock" emphasis="plain">
+        <Card overline={t('at_what_time')} icon="clock" emphasis="plain">
           <View style={styles.hours}>
             {HOURS.map((option) => (
               <Chip
@@ -101,7 +98,7 @@ export function AlertsScreen({ onBack }: Props) {
             style={[styles.row, { borderBottomColor: colours.outline }]}
           >
             <View style={styles.flex}>
-              <Text variant="body">{sentenceCase(describeAlert(kind))}</Text>
+              <Text variant="body">{sentenceCase(t(ALERT_WORDS[kind]))}</Text>
               <Text variant="label" tone="secondary">
                 {POLICY[kind].to.join(', ')} · at most once every{' '}
                 {every(POLICY[kind].repeatAfterMs)}
@@ -117,11 +114,10 @@ export function AlertsScreen({ onBack }: Props) {
         ))}
 
         {held.length > 0 ? (
-          <Card overline="In the morning" icon="message" emphasis="plain">
+          <Card overline={t('in_the_morning')} icon="message" emphasis="plain">
             <Text variant="body">{digest(held)}</Text>
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              One line rather than four buzzes in a minute, which reads as a
-              malfunction rather than as a summary.
+              {t('one_line_not_four_buzzes')}
             </Text>
           </Card>
         ) : null}

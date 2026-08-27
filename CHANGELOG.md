@@ -24,6 +24,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Screens were still half in English.** The headings and buttons had been
+  translated and the body copy had not, so a Yorùbá reader met four lines of
+  Yorùbá and then a paragraph of English underneath. All 138 remaining strings
+  are translated, and a sweep script keeps the count honest.
+
+  Two layers under that were worse. The domain's own labels — levy kinds, paper
+  names, trust tiers, incident kinds, alert kinds, cadences, review questions —
+  were rendered straight from `packages/domain`, which writes in English because
+  that is what the server says and what the parity fixtures pin. The enum now
+  crosses that boundary and the words do not: one exhaustive map per enum, so
+  adding a levy kind is a compile error until it has four translations.
+
+  And the domain composes several sentences with the numbers already inside
+  them — the line under a ranked load, whether a fare is worth taking, how far
+  through the drops a truck is, what a dispute pack contains. The engine still
+  decides what to say; the app now decides how, from the same figures, with the
+  count first and the phrase after.
+
 - **A filtered trip list said "All trips".** `isFiltering` counted a date range
   and the sentence above the results did not, so a shipper who narrowed to
   "since Monday" read "All trips" above a list that was plainly not all of

@@ -6,6 +6,42 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-30 (evening) — Translated, and then translated again twice
+
+**Did.** A sweep script over every `.tsx` — JSX text nodes and user-facing props,
+with comments stripped so the prose in them does not count — found 138 English
+strings still on screen after the first pass. All of them are translated.
+
+### What surprised us
+
+**"Translated" meant three different things and only the first had been done.**
+
+The first layer is the screens' own copy, and that is what the sweep found. The
+second is `packages/domain`'s label functions: `describeLevy`, `describeTier`,
+`describeKind`, `askCarrier` and the rest. They write English on purpose —
+they are what the server says and what the parity fixtures pin character for
+character — so translating them in place would have broken parity to fix a
+screen. `apps/mobile/src/state/words.ts` maps each enum to a phrase instead,
+one exhaustive `Record` per enum, so adding a levy kind is a compile error
+until it has four translations rather than a silent English label.
+
+The third is the sentences the domain composes with the numbers already in
+them: the line under a ranked load, whether a fare is worth taking, how far
+through the drops a truck is, what a dispute pack holds. Those needed rebuilding
+app-side from the same figures. The engine decides what to say; the app decides
+how.
+
+**A rendered screen found the layers in that order, and only in that order.**
+After the first pass the loads board looked finished until a card was read:
+four lines of Yorùbá, then "0 km empty to the pickup, and it covers 841 km of
+the run home." underneath. Nothing failed. Nothing could have.
+
+**One phrase is legitimately identical in Igbo and English, and the test said
+so.** `truck_lowbed` — a lowbed is called a lowbed on every yard in Nigeria.
+The "nothing is an untranslated copy" test caught it, which is the test working:
+it is now on the same short exemption list as "SMS", with a note saying why
+inventing an Igbo word for it would be worse than borrowing the one drivers use.
+
 ## 2026-08-30 (later) — The last two engines, and a sentence that lied
 
 **Did.** `alerts.ts` and `search.ts` mirrored, 127 new parity cases between

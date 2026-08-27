@@ -140,7 +140,7 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
               onChangeText={setTyped}
               placeholder="0803 123 4567"
               placeholderTextColor={colours.textSecondary}
-              accessibilityLabel="Your phone number"
+              accessibilityLabel={t('your_phone_number')}
               keyboardType="phone-pad"
               autoComplete="tel"
               textContentType="telephoneNumber"
@@ -211,7 +211,7 @@ export function SignInScreen({ onRequestCode, onVerify }: Props) {
               }}
               placeholder="123456"
               placeholderTextColor={colours.textSecondary}
-              accessibilityLabel="The code from the SMS"
+              accessibilityLabel={t('enter_the_code')}
               keyboardType="number-pad"
               autoComplete="sms-otp"
               textContentType="oneTimeCode"

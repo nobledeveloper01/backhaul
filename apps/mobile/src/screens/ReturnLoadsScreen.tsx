@@ -4,13 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   NO_LOAD_FILTER,
   advise,
+  margin,
+  walkAwayBelow,
   distance,
   filterLoads,
   format,
   fromNaira,
   quote,
   rankLoads,
-  whyNothing,
   type Carrier,
   type Load,
   type LoadFilter,
@@ -29,6 +30,7 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { BLOCKER_WORDS, whyNoLoads, whyThisFare, whyThisLoad } from '../state/words';
 
 const at = (lat: number, lon: number, when: Date): Position => ({
   lat,
@@ -165,22 +167,21 @@ export function ReturnLoadsScreen({
         </Text>
         <Press
           onPress={onPost}
-          accessibilityLabel="Post a load"
-          accessibilityHint="Opens it to bids from verified carriers"
+          accessibilityLabel={t('post_a_load')}
+          accessibilityHint={t('opens_to_bids')}
           feedback="opacity"
           style={[styles.post, { borderColor: colours.accent }]}
         >
           <Icon name="package" size="sm" colour={colours.accent} />
           <Text variant="label" tone="accent">
-            Post
+            {t('post')}
           </Text>
         </Press>
       </View>
       <View style={styles.lede}>
         <Icon name="truck" size="sm" colour={colours.textSecondary} />
         <Text variant="body" tone="secondary" style={styles.flex}>
-          Your trailer is free in Kano. Home is Lagos, 830 km away — empty, that
-          run earns nothing.
+          {t('your_trailer_is_free')}
         </Text>
       </View>
 
@@ -188,12 +189,12 @@ export function ReturnLoadsScreen({
         value={filter.text}
         onChange={(text) => setFilter((was) => ({ ...was, text }))}
         placeholder={t('search_loads')}
-        accessibilityLabel="Search the load board"
+        accessibilityLabel={t('search_the_board')}
       />
 
       <View style={styles.filters}>
         <Chip
-          label="₦1m and up"
+          label={t('a_million_and_up')}
           selected={filter.minimumOffer !== null}
           onPress={() =>
             setFilter((was) => ({
@@ -203,7 +204,7 @@ export function ReturnLoadsScreen({
           }
         />
         <Chip
-          label="Trailer only"
+          label={t('trailer_only')}
           selected={filter.truckClasses.length > 0}
           onPress={() =>
             setFilter((was) => ({
@@ -213,7 +214,7 @@ export function ReturnLoadsScreen({
           }
         />
         <Chip
-          label="Ready today"
+          label={t('ready_today')}
           selected={filter.readyBefore !== null}
           onPress={() =>
             setFilter((was) => ({
@@ -233,7 +234,7 @@ export function ReturnLoadsScreen({
       <Press
         onPress={onChain}
         accessibilityLabel={t('chain_three_legs')}
-        accessibilityHint="Strings return loads together so the truck never runs empty"
+        accessibilityHint={t('chain_note')}
         feedback="opacity"
         /*
           Quiet, deliberately. The ranked "best fit" load is this screen's one
@@ -249,7 +250,7 @@ export function ReturnLoadsScreen({
         <View style={styles.flex}>
           <Text variant="title">{t('chain_three_legs')}</Text>
           <Text variant="label" tone="secondary">
-            Kano → Kaduna → Lagos, loaded the whole way
+            Kano → Kaduna → Lagos · {t('loaded_the_whole_way')}
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />
@@ -259,13 +260,13 @@ export function ReturnLoadsScreen({
         <Shortcut
           icon="swap"
           title={t('share_a_trailer')}
-          detail="Two part-loads, one run"
+          detail={t('two_part_loads_one_run')}
           onPress={onPairs}
         />
         <Shortcut
           icon="route"
           title={t('your_lanes')}
-          detail="Runs you make again"
+          detail={t('runs_you_make_again')}
           onPress={onLanes}
         />
       </View>
@@ -273,9 +274,9 @@ export function ReturnLoadsScreen({
       {ranked.length === 0 ? (
         <Empty
           icon="search"
-          title="Nothing on the board for that"
-          detail={whyNothing(filter)}
-          action={{ label: 'Clear the filter', onPress: () => setFilter(NO_LOAD_FILTER) }}
+          title={t('nothing_on_the_board_for_that')}
+          detail={whyNoLoads(filter, t)}
+          action={{ label: t('clear_the_filter'), onPress: () => setFilter(NO_LOAD_FILTER) }}
         />
       ) : null}
 
@@ -291,7 +292,7 @@ export function ReturnLoadsScreen({
       {blocked.length > 0 ? (
         <>
           <Text variant="overline" tone="secondary" style={styles.blockedHead}>
-            NOT FOR THIS TRUCK
+            {t('not_for_this_truck').toUpperCase()}
           </Text>
           {blocked.map((scored) => (
             <LoadRow
@@ -305,8 +306,7 @@ export function ReturnLoadsScreen({
       ) : null}
 
       <Text variant="label" tone="secondary" style={styles.footer}>
-        Ranked on what the trip pays, how far you run empty to reach it, and how
-        much of the run home it covers.
+        {t('ranking_note')}
       </Text>
     </ScrollView>
   );
@@ -358,6 +358,7 @@ function LoadRow({
   rank: number;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const blocked = scored.blocked !== null;
   const [from, to, cargo] = route;
 
@@ -365,7 +366,7 @@ function LoadRow({
   const homeward = scored.progressHome > 50_000;
 
   const laden = distance(scored.load.origin, scored.load.destination);
-  const verdict = advise(scored.load.offered ?? (0 as never), {
+  const costing = {
     truck: scored.load.requires,
     ladenM: laden,
     // The empty run to reach it. The whole argument of this screen.
@@ -373,7 +374,8 @@ function LoadRow({
     dieselPerLitre: fromNaira(1_100),
     levies: fromNaira(Math.round((laden / 1_000) * 45)),
     other: fromNaira(15_000),
-  });
+  };
+  const verdict = advise(scored.load.offered ?? (0 as never), costing);
 
   return (
     <Card
@@ -389,7 +391,7 @@ function LoadRow({
         {!blocked && rank === 1 ? (
           <View style={[styles.best, { backgroundColor: colours.accent }]}>
             <Text variant="label" style={{ color: colours.onAccent }}>
-              Best fit
+              {t('best_fit')}
             </Text>
           </View>
         ) : null}
@@ -406,7 +408,7 @@ function LoadRow({
         <View style={styles.metaRow}>
           <Icon name="alert" size="sm" colour={colours.stale} />
           <Text variant="body" tone="stale" style={styles.flex}>
-            {scored.because}
+            {t(BLOCKER_WORDS[scored.blocked ?? 'expired'])}
           </Text>
         </View>
       ) : (
@@ -414,7 +416,7 @@ function LoadRow({
           <View style={styles.metaRow}>
             <Icon name={homeward ? 'swap' : 'route'} size="sm" colour={colours.textSecondary} />
             <Text variant="body" tone="secondary" style={styles.flex}>
-              {scored.because}
+              {whyThisLoad(scored.deadhead, scored.progressHome, true, t)}
             </Text>
           </View>
 
@@ -430,7 +432,8 @@ function LoadRow({
             </Text>
           </View>
           <Text variant="label" tone="secondary">
-            Going rate {format(indicative.low)} – {format(indicative.high)} · indicative
+            {t('going_rate')} {format(indicative.low)} – {format(indicative.high)} ·{' '}
+            {t('indicative')}
           </Text>
 
           {/*
@@ -455,7 +458,12 @@ function LoadRow({
               tone={verdict.take ? 'moving' : 'stopped'}
               style={styles.flex}
             >
-              {verdict.detail}
+              {whyThisFare(
+                verdict.take,
+                margin(scored.load.offered ?? (0 as never), costing).fraction,
+                (scored.load.offered ?? 0) < walkAwayBelow(costing),
+                t,
+              )}
             </Text>
           </View>
         </>

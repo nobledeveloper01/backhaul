@@ -8,9 +8,7 @@ import {
   decide,
   UPLOAD_EVERY_MS,
   dailyCost,
-  describeCost,
   describeLanguage,
-  describeMonthly,
   estimateCost,
   isSystemRaised,
   say,
@@ -20,6 +18,8 @@ import {
   visibleConfirmation,
   type TripEvent,
   type TripState,
+  describeBytes,
+  monthlyCost,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -30,6 +30,7 @@ import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips } from '../state/demo';
 import { useLanguage } from '../state/language';
+import type { Words } from '../components/PositionAge';
 
 /**
  * The driver's whole app.
@@ -261,8 +262,7 @@ export function DriverScreen({
           </Text>
           {plan.sampleIn >= INTERVAL.conserving ? (
             <Text variant="bodyDriver" tone="stopped" style={styles.gap}>
-              Your battery is low, so Backhaul is checking less often to help the
-              phone last the trip.
+              {t('battery_low_note')}
             </Text>
           ) : null}
         </Card>
@@ -315,7 +315,12 @@ export function DriverScreen({
       <View style={styles.dataRow}>
         <Icon name="signal" size="sm" colour={colours.textSecondary} />
         <Text variant="body" tone="secondary" style={styles.flex}>
-          {describeCost(dataUsed, dataCost)} {describeMonthly(dailyData.cost)}
+          {describeBytes(dataUsed.bytes)} {t('of_data_so_far')} —{' '}
+          {dataCost / 100 < 1 ? t('under_one_naira') : `₦${Math.round(dataCost / 100)}`}{' '}
+          {t('of_your_airtime')} {monthlyCost(dailyData.cost) / 100 < 1
+            ? t('under_one_naira')
+            : `₦${Math.round(monthlyCost(dailyData.cost) / 100)}`}{' '}
+          {t('about_a_month_at_this_rate')}
         </Text>
       </View>
 
@@ -352,7 +357,7 @@ export function DriverScreen({
 
         <Press
           onPress={onDeliver}
-          accessibilityLabel="Hand over and sign"
+          accessibilityLabel={t('hand_over_and_sign')}
           feedback="opacity"
           style={[styles.half, { borderColor: colours.outline }]}
         >
@@ -365,7 +370,7 @@ export function DriverScreen({
 
       <Press
         onPress={onOpenHistory}
-        accessibilityLabel="Your past trips and earnings"
+        accessibilityLabel={t('past_trips_and_earnings')}
         feedback="opacity"
         style={[styles.link, { borderColor: colours.outline }]}
       >
@@ -383,7 +388,7 @@ export function DriverScreen({
               key={candidate}
               onPress={() => move(candidate)}
               accessibilityRole="button"
-              accessibilityLabel={actionLabel(candidate)}
+              accessibilityLabel={actionLabel(candidate, t)}
               style={({ pressed }) => [
                 styles.action,
                 elevation.lifted,
@@ -391,17 +396,17 @@ export function DriverScreen({
               ]}
             >
               <Text variant="title" style={{ color: colours.onAccent }}>
-                {actionLabel(candidate)}
+                {actionLabel(candidate, t)}
               </Text>
               <Icon name="chevron-right" size="md" colour={colours.onAccent} />
             </Pressable>
           ))}
         </View>
       ) : (
-        <Card overline="Finished" icon="check">
-          <Text variant="title">This trip is done.</Text>
+        <Card overline={t('finished')} icon="check">
+          <Text variant="title">{t('this_trip_is_done')}</Text>
           <Text variant="bodyDriver" tone="secondary" style={styles.gap}>
-            Nothing more to do, and nothing is being shared any more.
+            {t('nothing_more_to_do')}
           </Text>
         </Card>
       )}
@@ -428,18 +433,18 @@ function cadence(seconds: number): string {
  * The state machine's vocabulary is for the record; a driver at a loading bay
  * is pressing "I've started loading", not "transition to loading".
  */
-function actionLabel(state: TripState): string {
+function actionLabel(state: TripState, t: Words): string {
   switch (state) {
     case 'loading':
-      return "I've started loading";
+      return t('i_have_loaded');
     case 'in_transit':
-      return "I'm on the road";
+      return t('im_on_the_road');
     case 'arrived':
-      return "I've arrived";
+      return t('i_have_arrived');
     case 'delivered':
-      return 'Delivered';
+      return t('delivered_word');
     case 'assigned':
-      return 'Accept this trip';
+      return t('accept_this_trip');
     case 'signal_lost':
     case 'stalled':
     case 'open':

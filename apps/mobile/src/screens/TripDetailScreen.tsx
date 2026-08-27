@@ -14,7 +14,6 @@ import {
   shouldTrack,
   silentFor,
   chargeableWaiting,
-  describeProgress,
   deviation,
   headline,
   nextRelease,
@@ -26,6 +25,8 @@ import {
   type Position,
   type Stop,
   type Visit,
+  completed,
+  nextDrop,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -43,6 +44,7 @@ import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { whereTheDropsAre } from '../state/words';
 import {
   demoDrops,
   demoEscrow,
@@ -224,7 +226,7 @@ export function TripDetailScreen({
         <Press
           onPress={onDrops}
           accessibilityLabel={t('drops_on_this_trip')}
-          accessibilityHint={describeProgress(drops)}
+          accessibilityHint={whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}
           feedback="opacity"
           style={[styles.rowLink, { borderColor: colours.outline }]}
         >
@@ -232,7 +234,7 @@ export function TripDetailScreen({
           <View style={styles.flex}>
             <Text variant="title">{t('drops')}</Text>
             <Text variant="label" tone="secondary">
-              {describeProgress(drops)}
+              {whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}
             </Text>
           </View>
           <Icon name="chevron-right" size="md" colour={colours.outline} />
@@ -373,8 +375,8 @@ export function TripDetailScreen({
         </Card>
         <Press
           onPress={onDispute}
-          accessibilityLabel="What the record shows"
-          accessibilityHint="Everything this trip recorded, in the order it happened"
+          accessibilityLabel={t('what_the_record_shows')}
+          accessibilityHint={t('record_detail')}
           style={[styles.proof, { borderColor: colours.outline }]}
         >
           <Icon name="list" size="md" colour={colours.textSecondary} />
@@ -386,8 +388,8 @@ export function TripDetailScreen({
 
         <Press
           onPress={onCancel}
-          accessibilityLabel="Call this trip off"
-          accessibilityHint="Shows what cancelling costs before anything happens"
+          accessibilityLabel={t('call_this_trip_off')}
+          accessibilityHint={t('cancel_detail')}
           feedback="opacity"
           style={[styles.cancel, { borderColor: colours.outline }]}
         >
@@ -398,8 +400,8 @@ export function TripDetailScreen({
 
         <Press
           onPress={onProof}
-          accessibilityLabel="Open the delivery document"
-          accessibilityHint="Photographs, signature and where it was captured"
+          accessibilityLabel={t('open_delivery_document')}
+          accessibilityHint={t('delivery_document_detail')}
           style={[styles.proof, { borderColor: colours.outline }]}
         >
           <Icon name="document" size="md" colour={colours.textSecondary} />

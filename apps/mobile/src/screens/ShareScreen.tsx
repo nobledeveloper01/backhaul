@@ -80,22 +80,22 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
           */}
           <Option
             title={t('where_it_is_only')}
-            detail="Position and arrival, nothing else."
+            detail={t('position_and_arrival_only')}
             selected={scope === 'position'}
             onPress={() => setScope('position')}
           />
           <Option
             title={t('where_it_has_been_too')}
-            detail="Adds the full track and what the tracker dropped from it."
+            detail={t('adds_the_full_track')}
             selected={scope === 'evidence'}
             onPress={() => setScope('evidence')}
           />
 
           <View style={styles.rules}>
-            <Rule on={visible.position} label="Where the truck is now" />
-            <Rule on={visible.eta} label="When it should arrive" />
-            <Rule on={visible.history} label="Everywhere it has been" />
-            <Rule on={visible.trackQuality} label="What the track dropped, and why" />
+            <Rule on={visible.position} label={t('where_the_truck_is_now')} />
+            <Rule on={visible.eta} label={t('when_it_should_arrive')} />
+            <Rule on={visible.history} label={t('everywhere_it_has_been')} />
+            <Rule on={visible.trackQuality} label={t('what_the_track_dropped')} />
           </View>
 
           {/*
@@ -109,8 +109,8 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
             <Text variant="overline" tone="secondary">
               {t('never_shown').toUpperCase()}
             </Text>
-            <Rule on={visible.contactDetails} label="Anybody's phone number" />
-            <Rule on={visible.money} label="What the load is worth" />
+            <Rule on={visible.contactDetails} label={t('anybodys_phone_number')} />
+            <Rule on={visible.money} label={t('what_the_load_is_worth')} />
           </View>
         </Card>
 
@@ -126,7 +126,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
           <View style={styles.actions}>
             <Press
               onPress={onPreview}
-              accessibilityLabel="See what they will see"
+              accessibilityLabel={t('see_what_they_see')}
               style={[styles.primary, { backgroundColor: colours.accent }]}
             >
               <View style={styles.centreRow}>
@@ -144,7 +144,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
         </Card>
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          LINKS ON THIS TRIP
+          {t('links_on_this_trip').toUpperCase()}
         </Text>
 
         {links.map((link) => (
@@ -279,7 +279,7 @@ function LinkRow({
           <Press
             onPress={onRevoke}
             accessibilityLabel={`Turn off the link for ${link.label}`}
-            accessibilityHint="They stop being able to see this trip"
+            accessibilityHint={t('they_stop_seeing_it')}
             feedback="opacity"
             hitSlop={space.sm}
             style={[styles.revoke, { borderColor: colours.outline }]}

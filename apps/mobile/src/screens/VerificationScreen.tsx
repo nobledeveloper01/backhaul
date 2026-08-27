@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   EXPIRY_WARNING_DAYS,
   MINIMUM_TRIPS_FOR_RATE,
-  describeTier,
   expiringSoon,
   nextStep,
   onTimeRate,
@@ -21,6 +20,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { TIER_WORDS } from '../state/words';
 import { demoNow } from '../state/demo';
 import { DEMO_DOCUMENTS, DEMO_RECORD, demoExpiries } from '../state/product';
 
@@ -75,7 +75,7 @@ export function VerificationScreen({ onBack }: Props) {
               <Icon name="shield" size="lg" colour={tintFor(tier, colours)} />
             </View>
             <View style={styles.flex}>
-              <Text variant="headline">{describeTier(tier)}</Text>
+              <Text variant="headline">{t(TIER_WORDS[tier])}</Text>
               <Text variant="body" tone="secondary">
                 {DEMO_RECORD.tripsCompleted} trips completed
                 {rate === null
@@ -97,7 +97,7 @@ export function VerificationScreen({ onBack }: Props) {
         </Card>
 
         {step !== null ? (
-          <Card overline={`To reach ${describeTier(step.tier)}`} icon="route">
+          <Card overline={`${t('to_reach')} ${t(TIER_WORDS[step.tier])}`} icon="route">
             {step.missing.map((missing) => (
               <View key={missing} style={styles.missing}>
                 <Icon name="plus" size="sm" colour={colours.accent} />
@@ -108,10 +108,9 @@ export function VerificationScreen({ onBack }: Props) {
             ))}
           </Card>
         ) : (
-          <Card overline="Top of the ladder" icon="check">
+          <Card overline={t('top_of_the_ladder')} icon="check">
             <Text variant="body">
-              Nothing left to prove. An upheld incident would cost one tier — not
-              the whole record.
+              {t('nothing_left_to_prove')}
             </Text>
           </Card>
         )}
@@ -183,8 +182,7 @@ export function VerificationScreen({ onBack }: Props) {
         })}
 
         <Text variant="label" tone="secondary">
-          A tier is never something a carrier types in. It comes out of these
-          papers and a delivery record neither side can edit.
+          {t('tier_note')}
         </Text>
       </ScrollView>
     </View>

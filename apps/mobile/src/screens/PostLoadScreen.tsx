@@ -111,7 +111,7 @@ export function PostLoadScreen({ onBack }: Props) {
           {/* A visible label, not a placeholder. A placeholder disappears the
               moment somebody types, taking the question with it. */}
           <Text variant="label" tone="secondary">
-            WHAT IS IT
+            {t('what_is_it').toUpperCase()}
           </Text>
           <TextInput
             value={cargo}
@@ -125,7 +125,7 @@ export function PostLoadScreen({ onBack }: Props) {
           />
 
           <Text variant="label" tone="secondary" style={styles.gap}>
-            HOW HEAVY, IN TONNES
+            {t('how_heavy_in_tonnes').toUpperCase()}
           </Text>
           <TextInput
             value={weightText}
@@ -163,7 +163,7 @@ export function PostLoadScreen({ onBack }: Props) {
         </Card>
 
         {estimate !== null ? (
-          <Card overline="What it should cost" icon="naira" emphasis="accent">
+          <Card overline={t('what_it_should_cost')} icon="naira" emphasis="accent">
             {/*
               Stacked, not "low – high" on one line. Two seven-figure naira
               amounts and a dash are about 24 characters at 36pt, which
@@ -184,8 +184,7 @@ export function PostLoadScreen({ onBack }: Props) {
               without it. This is the sentence that keeps it honest.
             */}
             <Text variant="label" tone="stale" style={styles.gap}>
-              Indicative only. Rates move with diesel, with the season, and with
-              which way the truck is already going.
+              {t('indicative_only')}
             </Text>
           </Card>
         ) : null}
@@ -193,7 +192,7 @@ export function PostLoadScreen({ onBack }: Props) {
         <Press
           onPress={() => {}}
           accessibilityLabel={t('post_this_load')}
-          accessibilityHint="Opens it to bids from verified carriers"
+          accessibilityHint={t('opens_to_bids')}
           disabled={estimate === null || cargo.trim() === ''}
           style={[styles.post, { backgroundColor: colours.accent }]}
         >

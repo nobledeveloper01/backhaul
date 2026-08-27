@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  describeProgress,
   dropFee,
   format,
   isComplete,
@@ -10,6 +9,7 @@ import {
   outOfOrder,
   weightAboard,
   type Drop,
+  completed,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
@@ -21,6 +21,7 @@ import { agoLabel } from '../components/PositionAge';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { whereTheDropsAre } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDrops } from '../state/product';
 
@@ -66,8 +67,8 @@ export function DropsScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="Where the truck is up to" icon="package">
-          <Text variant="title">{describeProgress(drops)}</Text>
+        <Card emphasis="accent" overline={t('where_the_truck_is_up_to')} icon="package">
+          <Text variant="title">{whereTheDropsAre(completed(drops).length, drops.length, nextDrop(drops)?.at.name ?? null, t)}</Text>
 
           <View style={styles.facts}>
             <View style={styles.fact}>
@@ -97,23 +98,20 @@ export function DropsScreen({ trip, onBack }: Props) {
         {isComplete(drops) ? (
           <Card overline="Finished" icon="check" emphasis="plain">
             <Text variant="body">
-              Every drop is signed for, so the trip can close. Arriving at the
-              last address would not have been enough.
+              {t('every_drop_signed_note')}
             </Text>
           </Card>
         ) : null}
 
         {late.length > 0 ? (
-          <Card overline="Out of order" icon="swap" emphasis="plain">
+          <Card overline={t('out_of_order_card')} icon="swap" emphasis="plain">
             {late.map((drop) => (
               <Text key={drop.id} variant="body">
                 {drop.at.name} was delivered with an earlier drop still aboard.
               </Text>
             ))}
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              Recorded, not refused. A consignee who was closed is a real thing —
-              but "delivered in the order loaded" is otherwise assumed by
-              everybody reading this afterwards.
+              {t('out_of_order_note')}
             </Text>
           </Card>
         ) : null}
@@ -191,7 +189,7 @@ export function DropsScreen({ trip, onBack }: Props) {
                     variant="label"
                     style={{ color: isNext ? colours.onAccent : colours.textSecondary }}
                   >
-                    Hand over here
+                    {t('hand_over_here_button')}
                   </Text>
                 </Press>
               )}

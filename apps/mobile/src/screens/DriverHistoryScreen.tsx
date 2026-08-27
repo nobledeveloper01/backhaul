@@ -113,11 +113,11 @@ export function DriverHistoryScreen({ onBack }: Props) {
           { paddingBottom: insets.bottom + space.xxl },
         ]}
       >
-        <Card overline="This month" icon="naira" emphasis="accent">
+        <Card overline={t('this_month')} icon="naira" emphasis="accent">
           <Text variant="display">{format(totalEarned)}</Text>
           <Text variant="bodyDriver" tone="secondary" style={styles.gap}>
-            {plural(trips.length, 'trip')} · {totalKm.toLocaleString('en-NG')} km ·{' '}
-            {onTime} of {trips.length} on time
+            {trips.length} {t('trips_word')} · {totalKm.toLocaleString('en-NG')} km ·{' '}
+            {onTime}/{trips.length} {t('on_time_word')}
           </Text>
         </Card>
 
@@ -129,7 +129,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
           told them nothing they could use. What a kilometre earned is a figure
           nobody has ever been able to give them.
         */}
-        <Card overline="What you are owed" icon="document">
+        <Card overline={t('what_you_are_owed')} icon="document">
           <View style={styles.figures}>
             <View style={styles.figure}>
               <Text variant="headline" tabular>
@@ -161,13 +161,12 @@ export function DriverHistoryScreen({ onBack }: Props) {
 
           {waiting !== null ? (
             <Text variant="label" tone="secondary" style={styles.gap}>
-              The oldest unpaid trip has been waiting {humanDuration(waiting, t)}.
-              It is at the top of the list below, because that is the one to ask
-              about.
+              {humanDuration(waiting, t)} — {t('oldest_unpaid_waiting')}{' '}
+              {t('oldest_unpaid_note')}
             </Text>
           ) : (
             <Text variant="label" tone="secondary" style={styles.gap}>
-              Every trip has been settled.
+              {t('every_trip_settled')}
             </Text>
           )}
         </Card>
@@ -175,7 +174,7 @@ export function DriverHistoryScreen({ onBack }: Props) {
         {owed.length > 0 ? (
           <>
             <Text variant="overline" tone="secondary" style={styles.sectionHead}>
-              NOT PAID YET
+              {t('not_paid_yet').toUpperCase()}
             </Text>
 
             {owed.map((earning) => (
@@ -186,7 +185,8 @@ export function DriverHistoryScreen({ onBack }: Props) {
                 <View style={styles.flex}>
                   <Text variant="bodyDriver">{earning.corridor}</Text>
                   <Text variant="label" tone="secondary">
-                    delivered {agoLabel(now.getTime() - earning.deliveredAt.getTime(), t)}
+                    {agoLabel(now.getTime() - earning.deliveredAt.getTime(), t)} ·{' '}
+                    {t('delivered_lower')}
                   </Text>
                 </View>
                 <Text variant="bodyDriver" tabular>
@@ -200,16 +200,15 @@ export function DriverHistoryScreen({ onBack }: Props) {
         {trips.length === 0 ? (
           <Empty
             icon="truck"
-            title="No trips yet"
-            detail="Your completed trips and what they paid will show up here."
+            title={t('no_trips_yet_history')}
+            detail={t('history_empty_detail')}
           />
         ) : (
           trips.map((trip) => <PastRow key={trip.id} trip={trip} />)
         )}
 
         <Text variant="label" tone="secondary" style={styles.footer}>
-          On-time is measured from tracked arrivals, not from anybody's report —
-          including yours. If one of these looks wrong, it is worth disputing.
+          {t('on_time_note')}
         </Text>
       </ScrollView>
     </View>

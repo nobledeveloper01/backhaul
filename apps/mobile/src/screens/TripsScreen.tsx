@@ -144,7 +144,7 @@ export function TripsScreen({ onOpen }: Props) {
               // Three words, not four: at the largest text size the longer
               // version ran off the right edge of the field.
               placeholder={t('search_trips')}
-              accessibilityLabel="Search trips"
+              accessibilityLabel={t('search_trips_label')}
             />
 
             {/*
@@ -231,15 +231,15 @@ export function TripsScreen({ onOpen }: Props) {
           filtering ? (
             <Empty
               icon="search"
-              title="Nothing matches that"
-              detail={`${describeTripFilter(filter)} — none on the road right now.`}
-              action={{ label: 'Clear the filter', onPress: () => setFilter(NO_TRIP_FILTER) }}
+              title={t('nothing_matches_that')}
+              detail={`${describeTripFilter(filter)} — ${t('none_on_the_road_now')}`}
+              action={{ label: t('clear_the_filter'), onPress: () => setFilter(NO_TRIP_FILTER) }}
             />
           ) : (
             <Empty
               icon="truck"
               title={t('no_trips_yet')}
-              detail="Already got a truck on the road? Track it in a minute, even if you arranged it somewhere else."
+              detail={t('already_got_a_truck')}
             />
           )
         }
@@ -273,6 +273,7 @@ const Row = memo(function Row({
   onPress: () => void;
 }) {
   const colours = useColours();
+  const { t } = useLanguage();
   const elevation = useElevation();
 
   const state = trip.history[trip.history.length - 1]?.state ?? 'open';
@@ -285,7 +286,7 @@ const Row = memo(function Row({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${trip.cargo}, ${trip.originName} to ${trip.destinationName}`}
-      accessibilityHint="Opens the trip"
+      accessibilityHint={t('opens_the_trip')}
       style={({ pressed }) => [
         styles.row,
         elevation.raised,

@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { Press } from './Press';
 import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
+import { useLanguage } from '../state/language';
 
 interface Props {
   readonly value: string;
@@ -20,6 +21,7 @@ interface Props {
  * ten, and it sits exactly where a thumb lands when reaching for the keyboard.
  */
 export function SearchField({ value, onChange, placeholder, accessibilityLabel }: Props) {
+  const { t } = useLanguage();
   const colours = useColours();
 
   return (
@@ -55,7 +57,7 @@ export function SearchField({ value, onChange, placeholder, accessibilityLabel }
       {value.length > 0 ? (
         <Press
           onPress={() => onChange('')}
-          accessibilityLabel="Clear the search"
+          accessibilityLabel={t('clear_the_search')}
           feedback="opacity"
           style={styles.clear}
         >

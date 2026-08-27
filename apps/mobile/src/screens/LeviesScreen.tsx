@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   byKind,
-  describeLevy,
   format,
   fromNaira,
   needsNote,
@@ -22,6 +21,7 @@ import { mono, radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { LEVY_WORDS } from '../state/words';
 import { demoLevies } from '../state/product';
 
 interface Props {
@@ -110,8 +110,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
 
           {owedToDriver ? (
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              You have spent more than you were given. That is the number this
-              screen exists for.
+              {t('spent_more_note')}
             </Text>
           ) : null}
         </Card>
@@ -125,7 +124,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
             <Press
               key={`${option.kind}-${option.naira}`}
               onPress={() => add(option.kind, option.naira)}
-              accessibilityLabel={`${describeLevy(option.kind)}, ${option.naira} naira`}
+              accessibilityLabel={`${t(LEVY_WORDS[option.kind])}, ${option.naira} naira`}
               style={[styles.tile, { borderColor: colours.outline }]}
             >
               <Icon name={option.icon} size="md" colour={colours.textSecondary} />
@@ -138,7 +137,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
                 say what the money went to.
               */}
               <Text variant="label" tone="secondary" numberOfLines={2} style={styles.centred}>
-                {describeLevy(option.kind)}
+                {t(LEVY_WORDS[option.kind])}
               </Text>
             </Press>
           ))}
@@ -158,7 +157,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
           {grouped.map((row) => (
             <View key={row.kind} style={styles.summaryRow}>
               <Text variant="body" style={styles.flex}>
-                {describeLevy(row.kind)}
+                {t(LEVY_WORDS[row.kind])}
                 <Text variant="label" tone="secondary">
                   {'  '}×{row.count}
                 </Text>
@@ -179,7 +178,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
           .map((levy) => (
             <View key={levy.id} style={[styles.entry, { borderBottomColor: colours.outline }]}>
               <View style={styles.flex}>
-                <Text variant="body">{describeLevy(levy.kind)}</Text>
+                <Text variant="body">{t(LEVY_WORDS[levy.kind])}</Text>
                 <Text variant="label" tone="secondary">
                   {agoLabel(now.getTime() - levy.at.getTime(), t)}
                   {levy.note.length > 0 ? ` · ${levy.note}` : ''}
@@ -193,9 +192,7 @@ export function LeviesScreen({ trip, onBack }: Props) {
           ))}
 
         <Text variant="label" tone="secondary">
-          Once enough trips have run this corridor, the middle of these totals
-          is what the lane actually costs — the number a carrier needs to price
-          it and has never had.
+          {t('lane_middle_note')}
         </Text>
       </ScrollView>
     </View>

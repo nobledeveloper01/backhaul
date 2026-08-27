@@ -5,7 +5,6 @@ import {
   MINIMUM_PHOTOS,
   capturedAwayFromDestination,
   capturedNear,
-  describeException,
   document,
   seal,
   settlesDespite,
@@ -20,6 +19,7 @@ import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { EXCEPTION_WORDS } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDelivery, demoWaypoints } from '../state/product';
 
@@ -135,8 +135,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
           </View>
 
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            The goods, and where you are. Two is the fewest that make a delivery
-            arguable — one photograph of a pallet could have been taken anywhere.
+            {t('two_photos_note')}
           </Text>
         </Card>
 
@@ -146,7 +145,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
           actually made will stop using the app before the day is out.
         */}
         {away !== null ? (
-          <Card overline="Where it was captured" icon="pin" emphasis="plain">
+          <Card overline={t('where_it_was_captured')} icon="pin" emphasis="plain">
             <View style={styles.state}>
               <Icon
                 name={far ? 'alert' : 'check'}
@@ -164,7 +163,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
 
         {delivery.exception !== null ? (
           <Card overline="Exception" icon="alert">
-            <Text variant="title">{describeException(delivery.exception)}</Text>
+            <Text variant="title">{t(EXCEPTION_WORDS[delivery.exception.kind])}</Text>
             <Text variant="body" tone="secondary" style={styles.gapTop}>
               {delivery.exception.note}
             </Text>
@@ -198,8 +197,7 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
             </View>
           ))}
           <Text variant="label" tone="secondary" style={styles.gapTop}>
-            The same lines go into the PDF and the dispute pack. There is one
-            version of this document, not three.
+            {t('one_version_note')}
           </Text>
         </Card>
 
@@ -211,12 +209,12 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
         {onReview !== undefined && sealed.ok ? (
           <Press
             onPress={onReview}
-            accessibilityLabel="Say how the carrier did"
+            accessibilityLabel={t('say_how_the_carrier_did')}
             style={[styles.review, { borderColor: colours.outline }]}
           >
             <Icon name="pen" size="md" colour={colours.textSecondary} />
             <Text variant="title" style={styles.flex}>
-              How did they do?
+              {t('how_did_they_do')}
             </Text>
             <Icon name="chevron-right" size="md" colour={colours.outline} />
           </Press>

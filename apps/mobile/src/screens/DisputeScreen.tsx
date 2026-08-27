@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { describePack, isThin, type Weight } from '@backhaul/domain';
+import { isThin, type Weight } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Icon, type IconName } from '../components/Icon';
@@ -11,6 +11,8 @@ import { humanDuration } from '../components/PositionAge';
 import { mono, radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
+import { whatThePackHolds } from '../state/words';
+import type { Words } from '../components/PositionAge';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDispute } from '../state/product';
 
@@ -52,14 +54,20 @@ export function DisputeScreen({ trip, onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
-        <Card emphasis="accent" overline="The pack" icon="document">
-          <Text variant="title">{describePack(pack)}</Text>
+        <Card emphasis="accent" overline={t('the_pack')} icon="document">
+          <Text variant="title">{whatThePackHolds(
+              pack.items.length,
+              pack.counts.measured,
+              pack.counts.late_attested,
+              Math.round(pack.gaps.reduce((sum, gap) => sum + gap.ms, 0) / 3_600_000),
+              t,
+            )}</Text>
 
           <View style={styles.counts}>
             <Count
-              label="Measured"
+              label={t('measured_word')}
               value={pack.counts.measured}
-              detail="by the tracker"
+              detail={t('by_the_tracker')}
               colour={colours.moving}
             />
             <Count
@@ -74,9 +82,9 @@ export function DisputeScreen({ trip, onBack }: Props) {
               to finish the sentence its label started, not start a new one.
             */}
             <Count
-              label="Reported late"
+              label={t('reported_late_word')}
               value={pack.counts.late_attested}
-              detail="hours after the fact"
+              detail={t('hours_after_the_fact')}
               colour={colours.stale}
             />
           </View>
@@ -87,14 +95,13 @@ export function DisputeScreen({ trip, onBack }: Props) {
 
           {isThin(pack) ? (
             <Text variant="label" tone="stopped" style={styles.gapTight}>
-              There is not much here. That is a fact about the trip, not about
-              either party's case.
+              {t('not_much_here')}
             </Text>
           ) : null}
         </Card>
 
         {pack.gaps.length > 0 ? (
-          <Card overline="Nothing recorded" icon="signal-off" emphasis="plain">
+          <Card overline={t('nothing_recorded')} icon="signal-off" emphasis="plain">
             {pack.gaps.map((gap) => (
               <View key={gap.from.toISOString()} style={styles.line}>
                 <Text variant="body" style={styles.flex}>
@@ -103,14 +110,13 @@ export function DisputeScreen({ trip, onBack }: Props) {
               </View>
             ))}
             <Text variant="label" tone="secondary" style={styles.gapTop}>
-              A hole in the record is the thing both sides will point at, so it
-              is named rather than left to be noticed.
+              {t('hole_note')}
             </Text>
           </Card>
         ) : null}
 
         <Text variant="overline" tone="secondary" style={styles.heading}>
-          IN THE ORDER IT HAPPENED
+          {t('in_the_order_it_happened').toUpperCase()}
         </Text>
 
         {pack.items.map((item, index) => {
@@ -146,7 +152,7 @@ export function DisputeScreen({ trip, onBack }: Props) {
                       colour={colours.textSecondary}
                     />
                     <Text variant="label" tone="secondary">
-                      {weightLabel(item.weight)}
+                      {weightLabel(item.weight, t)}
                       {item.weight === 'late_attested' && item.receivedAt !== null
                         ? ` · ${humanDuration(
                             item.receivedAt.getTime() - item.at.getTime(),
@@ -204,14 +210,14 @@ function weightIcon(weight: Weight): IconName {
   return weight === 'measured' ? 'signal' : weight === 'attested' ? 'pen' : 'clock';
 }
 
-function weightLabel(weight: Weight): string {
+function weightLabel(weight: Weight, t: Words): string {
   switch (weight) {
     case 'measured':
-      return 'Measured';
+      return t('measured_word');
     case 'attested':
-      return 'Reported';
+      return t('reported_word');
     case 'late_attested':
-      return 'Reported late';
+      return t('reported_late_word');
   }
 }
 

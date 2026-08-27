@@ -93,7 +93,7 @@ export function FollowScreen({ trip, onBack }: Props) {
         */}
         <Press
           onPress={() => setIndex((was) => was + 1)}
-          accessibilityLabel="Show the next link's state"
+          accessibilityLabel={t('show_next_link')}
           feedback="opacity"
           style={[styles.switcher, { borderColor: colours.outline }]}
         >
@@ -137,7 +137,7 @@ export function FollowScreen({ trip, onBack }: Props) {
             </View>
 
             {visible?.position === true ? (
-              <Card overline="Where it is" icon="route" emphasis="accent">
+              <Card overline={t('where_it_is')} icon="route" emphasis="accent">
                 <Corridor
                   origin={trip.origin}
                   destination={trip.destination}
@@ -155,25 +155,24 @@ export function FollowScreen({ trip, onBack }: Props) {
               is usually the cargo owner, and the question they ask the sender
               first is whether this shows anything they would rather it did not.
             */}
-            <Card overline="What this link shows" icon="link" emphasis="plain">
-              <Line on label="Where the truck is, and when it should arrive" />
-              <Line on={visible?.history === true} label="Everywhere it has been" />
-              <Line on={false} label="Anybody's phone number" />
-              <Line on={false} label="What the load is worth" />
+            <Card overline={t('what_this_link_shows')} icon="link" emphasis="plain">
+              <Line on label={t('where_it_is_and_arrival')} />
+              <Line on={visible?.history === true} label={t('everywhere_it_has_been')} />
+              <Line on={false} label={t('anybodys_phone_number')} />
+              <Line on={false} label={t('what_the_load_is_worth')} />
               <Text variant="label" tone="secondary" style={styles.expiry}>
                 {left === null
-                  ? 'This link does not expire.'
+                  ? t('link_does_not_expire')
                   : left === 0
-                    ? 'This link stops working today.'
-                    : `This link stops working in ${left} days.`}
+                    ? t('link_stops_today')
+                    : `${left} ${t('link_stops_in_days')}`}
               </Text>
             </Card>
 
             <View style={[styles.pitch, { backgroundColor: colours.surfaceDim }]}>
-              <Text variant="title">Sending something yourself?</Text>
+              <Text variant="title">{t('sending_something_yourself')}</Text>
               <Text variant="body" tone="secondary">
-                Track any truck this way, even one you arranged somewhere else.
-                Nothing to install for the person watching.
+                {t('track_any_truck')}
               </Text>
             </View>
           </>

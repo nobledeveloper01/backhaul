@@ -58,7 +58,7 @@ export function CancelScreen({ trip, onBack }: Props) {
         <ScreenHeader title={t('cancelled')} onBack={onBack} />
         <View style={styles.finished}>
           <Text variant="headline" style={styles.centred}>
-            The trip is cancelled
+            {t('the_trip_is_cancelled')}
           </Text>
           <Text variant="body" tone="secondary" style={styles.centred}>
             {outcome.fee === 0
@@ -112,7 +112,7 @@ export function CancelScreen({ trip, onBack }: Props) {
           </Card>
         ) : (
           <>
-            <Card emphasis="accent" overline="What it costs" icon="naira">
+            <Card emphasis="accent" overline={t('what_it_costs')} icon="naira">
               <Text variant="display" tabular>
                 {format(outcome.fee)}
               </Text>
@@ -122,10 +122,10 @@ export function CancelScreen({ trip, onBack }: Props) {
 
               {outcome.fee > 0 ? (
                 <View style={[styles.split, { borderTopColor: colours.accent }]}>
-                  <Row label="Agreed fare" value={format(agreed)} />
+                  <Row label={t('agreed_fare')} value={format(agreed)} />
                   <Row label={`Cancellation (${outcome.feePct}%)`} value={format(outcome.fee)} />
                   <Row
-                    label="Left of the fare"
+                    label={t('left_of_the_fare')}
                     value={format(subtract(agreed, outcome.fee))}
                     strong
                   />
@@ -140,11 +140,10 @@ export function CancelScreen({ trip, onBack }: Props) {
               />
               <Line
                 on={countsAgainstRecord(by, state)}
-                text="Counts against the carrier's record as an incident"
+                text={t('counts_against_record')}
               />
               <Text variant="label" tone="secondary" style={styles.gapTop}>
-                An incident costs one tier, not the record. Somebody who lets a
-                shipper down should be harder to book, not unbookable.
+                {t('incident_costs_one_tier')}
               </Text>
             </Card>
 

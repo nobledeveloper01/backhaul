@@ -68,15 +68,14 @@ export function PairsScreen({ onBack }: Props) {
         {found.length === 0 ? (
           <Empty
             icon="package"
-            title="No pairs on the board"
-            detail="Nothing here fits together on one trailer today."
+            title={t('no_pairs_on_the_board')}
+            detail={t('nothing_fits_together')}
           />
         ) : (
           <>
             <Text variant="body" tone="secondary">
               Both shippers pay {SHIPPER_DISCOUNT_PCT}% less than a whole truck.
-              You collect more than one fare for one run. Nobody is doing anybody
-              a favour, which is why it works.
+              {t('pairs_note')}
             </Text>
 
             {found.map((pairing, index) => (
@@ -112,7 +111,7 @@ export function PairsScreen({ onBack }: Props) {
 
                 <View style={[styles.total, { borderTopColor: colours.outline }]}>
                   <Text variant="title" style={styles.flex}>
-                    You collect
+                    {t('you_collect')}
                   </Text>
                   <Text variant="title" tabular>
                     {format(pairing.carrierGets)}
@@ -126,7 +125,7 @@ export function PairsScreen({ onBack }: Props) {
         {refused.length > 0 ? (
           <>
             <Text variant="overline" tone="secondary" style={styles.heading}>
-              WON'T FIT TOGETHER
+              {t('wont_fit_together').toUpperCase()}
             </Text>
 
             {refused.map((entry) => (

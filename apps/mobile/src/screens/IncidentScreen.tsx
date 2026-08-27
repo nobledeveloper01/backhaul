@@ -10,7 +10,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   DEFAULT_SEVERITY,
-  describeKind,
   needsPhoto,
   raisesDispute,
   type IncidentKind,
@@ -26,6 +25,7 @@ import { radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 import type { DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
+import { INCIDENT_WORDS } from '../state/words';
 
 interface Props {
   readonly trip: DemoTrip;
@@ -89,7 +89,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
             <Icon name="check" size="lg" colour={colours.moving} />
           </View>
           <Text variant="headline" style={styles.centred}>
-            {describeKind(kind)}{' '}
+            {t(INCIDENT_WORDS[kind])}{' '}
             reported
           </Text>
           <Text variant="bodyDriver" tone="secondary" style={styles.centred}>
@@ -105,7 +105,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
           */}
           <Press
             onPress={onBack}
-            accessibilityLabel="Back to the trip"
+            accessibilityLabel={t('back_to_the_trip')}
             style={[styles.send, styles.wide, { backgroundColor: colours.accent }]}
           >
             <Text variant="title" style={{ color: colours.onAccent }}>
@@ -136,7 +136,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
             <Press
               key={option.kind}
               onPress={() => setKind(option.kind)}
-              accessibilityLabel={describeKind(option.kind)}
+              accessibilityLabel={t(INCIDENT_WORDS[option.kind])}
               style={[
                 styles.tile,
                 {
@@ -163,7 +163,7 @@ export function IncidentScreen({ trip, onBack }: Props) {
 
         {kind !== null ? (
           <>
-            <Card overline="What this does" icon="flag" emphasis="plain">
+            <Card overline={t('what_this_does')} icon="flag" emphasis="plain">
               {/*
                 Severity and dispute are two different answers, and the first
                 version only said the first — so a cargo report, which puts the
@@ -178,19 +178,17 @@ export function IncidentScreen({ trip, onBack }: Props) {
               </Text>
               {raisesDispute(kind) ? (
                 <Text variant="body" tone="stopped" style={styles.gapTop}>
-                  This one also puts the trip under dispute, so a person looks
-                  at it rather than an alert going into a list.
+                  {t('puts_under_dispute')}
                 </Text>
               ) : null}
               {last !== undefined ? (
                 <Text variant="label" tone="secondary" style={styles.gapTop}>
-                  Your position goes with it — the last fix, {Math.round(last.accuracy)} m accurate.
-                  You do not have to type where you are.
+                  ±{Math.round(last.accuracy)} m — {t('no_need_to_type_where')}
                 </Text>
               ) : null}
             </Card>
 
-            <Card overline="Anything to add" icon="message">
+            <Card overline={t('anything_to_add')} icon="message">
               <TextInput
                 value={note}
                 onChangeText={setNote}
