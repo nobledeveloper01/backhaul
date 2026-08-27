@@ -146,6 +146,79 @@ The history is append-only, and it says so on the screen rather than only in an
 ADR. Every settlement line is whole naira, so the column adds up on screen as
 well as in the arithmetic.
 
+### Showing somebody else where their goods are
+
+**This is the wedge.** Tracking one truck is worth paying for with no other
+user on the platform — but only if the person who wants to *see* it can, and
+that person is usually a cargo owner who has never heard of Backhaul and will
+not install anything to find out where their load is.
+
+| Sharing a trip | The links on it |
+|---|---|
+| ![Sharing a trip](docs/screenshots/16-share.png) | ![Links on a trip](docs/screenshots/17-share-links.png) |
+
+Two decisions and nothing else: what the link shows, and how long it lasts.
+What it will **never** show is below a rule, separated from the toggle, because
+no scope turns those on and the sentence that actually gets a link sent is *it
+cannot show them your number*.
+
+Every link expires — fourteen days by default. A link with no expiry is a
+permanent, unauthenticated view of where somebody's truck is, which is a thing
+worth stealing. Revoked and expired are answered separately, in different
+words: telling a cargo owner their link "was turned off" when it merely lapsed
+invites a phone call about trust.
+
+![The page at the end of the link](docs/screenshots/18-follow.png)
+
+No account, no install, no navigation. One thing on the screen, and the ask is
+at the bottom *after* the answer has been given.
+
+### The conversation, attached to the trip
+
+![Messages on a trip](docs/screenshots/19-messages.png)
+
+Today this happens in a WhatsApp group with forty other messages in it, and
+when a delivery is argued about the argument is reconstructed from a phone that
+has since been sold.
+
+The screen's hard job is being honest about **time**. A message written in a
+dead zone and delivered eleven hours later says both, or it misrepresents
+whoever wrote it — and a message the server has not taken says "waiting for
+signal" rather than claiming to be sent.
+
+### When something goes wrong
+
+| Reporting from the roadside | Proof of delivery |
+|---|---|
+| ![Reporting an incident](docs/screenshots/20-incident.png) | ![Capturing proof](docs/screenshots/21-proof.png) |
+
+The report is **one tap to file**: the kind carries a default severity, the
+position comes from the tracker, and everything else is optional. A form that
+demands a classification before it will accept a report is a form that produces
+no reports. A photograph is required for cargo and accident claims and never
+for a security one — nobody photographs a hijack, and demanding it would mean
+the report that matters most is the one that cannot be filed.
+
+Proof is two photographs, a signature, a name and where the phone was. A
+capture more than a kilometre from the destination is **flagged on the
+document, not refused**: a market address in Kano is a district, not a gate, and
+a driver who cannot close a delivery they actually made stops using the app
+before the day is out.
+
+| The delivery note | Afterwards |
+|---|---|
+| ![The delivery note](docs/screenshots/22-delivery-note.png) | ![Reviewing a carrier](docs/screenshots/23-review.png) |
+
+The note's lines come from the domain, so the PDF, the dispute pack and the
+screen cannot disagree — three renderings that differ is the situation a proof
+is supposed to end.
+
+The review is **four facts, not five stars**. A 4.2 compresses "arrived late
+twice" and "damaged the load" into one number, and on a two-sided market the
+average drifts upward until everyone is 4.8 and it says nothing. What other
+shippers see is "6 of 7" — and the denominator is the part that matters, which
+is why nothing is shown until three trips have been answered for.
+
 ### The fleet owner
 
 | Utilisation and what needs a person | Whose bid to take |
@@ -165,13 +238,30 @@ bad: a marketplace that never surfaces a new carrier never gets a second one.
 
 ### The carrier
 
-![Return loads](docs/screenshots/04-return-loads.png)
+| The board | Three legs instead of one |
+|---|---|
+| ![Return loads](docs/screenshots/04-return-loads.png) | ![A chained run](docs/screenshots/25-chain.png) |
 
 The reason the product is called Backhaul. An empty truck running 830 km home
 earns nothing, so a load going that way at ₦1,850,000 beats one going the wrong
 way at ₦2,600,000 — and the row says *why*, in empty kilometres and kilometres
 of the run home, so a haulier can disagree with it. Loads the truck cannot take
 are greyed with the reason rather than hidden.
+
+Chaining is the same argument taken two legs further: Lagos → Kano → Kaduna →
+Lagos, loaded the whole way, against the same truck running home empty. The
+loads it **passed over** are shown too, each with the reason — either which leg
+out-earned it, or the shortest empty reposition that was still too far. A
+proposal you cannot argue with is a proposal nobody acts on.
+
+![Verification](docs/screenshots/24-verification.png)
+
+A tier is never something a carrier types in: it comes out of documents and a
+delivery record neither side can edit. An upheld incident costs **one tier, not
+the record** — somebody whose truck was robbed is not thereby untrustworthy, and
+a system that treats one bad trip as career-ending is one carriers will lie to.
+What is missing between here and the next tier is named exactly, because a
+badge with no path to the one above it is a locked door.
 
 ### The driver
 
@@ -199,6 +289,17 @@ self-report the thing the tracking exists to detect.
 | A trip, dark | Return loads, dark |
 |---|---|
 | ![A trip in dark](docs/screenshots/09-trip-detail-dark.png) | ![Return loads in dark](docs/screenshots/10-return-loads-dark.png) |
+
+| Sharing, dark | Messages, dark |
+|---|---|
+| ![Sharing a trip in dark](docs/screenshots/26-share-dark.png) | ![Messages in dark](docs/screenshots/27-messages-dark.png) |
+
+The largest text size is checked by looking, not assumed. It has caught four
+things a test could not: a header that truncated "Lagos → Kano" to "Lagos →…",
+losing the destination; three trip actions that became "Sh…", "M…" and "Re…";
+corridor labels broken across three lines; and a search placeholder running off
+the edge. Chrome — headers, axis labels, button labels — has its growth capped;
+body text does not.
 
 ### And Android
 
