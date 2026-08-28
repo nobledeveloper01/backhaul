@@ -6,6 +6,51 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (end) — The retry that only ran while somebody watched
+
+**Did.** The delivery outbox: every sealed hand-over this phone holds is swept
+when the app runs and when it returns to the foreground, not only while the
+proof screen is open. One implementation of "send a draft", shared by the
+screen and the sweep. `make ci` green.
+
+### What surprised us
+
+**This was on the list as a nice-to-have and it is the payment bug again.**
+Written down two entries ago as *"the outbox retries only while the screen is
+open"*, filed under things that are not on a gate. Read once more: a driver
+seals a delivery at a gate, pockets the phone, and the trip is finished — so
+they have no reason to open it again, ever. The earnings statement skips a
+delivered trip with no sealed proof and the escrow milestone never releases.
+
+That is the third time on this project the same sentence has ended somewhere
+different from where it started: *the driver finished the run and is not paid*.
+First `sealDelivery` written and called by nothing, then the draft living on a
+server the phone could not reach, now a retry that only ran while somebody was
+looking at it. Each fix was correct and each left the next one standing.
+
+**Extracting `send` was not tidying.** The screen and the sweep both had to put
+a delivery on the wire, and two spellings of that is a delivery uploaded from
+the background missing a field the screen sends — which nobody would notice
+until a dispute asked for the exception note. One function, both callers.
+
+**In order, not in parallel.** A phone with four unsent deliveries is a phone
+that has been out of signal for days, and firing four requests at the first bar
+of signal is how none of them completes. That is the same reasoning the batch
+upload already uses and it had to be reached for again rather than inherited.
+
+**The sweep must never seal.** It sends what the driver closed and saves what
+they did not. An outbox that finished a delivery on their behalf would be the
+platform asserting a hand-over happened, which is the one thing in this product
+nobody but the person at the gate may say. There is a test whose only job is
+that it never happens.
+
+**And it is still not enough, which is said out loud.** A phone that is never
+opened again holds its delivery for ever. The fix is the native queue the
+tracker already has — the same shape, the same reason — and it is a different
+piece of work. Naming it beats shipping a sweep and calling the problem solved.
+
+---
+
 ## 2026-08-28 (very late) — The product had no door into half of itself
 
 **Did.** Finished the console's shipper actions — post, bids, award — and in

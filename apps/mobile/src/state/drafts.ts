@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Delivery, ExceptionKind } from '@backhaul/domain';
+import type { BackhaulApi, DeliveryDraft } from '@backhaul/api';
 
 /**
  * The delivery a driver captured, held on the phone until the server has it.
@@ -193,4 +194,63 @@ export async function forget(tripId: string): Promise<void> {
   } catch {
     // As above.
   }
+}
+
+
+/**
+ * The draft on the wire.
+ *
+ * Here rather than in the screen's hook because two callers send drafts — the
+ * proof screen, while somebody is looking at it, and the outbox, which sweeps
+ * every unacknowledged one whenever the app comes back. Two spellings of "what
+ * a delivery looks like on the wire" is how a delivery uploaded from the
+ * background loses a field the screen sends.
+ */
+export function toDraftBody(delivery: Delivery): DeliveryDraft {
+  return {
+    at: delivery.at,
+    photoIds: [...delivery.photoIds],
+    signatureName: delivery.signature?.name ?? null,
+    signatureRole: delivery.signature?.role ?? null,
+    signatureImageId: delivery.signature?.imageId ?? null,
+    // Omitted rather than nulled when there was no fix. The three are optional
+    // on the wire and a null latitude is not a place.
+    ...(delivery.capturedAt === null
+      ? {}
+      : {
+          capturedLat: delivery.capturedAt.lat,
+          capturedLon: delivery.capturedAt.lon,
+          capturedAccuracy: delivery.capturedAt.accuracy,
+        }),
+    note: delivery.note,
+    exceptionKind: delivery.exception?.kind ?? null,
+    exceptionQuantity: delivery.exception?.quantity ?? null,
+    exceptionNote: delivery.exception?.note ?? null,
+  };
+}
+
+/**
+ * Sends one draft, and answers when the server countersigned it.
+ *
+ * Null means "not yet", which covers no network, a refusal and a server that
+ * has not sealed it — and every one of those is a reason to keep the local
+ * copy and try again later, so none of them is worth distinguishing here. The
+ * evidence is not deleted on a hope: ADR-0009 for fixes, ADR-0018 for this.
+ */
+export async function send(api: BackhaulApi, draft: Draft): Promise<Date | null> {
+  const { tripId } = draft.delivery;
+
+  const saved = await api.saveDelivery(tripId, toDraftBody(draft.delivery));
+  if (!saved.ok) return null;
+
+  // An unsealed draft is saved and nothing more. Sealing is the driver's act
+  // and the outbox must never perform it on their behalf.
+  if (draft.sealedAt === null) return null;
+
+  const sealed = await api.sealDelivery(tripId);
+  if (!sealed.ok || sealed.value.sealedAt === null) return null;
+
+  const acknowledged = sealed.value.sealedAt;
+  await writeDraft({ ...draft, acknowledgedAt: acknowledged });
+  return acknowledged;
 }

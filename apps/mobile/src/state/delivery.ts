@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { seal, type Delivery } from '@backhaul/domain';
 
-import type { BackhaulApi, DeliveryDraft } from '@backhaul/api';
-import { forget, readDraft, writeDraft, type Draft } from './drafts';
+import type { BackhaulApi } from '@backhaul/api';
+import { readDraft, send, writeDraft, type Draft } from './drafts';
 
 /**
  * A delivery, captured on the phone and sent when there is a network.
@@ -22,29 +22,6 @@ export interface Held {
   readonly acknowledgedAt: Date | null;
   /** False until storage has answered. Nothing decisive is shown before then. */
   readonly ready: boolean;
-}
-
-function toDraftBody(delivery: Delivery): DeliveryDraft {
-  return {
-    at: delivery.at,
-    photoIds: [...delivery.photoIds],
-    signatureName: delivery.signature?.name ?? null,
-    signatureRole: delivery.signature?.role ?? null,
-    signatureImageId: delivery.signature?.imageId ?? null,
-    // Omitted rather than nulled when there was no fix. The three are
-    // optional on the wire and a null latitude is not a place.
-    ...(delivery.capturedAt === null
-      ? {}
-      : {
-          capturedLat: delivery.capturedAt.lat,
-          capturedLon: delivery.capturedAt.lon,
-          capturedAccuracy: delivery.capturedAt.accuracy,
-        }),
-    note: delivery.note,
-    exceptionKind: delivery.exception?.kind ?? null,
-    exceptionQuantity: delivery.exception?.quantity ?? null,
-    exceptionNote: delivery.exception?.note ?? null,
-  };
 }
 
 export interface Capture {
@@ -123,26 +100,27 @@ export function useDelivery(
     };
   }, [api, tripId, live]);
 
-  /** Sends what is held, and forgets it only once the server has answered. */
+  /**
+   * Sends what is held.
+   *
+   * The same `send` the outbox uses, so a delivery uploaded in the background
+   * carries exactly what one uploaded from this screen would. It writes the
+   * countersignature to storage itself; this only mirrors it into the state
+   * the screen is rendering from.
+   *
+   * The draft is kept either way, acknowledged or not — the document is
+   * composed from it and a dispute may ask for it months later. A server copy
+   * is what makes it safe to stop *retrying*, not what makes it safe to throw
+   * away.
+   */
   const push = useCallback(
     async (draft: Draft) => {
       if (!live) return;
 
-      const saved = await api.saveDelivery(tripId, toDraftBody(draft.delivery));
-      if (!saved.ok) return;
-      if (draft.sealedAt === null) return;
+      const acknowledged = await send(api, draft);
+      if (acknowledged === null) return;
 
-      const sealed = await api.sealDelivery(tripId);
-      if (!sealed.ok || sealed.value.sealedAt === null) return;
-
-      const acknowledged = sealed.value.sealedAt;
       setHeld((was) => ({ ...was, acknowledgedAt: acknowledged }));
-      await writeDraft({ ...draft, acknowledgedAt: acknowledged });
-
-      // Kept, not deleted. The document is composed from it and a dispute may
-      // ask for it months later; the server having a copy is what makes it
-      // safe to stop *retrying*, not what makes it safe to throw away.
-      void forget;
     },
     [api, tripId, live],
   );

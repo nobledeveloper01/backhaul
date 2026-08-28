@@ -52,6 +52,15 @@ import type { Words } from '../components/PositionAge';
  */
 interface Props {
   readonly online: boolean;
+  /**
+   * Sealed hand-overs this phone is still holding.
+   *
+   * Not an error and not a thing to press. A driver has done their part; the
+   * phone is waiting for a signal, which is an ordinary condition on this road
+   * — and it is worth saying out loud because a delivery that never uploads is
+   * a milestone that never releases. See ADR-0018.
+   */
+  readonly waiting: number;
   readonly onToggleConnection: () => void;
   readonly onOpenHistory: () => void;
   readonly onReport: () => void;
@@ -62,6 +71,7 @@ interface Props {
 
 export function DriverScreen({
   online,
+  waiting,
   onToggleConnection,
   onOpenHistory,
   onReport,
@@ -506,6 +516,15 @@ export function DriverScreen({
         </Text>
         <Icon name="chevron-right" size="sm" colour={colours.textSecondary} />
       </Press>
+
+      {waiting > 0 ? (
+        <View style={styles.dataRow}>
+          <Icon name="clock" size="sm" colour={colours.textSecondary} beside="body" />
+          <Text variant="body" tone="secondary" style={styles.flex}>
+            {waiting} {t('deliveries_waiting_to_send')}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.dataRow}>
         <Icon name="signal" size="sm" colour={colours.textSecondary} beside="body" />

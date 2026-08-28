@@ -37,6 +37,7 @@ import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
 import { LanguageProvider, useLanguage } from './state/language';
 import { useNotifications } from './state/notifications';
+import { useOutbox } from './state/outbox';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { SessionProvider, useSession } from './state/session';
 import { SignInScreen } from './screens/SignInScreen';
@@ -91,6 +92,18 @@ function Shell() {
    * is wired to something a reviewer can toggle rather than left unbuilt.
    */
   const [online, setOnline] = useState(true);
+
+  /*
+    Sealed deliveries this phone is still holding, swept here rather than on
+    the proof screen.
+
+    On that screen it only ran while somebody was looking at it, so a driver
+    who sealed a delivery at a gate and pocketed the phone sent nothing until
+    they opened that trip again — which, the trip being finished, they have no
+    reason to do. A delivery that sits on a phone is an escrow milestone that
+    never releases. See ADR-0018.
+  */
+  const outbox = useOutbox(api, online);
 
   return (
     <View style={[styles.root, { backgroundColor: colours.surface }]}>
@@ -195,6 +208,7 @@ function Shell() {
         {current.name === 'driver' ? (
           <DriverScreen
             online={online}
+            waiting={outbox.waiting}
             onToggleConnection={() => setOnline((was) => !was)}
             onOpenHistory={() => push({ name: 'history' })}
             onReport={() =>

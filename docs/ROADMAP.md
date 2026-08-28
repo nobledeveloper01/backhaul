@@ -437,8 +437,15 @@ facts.
 **Still open in this phase, and not on the gate:** the note is plain text, so
 it carries neither the signature strokes nor the photographs — F4 in
 `docs/FEATURE-BACKLOG.md`, and it is what a disputed delivery eventually needs.
-The outbox retries only while the screen is open; a phone that is closed for
-two days sends nothing until the driver opens the trip again.
+
+**The outbox is no longer one of them.** It retried only while the proof screen
+was open, so a driver who sealed a delivery and pocketed the phone sent nothing
+until they opened that finished trip again — which they have no reason to do.
+`useOutbox` sweeps every unacknowledged draft when the app runs and whenever it
+returns to the foreground, in order rather than in parallel, and the driver
+face says how many are waiting. It is still not a background task: a phone that
+is never opened again still holds its delivery, and the thing that fixes *that*
+is the native queue the tracker already uses.
 
 ---
 

@@ -9,6 +9,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A sealed delivery now sends itself, even with the screen closed.** It
+  uploaded only while the proof screen was open — so a driver who signed off at
+  a gate and put the phone in their pocket sent nothing until they opened that
+  trip again, and a finished trip is exactly the one nobody opens again. The
+  earnings statement skips a delivered trip with no sealed proof and the escrow
+  milestone never releases, so a delivery sitting on a phone is a driver who
+  finished the run and is not paid.
+
+  Every unacknowledged hand-over is swept when the app runs and whenever it
+  comes back to the foreground, one at a time — four requests fired at the
+  first bar of signal is how none of them completes. The driver's screen says
+  how many are waiting, because that is a fact about their evidence and not a
+  thing for them to press. The outbox never seals on their behalf: closing a
+  delivery is the driver's act.
+
+  It is still not a background task. A phone that is never opened again still
+  holds its delivery, and that needs the native queue the tracker already uses —
+  written down rather than pretended.
+
 - **Nobody could post a load.** Signing in for the first time mints a driver —
   the role that can see the least, which is the right guess when nobody has
   said — and no endpoint changed a role afterwards. Between the two there was
