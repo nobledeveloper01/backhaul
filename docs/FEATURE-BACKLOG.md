@@ -207,3 +207,51 @@ The product statement is explicit that brokers are not to be eliminated. What
 a broker account actually *is* — an agent acting for a shipper, a shipper in
 their own right, or a distinct third role — has not been decided, and the
 matching engine's shape depends on the answer.
+
+### F12 — The wedge is not built · **the largest gap in the product**
+
+`CLAUDE.md` opens with the sentence that decides most arguments here:
+
+> **Tracking is the wedge; matching is the business.**
+
+`docs/ROADMAP.md` carries it as feature 2 of phase 2 — *"standalone tracking of
+a trip arranged elsewhere — **the wedge**"* — and it is the feature that is
+supposed to be worth paying for with one truck and no other user on the
+platform. A shipper agrees a load on WhatsApp, as almost every load in Nigeria
+is agreed, and tracks it here.
+
+**The app cannot open a trip.** `POST /v1/trips/{id}` is served, tested, and
+authorised. `ApiClient.openTrip` is written against it. No screen calls it, and
+until now the `wired-check:` comment above it said *"the app never creates a
+trip. A shipper writes one down elsewhere; this face tracks it."* That is the
+gap restated as though it were a decision. Every trip in the product today
+arrives by the marketplace route — post a load, take a bid — which is the half
+the product statement says is worth nothing until there is liquidity.
+
+**What actually blocks it, and it is not a screen.** `OpenTripRequest` takes
+three party GUIDs: `DriverId`, `CarrierId`, `ShipperId`. A shipper opening a
+trip has their own id and, for the other two, a phone number — the number they
+have been messaging all morning. There is no way to turn one into the other.
+`IdentityController` has no lookup and `AuthController` resolves a phone only
+for the caller's own sign-in.
+
+**The shape of the answer is already in the repository.** `SignInRepository`
+resolves-or-creates an account from a phone number, which is exactly what
+opening a trip against a driver who has never installed the app needs, and the
+roadmap already says phase 2 carries *"standalone tracking with SMS invite
+links"* — the invite is how that driver finds out. So the endpoint would take
+phone numbers rather than GUIDs and mint the parties as it goes.
+
+**Why that needs an ADR before any code.** An endpoint that turns any phone
+number into a user identity is an enumeration oracle, and this one would be
+callable by any signed-in account. It also creates accounts for people who have
+not asked for one, which is defensible for a driver who is about to be invited
+to a trip and indefensible as a general capability. Rate limiting alone does
+not settle it — ADR-0010 reached for that on the share route, where the caller
+already holds a 32-byte secret and this caller holds nothing but a guess.
+
+Neither is a reason not to build it. They are the reason to decide it on
+purpose rather than discover it in a screen.
+
+Wants: an ADR on identity-by-phone, then the endpoint, then the screen, then
+the SMS invite. Phase 2's software gate is not honestly green without it.

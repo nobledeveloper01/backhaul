@@ -71,6 +71,37 @@ moved one line up, watched to fire again. This is the third guard on this
 project proved by making it fail on purpose, and the second time that proof
 found a bug in the guard.
 
+**The biggest thing this project has not built was hiding behind a comment
+that read like a decision.** With phase 1's software gate green, phase 2's
+features were checked one at a time — corridor, share link, waypoints,
+messages, deviation, alerts, the data budget — and every one is built and reads
+the server. Then feature 2, the one the roadmap prints in bold as **the
+wedge**: standalone tracking of a trip arranged elsewhere. `openTrip` is
+written in the client. Nothing calls it, and the exemption above it said *"the
+app never creates a trip. A shipper writes one down elsewhere; this face tracks
+it."*
+
+Read quickly that is a design note. Read against `CLAUDE.md`'s first sentence —
+*tracking is the wedge; matching is the business* — it is the gap restated in
+the voice the project uses for settled things. Every trip in the product today
+arrives by post-a-load-take-a-bid, which is the half the product statement says
+is worth nothing until there is liquidity.
+
+The block underneath is real, and finding it is why the comment could stand for
+so long: `OpenTripRequest` takes three party GUIDs, and a shipper who agreed a
+load on WhatsApp has a phone number. Turning one into the other means an
+endpoint that resolves any phone to an identity, callable by any signed-in
+account — an enumeration oracle, and one that mints accounts for people who
+never asked. `SignInRepository` already resolves-or-creates from a phone, so
+the shape is sitting there; that is exactly what makes it tempting to do in an
+afternoon and wrong to. It is F12 now, with an ADR named as the first step, and
+phase 2's software gate says the phase is not green without it.
+
+**A gap you have written a reason for is harder to see than a gap you have
+not.** Both of today's findings — `suppressesEta` and the wedge — were covered
+by prose that read like it had been thought about. The comments were what kept
+them invisible.
+
 **A hardware blocker is not a reason to stop.** The battery and soak gates
 need a Tecno nobody here has, and read strictly the roadmap rule said the
 project stops until one arrives. The split in ADR-0014 keeps the rule intact

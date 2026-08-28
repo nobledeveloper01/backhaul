@@ -16,13 +16,14 @@ gate, because that is the one that says what to work on next. See
 
 ## Deferred to a device day
 
-Three conditions, in the words their own gates use. **v1.0 does not ship until
+Four conditions, in the words their own gates use. **v1.0 does not ship until
 every one is green**, and no simulator signs any of them off.
 
 | From | Condition |
 |---|---|
 | Phase 1 | **Under 4% battery per hour**, screen off, on real hardware, both platforms |
 | Phase 1 | **72-hour soak survival** on physical devices including Tecno and Infinix |
+| Phase 2 | **A shipper tracks a real truck on a real corridor**, end to end, on both platforms |
 | Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
 
 The risk this accepts is stated in ADR-0014 and is worth reading before adding
@@ -282,7 +283,7 @@ week 10 than in week 30.
 
 ---
 
-## Phase 2 — Trips and the wedge
+## Phase 2 — Trips and the wedge · **current**
 
 Geofencing and waypoint arrival, standalone tracking with SMS invite links,
 scoped and revocable share links, the shipper map with position age and trail,
@@ -293,11 +294,26 @@ Carries features **1–5** and **16–18**. All eight engines are written and
 tested.
 
 **Exit gate:** a shipper tracks a real truck on a real corridor, end to end, on
-both platforms, **and the public share route is rate limited** — *green in
-software*: sixty an hour per address, partitioned so one abusive caller cannot
-take the feature away from everybody else, and proven to fire by
-`ShareRateLimitTests`. First external pilot users onboard here — before any
-marketplace exists.
+both platforms, **and the public share route is rate limited**. First external
+pilot users onboard here — before any marketplace exists.
+
+**Software gate — one condition open.**
+
+| | |
+|---|---|
+| The public share route is rate limited | **green** — sixty an hour per address, partitioned so one abusive caller cannot take the feature away from everybody else, proven to fire by `ShareRateLimitTests` |
+| A shipper can open a trip that no marketplace created | **open** — the app cannot. `POST /v1/trips/{id}` is served and `openTrip` is written against it; nothing calls it, because the request takes three party GUIDs and a shipper has a phone number. F12 in `docs/FEATURE-BACKLOG.md`, and it wants an ADR before any code |
+
+**Hardware gate:** *a real truck on a real corridor, end to end, on both
+platforms* — deferred with the rest, listed at the top of this file.
+
+The open condition is the whole phase, not a loose end. Feature 2 is the one
+the product statement calls the wedge: worth paying for with one truck and no
+other user on the platform. Everything else in phase 2 — the corridor, the
+share link, waypoints, messages, deviation, alerts, the data budget — is built
+and reads the server, and every one of them is a thing you do *to a trip that
+already exists*. Today the only way one exists is the marketplace route, which
+is the half that is worth nothing until there is liquidity.
 
 The rate limit is on the gate rather than in the backlog because
 `GET /v1/share/{token}` is the only route in the product that answers an

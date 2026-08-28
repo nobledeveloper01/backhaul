@@ -278,7 +278,14 @@ export class BackhaulApi {
    * against — the caller must be one of them or the server refuses. See
    * ADR-0008.
    */
-  // wired-check: the app never creates a trip. A shipper writes one down elsewhere; this face tracks it.
+  // wired-check: F12 — the wedge, and the exemption here used to read "the app
+  // never creates a trip. A shipper writes one down elsewhere; this face tracks
+  // it." That is not a reason, it is the gap restated. docs/ROADMAP.md carries
+  // "standalone tracking of a trip arranged elsewhere" as feature 2 of phase 2
+  // and calls it **the wedge**; CLAUDE.md opens with "tracking is the wedge".
+  // The one way a trip arranged on WhatsApp reaches this product is somebody
+  // opening it here, and nothing does. What blocks it is named in F12: the
+  // request takes three party GUIDs and a shipper has a phone number.
   async openTrip(
     id: string,
     parties: TripParties,
