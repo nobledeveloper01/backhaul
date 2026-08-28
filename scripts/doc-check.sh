@@ -47,6 +47,20 @@ for doc in "${REQUIRED[@]}"; do
   fi
 done
 
+# The fixed list above cannot cover `docs/adr/`, which grows. An ADR is the
+# document this project leans on hardest — CLAUDE.md says write one *before*
+# the code that depends on it, and CHANGELOG entries link to them by path — so
+# an untracked ADR is a 404 on GitHub under a commit that reported success.
+# That is the Grid failure exactly, and the fixed list had a hole shaped like
+# it: two ADRs sat on disk, unignored and un-added, while this gate passed.
+for adr in docs/adr/*.md; do
+  [ -e "$adr" ] || continue
+  if ! git ls-files --error-unmatch "$adr" >/dev/null 2>&1; then
+    red "not tracked by git: $adr — an ADR on disk is not an ADR anybody can read"
+    fail=1
+  fi
+done
+
 # --- shape -----------------------------------------------------------------
 
 if [ -f CHANGELOG.md ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then

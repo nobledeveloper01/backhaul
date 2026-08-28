@@ -253,5 +253,16 @@ already holds a 32-byte secret and this caller holds nothing but a guess.
 Neither is a reason not to build it. They are the reason to decide it on
 purpose rather than discover it in a screen.
 
-Wants: an ADR on identity-by-phone, then the endpoint, then the screen, then
-the SMS invite. Phase 2's software gate is not honestly green without it.
+**The ADR is written.**
+[ADR-0016](adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md)
+settles it: a phone number is only ever an argument to an action that names it,
+never a question the API answers. No lookup endpoint, now or later. `POST
+/v1/trips/{id}` takes `driverPhone` and `carrierPhone`, resolves-or-creates the
+way sign-in already does, and **answers identically whether the account existed
+or not** — which is what stops an endpoint that creates something from being an
+oracle. A minted account holds the number and nothing else until its owner
+signs in.
+
+What is left, in order: the endpoint change and its tests, the screen, the SMS
+invite, and a per-account rate limit on trip creation. Phase 2's software gate
+is not honestly green until a shipper can open a trip no marketplace created.

@@ -375,8 +375,17 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                   </Text>
                 </Press>
               ) : (
+                /*
+                  Two different sentences, because "sign it off first" is only
+                  a forward path where signing off is possible. In the
+                  walkthrough it is not — `sealedAt` comes from the server and
+                  the seal button is gated on `trip.live` — so the same line
+                  would point at a button that is not on the screen and cannot
+                  be put there. A dead end reads exactly like an instruction
+                  until you try to follow it.
+                */
                 <Text variant="label" tone="secondary" style={styles.gapTop}>
-                  {t('hand_over_once_signed_off')}
+                  {t(trip.live ? 'hand_over_once_signed_off' : 'walkthrough_signs_nothing_off')}
                 </Text>
               )}
 

@@ -94,12 +94,10 @@ public static class Geo
             MidpointRounding.AwayFromZero);
     }
 
-    // wired-check: reached from DistanceTravelled() below, which the tracking
-    // parity case checks against TypeScript. It stays separate for the same
-    // reason geo.ts keeps pathLength() separate — but note it sums a path
-    // whole, with no accuracy gate. Only ever hand it a CleanedTrack's kept
-    // fixes: two ±90 m fixes of a parked truck sit 180 m apart, and summed raw
-    // that is an overnight stop invented as kilometres onto a per-km rate.
+    // Sums a path whole, with no accuracy gate — only ever hand it a
+    // CleanedTrack's kept fixes. Two ±90 m fixes of a parked truck sit 180 m
+    // apart, and summed raw that is an overnight stop invented as kilometres
+    // onto a per-kilometre rate.
     public static long PathLength(IReadOnlyList<Position> path)
     {
         long total = 0;
@@ -111,9 +109,6 @@ public static class Geo
         return total;
     }
 
-    // wired-check: reached only from Clean() below, which the tracking parity
-    // case runs over every fixture track, so each rejection reason here is
-    // compared against TypeScript. Public to match what geo.ts exports.
     /// <summary>Checks a fix against the one before it; null when it is usable.</summary>
     public static FixProblem? ProblemWith(Position fix, Position? previous)
     {

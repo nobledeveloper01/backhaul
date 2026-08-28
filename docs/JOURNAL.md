@@ -97,6 +97,48 @@ the shape is sitting there; that is exactly what makes it tempting to do in an
 afternoon and wrong to. It is F12 now, with an ADR named as the first step, and
 phase 2's software gate says the phase is not green without it.
 
+**The reviewer's first finding was in code that had passed every gate.** A
+fourth agent read the other three's diff with no permission to edit anything,
+and the top of its report was a share link that could be issued and destroyed
+in the same breath: the token card rendered inside the query's ready state, and
+issuing a link refreshed the query, and a refresh sets the state back to
+loading. Typecheck green, lint green, tests green, and on a bad stretch of road
+the only copy of a live capability disappears under a skeleton on the screen
+that has just promised this is the only time it will be shown.
+
+Nothing about a token depends on a list arriving. It was inside that gate
+because everything else on the screen legitimately is.
+
+**Then it went after the gate we had just built.** `wired-check` had reported
+zero findings against the repository layer, and the reviewer showed why: it
+matched on bare method name, and twenty-three names in `server/src` are
+declared on more than one type. Three calls to `CarrierRecord.ForAsync` were
+vouching for `NotificationRepository.ForAsync`, which nothing calls. The rule
+written to catch dead code was clean on a directory containing some.
+
+The same pass found the other half. Excluding a method's own file made six
+parity-tested engines look dead — each reached from a sibling in the same class
+— so each needed a written excuse to pass. Seven, with `Papers.Has`, whose
+excuse read *"nothing calls this and nothing ever has"* about a method called
+eighty lines below it on the tier ladder. **A gate that needs ten excuses to
+go green is a gate that teaches people to write excuses**, and the tenth one
+was false. Counting same-file callers and naming the owning type when the name
+is ambiguous took the count from ten to three, and the first run afterwards
+reported the dead method by itself.
+
+**The documentation gate has an allow-list problem the documentation gate was
+written to prevent.** It checks that a fixed list of documents is tracked by
+git — the rule that exists because a document was absent from GitHub for a day
+on a sibling project while every commit reported success. `docs/adr/` is not on
+that list, because it grows. Two ADRs written that afternoon sat on disk,
+unignored, un-added, while the gate passed and `CHANGELOG.md` linked to one of
+them by path. It checks every ADR now, and caught a third within the hour.
+
+Three of the four findings are the same shape as the two above: something that
+had been written down carefully, and was wrong, and read as though it had been
+checked. The parallel agents were fast. What made the afternoon worth anything
+was the one that could not write.
+
 **A gap you have written a reason for is harder to see than a gap you have
 not.** Both of today's findings — `suppressesEta` and the wedge — were covered
 by prose that read like it had been thought about. The comments were what kept

@@ -158,44 +158,51 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
           about somebody's trip, and a server this phone could not reach has
           not made any of them.
         */}
+        {/*
+          The token, once, above everything else on the screen — and outside
+          every gate on this page, which is not a detail.
+
+          It cannot be fetched again: not by this screen, not by the server,
+          not by support. It first sat inside `query.state === 'ready'`, and
+          issuing a link calls `refresh()`, and `refresh()` puts the query back
+          to `loading`. So the card unmounted the instant it appeared, and if
+          that refresh came back unreachable — one POST that got through on a
+          bad stretch of road, then nothing — the only copy of a live
+          capability was gone for good, under a skeleton, on the screen that
+          had just promised this was the only showing.
+
+          Nothing about a token depends on a list arriving. It is held in this
+          component's own state and it renders from there.
+        */}
+        {issued === null ? null : (
+          <Card emphasis="accent" overline={t('the_new_link')} icon="link">
+            <Text variant="title" numberOfLines={1}>
+              {issued.label}
+            </Text>
+            <Text variant="body" style={[mono, styles.gapTight]}>
+              bkhl.ng/t/{issued.token}
+            </Text>
+            <Text variant="label" tone="secondary" style={styles.gapTop}>
+              {t('shown_once_send_it_now')}
+            </Text>
+            <View style={styles.actions}>
+              <Press
+                onPress={() => setIssued(null)}
+                accessibilityLabel={t('hide_the_link')}
+                accessibilityHint={t('shown_once_send_it_now')}
+                feedback="opacity"
+                style={[styles.secondary, { borderColor: colours.outline }]}
+              >
+                <Text variant="title">{t('hide_the_link')}</Text>
+              </Press>
+            </View>
+          </Card>
+        )}
+
         <Unready query={query} onRetry={refresh} />
 
         {query.state !== 'ready' ? null : (
           <>
-            {/*
-              The token, once, above everything else on the screen.
-
-              It cannot be fetched again — not by this screen, not by the
-              server, not by support — so it is shown where it cannot be
-              scrolled past, and it says that this is the only showing. A
-              person who dismisses it and needs the link again makes another
-              one, which is the only honest way back.
-            */}
-            {issued === null ? null : (
-              <Card emphasis="accent" overline={t('the_new_link')} icon="link">
-                <Text variant="title" numberOfLines={1}>
-                  {issued.label}
-                </Text>
-                <Text variant="body" style={[mono, styles.gapTight]}>
-                  bkhl.ng/t/{issued.token}
-                </Text>
-                <Text variant="label" tone="secondary" style={styles.gapTop}>
-                  {t('shown_once_send_it_now')}
-                </Text>
-                <View style={styles.actions}>
-                  <Press
-                    onPress={() => setIssued(null)}
-                    accessibilityLabel={t('hide_the_link')}
-                    accessibilityHint={t('shown_once_send_it_now')}
-                    feedback="opacity"
-                    style={[styles.secondary, { borderColor: colours.outline }]}
-                  >
-                    <Text variant="title">{t('hide_the_link')}</Text>
-                  </Press>
-                </View>
-              </Card>
-            )}
-
             {/*
               One card leads the eye, and which one depends on what is on
               screen: a token that can never be shown again outranks a choice
@@ -266,7 +273,14 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
                 <View style={styles.actions}>
                   <TextInput
                     value={label}
-                    onChangeText={setLabel}
+                    // Retyping is the retry beginning. Leaving "the link was
+                    // not made" under a field the user is already fixing
+                    // reports a failure that is no longer the current state
+                    // of anything.
+                    onChangeText={(next) => {
+                      setFailed(false);
+                      setLabel(next);
+                    }}
                     placeholder={t('who_is_it_for')}
                     placeholderTextColor={colours.textSecondary}
                     accessibilityLabel={t('who_is_it_for')}

@@ -302,7 +302,7 @@ pilot users onboard here — before any marketplace exists.
 | | |
 |---|---|
 | The public share route is rate limited | **green** — sixty an hour per address, partitioned so one abusive caller cannot take the feature away from everybody else, proven to fire by `ShareRateLimitTests` |
-| A shipper can open a trip that no marketplace created | **open** — the app cannot. `POST /v1/trips/{id}` is served and `openTrip` is written against it; nothing calls it, because the request takes three party GUIDs and a shipper has a phone number. F12 in `docs/FEATURE-BACKLOG.md`, and it wants an ADR before any code |
+| A shipper can open a trip that no marketplace created | **open** — the app cannot. `POST /v1/trips/{id}` is served and `openTrip` is written against it; nothing calls it, because the request takes three party GUIDs and a shipper has a phone number. F12 in `docs/FEATURE-BACKLOG.md`; [ADR-0016](adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md) settles how, and the endpoint, screen and invite are what remain |
 
 **Hardware gate:** *a real truck on a real corridor, end to end, on both
 platforms* — deferred with the rest, listed at the top of this file.

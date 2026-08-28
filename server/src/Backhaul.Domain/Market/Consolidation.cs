@@ -118,9 +118,6 @@ public static class Consolidation
         return new PairVerdict.Ok(fill, collect, deliver);
     }
 
-    // wired-check: reached only from Pairs() below, which the consolidation
-    // parity case exercises, so every figure this produces is compared against
-    // TypeScript. Public to match the shape packages/domain exports.
     public static Pairing Price(PairLoad a, PairLoad b, double fill)
     {
         var paysA = a.Offered - a.Offered.Percent(ShipperDiscountPct);

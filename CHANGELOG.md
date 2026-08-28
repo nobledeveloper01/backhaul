@@ -9,6 +9,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A tracking link could be issued and destroyed in the same breath.** The
+  card showing a new token rendered inside `query.state === 'ready'`, and
+  issuing a link refreshed the list, and a refresh puts the query back to
+  loading. So the token unmounted the moment it appeared — and if that refresh
+  came back unreachable, which is one POST getting through on a bad stretch of
+  road and then nothing, the only copy of a live capability was gone under a
+  skeleton. The server keeps a hash; support cannot recover it; the card itself
+  said this was the only showing. It renders from component state now, outside
+  every gate on the page. Found by review, not by use.
+
+- **The wired check was reporting zero findings on a directory with dead code
+  in it.** Two blind spots, both since fixed and both proved by watching the
+  gate change its answer. It ignored callers in a method's own file, so six
+  parity-tested engines needed written excuses to pass — and a seventh excuse,
+  on `Papers.Has`, said "nothing calls this and nothing ever has" about a
+  method called eighty lines below it on the tier ladder. A gate that needs ten
+  excuses to go green teaches people to write excuses, and then one of them is
+  false. It also matched on bare method name, and twenty-three names in the
+  server are declared on more than one type: three calls to one class's
+  `ForAsync` were vouching for another class's, which had no callers at all.
+  Ten exemptions are now three, the check names the owning type when the name
+  is ambiguous, and `NotificationRepository.ForAsync` is deleted.
+
+- **The documentation gate did not check ADRs.** It verified a fixed list of
+  files was tracked by git — the rule that exists because a document was
+  missing from GitHub for a day on a sibling project — and `docs/adr/` is not
+  on a fixed list because it grows. Two ADRs sat on disk, unignored and
+  un-added, while the gate passed and the changelog linked to one of them by
+  path. It now checks every ADR, and it caught a third the same afternoon.
+
+- **Two dead ends and a comment that was wrong.** In the walkthrough the
+  delivery note said "you can hand this over once it is signed off" beside no
+  way to sign anything off; it now says the walkthrough signs nothing off, in
+  all four languages. A failed share link kept reporting the failure while the
+  user retyped the label. And the note explaining a ref in the message thread
+  described navigation this app does not do — corrected to say what is
+  actually true and why the ref is still worth its keep.
+
 - **An arrival time no longer appears beside an open breakdown.** The rule
   existed. `suppressesEta()` was written, tested, exported — and called by
   nothing, on either side. Two comments in `TripDetailScreen` said the screen

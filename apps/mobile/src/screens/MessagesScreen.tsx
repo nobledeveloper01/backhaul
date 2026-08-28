@@ -85,9 +85,13 @@ export function MessagesScreen({ trip, onBack }: Props) {
   /*
     Which trip this device has already told the server it has read.
 
-    The id rather than a flag: this screen is reached from two lists and does
-    not always unmount in between, and a flag would leave the second trip's
-    thread marked read by the first one's receipt.
+    The id rather than a flag. Today a flag would do — `App.tsx` renders this
+    screen only while the route is `messages`, and the stack pops back to the
+    trip before another thread can open, so it always remounts. The id costs
+    nothing and does not depend on that staying true: the day this screen is
+    reached from a second list without unmounting, a flag would leave the
+    second trip's thread marked read by the first one's receipt, and the bug
+    would be a badge cleared for a message nobody saw.
   */
   const marked = useRef<string | null>(null);
 

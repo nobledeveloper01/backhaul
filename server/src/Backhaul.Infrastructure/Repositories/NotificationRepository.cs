@@ -112,13 +112,6 @@ public sealed class NotificationRepository(BackhaulDbContext db)
         return Enum.TryParse<Role>(onAccount, ignoreCase: true, out var parsed) ? parsed : null;
     }
 
-    public async Task<IReadOnlyList<DeviceRecord>> ForAsync(Guid userId, CancellationToken ct = default) =>
-        await db.Devices
-            .Where(d => d.UserId == userId)
-            .AsNoTracking()
-            .Select(d => new DeviceRecord(d.Token, d.UserId, d.Platform, d.UtcOffsetMinutes))
-            .ToListAsync(ct);
-
     /// <summary>When each thing was last said to this person, by trip and kind.</summary>
     public async Task<Dictionary<(Guid TripId, string Kind), DateTimeOffset>> LastSentAsync(
         Guid userId,

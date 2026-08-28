@@ -49,9 +49,6 @@ public static class Escrow
         new(MilestoneKind.Retention, 10, "Seven days after delivery with no exception raised."),
     ];
 
-    // wired-check: reached only from For() below, which the escrow parity case
-    // walks milestone by milestone, so each condition here is held to the
-    // TypeScript answer. Public to match the shape packages/domain exports.
     public static bool IsMet(MilestoneKind kind, EscrowConditions conditions, DateTimeOffset now)
     {
         var started = conditions.State != TripState.Open && conditions.State != TripState.Assigned;

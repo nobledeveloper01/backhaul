@@ -57,6 +57,7 @@ somebody wrote down rather than a thing nobody noticed.
 
 import pathlib
 import re
+from typing import Dict, Optional, Set
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -367,13 +368,48 @@ def public_methods(path: pathlib.Path) -> list[tuple[str, str, int, int]]:
     return found
 
 
-def called(name: str, haystack: str) -> bool:
-    """Whether `haystack` calls `name` or passes it as a method group."""
+def called(name: str, haystack: str, owner: Optional[str] = None) -> bool:
+    """Whether `haystack` calls `name` or passes it as a method group.
+
+    `owner` guards against the one thing a bare name cannot tell you: which
+    type it was called on. Twenty-three method names in `server/src` are
+    declared on more than one type — `SaveAsync`, `MineAsync`, `IssueAsync`
+    and `ForAsync` three times each — so a match on `.ForAsync(` proves that
+    *something* named ForAsync is called and nothing about whose. That is not
+    a hypothetical: `NotificationRepository.ForAsync` had no caller anywhere
+    while three calls to `CarrierRecord.ForAsync` kept the rule quiet, and the
+    rule reported zero findings on the directory it exists to police.
+
+    When the name is ambiguous, the owning type must also be named in the same
+    file. In this codebase a caller has to get the object from somewhere — a
+    primary-constructor parameter, a field, a `new` — and all three spell the
+    type out. It is a heuristic and it errs toward reporting: a caller that
+    receives the object through an interface asks for a `wired-check:` reason
+    rather than passing silently, which is the right way round for a gate whose
+    whole job is to refuse to assume.
+    """
     escaped = re.escape(name)
-    return bool(
+    hit = bool(
         re.search(rf'\.{escaped}\s*(?:<[^<>()]*>\s*)?\(', haystack)
         or re.search(rf'\.{escaped}\s*[,)\];]', haystack)
     )
+    if not hit or owner is None:
+        return hit
+    return bool(re.search(rf'\b{re.escape(owner)}\b', haystack))
+
+
+def calls_itself(name: str, own: str, declared: int) -> bool:
+    """Whether the declaring file calls `name` on top of declaring it.
+
+    A static method reached from a sibling in the same class is written
+    unqualified — `IsMet(kind, …)`, not `Escrow.IsMet(…)` — so the dotted
+    pattern `called` uses cannot see it, and six parity-tested engines looked
+    dead because their only caller sat forty lines below them. Matching the
+    bare name would match the declaration too, which is why this counts: a
+    method declared once and named once is only ever declaring itself.
+    """
+    hits = len(re.findall(rf'(?<![\w.]){re.escape(name)}\s*\(', own))
+    return hits > declared
 
 
 def referenced(name: str, haystack: str) -> bool:
@@ -402,22 +438,56 @@ def unwired_server_methods(
         else ''
     )
 
+    # Which names are declared on more than one type, so `called` knows when a
+    # bare `.Name(` match proves nothing about whose method ran.
+    seen: Dict[str, Set[str]] = {}
+    for path in everything:
+        for owner, name, _line, _index in public_methods(path):
+            seen.setdefault(name, set()).add(owner)
+    ambiguous = {name for name, owners in seen.items() if len(owners) > 1}
+
     found = []
     for path in sorted(cs_files(declaring)):
         text = path.read_text()
         rel = path.relative_to(ROOT).as_posix()
-        elsewhere = '\n'.join(
-            strip_comments(other.read_text())
-            for other in everything
-            if other != path
-        )
+        # The declaring file included, deliberately. A method reached from a
+        # parity-tested entry point in its own class is called; excluding the
+        # file made seven of these need a written excuse to pass, and one of
+        # the seven said "nothing calls this and nothing ever has" about a
+        # method called eighty lines below it, on the tier ladder. A gate that
+        # needs excuses to go green teaches people to write excuses, and then
+        # one of them is wrong. A declaration is not a call site — `called`
+        # matches `.Name(`, and a declaration has no leading dot.
+        # Kept as a list of files rather than one concatenated string. The
+        # ambiguity guard asks whether the owning type is named *in the file
+        # that makes the call*, and against a concatenation that question has
+        # no meaning: one DI registration in Program.cs naming the type would
+        # vouch for every call in the tree.
+        others = [
+            strip_comments(other.read_text()) for other in everything if other != path
+        ]
+        own = strip_comments(text)
+
+        declarations: Dict[str, int] = {}
+        for _owner, name, _line, _index in public_methods(path):
+            declarations[name] = declarations.get(name, 0) + 1
 
         for owner, name, line_number, index in public_methods(path):
             if name in IMPLICIT_MEMBERS:
                 continue
             if exempted_above(text, index, CS_COMMENT_PREFIXES):
                 continue
-            if called(name, elsewhere):
+            guard = owner if name in ambiguous else None
+            if any(called(name, other, guard) for other in others):
+                continue
+            # Two shapes of same-file call, and both are calls. A static
+            # sibling writes `IsMet(…)` unqualified; an instance member is
+            # reached through a receiver — `need.Docs.All(papers.Has)` — and
+            # `called` sees that one because it has a dot. A declaration never
+            # does, so running `called` over the declaring file is safe.
+            if calls_itself(name, own, declarations.get(name, 1)):
+                continue
+            if called(name, own):
                 continue
             if tests_count and referenced(name, test_text):
                 continue

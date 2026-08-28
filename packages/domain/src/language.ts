@@ -96,6 +96,7 @@ export type Phrase =
   | 'shown_once_send_it_now'
   | 'hide_the_link'
   | 'walkthrough_makes_no_links'
+  | 'walkthrough_signs_nothing_off'
   | 'still_marked_unread'
   | 'mark_it_cleared'
   | 'clearing_it'
@@ -747,6 +748,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   shown_once_send_it_now: "This is the only time this link is shown. Send it now — it cannot be shown again.",
   hide_the_link: "Hide it",
   walkthrough_makes_no_links: "The walkthrough cannot make a real link. The ones below are examples.",
+  walkthrough_signs_nothing_off: "The walkthrough cannot sign anything off, so there is nothing to hand over here.",
   still_marked_unread: "Still marked unread for everyone else.",
   mark_it_cleared: "Mark it cleared",
   clearing_it: "Clearing…",
@@ -1384,6 +1386,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   shown_once_send_it_now: "Wannan shi ne lokaci ɗaya tak da za a nuna wannan hanyar haɗi. Ka aika da ita yanzu — ba za a ƙara nuna ta ba.",
   hide_the_link: "Ɓoye ta",
   walkthrough_makes_no_links: "Nuni ba zai iya ƙirƙirar hanyar haɗi ta gaskiya ba. Waɗanda ke ƙasa misalai ne.",
+  walkthrough_signs_nothing_off: "Nuni ba zai iya sa hannu a kan komai ba, don haka babu abin da za a mika a nan.",
   still_marked_unread: "Har yanzu ana nuna ba a karanta ba ga sauran mutane.",
   mark_it_cleared: "Nuna an warware shi",
   clearing_it: "Ana warwarewa…",
@@ -2025,6 +2028,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   shown_once_send_it_now: "Ìgbà kan ṣoṣo nìyí tí a ó fi ọ̀nà asopọ̀ yìí hàn. Fi í ránṣẹ́ ní báyìí — a kò lè fi hàn mọ́.",
   hide_the_link: "Fi pamọ́",
   walkthrough_makes_no_links: "Àpẹẹrẹ kò lè ṣe ọ̀nà asopọ̀ gidi. Àwọn tí ó wà nísàlẹ̀ kì í ṣe gidi.",
+  walkthrough_signs_nothing_off: "Àpẹẹrẹ kò lè fọwọ́sí ohunkóhun, nítorí náà kò sí ohun tí a lè fi lọ́wọ́ níbí.",
   still_marked_unread: "Ó ṣì wà ní àìkà fún àwọn yòókù.",
   mark_it_cleared: "Sàmì sí i pé ó ti yanjú",
   clearing_it: "Ń yanjú rẹ̀…",
@@ -2666,6 +2670,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   shown_once_send_it_now: "Nke a bụ naanị oge a ga-egosi njikọ a. Zipu ya ugbu a — agaghị egosi ya ọzọ.",
   hide_the_link: "Zoo ya",
   walkthrough_makes_no_links: "Ihe ngosi apụghị imepụta ezigbo njikọ. Ndị dị n'okpuru bụ ihe atụ.",
+  walkthrough_signs_nothing_off: "Ihe ngosi apụghị ịbịanye aka na ihe ọ bụla, ya mere ọ dịghị ihe a ga-enyefe ebe a.",
   still_marked_unread: "Ọ ka na-egosi na a gụghị ya maka ndị ọzọ.",
   mark_it_cleared: "Gosi na edozila ya",
   clearing_it: "Na-edozi…",
