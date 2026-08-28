@@ -71,10 +71,15 @@ gateway is built and tested, and **the app says so on the alerts screen** —
 which used to describe which alerts would wake somebody, on an install that had
 never registered for notifications at all.
 
-### F4 — Proof of delivery
+### F4 — Proof of delivery · *the document*
 
-Photographs, signature, geotag, timestamp, and a PDF generated on a device that
-has been offline for the whole trip. Roadmap phase 4.
+Photographs, signature, geotag and timestamp are captured, saved and now
+**sealed** — the screen offers the one-way door and the server records it,
+which is what the earnings statement and the escrow milestone both hang off.
+
+What is left is the *document*: a PDF a driver can hand over, generated on a
+device that has been offline for the whole trip. `pod.ts` already composes the
+lines; nothing renders them to a file. Roadmap phase 4.
 
 ### F5 — Waybill OCR
 
@@ -108,7 +113,7 @@ when android-37 reaches the stable channel.
 
 ---
 
-### F10 — Three routes the app can read but not write
+### F11 — Three routes the app can read but not write
 
 Found by `make wired-check`, which fails when a client method has no caller.
 All three are the same shape: a screen that shows a thing and cannot act on it.

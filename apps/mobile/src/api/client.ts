@@ -387,7 +387,7 @@ export class BackhaulApi {
    * exists in readable form anywhere. A caller that discards it cannot get it
    * back and has to issue another. See ADR-0010.
    */
-  // wired-check: GAP — the share screen lists and revokes but cannot create a link. See F10 in docs/FEATURE-BACKLOG.md.
+  // wired-check: GAP — the share screen lists and revokes but cannot create a link. See F11 in docs/FEATURE-BACKLOG.md.
   async issueShare(
     tripId: string,
     scope: ShareScope,
@@ -441,7 +441,7 @@ export class BackhaulApi {
     );
   }
 
-  // wired-check: GAP — the thread is read and never marked read. See F10 in docs/FEATURE-BACKLOG.md.
+  // wired-check: GAP — the thread is read and never marked read. See F11 in docs/FEATURE-BACKLOG.md.
   async markRead(tripId: string, by: string): Promise<ApiResult<null>> {
     return this.request<null>('POST', `/v1/trips/${tripId}/messages/read`, { by });
   }
@@ -474,7 +474,7 @@ export class BackhaulApi {
     );
   }
 
-  // wired-check: GAP — an incident can be reported and never closed. See F10 in docs/FEATURE-BACKLOG.md.
+  // wired-check: GAP — an incident can be reported and never closed. See F11 in docs/FEATURE-BACKLOG.md.
   async resolveIncident(tripId: string, incidentId: string): Promise<ApiResult<null>> {
     return this.request<null>('POST', `/v1/trips/${tripId}/incidents/${incidentId}/resolve`);
   }
