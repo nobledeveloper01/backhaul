@@ -143,6 +143,26 @@ seen — a splash that departs the frame it completes reads as a glitch.
 |---|---|
 | ![The trip list](docs/screenshots/01-trips.png) | ![A trip](docs/screenshots/02-trip-detail.png) |
 
+**Track a trip** sits above the list because it is the only thing on that
+screen that makes the list longer. Almost every load in this market is agreed
+somewhere the product cannot see — on WhatsApp, on a call, in a yard — and this
+is how one of them gets followed from here, with no board and no bids. The
+other two parties are named by phone number, which is what somebody who agreed
+a load in a chat window actually has.
+
+| Opening one | The same screen in dark |
+|---|---|
+| ![Track a trip](docs/screenshots/20-track-a-trip.png) | ![Track a trip in dark](docs/screenshots/21-track-a-trip-dark.png) |
+
+The form asks for the two parties **you are not** — a driver is asked for the
+carrier and the shipper — because your own slot is filled from your token and a
+number you type there that is not yours is refused rather than quietly
+overwritten. A number nobody holds gets an account holding that number and
+nothing else, and this screen cannot tell you which of the two just happened.
+There is no endpoint that will: one that turns a phone number into an identity
+is a list of who is running loads, for the price of one account. See
+[ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md).
+
 The list is scanned down a colour rail, and every row carries the state as an
 icon, a word and a tint — never colour alone, because it is read in sunlight
 through a windscreen. The header says whether anything needs a person at all,

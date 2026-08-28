@@ -58,6 +58,20 @@ caught before the request leaves, on a corridor where a round trip costs thirty
 seconds. This is the one place in the codebase where duplicating a check is
 right, and it is right because there is exactly one function.
 
+**Then it was driven on the simulator, and the copy was wrong.** The parties
+card carried the overline `TRIPS` — a placeholder phrase reached for while
+writing the layout, which type-checks, translates into four languages, and
+reads as nonsense above two phone fields. It says `Who is on it` now. Nothing
+but looking at it would have found that: every gate this project has was green
+across it.
+
+The rest held up. A number typed into the shipper's field enabled the button
+only once `normalisePhone` accepted it; the trip opened; the list came back
+without the walkthrough banner on it, one row, *Onitsha → Jos · Not started* —
+a real trip on a real server that no marketplace created. At the largest
+accessibility text size the screen wraps and scrolls with nothing truncated,
+and dark is authored, both checked rather than assumed.
+
 **What is deliberately not built: the SMS.** A driver named on a trip is not
 told. The gateway exists, the account exists, the call is one line — and what
 it should say to somebody who has never heard of Backhaul and has just been

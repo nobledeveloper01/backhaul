@@ -320,6 +320,7 @@ export type Phrase =
   | 'the_drivers_number'
   | 'the_carriers_number'
   | 'the_shippers_number'
+  | 'who_is_on_it'
   | 'what_it_is_carrying'
   | 'start_tracking_it'
   | 'starting_to_track'
@@ -886,6 +887,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   the_drivers_number: "The driver's number",
   the_carriers_number: "The carrier's number",
   the_shippers_number: "The shipper's number",
+  who_is_on_it: "Who is on it",
   what_it_is_carrying: "What it is carrying",
   start_tracking_it: "Start tracking it",
   starting_to_track: "Starting…",
@@ -1540,6 +1542,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   the_drivers_number: "Lambar direba",
   the_carriers_number: "Lambar mai mota",
   the_shippers_number: "Lambar mai kaya",
+  who_is_on_it: "Waye ke kanta",
   what_it_is_carrying: "Abin da take ɗauke da shi",
   start_tracking_it: "Fara bi",
   starting_to_track: "Ana farawa…",
@@ -2198,6 +2201,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   the_drivers_number: "Nọ́mbà awakọ̀",
   the_carriers_number: "Nọ́mbà onítọ̀ọ̀kọ̀",
   the_shippers_number: "Nọ́mbà oníṣòwò",
+  who_is_on_it: "Ta ló wà nínú rẹ̀",
   what_it_is_carrying: "Ohun tí ó ń gbé",
   start_tracking_it: "Bẹ̀rẹ̀ sí tọ̀ ọ́",
   starting_to_track: "Ń bẹ̀rẹ̀…",
@@ -2856,6 +2860,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   the_drivers_number: "Nọmba onye ọkwọ ụgbọala",
   the_carriers_number: "Nọmba onye nwe ụgbọala",
   the_shippers_number: "Nọmba onye nwe ngwongwo",
+  who_is_on_it: "Onye nọ na ya",
   what_it_is_carrying: "Ihe ọ na-ebu",
   start_tracking_it: "Malite iso ya",
   starting_to_track: "Na-amalite…",

@@ -196,7 +196,7 @@ export function TrackTripScreen({ onBack }: Props) {
               {field('what_it_is_carrying', note, setNote)}
             </Card>
 
-            <Card overline={t('trips')} icon="shield">
+            <Card overline={t('who_is_on_it')} icon="shield">
               {asked.map(({ slot, label }) =>
                 <View key={slot}>
                   {field(label, numbers[slot] ?? '', (next) =>
