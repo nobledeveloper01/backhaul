@@ -822,8 +822,21 @@ export class BackhaulApi {
     );
   }
 
-  async acceptBid(loadId: string, bidId: string): Promise<ApiResult<null>> {
-    return this.request<null>('POST', `/v1/loads/${loadId}/bids/${bidId}/accept`);
+  /**
+   * Accepts a bid, which opens the trip.
+   *
+   * Answers the trip id rather than nothing: awarding and opening happen in
+   * one transaction on the server (ADR-0019), and a shipper who has just
+   * awarded a load wants to look at the trip, not go and find it.
+   */
+  async acceptBid(loadId: string, bidId: string): Promise<ApiResult<string>> {
+    return map(
+      await this.request<{ tripId: string }>(
+        'POST',
+        `/v1/loads/${loadId}/bids/${bidId}/accept`,
+      ),
+      (raw) => raw.tripId,
+    );
   }
 
   async chain(loadId: string): Promise<ApiResult<ChainView>> {

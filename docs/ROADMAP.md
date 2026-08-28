@@ -16,7 +16,7 @@ gate, because that is the one that says what to work on next. See
 
 ## Deferred to a device day
 
-Four conditions, in the words their own gates use. **v1.0 does not ship until
+Five conditions, in the words their own gates use. **v1.0 does not ship until
 every one is green**, and no simulator signs any of them off.
 
 | From | Condition |
@@ -24,6 +24,7 @@ every one is green**, and no simulator signs any of them off.
 | Phase 1 | **Under 4% battery per hour**, screen off, on real hardware, both platforms |
 | Phase 1 | **72-hour soak survival** on physical devices including Tecno and Infinix |
 | Phase 2 | **A shipper tracks a real truck on a real corridor**, end to end, on both platforms |
+| Phase 5 | **The first return load**, matched and completed by a real carrier and a real shipper |
 | Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
 
 The risk this accepts is stated in ADR-0014 and is worth reading before adding
@@ -384,7 +385,7 @@ glanced at an upload*. `describeTier` must not grow language that claims it.
 
 ---
 
-## Phase 4 — Proof of delivery · **current**
+## Phase 4 — Proof of delivery · **software gate green**
 
 Loading and delivery capture, exceptions, offline queueing, the POD document.
 
@@ -421,7 +422,7 @@ two days sends nothing until the driver opens the trip again.
 
 ---
 
-## Phase 5 — Marketplace and matching
+## Phase 5 — Marketplace and matching · **current**
 
 Load posting, bidding, award and assignment, proactive return-load alerts,
 reverse discovery, fleet utilisation reporting.
@@ -437,6 +438,34 @@ costs, that test fails rather than a haulier finding out.
 
 **Exit gate:** match query under 2 s; first return load matched and completed
 end to end.
+
+**Software gate — green, both halves.**
+
+| | |
+|---|---|
+| Match query under 2 s | **green** — **55 ms for 10,000 open loads**, measured end to end through routing, the store, the filter and the ranking rather than around them. `BoardPerformanceTests`, budgeted at 1 s so it fails while there is still a factor of two of room, and it prints the figure on every run so a shrinking margin is visible before it goes |
+| A load matched and completed end to end | **green** — `EndToEndTests` drives one return load from posted to a sealed delivery without leaving the API: board, bid, ranked bids, award, trip, five transitions, capture, seal |
+
+**The gate had no number in it**, which makes "under 2 s" unfalsifiable — under
+2 s with how many loads? Ten thousand is named and defended in the test: at a
+hundred postings a day it is three months of board with nothing expiring, and
+far past where the pilot will be. Beyond it the answer is paging and an index,
+not a larger number.
+
+**Awarding a bid did nothing but mark the load.** No trip was opened, so a
+shipper and a carrier who agreed inside this product had to arrange the rest of
+it outside — which is the thing the wedge exists to stop. Awarding now opens
+the trip in the same transaction, with the carrier in the driver's slot until
+they hand it over; see
+[ADR-0019](adr/0019-an-awarded-load-becomes-a-trip-and-the-carrier-drives-until-they-say-otherwise.md).
+
+**Hardware/pilot gate:** *the **first** return load* — a real carrier, a real
+shipper, a real empty leg filled. Deferred with the rest, listed at the top of
+this file.
+
+**Still open in this phase, and not on the gate:** a carrier cannot hand a trip
+to one of their drivers, so on a fleet account the carrier stays the driver of
+record. Driver assignment is feature 19's other half.
 
 ---
 

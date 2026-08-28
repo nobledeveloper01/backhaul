@@ -316,12 +316,18 @@ public sealed class LoadsController(
 
     /// <summary>Accept a bid. The load leaves the board.</summary>
     [HttpPost("{loadId:guid}/bids/{bidId:guid}/accept")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<AwardResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Accept(Guid loadId, Guid bidId, CancellationToken ct)
+    public async Task<ActionResult<AwardResponse>> Accept(Guid loadId, Guid bidId, CancellationToken ct)
     {
         var awarded = await market.AwardAsync(loadId, bidId, Caller, clock.GetUtcNow(), ct);
-        return awarded ? NoContent() : NotFound("No such bid on a load you can award.");
+
+        // The trip, not 204. Awarding now opens one (ADR-0019) and a caller
+        // told only "done" has to guess what it is called before it can show
+        // the shipper the thing they just created.
+        return awarded
+            ? new AwardResponse { TripId = MarketRepository.TripIdFor(loadId) }
+            : NotFound("No such bid on a load you can award.");
     }
 
     private static LoadSummary ToSummary(LoadRecord row) => new(

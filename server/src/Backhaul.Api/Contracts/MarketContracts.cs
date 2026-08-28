@@ -171,3 +171,13 @@ public sealed record PairRefusalResponse(
     LoadResponse B,
     string Reason,
     string Detail);
+
+/// <summary>What an accepted bid produced.</summary>
+/// <remarks>
+/// Awarding opens the trip in the same transaction, and its id is derived from
+/// the load's so a retry cannot mint a second one. See ADR-0019.
+/// </remarks>
+public sealed class AwardResponse
+{
+    public Guid TripId { get; set; }
+}

@@ -6,6 +6,59 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (late) — The award that ended the product
+
+**Did.** Phase 5's software gate, both halves. Awarding a bid opens the trip;
+the board ranks ten thousand loads in 55 ms. `EndToEndTests` drives one return
+load from posted to sealed delivery without leaving the API. 192 API tests,
+`make ci` green.
+
+### What surprised us
+
+**`AwardAsync` set two columns and returned true.** The load left the board and
+nothing took its place — no trip, so nothing to track, no delivery to capture
+against, no escrow, no record to count toward a tier. Two people agree a load
+inside the product and then have to arrange the rest of it in a WhatsApp
+thread, which is the thing this whole product is a reaction to. It is the
+fourth instance this week of the same shape: everything built, nothing joined.
+
+**It was not an oversight, and that is why it survived.** A trip has three
+parties and an award names two — nobody has said who is driving, because driver
+assignment is feature 19's unbuilt half. That is a real question, and a real
+question with no obvious answer is how a gap sits in a codebase for months
+looking like a decision. Writing down the three available answers took ten
+minutes and made the choice obvious: most of this market is owner-operators, so
+the carrier *is* the driver, and for a fleet the carrier holds the trip until
+they hand it over. The alternative — a trip with an empty driver slot — would
+have put a special case in the query filter that is the whole of this server's
+authorisation.
+
+**55 ms for ten thousand loads, and the naive implementation is the fast one.**
+The board reads every open load, maps it, filters it in the domain and ranks it
+in the domain — no SQL cleverness, because ADR-0005 says rules live in one
+place and a `LIKE` in Postgres would be a second implementation of matching
+that agrees on most inputs. That decision has been carrying a performance
+liability on paper since it was made, and the number says the liability is
+2000/55 ≈ thirty-six times smaller than the gate allows.
+
+**The gate had no number in it.** *"Match query under 2 s"* — with how many
+loads on the board? Ten is under 2 s on a laptop from 2009. Unfalsifiable
+conditions pass by default, which is the worst kind of green, so the test names
+ten thousand and defends it: three months of posting at a hundred a day with
+nothing expiring, far past where the pilot will be. The budget in the test is
+1 s rather than 2, because a test at exactly the gate fails on a loaded CI box
+for a reason nobody can act on, and a flaky performance test gets deleted.
+
+**The first performance run failed on the count, not the clock.** Two tests
+seeding ten thousand loads each into `ApiFactory`'s shared in-memory store
+ranked twenty thousand between them. The timing assertion passed — it was
+*faster* per load — and the only thing that noticed was an assertion that the
+query returned what was on the board. A performance test with no correctness
+assertion in it would have reported a healthy number for the wrong board, and
+`ApiFactory` already had a `StoreName` for exactly this.
+
+---
+
 ## 2026-08-28 (night) — The comment that was right about the wrong thing
 
 **Did.** Phase 4's software gate, green. The delivery draft lives on the phone

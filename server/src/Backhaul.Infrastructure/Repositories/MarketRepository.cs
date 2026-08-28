@@ -1,4 +1,6 @@
+using Backhaul.Domain;
 using Backhaul.Domain.Access;
+using Backhaul.Domain.Trips;
 using Backhaul.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +52,7 @@ public sealed record BidRecord(
 /// two parties have agreed to know each other.
 /// </para>
 /// </remarks>
-public sealed class MarketRepository(BackhaulDbContext db)
+public sealed class MarketRepository(BackhaulDbContext db, TripRepository trips)
 {
     /// <summary>What is still on offer, soonest to expire first.</summary>
     public async Task<IReadOnlyList<LoadRecord>> BoardAsync(
@@ -240,8 +242,62 @@ public sealed class MarketRepository(BackhaulDbContext db)
         load.AwardedToCarrierId = bid.CarrierId;
         load.AwardedAt = now;
 
+        /*
+            The trip, in the same transaction.
+
+            An awarded load with no trip is a shipper and a carrier who agreed
+            inside this product and then have to arrange the rest of it in a
+            WhatsApp thread — the exact thing the wedge exists to stop. It was
+            the state this repository left behind on every award. See ADR-0019.
+
+            The carrier is in the driver's slot. Most of this market is
+            owner-operators, for whom that is simply true; for a fleet it is
+            the carrier holding the trip until they hand it to a driver, which
+            is a later action and not this one. Nobody has said who is driving
+            at the moment a bid is accepted, and a trip with an empty driver
+            would put a special case in the query filter that is the whole of
+            this server's authorisation.
+        */
+        var parties = new TripParties(bid.CarrierId, bid.CarrierId, load.ShipperId);
+        var opened = TripHistory.Apply(
+            [],
+            TripState.Open,
+            now,
+            TripActor.Shipper,
+            $"Awarded from the board: {load.Cargo}");
+
+        // The machine cannot refuse a first `open`, and unwrapping a closed
+        // hierarchy with a cast is where a file stops trusting its own types.
+        if (opened is not TransitionResult.Accepted accepted)
+        {
+            throw new InvalidOperationException("Opening a trip from an award was refused.");
+        }
+
+        trips.Stage(
+            TripIdFor(loadId),
+            new Corridor(load.OriginName, load.DestinationName),
+            parties,
+            accepted.Event,
+            now);
+
+        // One save. Both rows, or neither.
         await db.SaveChangesAsync(ct);
         return true;
+    }
+
+    /// <summary>The trip a load becomes when it is awarded.</summary>
+    /// <remarks>
+    /// Derived rather than generated, so a retry cannot mint a second trip for
+    /// one load and a caller who holds the load id already knows what the trip
+    /// is called. Guessable, and that is fine: a trip is visible to its three
+    /// parties and to nobody else (ADR-0008), so knowing an id buys nothing.
+    /// The one route in this product where an id genuinely is a capability is
+    /// the public share link, and it is not this. See ADR-0019.
+    /// </remarks>
+    public static Guid TripIdFor(Guid loadId)
+    {
+        var seeded = System.Security.Cryptography.SHA256.HashData(loadId.ToByteArray());
+        return new Guid(seeded.AsSpan(0, 16));
     }
 
     /// <summary>

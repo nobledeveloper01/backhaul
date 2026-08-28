@@ -9,6 +9,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Winning a load now gives you a trip.** Accepting a bid marked the load
+  awarded, took it off the board, and stopped. No trip was opened, so there was
+  nothing to track, no delivery to capture, no escrow to release and nothing to
+  count toward a carrier's record — a shipper and a carrier who agreed inside
+  this product had to go and arrange the rest of it in a WhatsApp thread, which
+  is the exact thing the tracking wedge exists to stop.
+
+  Awarding opens the trip in the same transaction: both rows, or neither. The
+  carrier is in the driver's slot, which for the owner-operators who are most
+  of this market is simply true, and for a fleet is the carrier holding the
+  trip until they hand it to a driver. The trip's id is derived from the load's
+  rather than generated, so a retry on one bar of signal cannot produce a
+  second trip for one load. See
+  [ADR-0019](docs/adr/0019-an-awarded-load-becomes-a-trip-and-the-carrier-drives-until-they-say-otherwise.md).
+
+- **The load board answers in 55 ms with ten thousand loads on it.** Measured
+  through the whole request — routing, the store, the filter and the ranking —
+  rather than around it, and reported on every run so a shrinking margin shows
+  up before it goes. The phase gate is two seconds.
+
 - **A driver can close a delivery with no signal at all.** The proof screen
   held its draft on the server and took the seal from it, so a driver at a
   market gate in Kano photographed the goods, took a signature, and had

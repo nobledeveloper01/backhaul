@@ -203,6 +203,32 @@ public sealed class TripRepository(BackhaulDbContext db)
         DateTimeOffset recordedAt,
         CancellationToken ct = default)
     {
+        var record = Stage(id, corridor, parties, first, recordedAt);
+        await db.SaveChangesAsync(ct);
+        return record;
+    }
+
+    /// <summary>
+    /// The rows for a new trip, added to the change tracker and not saved.
+    /// </summary>
+    /// <remarks>
+    /// For a caller that has something else to commit in the same transaction.
+    /// Awarding a load is the one: an awarded load with no trip is a shipper
+    /// and a carrier who agreed inside this product and have to arrange the
+    /// rest of it outside, and it must not be reachable by a process dying
+    /// between two writes. See ADR-0019.
+    ///
+    /// Shared with <see cref="CreateAsync"/> rather than written twice, because
+    /// a second spelling of "what a new trip looks like" is a trip that opens
+    /// differently depending on how it started.
+    /// </remarks>
+    public TripRecord Stage(
+        Guid id,
+        Corridor corridor,
+        TripParties parties,
+        TripEvent first,
+        DateTimeOffset recordedAt)
+    {
         db.Trips.Add(new TripEntity
         {
             Id = id,
@@ -214,7 +240,6 @@ public sealed class TripRepository(BackhaulDbContext db)
             Destination = corridor.Destination,
         });
         db.TripEvents.Add(ToEntity(id, 0, first, recordedAt));
-        await db.SaveChangesAsync(ct);
         return new TripRecord(id, corridor, parties, [first]);
     }
 
