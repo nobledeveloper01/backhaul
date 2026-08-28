@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // DOM for the console, node for its tests. The build config below carries
+    // no node types at all, so nothing that reaches a browser can reach for
+    // `process` and typecheck.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["src", "test"]
+}

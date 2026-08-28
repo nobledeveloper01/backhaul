@@ -128,6 +128,36 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+/*
+    Which browsers may call this API, by origin, and nothing wider.
+
+    There was no CORS policy at all until there was a browser client, because a
+    phone does not send a preflight — the shipper console is the first caller
+    that has to be let in by name. Configured rather than compiled: a console
+    served from a static host is deployed per environment and the API cannot
+    guess where.
+
+    No wildcard, ever. `AllowAnyOrigin` with credentials is refused by every
+    browser anyway, and without credentials it would still hand any page on the
+    internet a same-origin-shaped view of this API for a caller who has a
+    token. The empty list is the default and it means "no browser", which is
+    the correct posture for a deployment that has not thought about it.
+*/
+var origins = (builder.Configuration.GetValue("Cors:Origins", string.Empty) ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+if (origins.Any(origin => origin == "*"))
+{
+    throw new InvalidOperationException(
+        "Cors:Origins may not contain '*'. Name the origins the console is served from.");
+}
+
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(origins)
+        .WithHeaders("authorization", "content-type")
+        .WithMethods("GET", "POST", "PUT", "DELETE")));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -204,6 +234,13 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
+// Before the bearer middleware, because a CORS preflight is an `OPTIONS` with
+// no `Authorization` header on it — by design, the browser sends it precisely
+// to find out whether it is allowed to send one. Behind the bearer check it
+// would be refused, and the console would report a sign-in failure whose real
+// cause is three layers away.
+app.UseCors();
 
 // Order matters and is the whole point. `BearerMiddleware` proves who the
 // caller is; `RequireBearerMiddleware` refuses anything that is not public and

@@ -6,6 +6,58 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (last) — A gate nobody had written, and a console that found two things
+
+**Did.** Wrote Phase 6's exit gate — it did not have one — and enforced the data
+budget in CI. Built the first cut of the shipper console. `make ci` green.
+
+### What surprised us
+
+**The phase that ships v1.0 had no exit gate.** Every other one was written
+before the phase started, which is this file's own rule, and the one that
+decides whether a product is fit to put in front of Nigerian drivers had a
+description and a full stop. It has one now, in three parts, because three
+different kinds of thing block a release and only one of them is code: a
+software gate, a hardware gate, and a **language gate** — three tables of
+roughly 640 keys each, written by somebody who does not speak the language and
+never read by somebody who does. That last one was invisible while it was only
+a caveat in a file header; it is a row in a table on the release gate now.
+
+**The data budget is enforced against the app's own threshold, not a number I
+picked.** A month of continuous tracking at the fastest interval costs ₦4.80,
+and the ceiling is `WORTH_MENTIONING` — ₦50, the line at which the product
+would have to start telling a driver what it costs them. That makes the gate
+self-consistent: the build fails at exactly the point where the product would
+have to apologise. Crossing it stays possible and becomes a decision somebody
+takes rather than one a review of somebody's data usage discovers.
+
+**The API client was in the wrong place and had been the whole time.** 1,960
+lines, importing nothing but `@backhaul/domain`, sitting in `apps/mobile`. It
+was platform-free from the first commit; it simply lived where only one face
+could reach it, so a second face's options were to import across an app
+boundary or write the wire again. Moving it to `packages/api` touched 28 files
+and broke nothing, which is the tell — it was never coupled to anything, only
+filed under it.
+
+**The API had no CORS policy, because a phone sends no preflight.** Not an
+oversight so much as a category that had never come up: every client so far was
+native. Adding one is a security decision rather than a config line, so the
+allow-list is by name, a `*` throws at start-up, and the default is empty —
+"no browser may call this" is the right posture for a deployment that has not
+thought about it. It goes before the bearer middleware, because a preflight is
+an `OPTIONS` with no `Authorization` on it by design.
+
+**Every corridor in the list rendered invisible, and nothing caught it.** The
+stylesheet gave `button` the accent fill, and the trip cards are buttons — so
+`Lagos → Kano` was painted in `--on-accent`, which in dark mode is the page
+background. The text was in the DOM. Typecheck, lint and every test were green.
+Contrast 1:1, and the only thing that found it was looking at the screen.
+
+The fix is one line and the lesson is a rule: **style the role, not the tag**. A
+card that happens to be clickable is not a call to action.
+
+---
+
 ## 2026-08-28 (late) — The award that ended the product
 
 **Did.** Phase 5's software gate, both halves. Awarding a bid opens the trip;

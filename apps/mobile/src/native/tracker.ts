@@ -11,7 +11,7 @@ import {
   type QueueHealth,
 } from '@backhaul/domain';
 
-import type { BackhaulApi } from '../api/client';
+import type { BackhaulApi } from '@backhaul/api';
 import { NativeTracking, type NativeFix, type Spec } from '@backhaul/tracking-native';
 import { newId as newId_ } from '../state/ids';
 

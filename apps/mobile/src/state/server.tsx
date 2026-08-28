@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { ApiFailure, ApiResult } from '../api/client';
+import type { ApiFailure, ApiResult } from '@backhaul/api';
 
 /**
  * What a screen knows about a request that has not finished.

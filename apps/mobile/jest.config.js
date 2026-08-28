@@ -11,6 +11,7 @@ module.exports = {
   // Metro consumes it, so a test and the app agree about what they are running.
   moduleNameMapper: {
     '^@backhaul/domain$': '<rootDir>/../../packages/domain/src/index.ts',
+    '^@backhaul/api$': '<rootDir>/../../packages/api/src/index.ts',
   },
   // Packages that ship untranspiled ESM and have to go through Babel.
   // `async-storage` is the one that surfaced this: every test that touched the

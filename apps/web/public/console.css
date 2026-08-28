@@ -1,0 +1,145 @@
+/*
+  The same palette as the app, written out rather than imported.
+
+  `design/tokens.ts` is React Native — StyleSheet units, a `palette` object
+  consumed by a hook — and importing it here would drag the platform into a
+  page that has no platform. Two spellings of one palette is a real cost and
+  it is the smaller one: the alternative is a `@backhaul/design` package whose
+  only job is to hold twenty hex codes, and a shipper console that cannot
+  render until React Native's type surface compiles for the web.
+
+  If a third face ever appears, that package is the right answer and this
+  comment is the argument for building it.
+*/
+:root {
+  --surface: #ffffff;
+  --surface-dim: #f2f4f7;
+  --outline: #d8dde4;
+  --text: #0c1119;
+  --text-secondary: #5a6675;
+  --accent: #1a4fa0;
+  --on-accent: #ffffff;
+  --moving: #1b7f4b;
+  --moving-wash: #e6f4ec;
+  --stopped: #b4690e;
+  --stopped-wash: #faf0e1;
+  --stale: #6e7b8a;
+  --stale-wash: #edeff2;
+  --exception: #b0281f;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #0c0f14;
+    --surface-dim: #151a21;
+    --outline: #252d37;
+    --text: #ebeff4;
+    --text-secondary: #97a3b2;
+    --accent: #6f9ee8;
+    --on-accent: #0c0f14;
+    --moving-wash: #10241a;
+    --stopped-wash: #251c0d;
+    --stale-wash: #1a1f26;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+h1 { font-size: 1.75rem; margin: 0 0 1.25rem; }
+h2 { font-size: 1.1rem; margin: 0 0 0.5rem; }
+
+.muted { color: var(--text-secondary); }
+.label { font-size: 0.8125rem; color: var(--text-secondary); }
+
+/* A field, a button and a card, and nothing else. */
+label { display: block; margin-bottom: 0.35rem; }
+
+input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+/*
+  A bare `button` gets structure and inherits its colours, and nothing else.
+
+  It used to carry the accent fill, and the trip cards in the list are buttons
+  too — so every corridor rendered in `--on-accent`, which in dark mode is the
+  page background. The text was in the DOM, the contrast was 1:1, and every
+  automated check in the repository was green. Only looking at it found this.
+
+  The lesson is the rule: style the role, not the tag. A card that happens to
+  be clickable is not a call to action.
+*/
+button {
+  min-height: 44px;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+button[disabled] { opacity: 0.55; cursor: default; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+button.quiet {
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--outline);
+  font-weight: 600;
+}
+
+.stack > * + * { margin-top: 1rem; }
+
+.card {
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  padding: 1rem;
+  background: var(--surface);
+}
+
+/* The colour rail from the trips list, which is how that screen is scanned. */
+.trip { border-left: 4px solid var(--outline); cursor: pointer; text-align: left; width: 100%; }
+.trip.moving { border-left-color: var(--moving); }
+.trip.stopped { border-left-color: var(--stopped); }
+.trip.stale { border-left-color: var(--stale); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  background: var(--stale-wash);
+  color: var(--stale);
+}
+.chip.moving { background: var(--moving-wash); color: var(--moving); }
+.chip.stopped { background: var(--stopped-wash); color: var(--stopped); }
+
+.row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.corridor { font-weight: 600; font-size: 1.05rem; }
+.error { color: var(--exception); }

@@ -22,7 +22,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useTripData } from '../state/server';
-import { map } from '../api/client';
+import { map } from '@backhaul/api';
 import { demoNow, type DemoTrip } from '../state/demo';
 
 interface Props {

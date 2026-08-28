@@ -19,7 +19,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useMine } from '../state/server';
-import { map } from '../api/client';
+import { map } from '@backhaul/api';
 import { CARRIER_CLAIM_WORDS, CARRIER_QUESTIONS } from '../state/words';
 import type { DemoTrip } from '../state/demo';
 

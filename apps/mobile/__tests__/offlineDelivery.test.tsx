@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { document, documentText, type Delivery } from '@backhaul/domain';
 import { useDelivery } from '../src/state/delivery';
-import { BackhaulApi } from '../src/api/client';
+import { BackhaulApi } from '@backhaul/api';
 
 /**
  * Phase 4's exit gate: **a complete proof-of-delivery document generated on a

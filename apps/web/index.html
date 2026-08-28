@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backhaul</title>
+    <link rel="stylesheet" href="./console.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@backhaul/domain": "./vendor/domain/index.js",
+          "@backhaul/api": "./vendor/api/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>This console needs JavaScript. The mobile app does not.</noscript>
+    <main id="app" aria-live="polite"></main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

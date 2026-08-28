@@ -53,7 +53,7 @@ import type { DemoTrip } from '../state/demo';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useTripData } from '../state/server';
-import { map } from '../api/client';
+import { map } from '@backhaul/api';
 import { whereTheDropsAre } from '../state/words';
 import {
   demoDrops,

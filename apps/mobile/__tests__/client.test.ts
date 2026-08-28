@@ -1,4 +1,4 @@
-import { BackhaulApi } from '../src/api/client';
+import { BackhaulApi } from '@backhaul/api';
 
 /**
  * The client's job is to fail well.

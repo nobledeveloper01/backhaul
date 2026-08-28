@@ -29,7 +29,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { radius, space, target } from '../design/tokens';
 import { useColours, useElevation } from '../design/theme';
 import { demoNow, demoTrips, type DemoTrip } from '../state/demo';
-import type { TripSummaryView } from '../api/client';
+import type { TripSummaryView } from '@backhaul/api';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { emptiness, useQuery } from '../state/server';

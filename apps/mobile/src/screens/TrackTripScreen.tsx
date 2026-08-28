@@ -13,7 +13,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { newId } from '../state/ids';
-import type { TripParties } from '../api/client';
+import type { TripParties } from '@backhaul/api';
 
 interface Props {
   readonly onBack: () => void;

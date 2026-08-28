@@ -2,7 +2,7 @@ import { act, create } from 'react-test-renderer';
 import { Text } from 'react-native';
 
 import { useTracking } from '../src/state/tracking';
-import { BackhaulApi } from '../src/api/client';
+import { BackhaulApi } from '@backhaul/api';
 import * as permissions from '../src/native/permissions';
 import { Tracker } from '../src/native/tracker';
 

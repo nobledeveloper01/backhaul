@@ -15,7 +15,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useMine } from '../state/server';
-import type { LaneView } from '../api/client';
+import type { LaneView } from '@backhaul/api';
 import { whenDue } from '../state/words';
 import { CADENCE_WORDS } from '../state/words';
 

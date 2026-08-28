@@ -9,7 +9,7 @@ import {
   request,
   type TrackingPermissions,
 } from '../native/permissions';
-import type { BackhaulApi } from '../api/client';
+import type { BackhaulApi } from '@backhaul/api';
 
 /**
  * What the driver's screen knows about the loop that is the product.

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { BackhaulApi, DEFAULT_BASE_URL, type SignedIn } from '../api/client';
+import { BackhaulApi, DEFAULT_BASE_URL, type SignedIn } from '@backhaul/api';
 
 /**
  * Who is signed in, and the client that carries their token.

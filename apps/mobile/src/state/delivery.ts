@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { seal, type Delivery } from '@backhaul/domain';
 
-import type { BackhaulApi, DeliveryDraft } from '../api/client';
+import type { BackhaulApi, DeliveryDraft } from '@backhaul/api';
 import { forget, readDraft, writeDraft, type Draft } from './drafts';
 
 /**

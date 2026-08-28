@@ -2,7 +2,7 @@ import { act, create } from 'react-test-renderer';
 import { Text } from 'react-native';
 
 import { useNotifications } from '../src/state/notifications';
-import { BackhaulApi } from '../src/api/client';
+import { BackhaulApi } from '@backhaul/api';
 import * as push from '../src/native/push';
 
 /**

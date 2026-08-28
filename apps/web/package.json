@@ -1,0 +1,20 @@
+{
+  "name": "@backhaul/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node build.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test 'test/**/*.test.ts'",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@backhaul/api": "workspace:*",
+    "@backhaul/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}

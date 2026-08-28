@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Phrase } from '@backhaul/domain';
 
 import { pushPlatform, pushToken, utcOffsetMinutes } from '../native/push';
-import type { BackhaulApi } from '../api/client';
+import type { BackhaulApi } from '@backhaul/api';
 
 /**
  * Whether anything the alert policy decides can actually arrive here.

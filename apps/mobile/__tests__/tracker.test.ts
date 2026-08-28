@@ -1,4 +1,4 @@
-import { BackhaulApi } from '../src/api/client';
+import { BackhaulApi } from '@backhaul/api';
 import { Tracker } from '../src/native/tracker';
 import type { NativeFix, Spec, TrackingStatus } from '@backhaul/tracking-native';
 

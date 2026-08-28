@@ -15,7 +15,7 @@
 
 import { readFileSync } from 'node:fs';
 
-import { BackhaulApi } from '../apps/mobile/src/api/client.ts';
+import { BackhaulApi } from '../packages/api/src/client.ts';
 import { clean, distanceTravelled, observe } from '../packages/domain/src/index.ts';
 import type { Position } from '../packages/domain/src/index.ts';
 

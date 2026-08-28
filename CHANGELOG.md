@@ -9,6 +9,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A shipper console, in a browser.** A shipper running loads from an office
+  has a desktop in front of them, and a list of twenty trips is the wrong shape
+  for a phone. It signs in, lists trips and searches them — and it is
+  emphatically **not** the driver face, which is 64 dp targets on a phone in
+  the sun and does not belong on a desktop.
+
+  Nothing in it reimplements a rule or a request: the matcher that finds
+  `Port Harcourt` from `port-harcourt` is the domain's, the same function the
+  phone filters with and the server filters with. No framework and no bundler —
+  `tsc` emits ordinary ESM and an import map gives the two workspace packages a
+  name.
+
+  Building it surfaced two things. **The API client was 1,960 lines that import
+  nothing from React Native**, sitting in `apps/mobile` where only one face
+  could reach it; it is `@backhaul/api` now, because a second implementation of
+  the wire is the mistake ADR-0005 forbids for a rule, one layer out. And **the
+  API had no CORS policy at all**, because a phone sends no preflight — it now
+  takes an allow-list by name, with no wildcard, defaulting to empty.
+
 - **Winning a load now gives you a trip.** Accepting a bid marked the load
   awarded, took it off the board, and stopped. No trip was opened, so there was
   nothing to track, no delivery to capture, no escrow to release and nothing to

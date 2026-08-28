@@ -34,7 +34,7 @@ import { useSession } from '../state/session';
 import { useMine } from '../state/server';
 import { useTracking } from '../state/tracking';
 import { openSettings } from '../native/permissions';
-import { map } from '../api/client';
+import { map } from '@backhaul/api';
 import type { Words } from '../components/PositionAge';
 
 /**

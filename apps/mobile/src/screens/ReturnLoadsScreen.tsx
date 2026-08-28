@@ -29,7 +29,7 @@ import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
 import { useMine } from '../state/server';
-import type { RankedLoadView } from '../api/client';
+import type { RankedLoadView } from '@backhaul/api';
 import { BLOCKER_WORDS, whyNoLoads, whyThisFare, whyThisLoad } from '../state/words';
 
 /**
