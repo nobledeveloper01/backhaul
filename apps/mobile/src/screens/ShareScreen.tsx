@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   DEFAULT_SHARE_DAYS,
@@ -96,6 +96,7 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
   const [label, setLabel] = useState('');
   const [issuing, setIssuing] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [sendFailed, setSendFailed] = useState(false);
 
   const message = invite({
     from: 'Sahel Haulage',
@@ -135,6 +136,25 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
       // link appears among the others rather than only in the panel above.
       refresh();
     });
+  };
+
+  /*
+    Hands the invite to whatever the phone uses to send things.
+
+    Before this, the only way to use a link shown once was to read it off the
+    screen and retype it into WhatsApp — thirty-two characters, by hand, on a
+    5" screen, for the feature the product calls its wedge. `Share.share`
+    rejects when nothing on the device can handle it, which on a stripped
+    Transsion ROM is real; the link stays on screen either way, so a refusal
+    costs nothing but the attempt.
+
+    It sends `message`, not the bare URL — the same sentence the preview below
+    is already showing, so what the cargo owner receives is what the shipper
+    read before they sent it.
+  */
+  const send = () => {
+    setSendFailed(false);
+    void Share.share({ message }).catch(() => setSendFailed(true));
   };
 
   const revoke = (id: string) => {
@@ -185,7 +205,23 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
             <Text variant="label" tone="secondary" style={styles.gapTop}>
               {t('shown_once_send_it_now')}
             </Text>
+            {sendFailed ? (
+              <Text variant="label" tone="secondary" style={styles.gapTop}>
+                {t('could_not_send_the_link')}
+              </Text>
+            ) : null}
+
             <View style={styles.actions}>
+              <Press
+                onPress={send}
+                accessibilityLabel={t('send_the_link')}
+                feedback="opacity"
+                style={[styles.primary, { backgroundColor: colours.accent }]}
+              >
+                <Text variant="title" style={{ color: colours.onAccent }}>
+                  {t('send_the_link')}
+                </Text>
+              </Press>
               <Press
                 onPress={() => setIssued(null)}
                 accessibilityLabel={t('hide_the_link')}

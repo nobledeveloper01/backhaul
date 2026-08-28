@@ -9,6 +9,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A tracking link can be sent, not transcribed.** It was shown once and
+  there was no way to use it but to read thirty-two characters off a 5" screen
+  and retype them into WhatsApp — on the screen the product calls its wedge.
+  **Send it** hands the invite to whatever the phone already uses, and it sends
+  the sentence the preview is showing rather than a bare URL, so what the cargo
+  owner receives is what the shipper read before sending. The link stays on
+  screen either way, so a phone with nothing to share through loses nothing but
+  the attempt.
+
 - **A tracking link could be issued and destroyed in the same breath.** The
   card showing a new token rendered inside `query.state === 'ready'`, and
   issuing a link refreshed the list, and a refresh puts the query back to

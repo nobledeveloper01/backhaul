@@ -94,6 +94,8 @@ export type Phrase =
   | 'link_not_made'
   | 'the_new_link'
   | 'shown_once_send_it_now'
+  | 'send_the_link'
+  | 'could_not_send_the_link'
   | 'hide_the_link'
   | 'walkthrough_makes_no_links'
   | 'walkthrough_signs_nothing_off'
@@ -746,6 +748,8 @@ export const EN: Readonly<Record<Phrase, string>> = {
   link_not_made: "The link was not made. Try again.",
   the_new_link: "The new link",
   shown_once_send_it_now: "This is the only time this link is shown. Send it now — it cannot be shown again.",
+  send_the_link: "Send it",
+  could_not_send_the_link: "It did not go out. The link is still above — try again.",
   hide_the_link: "Hide it",
   walkthrough_makes_no_links: "The walkthrough cannot make a real link. The ones below are examples.",
   walkthrough_signs_nothing_off: "The walkthrough cannot sign anything off, so there is nothing to hand over here.",
@@ -1384,6 +1388,8 @@ export const HA: Readonly<Record<Phrase, string>> = {
   link_not_made: "Ba a ƙirƙiri hanyar haɗi ba. Ka sake gwadawa.",
   the_new_link: "Sabuwar hanyar haɗi",
   shown_once_send_it_now: "Wannan shi ne lokaci ɗaya tak da za a nuna wannan hanyar haɗi. Ka aika da ita yanzu — ba za a ƙara nuna ta ba.",
+  send_the_link: "Aika shi",
+  could_not_send_the_link: "Bai fita ba. Hanyar haɗi na nan sama — sake gwadawa.",
   hide_the_link: "Ɓoye ta",
   walkthrough_makes_no_links: "Nuni ba zai iya ƙirƙirar hanyar haɗi ta gaskiya ba. Waɗanda ke ƙasa misalai ne.",
   walkthrough_signs_nothing_off: "Nuni ba zai iya sa hannu a kan komai ba, don haka babu abin da za a mika a nan.",
@@ -2026,6 +2032,8 @@ export const YO: Readonly<Record<Phrase, string>> = {
   link_not_made: "A kò ṣe ọ̀nà asopọ̀ náà. Tún gbìyànjú.",
   the_new_link: "Ọ̀nà asopọ̀ tuntun",
   shown_once_send_it_now: "Ìgbà kan ṣoṣo nìyí tí a ó fi ọ̀nà asopọ̀ yìí hàn. Fi í ránṣẹ́ ní báyìí — a kò lè fi hàn mọ́.",
+  send_the_link: "Fi ránṣẹ́",
+  could_not_send_the_link: "Kò jáde. Ọ̀nà asopọ̀ ṣì wà lókè — gbìyànjú lẹ́ẹ̀kansi.",
   hide_the_link: "Fi pamọ́",
   walkthrough_makes_no_links: "Àpẹẹrẹ kò lè ṣe ọ̀nà asopọ̀ gidi. Àwọn tí ó wà nísàlẹ̀ kì í ṣe gidi.",
   walkthrough_signs_nothing_off: "Àpẹẹrẹ kò lè fọwọ́sí ohunkóhun, nítorí náà kò sí ohun tí a lè fi lọ́wọ́ níbí.",
@@ -2668,6 +2676,8 @@ export const IG: Readonly<Record<Phrase, string>> = {
   link_not_made: "Emepụtaghị njikọ ahụ. Nwaa ọzọ.",
   the_new_link: "Njikọ ọhụrụ",
   shown_once_send_it_now: "Nke a bụ naanị oge a ga-egosi njikọ a. Zipu ya ugbu a — agaghị egosi ya ọzọ.",
+  send_the_link: "Zipu ya",
+  could_not_send_the_link: "Ọ pụghị. Njikọ ahụ ka dị n'elu — nwaa ọzọ.",
   hide_the_link: "Zoo ya",
   walkthrough_makes_no_links: "Ihe ngosi apụghị imepụta ezigbo njikọ. Ndị dị n'okpuru bụ ihe atụ.",
   walkthrough_signs_nothing_off: "Ihe ngosi apụghị ịbịanye aka na ihe ọ bụla, ya mere ọ dịghị ihe a ga-enyefe ebe a.",
