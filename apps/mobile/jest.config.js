@@ -3,6 +3,10 @@ module.exports = {
   // `preset: 'react-native'` now fails with a message about a missing
   // jest-preset.js that does not say where it went.
   preset: '@react-native/jest-preset',
+  // See jest.setup.js: async-storage v3 has no native module under Jest and
+  // ships no mock of its own, so every call throws from a file nobody here
+  // wrote.
+  setupFiles: ['<rootDir>/jest.setup.js'],
   // The domain package is TypeScript source consumed directly, exactly as
   // Metro consumes it, so a test and the app agree about what they are running.
   moduleNameMapper: {

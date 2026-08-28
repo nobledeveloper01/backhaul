@@ -255,6 +255,8 @@ export type Phrase =
   | 'sent_waiting_on_a_check'
   | 'checked'
   | 'a_check_is_what_counts'
+  | 'on_this_phone_only'
+  | 'it_will_send_itself'
   | 'who_may_bid'
   | 'anybody_may_bid'
   | 'only_checked_carriers'
@@ -829,6 +831,8 @@ export const EN: Readonly<Record<Phrase, string>> = {
   sent_waiting_on_a_check: "Sent — waiting to be checked",
   checked: "Checked",
   a_check_is_what_counts: "A paper counts toward your standing once somebody here has looked at it. Sending it is the first half.",
+  on_this_phone_only: "Signed off. Still on this phone only.",
+  it_will_send_itself: "It goes to the office by itself when there is a signal. Nothing to do.",
   who_may_bid: "Who may bid",
   anybody_may_bid: "Anybody",
   only_checked_carriers: "Checked carriers only",
@@ -1491,6 +1495,8 @@ export const HA: Readonly<Record<Phrase, string>> = {
   sent_waiting_on_a_check: "E zigara ya — na-echere ka a lelee ya",
   checked: "E leleela ya",
   a_check_is_what_counts: "Akwụkwọ na-agụ maka ọnọdụ gị mgbe onye nọ ebe a leliri ya. Izipu ya bụ ọkara mbụ.",
+  on_this_phone_only: "An sa hannu. Har yanzu yana wannan wayar kaɗai.",
+  it_will_send_itself: "Zai tafi ofis da kansa idan an sami sigina. Ba abin yi.",
   who_may_bid: "Wa zai iya bayar da tayi",
   anybody_may_bid: "Kowa",
   only_checked_carriers: "Masu mota da aka duba kawai",
@@ -2157,6 +2163,8 @@ export const YO: Readonly<Record<Phrase, string>> = {
   sent_waiting_on_a_check: "A ti fi ránṣẹ́ — à ń dúró kí a wò ó",
   checked: "A ti wò ó",
   a_check_is_what_counts: "Ìwé kan bẹ̀rẹ̀ sí kà fún ipò rẹ lẹ́yìn tí ẹnìkan níbí bá wò ó. Fífi ránṣẹ́ ni ìdajì àkọ́kọ́.",
+  on_this_phone_only: "A ti fọwọ́sí i. Ó ṣì wà lórí fóònù yìí nìkan.",
+  it_will_send_itself: "Yóò lọ sí ọ́fíìsì fúnra rẹ̀ nígbà tí sìgnà bá wà. Kò sí ohun tí o ní láti ṣe.",
   who_may_bid: "Ta ló lè fúnni ní ìdíyelé",
   anybody_may_bid: "Ẹnikẹ́ni",
   only_checked_carriers: "Àwọn onítọ̀ọ̀kọ̀ tí a ti wò nìkan",
@@ -2823,6 +2831,8 @@ export const IG: Readonly<Record<Phrase, string>> = {
   sent_waiting_on_a_check: "E zigara ya — na-echere ka a lelee ya",
   checked: "E leleela ya",
   a_check_is_what_counts: "Akwụkwọ na-agụ maka ọnọdụ gị mgbe onye nọ ebe a leliri ya. Izipu ya bụ ọkara mbụ.",
+  on_this_phone_only: "Abịanyela aka. Ọ ka dị naanị na ekwentị a.",
+  it_will_send_itself: "Ọ ga-aga ụlọ ọrụ n'onwe ya mgbe sịgnal dị. Ọ dịghị ihe ị ga-eme.",
   who_may_bid: "Onye nwere ike ịnye ọnụahịa",
   anybody_may_bid: "Onye ọ bụla",
   only_checked_carriers: "Naanị ndị nwe ụgbọala a leleworo",

@@ -341,7 +341,7 @@ shape is configuration rather than code, so swapping to one is a config edit.
 
 ---
 
-## Phase 3 — Identity and trust · **current**
+## Phase 3 — Identity and trust · **software gate green**
 
 Verification tiers, document capture, liveness and ID match, expiry tracking,
 post-trip reviews, incident reporting.
@@ -384,7 +384,7 @@ glanced at an upload*. `describeTier` must not grow language that claims it.
 
 ---
 
-## Phase 4 — Proof of delivery
+## Phase 4 — Proof of delivery · **current**
 
 Loading and delivery capture, exceptions, offline queueing, the POD document.
 
@@ -395,7 +395,29 @@ nothing and decides nothing — a platform that adjudicates its own disputes is
 one both sides stop trusting.
 
 **Exit gate:** a complete proof-of-delivery document generated on a device that
-has been offline for the entire trip.
+has been offline for the entire trip. All software; no handset required to
+prove it, only a client with nothing on the other end.
+
+**Green.** `apps/mobile/__tests__/offlineDelivery.test.tsx` drives a capture
+against an API pointed at a port nothing is listening on: two photographs, a
+signature, a seal, then the component is destroyed and rebuilt — and the note
+is composed from what came back off the disk, not from React state. Disabling
+the local write fails two of the three; watched, not assumed.
+
+What made it reachable was not storage but a decision. `ProofScreen` held the
+draft on the server and took `sealedAt` and `canSeal` from it, so a driver at a
+gate with no signal could photograph the goods, take a signature, and have
+nothing — and the button that closes the delivery waited on an answer that
+would never arrive.
+[ADR-0018](adr/0018-the-device-seals-a-delivery-and-the-server-countersigns.md):
+the device seals and the server countersigns, and the two timestamps stay two
+facts.
+
+**Still open in this phase, and not on the gate:** the note is plain text, so
+it carries neither the signature strokes nor the photographs — F4 in
+`docs/FEATURE-BACKLOG.md`, and it is what a disputed delivery eventually needs.
+The outbox retries only while the screen is open; a phone that is closed for
+two days sends nothing until the driver opens the trip again.
 
 ---
 

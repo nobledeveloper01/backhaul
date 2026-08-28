@@ -9,6 +9,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A driver can close a delivery with no signal at all.** The proof screen
+  held its draft on the server and took the seal from it, so a driver at a
+  market gate in Kano photographed the goods, took a signature, and had
+  nothing — and the button that closes the delivery was waiting on an answer
+  that was never coming. The comment explaining the design was right about
+  durability and picked the wrong durable place.
+
+  The delivery is now written to the phone first and sent afterwards, and
+  **the driver seals it**: `seal()` is pure, lives in the domain, and needs
+  nothing but the two photographs, the signature and the name in front of it.
+  The server's timestamp becomes a countersignature — *when this platform first
+  saw the evidence* — and both are kept, because a dispute wants the gap
+  between them and a coverage hole explains it. The screen says so while it is
+  waiting: **Signed off. Still on this phone only.** That is a queue depth, not
+  an error; the driver has done their part.
+
+  It is not a lost form. The earnings statement skips a delivered trip with no
+  sealed proof and the escrow milestone never releases, so a delivery captured
+  and lost is a driver who finished the run and is not paid. See
+  [ADR-0018](docs/adr/0018-the-device-seals-a-delivery-and-the-server-countersigns.md).
+
 - **A carrier could award themselves a Trusted badge in four taps.** The tier
   ladder read four booleans, and `PUT /v1/me/verification/{paper}` let the
   carrier write them. The endpoint's own comment was honest — *"Records that it

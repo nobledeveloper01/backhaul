@@ -6,6 +6,55 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (night) — The comment that was right about the wrong thing
+
+**Did.** Phase 4's software gate, green. The delivery draft lives on the phone
+and the driver seals it; the server countersigns when it can. `make ci` green.
+
+### What surprised us
+
+**The blocker was a comment, and the comment was correct.** `ProofScreen` said:
+
+> The draft lives on the server, not in this component. A delivery is captured
+> at a gate on a phone that may be closed, killed by the OEM, or out of battery
+> before the driver reaches the office. Holding the photographs and the
+> signature in `useState` means a delivery that vanishes when the app does.
+
+Every word of that is true. It rules out `useState` and it does not rule *in*
+the server — and on a corridor with no signal for two hours either way,
+"durable" and "remote" are opposite properties. The reasoning had eliminated
+one wrong answer and stopped.
+
+**Two questions were tangled and only one was about the network.** *Where does
+the draft live* is durability, and the answer was already elsewhere in this
+repo: the tracking queue is native SQLite precisely so capture continues when
+the network does not. *Who decides it is sealed* is a rule, and the server
+owning it is what made the gate unreachable. `seal()` is pure, parity-tested,
+and needs nothing but the delivery in front of it — it could always have run on
+the phone. Nobody had asked it to.
+
+**A hook with a trap in it, found by the test rather than by review.** The
+first cut took the fallback delivery in the effect's dependency array, so a
+caller who built that object inline — the obvious way to call it — got a new
+identity every render and the effect looped for ever. `ProofScreen` happened to
+pass a `useMemo`, so the app was fine and the test hung. A contract that reads
+"remember to memoise this or the app freezes" is not a contract; the fallback
+sits in a ref now.
+
+**The gate test passed without the gate, for about ten minutes.** Composing the
+note from the same mount that captured it reads React state, and React state
+survives anything as long as nobody unmounts. Disabling the local write left
+that test green while the durability test went red — which is the tell. It
+builds the note after a remount now, and disabling the write fails both.
+
+**Not built, and said out loud:** the outbox only retries while the proof
+screen is open. A phone closed for two days sends nothing until the driver
+opens that trip again. The right shape is the tracking queue's — a background
+sweep over every unacknowledged draft — and it is a different piece of work
+from the one the gate asked for.
+
+---
+
 ## 2026-08-28 (evening) — The badge carriers were awarding themselves
 
 **Did.** Phase 3's software gate, green. A paper now counts toward a tier only

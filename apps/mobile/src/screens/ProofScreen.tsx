@@ -10,22 +10,19 @@ import {
   seal,
   settlesDespite,
   type Delivery,
-  type ExceptionKind,
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
 import { radius, space, target } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
-import { useTripData } from '../state/server';
+import { useDelivery } from '../state/delivery';
 import { newId } from '../state/ids';
-import { map } from '../api/client';
 import { EXCEPTION_WORDS } from '../state/words';
 import { demoNow, type DemoTrip } from '../state/demo';
 import { demoDelivery, demoWaypoints } from '../state/product';
@@ -68,98 +65,39 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
   const { api } = useSession();
 
   /*
-    The draft lives on the server, not in this component.
+    The draft lives on the phone, and the server countersigns it.
 
-    A delivery is captured at a gate on a phone that may be closed, killed by
-    the OEM, or out of battery before the driver reaches the office. Holding
-    the photographs and the signature in `useState` means a delivery that
-    vanishes when the app does — which is the one piece of evidence the whole
-    product is built to keep.
+    It used to live on the server, and the comment here said why: a delivery is
+    captured at a gate on a phone that may be closed, killed by the OEM, or
+    flat before the driver reaches the office, so `useState` loses it. Every
+    word of that was right about durability and it picked the wrong durable
+    place — on a corridor with no signal for two hours either way, writing to
+    the server first means a driver who photographed the goods, took a
+    signature, and has nothing.
+
+    `useDelivery` writes to storage first and sends afterwards. See ADR-0018.
   */
-  const { query, refresh } = useTripData(
-    trip.live,
-    async () =>
-      map(await api.delivery(trip.id), (view) =>
-        view === null
-          ? { delivery: { ...captured, photoIds: [], signature: null }, sealedAt: null, canSeal: false }
-          : {
-            sealedAt: view.sealedAt,
-            canSeal: view.canSeal,
-            delivery: {
-              tripId: trip.id,
-              at: view.at,
-              photoIds: view.photoIds,
-              signature:
-                view.signatureName === null
-                  ? null
-                  : {
-                      name: view.signatureName,
-                      role: view.signatureRole ?? '',
-                      // The strokes are an opaque blob the domain never looks
-                      // inside, and the list route does not send its id.
-                      imageId: '',
-                    },
-              capturedAt: captured.capturedAt,
-              note: view.note,
-              exception:
-                view.exceptionKind === null
-                  ? null
-                  : {
-                      kind: view.exceptionKind as ExceptionKind,
-                      quantity: view.exceptionQuantity,
-                      note: view.exceptionNote ?? '',
-                      photoIds: [],
-                    },
-            },
-          },
-      ),
-    () => ({
-      delivery: { ...captured, photoIds: [], signature: null },
-      sealedAt: null,
-      canSeal: false,
-    }),
-    [api, trip.id, captured],
-  );
+  const { held, save, close } = useDelivery(api, trip.id, trip.live, captured);
 
-  const delivery: Delivery =
-    query.state === 'ready'
-      ? query.value.delivery
-      : { ...captured, photoIds: [], signature: null };
-
-  /** Saves the draft and re-reads it, so the screen shows what the server holds. */
-  const save = (next: Delivery) => {
-    if (!trip.live) return;
-
-    void api
-      .saveDelivery(trip.id, {
-        at: next.at,
-        photoIds: next.photoIds,
-        signatureName: next.signature?.name ?? null,
-        signatureRole: next.signature?.role ?? null,
-        signatureImageId: next.signature?.imageId ?? null,
-        note: next.note,
-      })
-      .then(() => refresh());
-  };
+  const delivery: Delivery = held.delivery;
 
   /*
-    Whether the server holds a sealed proof, and whether it would accept one.
+    Sealed by the driver, countersigned by the server.
 
-    `seal()` answers "is this enough" from what is on the screen. It is not the
-    same question as "has this been sealed", and the screen was rendering the
-    first as though it were the second: a driver saw "signed for" the moment
-    the local check passed, and `api.sealDelivery` was never called by
-    anything. Nothing downstream fires without it — a delivered trip with no
-    sealed proof has no date to hang the pay on, so the earnings statement
+    `sealedAt` is this phone's answer and it is the one the screen renders:
+    the driver said the delivery is done and `seal()` agreed there was enough
+    to say so. `acknowledgedAt` is a different fact — when the platform first
+    saw the evidence — and it is what the "not sent yet" line below is about.
+
+    `seal()` answers "is this enough", which is not the same question as "has
+    this been sealed", and this screen once rendered the first as though it
+    were the second. Nothing downstream fires without a real seal: a delivered
+    trip without one has no date to hang the pay on, so the earnings statement
     skips it and the escrow milestone never releases.
-
-    The walkthrough has no server to ask, so it keeps the local answer. That is
-    the same split as every other screen here.
   */
-  const held = query.state === 'ready' && trip.live ? query.value : null;
-  const sealedAt = held?.sealedAt ?? null;
+  const sealedAt = held.sealedAt;
   const sealed = sealedAt !== null ? { ok: true as const } : seal(delivery);
-  const canSeal = held === null ? seal(delivery).ok : held.canSeal;
+  const canSeal = seal(delivery).ok;
   const away = capturedNear(delivery, destination);
   const far = capturedAwayFromDestination(delivery, destination);
 
@@ -209,15 +147,15 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
         {/*
-          Nothing derived from the answer until there is one.
+          Nothing decisive until storage has answered, which is a frame or two
+          and not a network round trip.
 
-          The binding above fell back to an empty list (or the walkthrough) on
-          every outcome that was not a value, so a server this phone could not
-          reach rendered as a fact about somebody's own records. See `Unready`.
+          There is no `Unready` here any more and that is the point of ADR-0018:
+          a phone that cannot reach the server still has this delivery, so
+          there is no unreachable state to render. What there is instead is a
+          line saying it has not been sent yet, further down.
         */}
-        <Unready query={query} onRetry={refresh} />
-
-        {query.state !== 'ready' ? null : (
+        {!held.ready ? null : (
           <>
             {/*
               The refusal, above everything. A driver standing in a market with a
@@ -244,11 +182,15 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                 happens when the last photograph lands. Once it is through, the
                 button is gone — there is nothing to press twice.
               */}
-              {trip.live && sealedAt === null && canSeal ? (
+              {/*
+                No `trip.live` gate any more. Sealing is the driver's act and
+                it needs no network — that is ADR-0018, and it is what makes
+                the walkthrough show this button too, which it should: this is
+                the one thing on the screen a driver actually does.
+              */}
+              {sealedAt === null && canSeal ? (
                 <Press
-                  onPress={() => {
-                    void api.sealDelivery(trip.id).then(() => refresh());
-                  }}
+                  onPress={close}
                   accessibilityLabel={t('seal_the_proof')}
                   style={[styles.seal, { backgroundColor: colours.accent }]}
                 >
@@ -256,6 +198,27 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                     {t('seal_the_proof')}
                   </Text>
                 </Press>
+              ) : null}
+
+              {/*
+                A queue depth, not an error.
+
+                The driver has done their part; the phone is waiting for a
+                network, which is an ordinary condition on this road and not a
+                failure of theirs. It says so in that order — what is done
+                first, what is outstanding second — because the first line is
+                the one a driver with a queue behind them reads.
+              */}
+              {sealedAt !== null && held.acknowledgedAt === null ? (
+                <View style={[styles.state, styles.gapTop]}>
+                  <Icon name="clock" size="md" colour={colours.textSecondary} beside="body" />
+                  <View style={styles.flex}>
+                    <Text variant="body">{t('on_this_phone_only')}</Text>
+                    <Text variant="label" tone="secondary">
+                      {t('it_will_send_itself')}
+                    </Text>
+                  </View>
+                </View>
               ) : null}
 
               <View style={styles.capture}>

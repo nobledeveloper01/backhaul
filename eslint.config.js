@@ -40,6 +40,9 @@ export default tseslint.config(
       'apps/mobile/jest.config.js',
       'apps/mobile/babel.config.js',
       'apps/mobile/react-native.config.js',
+      // Same reasoning: a jest setup file is harness, not source, and it
+      // belongs to no tsconfig.
+      'apps/mobile/jest.setup.js',
     ],
     ...tseslint.configs.disableTypeChecked,
     rules: {
@@ -61,6 +64,7 @@ export default tseslint.config(
             'eslint.config.js',
             'apps/mobile/babel.config.js',
             'apps/mobile/jest.config.js',
+            'apps/mobile/jest.setup.js',
             'apps/mobile/metro.config.js',
             'apps/mobile/react-native.config.js',
           ],
