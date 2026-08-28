@@ -187,6 +187,13 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'not_notifying'
+  | 'at_most_once_every'
+  | 'role_shipper'
+  | 'role_carrier'
+  | 'role_driver'
+  | 'push_not_configured'
+  | 'push_refused'
   | 'no_position_to_rank_from'
   | 'location_blocked'
   | 'location_denied'
@@ -716,6 +723,13 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  not_notifying: "Not notifying",
+  at_most_once_every: "at most once every",
+  role_shipper: "shipper",
+  role_carrier: "carrier",
+  role_driver: "driver",
+  push_not_configured: "This build cannot receive notifications. The alerts below are what it would send.",
+  push_refused: "Notifications are off for Backhaul, so nothing below will reach this phone.",
   no_position_to_rank_from: "No truck has reported yet, so this is not sorted by distance.",
   location_blocked: "Location is switched off for Backhaul. Your trip is not being recorded — turn it on in Settings.",
   location_denied: "Backhaul needs your location to record this trip. Nothing is recorded until you allow it.",
@@ -1329,6 +1343,13 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  not_notifying: "Ba a sanarwa",
+  at_most_once_every: "sau ɗaya kawai a kowane",
+  role_shipper: "mai kaya",
+  role_carrier: "mai mota",
+  role_driver: "direba",
+  push_not_configured: "Wannan sigar ba za ta iya karɓar sanarwa ba. Sanarwar da ke ƙasa ita ce abin da za a aika.",
+  push_refused: "An kashe sanarwa don Backhaul, don haka babu abin da zai isa wannan wayar.",
   no_position_to_rank_from: "Babu motar da ta ba da rahoto tukuna, don haka ba a jera wannan ta nisa ba.",
   location_blocked: "An kashe wurin zama don Backhaul. Ba a rubuta tafiyarka ba — ka kunna shi a cikin Saituna.",
   location_denied: "Backhaul na buƙatar wurin da kake don rubuta wannan tafiyar. Ba a rubuta komai sai ka yarda.",
@@ -1946,6 +1967,13 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  not_notifying: "A kò ń kìlọ̀",
+  at_most_once_every: "ẹ̀ẹ̀kan ṣoṣo ní gbogbo",
+  role_shipper: "olówó ẹrù",
+  role_carrier: "olówó ọkọ̀",
+  role_driver: "awakọ̀",
+  push_not_configured: "Ẹ̀dà yìí kò lè gba ìkìlọ̀. Àwọn ìkìlọ̀ ìsàlẹ̀ ni ohun tí yóò fi ránṣẹ́.",
+  push_refused: "A ti pa ìkìlọ̀ fún Backhaul, nítorí náà kò sí ohun tí yóò dé fóònù yìí.",
   no_position_to_rank_from: "Kò sí ọkọ̀ tí ó ti ròyìn síbẹ̀, nítorí náà a kò to èyí ní ìbámu pẹ̀lú ìjìnnà.",
   location_blocked: "A ti pa ipò ibi fún Backhaul. A kò ń kọ ìrìn rẹ sílẹ̀ — tan án nínú Ètò.",
   location_denied: "Backhaul nílò ibi tí o wà láti kọ ìrìn yìí sílẹ̀. A kò ní kọ ohunkóhun títí tí o fi gbà.",
@@ -2563,6 +2591,13 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  not_notifying: "Anaghị akọ",
+  at_most_once_every: "naanị otu ugboro kwa",
+  role_shipper: "onye nwe ngwaahịa",
+  role_carrier: "onye na-ebu ibu",
+  role_driver: "ọkwọ ụgbọ",
+  push_not_configured: "Nsụgharị a enweghị ike ịnata ọkwa. Ọkwa ndị dị n’okpuru bụ ihe ọ ga-eziga.",
+  push_refused: "Agbanyụọla ọkwa maka Backhaul, ya mere ọ dịghị ihe ga-eru ekwentị a.",
   no_position_to_rank_from: "Ọ dịghị ụgbọ akọọla ka ugbu a, ya mere edoghị nke a n’usoro dịka anya.",
   location_blocked: "Agbanyụọla ebe maka Backhaul. Anaghị edekọ njem gị — gbanye ya na Ntọala.",
   location_denied: "Backhaul chọrọ ebe ị nọ iji dekọọ njem a. Anaghị edekọ ihe ọ bụla ruo mgbe ị kwere.",

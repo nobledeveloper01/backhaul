@@ -19,10 +19,20 @@ import { Text } from '../components/Text';
 import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
-import { ALERT_WORDS } from '../state/words';
+import type { Deliverable } from '../state/notifications';
+import { ALERT_WORDS, AUDIENCE_WORDS } from '../state/words';
+import type { Words } from '../components/PositionAge';
 
 interface Props {
   readonly onBack: () => void;
+  /**
+   * Whether anything described here can actually arrive.
+   *
+   * Passed in rather than worked out here, because registering an install is
+   * something that happens when somebody signs in — not when they happen to
+   * open a settings screen. This screen only reports it.
+   */
+  readonly deliverable: Deliverable;
 }
 
 const KINDS = Object.keys(POLICY) as AlertKind[];
@@ -41,10 +51,11 @@ const HOURS = [3, 9, 14, 23];
  * every kind, so the screen shows the real decision rather than a description
  * of one.
  */
-export function AlertsScreen({ onBack }: Props) {
+export function AlertsScreen({ onBack, deliverable }: Props) {
   const colours = useColours();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
+
 
   const [hour, setHour] = useState(14);
 
@@ -71,6 +82,21 @@ export function AlertsScreen({ onBack }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
       >
+        {/*
+          Whether any of this can arrive, before any of it is described.
+
+          The rows below say "Wakes you" and "Notifies" beside each kind of
+          alert. That is the policy — what the product promises — and it was
+          being rendered in the present tense on an install that had never
+          registered for notifications at all. The promise is worth showing;
+          claiming it is already happening is not.
+        */}
+        {deliverable.reachable === false && deliverable.why !== null ? (
+          <Card overline={t('not_notifying')} icon="alert" emphasis="accent">
+            <Text variant="body">{t(deliverable.why)}</Text>
+          </Card>
+        ) : null}
+
         <Text variant="body" tone="secondary">
           {t('alerts_lede')}
         </Text>
@@ -100,8 +126,14 @@ export function AlertsScreen({ onBack }: Props) {
             <View style={styles.flex}>
               <Text variant="body">{sentenceCase(t(ALERT_WORDS[kind]))}</Text>
               <Text variant="label" tone="secondary">
-                {POLICY[kind].to.join(', ')} · at most once every{' '}
-                {every(POLICY[kind].repeatAfterMs)}
+                {/*
+                  The audiences as words, not as the domain's wire values.
+                  `to.join(', ')` printed "shipper, carrier" on every language
+                  — English identifiers that read as finished because they are
+                  lower case and have a comma in them.
+                */}
+                {POLICY[kind].to.map((who) => t(AUDIENCE_WORDS[who])).join(', ')} ·{' '}
+                {t('at_most_once_every')} {every(POLICY[kind].repeatAfterMs, t)}
               </Text>
             </View>
 
@@ -167,9 +199,11 @@ const sentenceCase = (words: string) => words.charAt(0).toUpperCase() + words.sl
  * duress alarm, whose window is five minutes — a repeat limit of zero, which
  * is the opposite of what it says.
  */
-function every(ms: number): string {
+function every(ms: number, t: Words): string {
   const minutes = Math.round(ms / 60_000);
-  return minutes < 60 ? `${minutes} min` : `${Math.round(minutes / 60)} h`;
+  return minutes < 60
+    ? `${minutes} ${t('unit_minute')}`
+    : `${Math.round(minutes / 60)} ${t('unit_hour')}`;
 }
 
 const styles = StyleSheet.create({

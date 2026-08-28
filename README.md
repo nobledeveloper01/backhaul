@@ -433,16 +433,27 @@ body text does not.
 |---|---|
 | ![Trips on Android](docs/screenshots/13-android-trips.png) | ![The driver face on Android](docs/screenshots/12-android-driver.png) |
 
-One codebase, and the same design system. The emulator is set to 360×800 dp
-(720×1600 at xhdpi), which is a Tecno Spark / Infinix Hot — the class of
-handset that dominates the driver segment.
+One codebase, and the same design system. These are shot on the
+**`backhaul-tecno`** AVD: 720×1600 at 280 dpi — **411 × 914 dp** — with 2 GB of
+RAM, which is a Tecno Spark / Infinix Hot, the class of handset that dominates
+the driver segment. The RAM matters as much as the screen: "a 2 GB device
+running out of memory mid-trip" is one of the risks the definition of done
+names.
 
-It was 320×640 dp until somebody looked at a screenshot and said the type was
-too big. It was not: font scale was 1.0 and every size was as designed. The
-*screen* was smaller in dp than any phone on sale, so the same type filled more
-of it — and calling that "a useful proxy for a low-end handset" had it exactly
-backwards. A stress test below the floor is worth running; it is not worth
-photographing and calling representative.
+```bash
+~/Library/Android/sdk/emulator/emulator -avd backhaul-tecno -gpu host
+```
+
+`-gpu host` is not optional on this machine — software rendering fails with
+`Failed to create window surface for DisplaySurfaceGl`, and the failure looks
+exactly like a working emulator with a blank window.
+
+The screenshots were taken on a 320×640 dp AVD until somebody looked at one and
+said the type was too big. It was not: font scale was 1.0 and every size was as
+designed. The *screen* was smaller in dp than any phone on sale, so the same
+type filled more of it — and the README called that "a useful proxy for a
+low-end handset", which is exactly backwards. A stress test below the floor is
+worth running; it is not worth photographing and calling representative.
 
 | Choosing a language | The loop, running, and blocked |
 |---|---|
@@ -485,6 +496,17 @@ screens, because "never ask again" has only one way forward and it is Settings
 Signing in is the same four languages on both platforms:
 
 ![Signing in, in Igbo](docs/screenshots/48-android-signin-igbo.png)
+
+#### And whether any of it can arrive
+
+![The alerts screen saying it cannot deliver](docs/screenshots/49-android-alerts-undeliverable.png)
+
+The policy is the product's promise: who hears what, how loudly, and never at
+3am. It was being rendered in the present tense on an install that had never
+registered for notifications — the same defect as the driver screen saying "we
+are recording your trip" over a capture loop nobody started. The card at the
+top is the app saying which it is. See
+[ADR-0013](docs/adr/0013-the-app-registers-a-real-push-token-or-says-it-has-none.md).
 
 The Android build needed three corrections React Native's own scaffolding does
 not make for a workspace, all recorded in

@@ -76,6 +76,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   register a device until it has a token to register, and that needs a native
   module this build does not have.
 
+- **Notifications are delivered, not just decided.** The policy, the
+  dispatcher, the device registry, the sender seam and their tests were all
+  built — and `registerDevice` was never called by anything. So there were no
+  devices, the loop that runs every five minutes had nobody to tell, and the
+  alerts screen said "Wakes you" beside each kind of alert on an install that
+  had never registered for a notification in its life.
+
+  The app registers on sign-in now — not when somebody opens a settings screen,
+  because a person who never opens it should still be told their truck has
+  stalled — and withdraws the registration on sign-out, because a phone in this
+  market is handed between two drivers on alternate weeks.
+
+  **It never registers a token it does not have.** A device row holding an
+  invented string is a promise the platform cannot keep, and it fails in the
+  worst direction: the dispatcher records the alert as sent, `repeatAfterMs`
+  suppresses the retry, and the shipper is never told about the stall. Absent a
+  push provider the app says so on the alerts screen instead, above the policy
+  rather than in place of it — the policy is still what the product promises.
+  ADR-0013 has the reasoning and what a provider would change.
+
+- **The alerts screen was part English and used the wrong word for "off".** The
+  audience beside every alert was `POLICY[kind].to.join(', ')` — the domain's
+  own wire values, so `shipper, carrier · at most once every 6 h` on all four
+  languages, which reads as finished because it is lower case and has a comma
+  in it. And the card announcing that notifications cannot be delivered was
+  headed "Not recording", which is about tracking.
+
 - **An icon, a launch screen, and a splash the app draws itself.** There was no
   icon — an empty asset catalogue on iOS and React Native's stock green robot
   on Android — and the launch screen said "BackhaulApp" in 36 pt over "Powered

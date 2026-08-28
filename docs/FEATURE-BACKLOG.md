@@ -56,12 +56,20 @@ What is left is **transport, and it is credentials rather than code**:
   notification to the log and says on every line that it did not send. Same
   seam and same reason as `ISmsSender`. APNs wants a signed JWT and a p8 key
   from an Apple developer account; FCM wants a service-account JSON.
-- The app cannot register a device until it has a push token to register, and
-  getting one needs a native module this build does not have. `registerDevice`
-  is written and proven over the wire against a token the round-trip makes up.
+- The app has a token source and registers whatever it produces — on sign-in,
+  not when somebody opens a settings screen — and withdraws it on sign-out,
+  because a phone in this market is handed between two drivers on alternate
+  weeks. `native/push.ts` is the seam. Absent a linked provider it answers
+  "unavailable", **and the app never registers a placeholder**: a `Devices` row
+  with an invented token is a promise the platform cannot keep, and it fails in
+  the worst direction — the dispatcher records the alert as sent,
+  `repeatAfterMs` suppresses the retry, and the shipper is never told about the
+  stall. See ADR-0013.
 
-So: nothing reaches a phone yet, and every piece between the condition and the
-gateway is built and tested.
+So: nothing reaches a phone yet, every piece between the condition and the
+gateway is built and tested, and **the app says so on the alerts screen** —
+which used to describe which alerts would wake somebody, on an install that had
+never registered for notifications at all.
 
 ### F4 — Proof of delivery
 

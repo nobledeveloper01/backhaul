@@ -35,6 +35,7 @@ import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
 import { useStacks } from './nav/stack';
 import { LanguageProvider, useLanguage } from './state/language';
+import { useNotifications } from './state/notifications';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { SessionProvider, useSession } from './state/session';
 import { SignInScreen } from './screens/SignInScreen';
@@ -54,6 +55,14 @@ import { demoNow, demoTrips } from './state/demo';
  * and unreadable at fifteen.
  */
 function Shell() {
+  /*
+    This install registers for notifications as soon as somebody is signed in.
+
+    Not when they open the alerts screen: a person who never opens it should
+    still be told their truck has stalled, and the alerting path was built end
+    to end except that nothing ever called `registerDevice`. See ADR-0013 for
+    why a token is registered only when it is real.
+  */
   const colours = useColours();
   const { isDark } = useTheme();
   const now = useMemo(demoNow, []);
@@ -61,6 +70,9 @@ function Shell() {
   const insets = useSafeAreaInsets();
   const { face, current, push, pop, select } = useStacks();
   const { t, language, setLanguage } = useLanguage();
+  const { api, who } = useSession();
+
+  const deliverable = useNotifications(api, who?.userId ?? null);
 
   /*
     The driver face is one trip, not a list — a driver has exactly one load on
@@ -171,7 +183,9 @@ function Shell() {
         {current.name === 'bids' ? <BidsScreen onBack={pop} /> : null}
         {current.name === 'verification' ? <VerificationScreen onBack={pop} /> : null}
         {current.name === 'vehicles' ? <VehiclesScreen onBack={pop} /> : null}
-        {current.name === 'alerts' ? <AlertsScreen onBack={pop} /> : null}
+        {current.name === 'alerts' ? (
+          <AlertsScreen onBack={pop} deliverable={deliverable} />
+        ) : null}
 
         {current.name === 'driver' ? (
           <DriverScreen

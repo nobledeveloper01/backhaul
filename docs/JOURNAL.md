@@ -307,6 +307,36 @@ no gate. It refuses to start when the port is held now, and says which of the
 two things to do about it. Checked by holding the port and watching it refuse —
 the same discipline as `repo-check`, and for the same reason.
 
+**The third thing this week that was built, tested, and never called.**
+
+The notification layer, in full: `alerts.ts` deciding who hears what and how
+loudly, parity-tested on both sides; `AlertDispatcher` hosted and running every
+five minutes; `NotificationRepository` holding the two facts that cannot be
+derived; `IPushSender` as the seam, `LoggingPushSender` behind it; endpoint
+tests for deduplication, quiet hours and audience isolation. `registerDevice`
+written on the client and proven over the wire by the round-trip.
+
+Nothing called it. Same shape as the capture loop, same shape as `Tracker`.
+I have now found this pattern three times in one project, and the common
+thread is not carelessness — every piece had a test that passed. It is that
+**"does anything call this" is not a question any of our gates asks.** The
+round-trip proves the client method works against the server. The endpoint
+tests prove the server works. Neither notices that the app never invokes it.
+
+The honest fix for the class, not the instance, would be a check that every
+exported client method has a caller outside its own tests. I have not written
+it; I am noting that it is the gate this project is missing, because three
+instances is a pattern and the fourth is already in the code somewhere.
+
+**And the decision that matters more than the wiring.** Getting a real push
+token needs an APNs key or a `google-services.json` — credentials, not code. It
+would have been easy to register a placeholder so the path "worked". That is
+the worst option available: a device row with an invented token makes the
+dispatcher record the alert as sent, `repeatAfterMs` then suppresses the retry,
+and the shipper is never told about the stall — silently, and in the direction
+that loses the evidence. ADR-0013 says the app registers a real token or says
+it has none, and the alerts screen now says which.
+
 **"The Android fonts are big now."**
 
 They were not. Font scale 1.0, every size as designed, nothing changed. The

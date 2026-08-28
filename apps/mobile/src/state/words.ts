@@ -1,5 +1,6 @@
 import type {
   AlertKind,
+  Audience,
   Blocker,
   Cadence,
   LoadFilter,
@@ -62,6 +63,20 @@ export const DOCUMENT_WORDS: Readonly<Record<keyof Documents, Phrase>> = {
   licence: 'document_licence',
   registration: 'document_registration',
   insurance: 'document_insurance',
+};
+
+/**
+ * Who an alert is for.
+ *
+ * The alerts screen printed `POLICY[kind].to.join(', ')` — the domain's own
+ * wire values, which are English identifiers — beside every kind of alert, on
+ * every language. `shipper, carrier` is the sort of thing that reads as
+ * finished because it is lower case and has a comma in it.
+ */
+export const AUDIENCE_WORDS: Readonly<Record<Audience, Phrase>> = {
+  shipper: 'role_shipper',
+  carrier: 'role_carrier',
+  driver: 'role_driver',
 };
 
 export const TIER_WORDS: Readonly<Record<Tier, Phrase>> = {
