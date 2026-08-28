@@ -31,12 +31,13 @@ public sealed class IdentityRepository(BackhaulDbContext db)
     }
 
     /// <summary>
-    /// Records that a paper is held.
+    /// Records that a carrier says a paper is held.
     /// </summary>
     /// <remarks>
-    /// Records that it exists, not that it is genuine. Verification is a human
-    /// step this endpoint does not pretend to perform, and the tier it feeds
-    /// is only as good as whoever checks the upload.
+    /// A claim, and nothing more. It used to be the same flag the tier ladder
+    /// read, which meant a carrier could award themselves a Trusted badge in
+    /// four taps; see ADR-0017. Withdrawing a claim withdraws the review with
+    /// it — a paper nobody says they hold cannot be a paper somebody checked.
     /// </remarks>
     public async Task<CarrierProfileEntity> SetPaperAsync(
         Guid userId,
@@ -48,10 +49,62 @@ public sealed class IdentityRepository(BackhaulDbContext db)
 
         switch (paper)
         {
-            case Paper.Identity: row.HasIdentity = held; break;
-            case Paper.Licence: row.HasLicence = held; break;
-            case Paper.Registration: row.HasRegistration = held; break;
-            case Paper.Insurance: row.HasInsurance = held; break;
+            case Paper.Identity:
+                row.HasIdentity = held;
+                if (!held) row.VerifiedIdentity = false;
+                break;
+            case Paper.Licence:
+                row.HasLicence = held;
+                if (!held) row.VerifiedLicence = false;
+                break;
+            case Paper.Registration:
+                row.HasRegistration = held;
+                if (!held) row.VerifiedRegistration = false;
+                break;
+            case Paper.Insurance:
+                row.HasInsurance = held;
+                if (!held) row.VerifiedInsurance = false;
+                break;
+        }
+
+        await db.SaveChangesAsync(ct);
+        return row;
+    }
+
+    /// <summary>
+    /// A reviewer's answer about a paper somebody claimed.
+    /// </summary>
+    /// <remarks>
+    /// Only a paper that was claimed can be confirmed — confirming one nobody
+    /// submitted would be a reviewer inventing evidence rather than reading
+    /// it, and the claim is the thing that has an upload attached. Returns
+    /// null when there is nothing to answer about.
+    /// </remarks>
+    public async Task<CarrierProfileEntity?> ReviewPaperAsync(
+        Guid carrierId,
+        Paper paper,
+        bool verified,
+        CancellationToken ct = default)
+    {
+        var row = await ProfileAsync(carrierId, ct);
+
+        var claimed = paper switch
+        {
+            Paper.Identity => row.HasIdentity,
+            Paper.Licence => row.HasLicence,
+            Paper.Registration => row.HasRegistration,
+            Paper.Insurance => row.HasInsurance,
+            _ => false,
+        };
+
+        if (verified && !claimed) return null;
+
+        switch (paper)
+        {
+            case Paper.Identity: row.VerifiedIdentity = verified; break;
+            case Paper.Licence: row.VerifiedLicence = verified; break;
+            case Paper.Registration: row.VerifiedRegistration = verified; break;
+            case Paper.Insurance: row.VerifiedInsurance = verified; break;
         }
 
         await db.SaveChangesAsync(ct);

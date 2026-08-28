@@ -26,6 +26,23 @@ public sealed class VerificationResponse
 
     public bool HasInsurance { get; set; }
 
+    /*
+        Both sets, because the carrier needs to see the difference.
+
+        `Has…` is what they told us. `Verified…` is what a reviewer confirmed,
+        and it is the only set the tier above is computed from. A screen
+        showing only the confirmed set looks like the upload was lost; one
+        showing only the claim is the badge a carrier awarded themselves.
+        See ADR-0017.
+    */
+    public bool VerifiedIdentity { get; set; }
+
+    public bool VerifiedLicence { get; set; }
+
+    public bool VerifiedRegistration { get; set; }
+
+    public bool VerifiedInsurance { get; set; }
+
     public int TripsCompleted { get; set; }
 
     /// <summary>Of the completed trips, those with a promised arrival to be judged against.</summary>

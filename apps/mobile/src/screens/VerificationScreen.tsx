@@ -79,7 +79,25 @@ export function VerificationScreen({ onBack }: Props) {
 
   const held = query.state === 'ready' ? query.value : null;
 
+  /*
+    The reviewed set, because that is the one the ladder reads.
+
+    `has…` is the carrier's claim and `verified…` is a reviewer's answer, and
+    handing `tierOf` the claims here would put this screen a rung or three
+    above what the server says — the carrier would see Trusted and be refused
+    the bid. See ADR-0017.
+  */
   const documents: Documents = held === null
+    ? DEMO_DOCUMENTS
+    : {
+        identity: held.verifiedIdentity,
+        licence: held.verifiedLicence,
+        registration: held.verifiedRegistration,
+        insurance: held.verifiedInsurance,
+      };
+
+  /** What they have sent us, reviewed or not. What the toggles show. */
+  const claimed: Documents = held === null
     ? DEMO_DOCUMENTS
     : {
         identity: held.hasIdentity,
@@ -257,18 +275,29 @@ export function VerificationScreen({ onBack }: Props) {
               {t('trucks_and_papers').toUpperCase()}
             </Text>
 
+            {/*
+              Sending a paper and a paper counting are two different things,
+              and the gap between them is somebody's afternoon. Said once,
+              above the list, rather than repeated on every row. See ADR-0017.
+            */}
+            <Text variant="label" tone="secondary" style={styles.heading}>
+              {t('a_check_is_what_counts')}
+            </Text>
+
             {PAPERS.map((paper) => {
-              const held = documents[paper];
+              const sent = claimed[paper];
+              const reviewed = documents[paper];
+              const held = sent;
               return (
                 <Press
                   key={paper}
                   /*
                     Records that a paper is held, not that it is genuine.
 
-                    Verification is a human step, and a tick that put a Trusted
-                    badge on an upload nobody looked at would be the platform
-                    vouching for something it has not seen. The server says the
-                    same thing in its own documentation.
+                    The tick is the carrier's claim and it buys no rung: only
+                    `verified…`, which a reviewer writes, reaches the ladder.
+                    A tick that put a Trusted badge on an upload nobody looked
+                    at was exactly what this used to do. See ADR-0017.
                   */
                   onPress={() => {
                     void api.recordPaper(paper, !held).then(() => refresh());
@@ -288,14 +317,23 @@ export function VerificationScreen({ onBack }: Props) {
                   ]}
                 >
                   <Icon
-                    name={held ? 'check' : 'camera'}
+                    // Three states, three icons — and never the same tick for
+                    // "sent" and "checked", because that is the distinction
+                    // the whole ladder now rests on.
+                    name={reviewed ? 'shield' : sent ? 'clock' : 'camera'}
                     size="md"
-                    colour={held ? colours.moving : colours.textSecondary}
+                    colour={
+                      reviewed
+                        ? colours.moving
+                        : sent
+                          ? colours.textSecondary
+                          : colours.textSecondary
+                    }
                   />
                   <View style={styles.flex}>
                     <Text variant="body">{t(DOCUMENT_WORDS[paper])}</Text>
                     <Text variant="label" tone="secondary">
-                      {t(held ? 'on_file' : 'not_uploaded')}
+                      {t(reviewed ? 'checked' : sent ? 'sent_waiting_on_a_check' : 'not_uploaded')}
                     </Text>
                   </View>
                   <Icon name="chevron-right" size="md" colour={colours.outline} />

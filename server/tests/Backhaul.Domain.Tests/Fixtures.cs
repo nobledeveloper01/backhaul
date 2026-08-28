@@ -238,7 +238,11 @@ public sealed record DropFeeRow(int Drops, long FeeKobo);
 public sealed record TrustFixtures(
     int ExpiryWarningDays,
     int MinimumTripsForRate,
-    IReadOnlyList<TrustRow> Cases);
+    IReadOnlyList<string> Ladder,
+    IReadOnlyList<TrustRow> Cases,
+    IReadOnlyList<BarRow> Bars);
+
+public sealed record BarRow(string Held, string Required, bool Meets);
 
 public sealed record TrustRow(
     string Name,

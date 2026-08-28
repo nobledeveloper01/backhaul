@@ -32,9 +32,10 @@ public sealed class VerificationController(
     /// Say a paper is held.
     /// </summary>
     /// <remarks>
-    /// Records that it exists, not that it is genuine. Verification is a human
-    /// step, and pretending otherwise would put a Trusted badge on an upload
-    /// nobody looked at.
+    /// Records a claim, not evidence. It used to be the same flag the ladder
+    /// read, which put a Trusted badge on four uploads nobody looked at;
+    /// `PUT /v1/verification/{carrierId}/{paper}`, which only a reviewer can
+    /// call, is what makes a paper count. See ADR-0017.
     /// </remarks>
     [HttpPut("{paper}")]
     [ProducesResponseType<VerificationResponse>(StatusCodes.Status200OK)]
@@ -44,15 +45,7 @@ public sealed class VerificationController(
         [FromBody] PaperRequest body,
         CancellationToken ct)
     {
-        var which = paper switch
-        {
-            "identity" => Paper.Identity,
-            "licence" => Paper.Licence,
-            "registration" => Paper.Registration,
-            "insurance" => Paper.Insurance,
-            _ => (Paper?)null,
-        };
-
+        var which = Papers_.Parse(paper);
         if (which is null) return BadRequest($"Unknown paper '{paper}'.");
 
         var row = await identity.SetPaperAsync(Caller.UserId, which.Value, body.Held, ct);
@@ -69,7 +62,10 @@ public sealed class VerificationController(
     */
     private static VerificationResponse ToResponse(CarrierProfileEntity row, TrackRecord record)
     {
-        var papers = new Papers(row.HasIdentity, row.HasLicence, row.HasRegistration, row.HasInsurance);
+        // Reviewed papers only. `Papers` means "held" to the domain and it
+        // always did; what changed is which of the two flags is allowed to
+        // answer that question. See ADR-0017.
+        var papers = Reviewed_.Of(row);
 
         return new VerificationResponse
         {
@@ -78,6 +74,10 @@ public sealed class VerificationController(
             HasLicence = row.HasLicence,
             HasRegistration = row.HasRegistration,
             HasInsurance = row.HasInsurance,
+            VerifiedIdentity = row.VerifiedIdentity,
+            VerifiedLicence = row.VerifiedLicence,
+            VerifiedRegistration = row.VerifiedRegistration,
+            VerifiedInsurance = row.VerifiedInsurance,
             TripsCompleted = record.TripsCompleted,
             TripsPromised = record.TripsPromised,
             TripsOnTime = record.TripsOnTime,
@@ -88,6 +88,73 @@ public sealed class VerificationController(
             OnTimeRate = Trust.OnTimeRate(record),
         };
     }
+}
+
+/// <summary>
+/// The papers a reviewer has confirmed, as the tier ladder reads them.
+/// </summary>
+/// <remarks>
+/// One reader, used by the carrier's own screen and by the bid gate, so a
+/// carrier cannot be one tier on their screen and another at the moment they
+/// bid. Public for that second caller.
+/// </remarks>
+public static class Reviewed_
+{
+    public static Papers Of(CarrierProfileEntity row) => new(
+        row.VerifiedIdentity,
+        row.VerifiedLicence,
+        row.VerifiedRegistration,
+        row.VerifiedInsurance);
+}
+
+/// <summary>Confirming a carrier's papers. Reviewers only.</summary>
+/// <remarks>
+/// The other half of verification, and the half that was missing: a tier read
+/// off flags the carrier wrote is a badge they awarded themselves. See
+/// ADR-0017 for why the role is unreachable from any public path.
+/// </remarks>
+[ApiController]
+[Route("v1/verification")]
+[Tags("identity")]
+public sealed class ReviewController(IdentityRepository identity) : AuthorisedController
+{
+    /// <summary>Confirm or withdraw a paper somebody claimed.</summary>
+    [HttpPut("{carrierId:guid}/{paper}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Put(
+        Guid carrierId,
+        string paper,
+        [FromBody] PaperRequest body,
+        CancellationToken ct)
+    {
+        // 404 rather than 403, as everywhere else in this API: the shape of
+        // the answer must not tell a caller that a route they may not use
+        // exists. See ADR-0008.
+        if (Caller.Role != Role.Reviewer) return NotFound();
+
+        var which = Papers_.Parse(paper);
+        if (which is null) return BadRequest($"Unknown paper '{paper}'.");
+
+        var row = await identity.ReviewPaperAsync(carrierId, which.Value, body.Held, ct);
+        return row is null
+            ? NotFound("That carrier has not said they hold this paper.")
+            : NoContent();
+    }
+}
+
+/// <summary>The four papers, by their name on the wire.</summary>
+public static class Papers_
+{
+    public static Paper? Parse(string paper) => paper switch
+    {
+        "identity" => Paper.Identity,
+        "licence" => Paper.Licence,
+        "registration" => Paper.Registration,
+        "insurance" => Paper.Insurance,
+        _ => null,
+    };
 }
 
 /// <summary>The trucks, and the papers that let them work.</summary>

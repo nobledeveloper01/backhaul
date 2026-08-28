@@ -1876,6 +1876,12 @@
   "trust": {
     "expiryWarningDays": 30,
     "minimumTripsForRate": 5,
+    "ladder": [
+      "unverified",
+      "verified",
+      "business",
+      "trusted"
+    ],
     "cases": [
       {
         "name": "nothing at all",
@@ -2097,6 +2103,88 @@
         },
         "tier": "trusted",
         "onTimeRate": 1
+      }
+    ],
+    "bars": [
+      {
+        "held": "unverified",
+        "required": "unverified",
+        "meets": true
+      },
+      {
+        "held": "unverified",
+        "required": "verified",
+        "meets": false
+      },
+      {
+        "held": "unverified",
+        "required": "business",
+        "meets": false
+      },
+      {
+        "held": "unverified",
+        "required": "trusted",
+        "meets": false
+      },
+      {
+        "held": "verified",
+        "required": "unverified",
+        "meets": true
+      },
+      {
+        "held": "verified",
+        "required": "verified",
+        "meets": true
+      },
+      {
+        "held": "verified",
+        "required": "business",
+        "meets": false
+      },
+      {
+        "held": "verified",
+        "required": "trusted",
+        "meets": false
+      },
+      {
+        "held": "business",
+        "required": "unverified",
+        "meets": true
+      },
+      {
+        "held": "business",
+        "required": "verified",
+        "meets": true
+      },
+      {
+        "held": "business",
+        "required": "business",
+        "meets": true
+      },
+      {
+        "held": "business",
+        "required": "trusted",
+        "meets": false
+      },
+      {
+        "held": "trusted",
+        "required": "unverified",
+        "meets": true
+      },
+      {
+        "held": "trusted",
+        "required": "verified",
+        "meets": true
+      },
+      {
+        "held": "trusted",
+        "required": "business",
+        "meets": true
+      },
+      {
+        "held": "trusted",
+        "required": "trusted",
+        "meets": true
       }
     ]
   },

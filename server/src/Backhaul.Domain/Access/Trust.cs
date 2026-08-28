@@ -133,6 +133,35 @@ public static class Trust
             ? null
             : (double)record.TripsOnTime / record.TripsPromised;
 
+    /// <summary>The ladder, lowest first. One order, named once.</summary>
+    /// <remarks>
+    /// Mirrors <c>LADDER</c> in <c>trust.ts</c> and is held to the fixtures.
+    /// A second spelling of this ordering is how a carrier gets admitted by
+    /// one rule and refused by another.
+    /// </remarks>
+    public static readonly IReadOnlyList<Tier> Ladder =
+        [Tier.Unverified, Tier.Verified, Tier.Business, Tier.Trusted];
+
+    /// <summary>Whether a carrier at <paramref name="held"/> may take work asking for <paramref name="required"/>.</summary>
+    /// <remarks>
+    /// Above the bar counts. A shipper asking for Verified means "not a
+    /// stranger off the street", not "exactly this rung". See ADR-0017; the
+    /// app runs the same comparison to grey a load it cannot take, and a
+    /// disagreement shows up as a load the board offered and the API refused.
+    /// </remarks>
+    public static bool Meets(Tier held, Tier required) =>
+        Ladder.ToList().IndexOf(held) >= Ladder.ToList().IndexOf(required);
+
+    /// <summary>The wire spelling back to a rung. Null when it is not one.</summary>
+    public static Tier? FromWire(string tier) => tier switch
+    {
+        "unverified" => Tier.Unverified,
+        "verified" => Tier.Verified,
+        "business" => Tier.Business,
+        "trusted" => Tier.Trusted,
+        _ => null,
+    };
+
     public static string ToWire(Tier tier) => tier switch
     {
         Tier.Unverified => "unverified",

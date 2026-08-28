@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
   EXPIRY_WARNING_DAYS,
+  REQUIREMENTS,
+  LADDER,
   MINIMUM_TRIPS_FOR_RATE,
   describeTier,
   expiringSoon,
+  meets,
   nextStep,
   onTimeRate,
   tierOf,
@@ -226,5 +229,38 @@ describe('describeTier', () => {
     assert.equal(describeTier('verified'), 'Verified');
     assert.equal(describeTier('business'), 'Business');
     assert.equal(describeTier('trusted'), 'Trusted');
+  });
+});
+
+describe('meets', () => {
+  test('above the bar counts, not just level with it', () => {
+    // A shipper asking for Verified means "not a stranger off the street".
+    // Refusing a Trusted carrier would enforce a distinction nobody meant.
+    assert.equal(meets('trusted', 'verified'), true);
+    assert.equal(meets('business', 'verified'), true);
+    assert.equal(meets('verified', 'verified'), true);
+  });
+
+  test('below the bar does not', () => {
+    assert.equal(meets('unverified', 'verified'), false);
+    assert.equal(meets('verified', 'business'), false);
+    assert.equal(meets('business', 'trusted'), false);
+  });
+
+  test('a load with no bar admits everybody', () => {
+    // The default, and the one most loads will carry. A bar is a shipper
+    // narrowing their own market and they should have to ask for it.
+    for (const tier of LADDER) {
+      assert.equal(meets(tier, 'unverified'), true);
+    }
+  });
+
+  test('it reads the same ladder tierOf walks', () => {
+    // Two spellings of one ordering is how a carrier gets admitted by one
+    // rule and refused by another.
+    assert.deepEqual([...LADDER], ['unverified', 'verified', 'business', 'trusted']);
+    for (const tier of LADDER) {
+      assert.ok(Object.hasOwn(REQUIREMENTS, tier));
+    }
   });
 });

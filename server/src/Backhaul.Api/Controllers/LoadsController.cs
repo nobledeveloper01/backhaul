@@ -1,9 +1,11 @@
 using Backhaul.Api.Auth;
 using Backhaul.Api.Contracts;
+using Backhaul.Domain.Access;
 using Backhaul.Domain.Market;
 using Backhaul.Domain.Money;
 using Backhaul.Domain.Pricing;
 using Backhaul.Domain.Tracking;
+using Backhaul.Infrastructure;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,6 +34,8 @@ namespace Backhaul.Api.Controllers;
 public sealed class LoadsController(
     MarketRepository market,
     PositionRepository positions,
+    IdentityRepository identity,
+    BackhaulDbContext db,
     TimeProvider clock) : AuthorisedController
 {
     /// <summary>
@@ -195,6 +199,7 @@ public sealed class LoadsController(
                 row.WeightTonnes = body.WeightTonnes;
                 row.Requires = body.Requires;
                 row.OfferedKobo = body.OfferedKobo;
+                row.RequiresTier = body.RequiresTier ?? "unverified";
                 row.ReadyBy = body.ReadyBy;
                 row.ExpiresAt = body.ExpiresAt;
             },
@@ -222,6 +227,39 @@ public sealed class LoadsController(
         [FromBody] BidRequest body,
         CancellationToken ct)
     {
+        /*
+            The bar, before the bid is written.
+
+            The bidder's tier is computed here, out of the papers a reviewer
+            confirmed and a record counted from trips — never read from the
+            request and never stored. That is the whole of "unbypassable from a
+            modified client": there is nothing in the body that touches it, so
+            there is nothing to modify. See ADR-0017.
+
+            422 rather than 404, unlike most refusals in this API. The carrier
+            can already see this load on the board and the board already greys
+            it, so hiding its existence would protect nothing and would leave
+            somebody staring at a load that answers "no such thing".
+        */
+        var bar = await market.BarAsync(loadId, ct);
+        if (bar is { } required && Trust.FromWire(required) is { } floor)
+        {
+            var profile = await identity.ProfileAsync(Caller.UserId, ct);
+            var record = await CarrierRecord.ForAsync(db, Caller.UserId, ct);
+            var mine = Trust.TierOf(Reviewed_.Of(profile), record);
+
+            if (!Trust.Meets(mine, floor))
+            {
+                return UnprocessableEntity(new
+                {
+                    refusal = "below_the_bar",
+                    message =
+                        $"This shipper is taking bids from {Trust.ToWire(floor)} carriers " +
+                        $"and upward. You are {Trust.ToWire(mine)}.",
+                });
+            }
+        }
+
         var placed = await market.PlaceBidAsync(
             loadId,
             Caller,

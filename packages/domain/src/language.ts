@@ -252,6 +252,13 @@ export type Phrase =
   | 'tap_to_filter_by_this'
   | 'on_file'
   | 'not_uploaded'
+  | 'sent_waiting_on_a_check'
+  | 'checked'
+  | 'a_check_is_what_counts'
+  | 'who_may_bid'
+  | 'anybody_may_bid'
+  | 'only_checked_carriers'
+  | 'bid_bar_note'
   | 'document_identity'
   | 'document_licence'
   | 'document_registration'
@@ -819,6 +826,13 @@ export const EN: Readonly<Record<Phrase, string>> = {
   tap_to_filter_by_this: "Tap to filter by this",
   on_file: 'On file',
   not_uploaded: 'Not uploaded',
+  sent_waiting_on_a_check: "Sent — waiting to be checked",
+  checked: "Checked",
+  a_check_is_what_counts: "A paper counts toward your standing once somebody here has looked at it. Sending it is the first half.",
+  who_may_bid: "Who may bid",
+  anybody_may_bid: "Anybody",
+  only_checked_carriers: "Checked carriers only",
+  bid_bar_note: "Asking for checked carriers narrows who can offer. Most loads do not need it.",
   document_identity: 'Government ID',
   document_licence: "Driver's licence",
   document_registration: 'Company registration',
@@ -1474,6 +1488,13 @@ export const HA: Readonly<Record<Phrase, string>> = {
   tap_to_filter_by_this: "Danna don tace da wannan",
   on_file: 'Yana nan',
   not_uploaded: 'Ba a saka ba',
+  sent_waiting_on_a_check: "E zigara ya — na-echere ka a lelee ya",
+  checked: "E leleela ya",
+  a_check_is_what_counts: "Akwụkwọ na-agụ maka ọnọdụ gị mgbe onye nọ ebe a leliri ya. Izipu ya bụ ọkara mbụ.",
+  who_may_bid: "Wa zai iya bayar da tayi",
+  anybody_may_bid: "Kowa",
+  only_checked_carriers: "Masu mota da aka duba kawai",
+  bid_bar_note: "Neman masu mota da aka duba yana rage adadin masu tayi. Yawancin kaya ba sa bukatarsa.",
   document_identity: 'Katin shaida na gwamnati',
   document_licence: 'Lasisin tuƙi',
   document_registration: 'Rajistar kamfani',
@@ -2133,6 +2154,13 @@ export const YO: Readonly<Record<Phrase, string>> = {
   tap_to_filter_by_this: "Tẹ̀ ẹ́ láti ṣàyẹ̀wò pẹ̀lú èyí",
   on_file: 'Ó wà nínú ìwé',
   not_uploaded: 'A kò tí ì fi sí i',
+  sent_waiting_on_a_check: "A ti fi ránṣẹ́ — à ń dúró kí a wò ó",
+  checked: "A ti wò ó",
+  a_check_is_what_counts: "Ìwé kan bẹ̀rẹ̀ sí kà fún ipò rẹ lẹ́yìn tí ẹnìkan níbí bá wò ó. Fífi ránṣẹ́ ni ìdajì àkọ́kọ́.",
+  who_may_bid: "Ta ló lè fúnni ní ìdíyelé",
+  anybody_may_bid: "Ẹnikẹ́ni",
+  only_checked_carriers: "Àwọn onítọ̀ọ̀kọ̀ tí a ti wò nìkan",
+  bid_bar_note: "Bíbéèrè fún àwọn tí a ti wò dín iye àwọn tí ó lè fúnni ní ìdíyelé kù. Ọ̀pọ̀ ẹrù kò nílò rẹ̀.",
   document_identity: 'Ìwé ìdánimọ̀ ìjọba',
   document_licence: 'Ìwé àṣẹ awakọ̀',
   document_registration: 'Ìforúkọsílẹ̀ ilé-iṣẹ́',
@@ -2792,6 +2820,13 @@ export const IG: Readonly<Record<Phrase, string>> = {
   tap_to_filter_by_this: "Pịa iji nyochaa site na nke a",
   on_file: 'Ọ dị na faịlụ',
   not_uploaded: 'Ebugoghị ya',
+  sent_waiting_on_a_check: "E zigara ya — na-echere ka a lelee ya",
+  checked: "E leleela ya",
+  a_check_is_what_counts: "Akwụkwọ na-agụ maka ọnọdụ gị mgbe onye nọ ebe a leliri ya. Izipu ya bụ ọkara mbụ.",
+  who_may_bid: "Onye nwere ike ịnye ọnụahịa",
+  anybody_may_bid: "Onye ọ bụla",
+  only_checked_carriers: "Naanị ndị nwe ụgbọala a leleworo",
+  bid_bar_note: "Ịrịọ ndị a leleworo na-ebelata ndị nwere ike ịnye ọnụahịa. Ọtụtụ ibu achọghị ya.",
   document_identity: 'Njirimara gọọmentị',
   document_licence: 'Ikike ọkwọ ụgbọala',
   document_registration: 'Ndebanye aha ụlọ ọrụ',

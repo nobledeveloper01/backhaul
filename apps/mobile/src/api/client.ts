@@ -1577,10 +1577,23 @@ function toAlerts(raw: RawAlerts): AlertsView {
 
 export interface VerificationView {
   readonly tier: string;
+  /*
+    Two sets, and the screen must show both.
+
+    `has…` is what the carrier told us. `verified…` is what a reviewer
+    confirmed, and it is the only set the tier is computed from — see
+    ADR-0017. A screen rendering only the confirmed set looks like the upload
+    was lost; one rendering only the claim is the badge a carrier awarded
+    themselves, which is the bug this split exists to close.
+  */
   readonly hasIdentity: boolean;
   readonly hasLicence: boolean;
   readonly hasRegistration: boolean;
   readonly hasInsurance: boolean;
+  readonly verifiedIdentity: boolean;
+  readonly verifiedLicence: boolean;
+  readonly verifiedRegistration: boolean;
+  readonly verifiedInsurance: boolean;
   readonly tripsCompleted: number;
   /** Of those, the ones that had a promised arrival to be judged against. */
   readonly tripsPromised: number;
@@ -1720,6 +1733,14 @@ export interface LoadDraft {
   readonly weightTonnes: number;
   readonly requires: string;
   readonly offeredKobo: number | null;
+  /**
+   * The lowest tier a carrier may bid from, or null for no bar.
+   *
+   * A bar is a shipper narrowing their own market, so it is opt-in. The
+   * server enforces it at bid time from a tier it computes itself; the board's
+   * greying is a courtesy on top. See ADR-0017.
+   */
+  readonly requiresTier: string | null;
   readonly readyBy: Date;
   readonly expiresAt: Date;
 }

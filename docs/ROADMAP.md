@@ -283,7 +283,7 @@ week 10 than in week 30.
 
 ---
 
-## Phase 2 — Trips and the wedge · **current**
+## Phase 2 — Trips and the wedge · **software gate green; hardware deferred**
 
 Geofencing and waypoint arrival, standalone tracking with SMS invite links,
 scoped and revocable share links, the shipper map with position age and trail,
@@ -341,7 +341,7 @@ shape is configuration rather than code, so swapping to one is a config edit.
 
 ---
 
-## Phase 3 — Identity and trust
+## Phase 3 — Identity and trust · **current**
 
 Verification tiers, document capture, liveness and ID match, expiry tracking,
 post-trip reviews, incident reporting.
@@ -356,7 +356,31 @@ is the one feature in the product whose correctness is measured by what the
 screen does *not* do.
 
 **Exit gate:** tier gates enforced server-side and proven unbypassable from a
-modified client.
+modified client. All software; nothing here waits on a handset.
+
+**It was not achievable as written, and the reason was not the gate.** `tierOf`
+is computed, displayed and enforces nothing — but adding enforcement would not
+have helped, because the ladder's document rungs were self-declared: `PUT
+/v1/me/verification/{paper}` took the carrier's word and `tierOf` read it as
+evidence. Four taps and a carrier was `trusted`. A gate on that would have been
+bypassable by the *ordinary* client and would have read green while proving
+nothing.
+[ADR-0017](adr/0017-a-tier-is-earned-from-evidence-the-carrier-cannot-write.md)
+settles it: a paper counts when somebody has looked at it, a fourth role
+`Reviewer` is the only caller who can say so, and a load carries a minimum tier
+the bid endpoint enforces from a tier computed server-side at bid time.
+
+**Software gate — green.** `TierGateTests` is the proof and it is six tests, not
+a sentiment: a carrier below the bar is refused and told where they stand;
+claiming all four papers does not get past it; a request asserting its own tier,
+its own verified flags and five hundred completed trips changes nothing; a
+reviewer's confirmation is what opens it; a load with no bar takes anybody's
+bid; and a reviewer can read no trip, no list and place no bid. Disabling the
+one comparison in `LoadsController` fails four of them — watched, not assumed.
+
+**Still open in this phase, and not on the gate:** liveness and ID match
+(feature 7), which is what would make a reviewed paper mean more than *somebody
+glanced at an upload*. `describeTier` must not grow language that claims it.
 
 ---
 

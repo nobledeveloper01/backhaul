@@ -77,6 +77,18 @@ export function PostLoadScreen({ onBack }: Props) {
   // already refuses an empty cargo, so the field asks rather than assumes.
   const [cargo, setCargo] = useState('');
 
+  /*
+    Off by default, and it has to be.
+
+    A bar is a shipper narrowing their own market: fewer bids, and on a
+    corridor with three carriers on it possibly none. A platform that applies
+    one nobody asked for has quietly decided who gets to work. Two options
+    rather than four rungs — "checked" is the distinction a shipper actually
+    means, and the ladder above it is earned on trips they can already read on
+    the bid. See ADR-0017.
+  */
+  const [checkedOnly, setCheckedOnly] = useState(false);
+
   const corridor = CORRIDORS[corridorIndex] ?? CORRIDORS[0];
 
   // A half-typed number is not a weight. `Number('')` is 0, which would silently
@@ -128,6 +140,7 @@ export function PostLoadScreen({ onBack }: Props) {
         weightTonnes: weight,
         requires: truck,
         offeredKobo: estimate?.mid ?? null,
+        requiresTier: checkedOnly ? 'verified' : null,
         readyBy: new Date(now + 3_600_000),
         expiresAt: new Date(now + 2 * 86_400_000),
       })
@@ -175,6 +188,34 @@ export function PostLoadScreen({ onBack }: Props) {
           </View>
           <Text variant="label" tone="secondary" style={styles.gap}>
             {Math.round((corridor?.metres ?? 0) / 1000)} {t('km_by_road')}
+          </Text>
+        </Card>
+
+        <Card overline={t('who_may_bid')} icon="shield">
+          <View style={styles.chips}>
+            {([false, true] as const).map((only) => (
+              <Press
+                key={String(only)}
+                onPress={() => setCheckedOnly(only)}
+                accessibilityLabel={t(only ? 'only_checked_carriers' : 'anybody_may_bid')}
+                feedback="opacity"
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: checkedOnly === only ? colours.accentWash : colours.surface,
+                    borderColor: checkedOnly === only ? colours.accent : colours.outline,
+                  },
+                ]}
+              >
+                <Text variant="label" tone={checkedOnly === only ? 'accent' : 'secondary'}>
+                  {t(only ? 'only_checked_carriers' : 'anybody_may_bid')}
+                </Text>
+              </Press>
+            ))}
+          </View>
+
+          <Text variant="label" tone="secondary" style={styles.gap}>
+            {t('bid_bar_note')}
           </Text>
         </Card>
 

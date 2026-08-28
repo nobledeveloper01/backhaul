@@ -28,17 +28,111 @@ public sealed class IdentityEndpointTests(ApiFactory factory) : IClassFixture<Ap
     }
 
     [Fact]
-    public async Task An_id_and_a_licence_earn_verified_with_no_trips_at_all()
+    public async Task Saying_you_hold_a_paper_earns_nothing()
     {
-        // Otherwise nobody can ever start: a first trip would require a tier,
-        // and a tier would require trips.
+        // The whole of ADR-0017. This used to assert "verified" — a carrier
+        // could award themselves a badge in two calls, and the ladder read it
+        // as evidence. The claim is recorded and shown back, because they need
+        // to see their upload was not lost. It buys no rung.
         var client = await AsCarrierAsync();
 
         await client.PutAsJsonAsync("/v1/me/verification/identity", new { held = true });
         var after = await client.PutAsJsonAsync("/v1/me/verification/licence", new { held = true });
 
         var view = (await after.Content.ReadFromJsonAsync<VerificationView>(Json))!;
-        Assert.Equal("verified", view.Tier);
+        Assert.Equal("unverified", view.Tier);
+        Assert.True(view.HasIdentity);
+        Assert.True(view.HasLicence);
+        Assert.False(view.VerifiedIdentity);
+        Assert.False(view.VerifiedLicence);
+    }
+
+    [Fact]
+    public async Task A_reviewer_confirming_them_earns_verified_with_no_trips_at_all()
+    {
+        // No trips required, or nobody can ever start: a first trip would need
+        // a tier and a tier would need trips. What is required is that
+        // somebody looked.
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var client = carrier.Carrying(factory.CreateClient());
+
+        await client.PutAsJsonAsync("/v1/me/verification/identity", new { held = true });
+        await client.PutAsJsonAsync("/v1/me/verification/licence", new { held = true });
+
+        var reviewer = await Identities.IssueAsync(factory, Role.Reviewer);
+        var desk = reviewer.Carrying(factory.CreateClient());
+
+        foreach (var paper in new[] { "identity", "licence" })
+        {
+            var confirmed = await desk.PutAsJsonAsync(
+                $"/v1/verification/{carrier.UserId}/{paper}",
+                new { held = true });
+            Assert.Equal(HttpStatusCode.NoContent, confirmed.StatusCode);
+        }
+
+        var view = await client.GetFromJsonAsync<VerificationView>("/v1/me/verification", Json);
+        Assert.Equal("verified", view!.Tier);
+        Assert.True(view.VerifiedIdentity);
+    }
+
+    [Fact]
+    public async Task A_carrier_cannot_review_themselves()
+    {
+        // 404, not 403. The shape of the answer must not tell a caller that a
+        // route they may not use exists. See ADR-0008.
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var client = carrier.Carrying(factory.CreateClient());
+
+        await client.PutAsJsonAsync("/v1/me/verification/identity", new { held = true });
+
+        var response = await client.PutAsJsonAsync(
+            $"/v1/verification/{carrier.UserId}/identity",
+            new { held = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var view = await client.GetFromJsonAsync<VerificationView>("/v1/me/verification", Json);
+        Assert.False(view!.VerifiedIdentity);
+    }
+
+    [Fact]
+    public async Task A_reviewer_cannot_confirm_a_paper_nobody_claimed()
+    {
+        // Confirming an upload that does not exist is a reviewer inventing
+        // evidence rather than reading it.
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var reviewer = await Identities.IssueAsync(factory, Role.Reviewer);
+
+        var response = await reviewer.Carrying(factory.CreateClient()).PutAsJsonAsync(
+            $"/v1/verification/{carrier.UserId}/insurance",
+            new { held = true });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Withdrawing_a_claim_withdraws_the_review_with_it()
+    {
+        // A paper nobody says they hold cannot be a paper somebody checked.
+        // Otherwise a carrier keeps a rung earned on a licence they have
+        // since told us they do not have.
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var client = carrier.Carrying(factory.CreateClient());
+        var reviewer = await Identities.IssueAsync(factory, Role.Reviewer);
+        var desk = reviewer.Carrying(factory.CreateClient());
+
+        await client.PutAsJsonAsync("/v1/me/verification/identity", new { held = true });
+        await client.PutAsJsonAsync("/v1/me/verification/licence", new { held = true });
+        await desk.PutAsJsonAsync($"/v1/verification/{carrier.UserId}/identity", new { held = true });
+        await desk.PutAsJsonAsync($"/v1/verification/{carrier.UserId}/licence", new { held = true });
+
+        var withdrawn = await client.PutAsJsonAsync(
+            "/v1/me/verification/licence",
+            new { held = false });
+
+        var view = (await withdrawn.Content.ReadFromJsonAsync<VerificationView>(Json))!;
+        Assert.Equal("unverified", view.Tier);
+        Assert.False(view.VerifiedLicence);
     }
 
     [Fact]
@@ -251,6 +345,8 @@ public sealed class IdentityEndpointTests(ApiFactory factory) : IClassFixture<Ap
         string Tier,
         bool HasIdentity,
         bool HasLicence,
+        bool VerifiedIdentity,
+        bool VerifiedLicence,
         double? OnTimeRate);
 
     private sealed record VehicleView(

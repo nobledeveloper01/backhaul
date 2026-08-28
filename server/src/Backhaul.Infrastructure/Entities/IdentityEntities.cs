@@ -13,6 +13,15 @@ public sealed class CarrierProfileEntity
     /// <summary>The account this belongs to.</summary>
     public Guid UserId { get; set; }
 
+    /*
+        `Has…` is the carrier's claim. `Verified…` is a reviewer's answer.
+
+        They were one set of booleans, written by `PUT /v1/me/verification/
+        {paper}` and read by `TierOf` as though they were evidence — four taps
+        and a carrier was Trusted, directly under a remark on this class saying
+        the record half is never written by the carrier. The papers half was.
+        Only the verified set reaches the ladder now. See ADR-0017.
+    */
     public bool HasIdentity { get; set; }
 
     public bool HasLicence { get; set; }
@@ -20,6 +29,14 @@ public sealed class CarrierProfileEntity
     public bool HasRegistration { get; set; }
 
     public bool HasInsurance { get; set; }
+
+    public bool VerifiedIdentity { get; set; }
+
+    public bool VerifiedLicence { get; set; }
+
+    public bool VerifiedRegistration { get; set; }
+
+    public bool VerifiedInsurance { get; set; }
 
     /// <summary>Expiry per paper, where one was given. ISO dates, comma-separated pairs.</summary>
     [MaxLength(200)]

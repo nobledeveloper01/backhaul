@@ -143,6 +143,22 @@ public sealed class MarketRepository(BackhaulDbContext db)
     /// letting a carrier stack three offers lets them bracket the shipper's
     /// decision, and this is a negotiation rather than an auction.
     /// </remarks>
+    /// <summary>
+    /// The lowest tier this load takes bids from, or null if there is no such
+    /// load.
+    /// </summary>
+    /// <remarks>
+    /// Unfiltered by caller on purpose, and it is safe: a load on the board is
+    /// readable by every carrier, and the answer is a bar the shipper
+    /// published rather than anything about a person.
+    /// </remarks>
+    public async Task<string?> BarAsync(Guid loadId, CancellationToken ct = default) =>
+        await db.Loads
+            .AsNoTracking()
+            .Where(l => l.Id == loadId)
+            .Select(l => l.RequiresTier)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<BidRecord?> PlaceBidAsync(
         Guid loadId,
         Principal principal,

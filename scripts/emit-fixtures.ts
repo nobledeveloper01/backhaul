@@ -91,6 +91,8 @@ import {
   tierOf,
   type Documents,
   type Record_,
+  LADDER,
+  meets,
 } from '../packages/domain/src/trust.ts';
 import { assess, mayCarry, type Vehicle } from '../packages/domain/src/vehicles.ts';
 import {
@@ -844,6 +846,18 @@ const trustCases = (
     onTimeRate: onTimeRate(held),
   };
 });
+
+/**
+ * Every rung against every bar.
+ *
+ * Sixteen cases rather than a handful, because this is the comparison that
+ * decides whether a carrier may bid and both sides run it: the board greys a
+ * load with it and the server refuses one with it. A disagreement here shows
+ * up as a load the app offered and the API then took away.
+ */
+const barCases = LADDER.flatMap((held) =>
+  LADDER.map((required) => ({ held, required, meets: meets(held, required) })),
+);
 
 /** A truck's papers, and whether it may take work. */
 const VEHICLE_NOW = new Date('2026-03-04T06:00:00Z');
@@ -1997,7 +2011,9 @@ const fixtures = {
   trust: {
     expiryWarningDays: EXPIRY_WARNING_DAYS,
     minimumTripsForRate: MINIMUM_TRIPS_FOR_RATE,
+    ladder: LADDER,
     cases: trustCases,
+    bars: barCases,
   },
   vehicles: vehicleCases,
   escrow: {
@@ -2215,6 +2231,7 @@ process.stdout.write(
       `${podCases.length} deliveries`,
       `${dropFeeCases.length} drop fees`,
       `${trustCases.length} tiers`,
+      `${barCases.length} bars`,
       `${vehicleCases.length} vehicles`,
       `${escrowCases.length} escrow schedules`,
       `${cancelCases.length} cancellations`,

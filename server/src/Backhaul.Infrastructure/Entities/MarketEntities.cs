@@ -49,6 +49,17 @@ public sealed class LoadEntity
 
     public DateTimeOffset ExpiresAt { get; set; }
 
+    /// <summary>
+    /// The lowest tier a carrier may bid from. "unverified" is no bar at all.
+    /// </summary>
+    /// <remarks>
+    /// Stored because the shipper set it; the *carrier's* tier is never
+    /// stored and is computed at the moment they bid. A bar is a shipper
+    /// narrowing their own market, so the default is none. See ADR-0017.
+    /// </remarks>
+    [MaxLength(16)]
+    public string RequiresTier { get; set; } = "unverified";
+
     /// <summary>Set when a bid is accepted. A taken load leaves the board.</summary>
     public Guid? AwardedToCarrierId { get; set; }
 

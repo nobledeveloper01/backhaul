@@ -6,6 +6,65 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (evening) — The badge carriers were awarding themselves
+
+**Did.** Phase 3's software gate, green. A paper now counts toward a tier only
+once a reviewer has confirmed it; a fourth role exists to do that and can see
+nothing else; a load carries a minimum tier and the bid endpoint enforces it
+from a tier computed server-side at bid time. Six tests in `TierGateTests` are
+the gate. 188 API tests, 136 domain, `make ci` green.
+
+### What surprised us
+
+**The gate was not achievable as written, and the reason was not the gate.**
+Phase 3's exit condition is *"tier gates enforced server-side and proven
+unbypassable from a modified client"*. `tierOf` was computed, displayed and
+enforced nothing — the familiar shape on this project — so the obvious move was
+to add enforcement. That would have shipped a gate that read green and proved
+nothing.
+
+`PUT /v1/me/verification/{paper}` took `{ held: true }` and wrote it, and
+`tierOf` read those four booleans as evidence. Four taps and a carrier was
+Trusted. A bar on bidding would not have been bypassable by a *modified*
+client; it would have been bypassable by the ordinary one.
+
+**The contradiction was two lines apart and had been for months.**
+`CarrierProfileEntity` opens with *"The record half is **never written by the
+carrier**. A rating somebody can type in is a rating worth nothing."* The four
+paper booleans are the next four lines of the same class. Trips completed and
+trips on time were counted from trips, incidents from upheld reports, and the
+papers were taken on trust — in a table whose own remarks say why that is
+worthless.
+
+**Writing the test first would not have helped either.** A test asserting "an
+unverified carrier cannot bid" passes against a ladder the carrier controls,
+because they simply do not tap the toggles. What made it provable was deciding
+that the *inputs* must be unwritable, and then the test is easy: claim all four
+papers, send a body asserting your own tier and five hundred completed trips,
+still refused. Only a reviewer's action changes the answer.
+
+**Then the gate was disabled on purpose, and four of six tests failed.** The
+fourth guard on this project proved by making it fail. Two kept passing, which
+is right — one is a load with no bar, one is a reviewer who cannot bid at all —
+and a suite where every test fails when you break one line is a suite testing
+one thing under six names.
+
+**Two of the six tests were passing for the wrong reason for a few minutes.**
+The load bodies used `T0` — March — and the API has a real clock, so the loads
+had expired and the bids were refused with a 404 before the bar was ever
+consulted. The four refusal tests were unaffected, because they assert 422 and
+an expired load answers 404; the two that expected success were the ones that
+caught it. Fixed to the wall clock, with the reason in a comment.
+
+**The cost is written down rather than filed away.** Every carrier is
+unverified until somebody reviews them, review is manual and unqueued, and
+there is no notification when something is waiting. For a pilot with one
+operator that is the right amount of machinery. At a hundred carriers a week
+the thing to build is the queue, not an automatic approval — and ADR-0017 says
+so, because that is the moment somebody will reach for one.
+
+---
+
 ## 2026-08-28 (later) — The wedge, and the endpoint that refuses to answer
 
 **Did.** Built feature 2. `POST /v1/trips/{id}` now takes phone numbers instead

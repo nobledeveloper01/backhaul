@@ -11,6 +11,21 @@ public enum Role
 
     /// <summary>Owns the goods. Sees the trips carrying them.</summary>
     Shipper,
+
+    /// <summary>
+    /// Looks at a carrier's papers and says whether they are what they claim.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately unreachable from any public path. Signing in for the first
+    /// time mints a <c>driver</c> — see <c>SignInRepository</c> — and there is
+    /// no endpoint that changes a role, so a reviewer token exists only
+    /// because ops issued one with <c>--issue-token</c>.
+    ///
+    /// A reviewer is not a party to any trip, and <see cref="TripParties.Admit"/>
+    /// answers false for them everywhere. They can confirm a paper and see
+    /// nothing else: not a trip, not a track, not a settlement. See ADR-0017.
+    /// </remarks>
+    Reviewer,
 }
 
 /// <summary>

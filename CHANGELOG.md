@@ -9,6 +9,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A carrier could award themselves a Trusted badge in four taps.** The tier
+  ladder read four booleans, and `PUT /v1/me/verification/{paper}` let the
+  carrier write them. The endpoint's own comment was honest — *"Records that it
+  exists, not that it is genuine. Verification is a human step"* — and the human
+  step had never been built, so `tierOf` read a claim as evidence. It sat
+  directly under a remark on the same table saying the record half is never
+  written by the carrier.
+
+  **A paper counts when somebody has looked at it.** Claiming one records the
+  claim and shows it back — *Sent, waiting to be checked* — and buys nothing. A
+  fourth role, **Reviewer**, is the only caller who can confirm it, and it is
+  unreachable from any public path: first sign-in mints a driver, no endpoint
+  changes a role, and a reviewer token exists only because ops issued one. A
+  reviewer can confirm papers and see nothing else — no trip, no list, no bid.
+  Withdrawing a claim withdraws the review with it.
+
+  Every carrier is unverified until somebody reviews them, including anyone
+  looking at a badge today. That is the cost and it is the point: a badge a
+  carrier assigns to themselves is worse than no badge, because a shipper reads
+  it as this platform saying something. See
+  [ADR-0017](docs/adr/0017-a-tier-is-earned-from-evidence-the-carrier-cannot-write.md).
+
+- **A shipper can ask for checked carriers, and the server enforces it.** A
+  load carries a minimum tier — off by default, because a bar is a shipper
+  narrowing their own market and on a thin corridor that can mean no bids at
+  all. The bid endpoint refuses below it and says where the carrier stands, so
+  the refusal has somewhere to go. The bidder's tier is computed at that moment
+  from reviewed papers and a record counted from trips: there is nothing in the
+  request that touches it, so there is nothing for a modified client to modify.
+
 - **A shipper can track a truck the product never sold them.** This is the
   feature the whole thing is built on — *tracking is the wedge; matching is the
   business* — and it did not exist. Every trip arrived by post-a-load-take-a-bid,

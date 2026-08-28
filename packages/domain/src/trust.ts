@@ -196,6 +196,34 @@ export function onTimeRate(record: Record_): number | null {
   return record.tripsOnTime / record.tripsPromised;
 }
 
+/**
+ * The ladder, lowest first. One order, named once.
+ *
+ * `tierOf` walks it downward to find the highest tier earned and upward to
+ * drop a tier per incident; `meets` compares two rungs. Three readings of one
+ * ordering, and a fourth spelling of it somewhere else is how a carrier ends
+ * up admitted by one rule and refused by another.
+ */
+export const LADDER: readonly Tier[] = ['unverified', 'verified', 'business', 'trusted'];
+
+/**
+ * Whether a carrier at `held` may take work that asks for `required`.
+ *
+ * Above the bar counts. A shipper who asks for Verified is saying "not a
+ * stranger off the street", not "exactly this rung" — refusing a Trusted
+ * carrier from a Verified load would be the platform enforcing a distinction
+ * nobody meant.
+ *
+ * The comparison is here rather than in the API because both sides do it: the
+ * board greys a load a carrier cannot take, and the bid endpoint refuses it.
+ * Those must agree, or the app shows a load it will then be told it cannot
+ * have — which reads as a bug in the platform rather than a bar the shipper
+ * set.
+ */
+export function meets(held: Tier, required: Tier): boolean {
+  return LADDER.indexOf(held) >= LADDER.indexOf(required);
+}
+
 /** "Verified", "Business", "Trusted" — for a badge. */
 export function describeTier(tier: Tier): string {
   switch (tier) {

@@ -504,6 +504,27 @@ public sealed class ParityTests
     }
 
     [Fact]
+    public void Both_sides_read_the_bar_the_same_way()
+    {
+        // Every rung against every bar, because both sides run this: the app
+        // greys a load a carrier cannot take and the bid endpoint refuses it.
+        // Disagree, and the product offers work it then takes away.
+        Assert.Equal(
+            Fixtures.Parity.Trust.Ladder,
+            Trust.Ladder.Select(Trust.ToWire).ToList());
+
+        foreach (var row in Fixtures.Parity.Trust.Bars)
+        {
+            var held = Trust.FromWire(row.Held);
+            var required = Trust.FromWire(row.Required);
+
+            Assert.NotNull(held);
+            Assert.NotNull(required);
+            Assert.Equal(row.Meets, Trust.Meets(held.Value, required.Value));
+        }
+    }
+
+    [Fact]
     public void Both_sides_assess_a_truck_the_same_way()
     {
         foreach (var row in Fixtures.Parity.Vehicles)

@@ -40,6 +40,20 @@ public sealed class LoadRequest
     /// <summary>What is offered, or null to open it to bids.</summary>
     public long? OfferedKobo { get; set; }
 
+    /// <summary>
+    /// The lowest tier a carrier may bid from: unverified, verified, business
+    /// or trusted. Omit for no bar.
+    /// </summary>
+    /// <remarks>
+    /// Enforced when a bid is placed, from a tier computed there and then out
+    /// of the carrier's reviewed papers and counted record — never read from
+    /// the bidder's request. The board greys what a carrier cannot take, and
+    /// the greying is a courtesy; this is the rule. See ADR-0017.
+    /// </remarks>
+    /// <example>verified</example>
+    [RegularExpression("^(unverified|verified|business|trusted)$")]
+    public string? RequiresTier { get; set; }
+
     [Required]
     public DateTimeOffset ReadyBy { get; set; }
 
