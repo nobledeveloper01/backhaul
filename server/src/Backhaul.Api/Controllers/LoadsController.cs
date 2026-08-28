@@ -184,6 +184,23 @@ public sealed class LoadsController(
             return BadRequest("A load cannot expire before it is ready to collect.");
         }
 
+        /*
+            Said here, because the repository's null cannot say it.
+
+            `SaveLoadAsync` answers null for "you are not a shipper" and for
+            "that load is somebody else's" alike, and this action turned both
+            into "No such load." — which for a *create* is nonsense twice over:
+            there was no load to not-find, and the actual reason is neither the
+            load nor the request. A shipper who had just signed in read "The
+            server answered 404" and had nothing to do about it. See ADR-0020
+            for the door that was missing.
+        */
+        if (Caller.Role != Role.Shipper)
+        {
+            return BadRequest(
+                "Only a shipper can post a load. Set what you are first, on your account.");
+        }
+
         var (saved, awarded) = await market.SaveLoadAsync(
             loadId,
             Caller,

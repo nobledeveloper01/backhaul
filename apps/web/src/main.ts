@@ -6,9 +6,12 @@ import {
   eta,
   filterTrips,
   fixQuality,
+  format,
   normalisePhone,
   observe,
+  quote,
   silentFor,
+  smallestClassFor,
   type Observation,
   type TripSummary,
 } from '@backhaul/domain';
@@ -38,6 +41,8 @@ const TOKEN_KEY = 'backhaul.web.token.v1';
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app === null) throw new Error('no #app to render into');
+
+const ROLE_KEY = 'backhaul.web.role.v1';
 
 /*
   The base URL is read from the page, not compiled in.
@@ -176,11 +181,96 @@ function enterCode(phone: string, shown: string): void {
 
 function held(who: SignedIn): void {
   localStorage.setItem(TOKEN_KEY, who.token);
+  localStorage.setItem(ROLE_KEY, who.role);
   api.setToken(who.token);
-  trips();
+
+  /*
+    A first sign-in mints a driver, which is the role that can see the least
+    and the right guess when nobody has said. Somebody who came here to post
+    loads is asked once, at the only moment the answer can still be given —
+    once a trip names them it is fixed. See ADR-0020.
+  */
+  if (who.isNew) askRole();
+  else trips();
+}
+
+function askRole(): void {
+  const problem = el('p', { class: 'error', role: 'alert' });
+
+  const choose = (role: 'shipper' | 'carrier' | 'driver', label: string, why: string) => {
+    const pick = el(
+      'button',
+      { class: 'card trip', type: 'button' },
+      el('div', { class: 'corridor' }, label),
+      el('div', { class: 'label' }, why),
+    );
+
+    pick.addEventListener('click', () => {
+      problem.textContent = '';
+
+      void api.setRole(role).then((result) => {
+        if (!result.ok) {
+          if (expired(result.failure)) return;
+          problem.textContent = result.failure.detail;
+          return;
+        }
+        localStorage.setItem(ROLE_KEY, role);
+        // Straight on. The token still carries the old role until the next
+        // sign-in, and the console reads the stored answer for what to show;
+        // the server reads the account, which is now right.
+        window.location.hash = role === 'shipper' ? '#/loads' : '';
+        route();
+      });
+    });
+
+    return pick;
+  };
+
+  render(
+    el('h1', {}, 'Backhaul'),
+    el(
+      'div',
+      { class: 'stack' },
+      el('h2', {}, 'What do you do?'),
+      el('p', { class: 'muted' }, 'Asked once. It decides what you can see, and nothing else.'),
+      choose('shipper', 'I send goods', 'Post loads, take bids, follow your trucks.'),
+      choose('carrier', 'I own trucks', 'Bid on loads and watch the trips your drivers are on.'),
+      choose('driver', 'I drive', 'One trip at a time. The phone is the better face for this.'),
+      problem,
+    ),
+  );
 }
 
 // --- the list --------------------------------------------------------------
+
+/**
+ * Two places to be, and the one you are in is not a link.
+ *
+ * A shipper watches trucks and posts loads, and those are the two things this
+ * console is for. Anything else it grows belongs behind one of them rather
+ * than beside them: a navigation bar that lists everything is one nobody
+ * reads.
+ */
+function nav(here: 'trips' | 'loads'): HTMLElement {
+  const go = (to: 'trips' | 'loads', label: string) => {
+    if (to === here) return el('span', { class: 'chip' }, label);
+    const link = el('button', { class: 'quiet' }, label);
+    link.addEventListener('click', () => {
+      window.location.hash = to === 'loads' ? '#/loads' : '';
+    });
+    return link;
+  };
+
+  const out = el('button', { class: 'quiet' }, 'Sign out');
+  out.addEventListener('click', () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ROLE_KEY);
+    api.setToken(null);
+    signIn();
+  });
+
+  return el('div', { class: 'row' }, go('trips', 'On the road'), go('loads', 'My loads'), out);
+}
 
 /**
  * Whether a failure means the session is over, and ends it if so.
@@ -196,6 +286,7 @@ function expired(failure: { kind: string; status?: number }): boolean {
   if (failure.kind !== 'refused' || failure.status !== 401) return false;
 
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(ROLE_KEY);
   api.setToken(null);
   signIn();
   return true;
@@ -373,15 +464,9 @@ function list(all: readonly TripSummaryView[]): void {
 
   search.addEventListener('input', draw);
 
-  const out = el('button', { class: 'quiet' }, 'Sign out');
-  out.addEventListener('click', () => {
-    localStorage.removeItem(TOKEN_KEY);
-    api.setToken(null);
-    signIn();
-  });
-
   render(
-    el('div', { class: 'row' }, el('h1', {}, 'On the road'), out),
+    nav('trips'),
+    el('h1', {}, 'On the road'),
     el('label', { for: 'q' }, 'Search'),
     search,
     el('p', { class: 'label' }, `${all.length} trip${all.length === 1 ? '' : 's'}`),
@@ -560,6 +645,281 @@ function backLink(): HTMLElement {
   return back;
 }
 
+// --- loads ------------------------------------------------------------------
+
+/**
+ * Corridors a shipper picks from, with the road distance somebody would drive.
+ *
+ * The same five the phone offers, and the same reason for a list rather than a
+ * map: a shipper posting from an office types a route they run, and dropping a
+ * pin on a desktop is not obviously easier than choosing from what they
+ * already do. Duplicated from `PostLoadScreen` because it is data about this
+ * product's market rather than a rule, and neither copy decides anything —
+ * `quote()` does.
+ */
+const CORRIDORS = [
+  { from: 'Lagos', to: 'Ibadan', metres: 130_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 7.3775, toLon: 3.947 },
+  { from: 'Lagos', to: 'Abuja', metres: 750_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 9.0765, toLon: 7.3986 },
+  { from: 'Lagos', to: 'Kano', metres: 1_000_000, fromLat: 6.4531, fromLon: 3.3958, toLat: 12.0022, toLon: 8.5919 },
+  { from: 'Port Harcourt', to: 'Abuja', metres: 620_000, fromLat: 4.8156, fromLon: 7.0498, toLat: 9.0765, toLon: 7.3986 },
+  { from: 'Kano', to: 'Lagos', metres: 1_000_000, fromLat: 12.0022, fromLon: 8.5919, toLat: 6.4531, toLon: 3.3958 },
+] as const;
+
+function loads(): void {
+  render(el('h1', {}, 'My loads'), el('p', { class: 'muted' }, 'Loading…'));
+
+  void api.myLoads().then((result) => {
+    if (!result.ok) {
+      if (expired(result.failure)) return;
+      render(
+        nav('loads'),
+        el('div', { class: 'card stack' }, el('p', {}, 'Could not read your loads.'),
+          el('p', { class: 'muted' }, result.failure.detail)),
+      );
+      return;
+    }
+
+    const posted = result.value;
+
+    /*
+      The form only where it can work.
+
+      Only a shipper can post, and a driver who pressed the button got "The
+      server answered 404" — a create that 404s, for a reason that is neither
+      the load nor the request. The server says something better now; this
+      says it before the press, and names the one thing that would change it.
+    */
+    const mine = localStorage.getItem(ROLE_KEY);
+
+    render(
+      nav('loads'),
+      el('h1', {}, 'My loads'),
+      mine === 'shipper'
+        ? postForm()
+        : el(
+            'div',
+            { class: 'card stack' },
+            el('h2', {}, 'Posting is for shippers'),
+            el(
+              'p',
+              { class: 'muted' },
+              'This account is set up to '
+                + (mine === 'carrier' ? 'own trucks' : 'drive')
+                + '. That is fixed once you are on a trip — ask us if it is wrong.',
+            ),
+          ),
+      ...(posted.length === 0
+        ? [el('p', { class: 'muted' }, 'Nothing posted yet.')]
+        : posted.map((load) => {
+            const card = el(
+              'button',
+              { class: 'card trip', type: 'button' },
+              el('div', { class: 'corridor' }, `${load.originName} → ${load.destinationName}`),
+              el(
+                'div',
+                { class: 'row' },
+                el('span', { class: 'label' }, `${load.cargo}, ${load.weightTonnes} t`),
+                load.awarded
+                  ? el('span', { class: 'chip moving' }, 'Awarded')
+                  : el('span', { class: 'chip' }, 'Taking bids'),
+              ),
+            );
+            card.addEventListener('click', () => {
+              window.location.hash = `#/load/${load.id}`;
+            });
+            return card;
+          })),
+    );
+  });
+}
+
+function postForm(): HTMLElement {
+  const corridor = el('select', { id: 'corridor' });
+  CORRIDORS.forEach((option, i) => {
+    corridor.append(el('option', { value: String(i) }, `${option.from} → ${option.to}`));
+  });
+
+  const cargo = el('input', { type: 'text', id: 'cargo' });
+  // Empty, not "Cement". A prefilled cargo is one a shipper who did not
+  // notice has posted.
+  const weight = el('input', { type: 'text', id: 'weight', inputmode: 'decimal', value: '26' });
+  const estimate = el('p', { class: 'label' });
+  const problem = el('p', { class: 'error', role: 'alert' });
+  const post = el('button', { class: 'primary' }, 'Post it');
+
+  const priced = () => {
+    const tonnes = Number.parseFloat(weight.value);
+    const route = CORRIDORS[Number(corridor.value)] ?? CORRIDORS[0];
+    if (!Number.isFinite(tonnes) || tonnes <= 0) return null;
+
+    const truck = smallestClassFor(tonnes);
+    if (truck === null) return null;
+
+    return { truck, route, quote: quote(truck, route.metres) };
+  };
+
+  const draw = () => {
+    const priced_ = priced();
+    if (priced_ === null) {
+      estimate.textContent = 'Nothing to price yet.';
+      return;
+    }
+
+    /*
+      A range, and marked indicative, because it is one.
+
+      `quote()` returns `isIndicative: true` always — the figure comes from a
+      per-kilometre table rather than from what this corridor actually paid
+      last week, and rendering it as a price would be presenting an estimate
+      as a measurement. The engine says so and the screen repeats it.
+    */
+    estimate.textContent =
+      `${format(priced_.quote.low)} – ${format(priced_.quote.high)} · indicative · `
+        + `${priced_.truck.replace('_', ' ')}`;
+  };
+
+  corridor.addEventListener('change', draw);
+  weight.addEventListener('input', draw);
+
+  post.addEventListener('click', () => {
+    const priced_ = priced();
+    if (priced_ === null || cargo.value.trim() === '') {
+      problem.textContent = 'A load needs a cargo and a weight a truck can take.';
+      return;
+    }
+
+    problem.textContent = '';
+    post.setAttribute('disabled', 'true');
+
+    const now = Date.now();
+    const { route } = priced_;
+
+    void api
+      .postLoad(crypto.randomUUID(), {
+        originName: route.from,
+        destinationName: route.to,
+        originLat: route.fromLat,
+        originLon: route.fromLon,
+        destinationLat: route.toLat,
+        destinationLon: route.toLon,
+        cargo: cargo.value.trim(),
+        weightTonnes: Number.parseFloat(weight.value),
+        requires: priced_.truck,
+        offeredKobo: priced_.quote.mid,
+        requiresTier: null,
+        // Ready in an hour, open for two days. Both are defaults a posting
+        // form has to pick and neither is a rule; the moment a shipper needs
+        // to say "Thursday" these become fields.
+        readyBy: new Date(now + 3_600_000),
+        expiresAt: new Date(now + 2 * 86_400_000),
+      })
+      .then((result) => {
+        post.removeAttribute('disabled');
+        if (!result.ok) {
+          if (expired(result.failure)) return;
+          problem.textContent = result.failure.detail;
+          return;
+        }
+        loads();
+      });
+  });
+
+  draw();
+
+  return el(
+    'div',
+    { class: 'card stack' },
+    el('h2', {}, 'Post a load'),
+    el('label', { for: 'corridor' }, 'The route'),
+    corridor,
+    el('label', { for: 'cargo' }, 'What is it'),
+    cargo,
+    el('label', { for: 'weight' }, 'How heavy, in tonnes'),
+    weight,
+    estimate,
+    problem,
+    post,
+  );
+}
+
+/**
+ * The bids on one load, ranked, and the award.
+ *
+ * The ranking is the server's — the same `rankBids` the phone shows — and the
+ * order is deliberately not by price. The cheapest bid is not the best bid,
+ * and this is where the product either earns trust or loses it, so the reason
+ * each bid ranks where it does is printed beside it rather than left implied.
+ */
+function loadBids(id: string): void {
+  render(el('h1', {}, 'Bids'), el('p', { class: 'muted' }, 'Loading…'));
+
+  void api.bids(id).then((result) => {
+    if (!result.ok) {
+      if (expired(result.failure)) return;
+      render(
+        nav('loads'),
+        el('div', { class: 'card stack' }, el('p', {}, 'Could not read the bids.'),
+          el('p', { class: 'muted' }, result.failure.detail)),
+      );
+      return;
+    }
+
+    const ranked = result.value;
+    const problem = el('p', { class: 'error', role: 'alert' });
+
+    render(
+      nav('loads'),
+      el('h1', {}, 'Bids'),
+      problem,
+      ...(ranked.length === 0
+        ? [el('p', { class: 'muted' }, 'No bids yet.')]
+        : ranked.map((row, i) => {
+            const take = el('button', { class: i === 0 ? 'primary' : 'quiet' }, 'Award it');
+
+            take.addEventListener('click', () => {
+              take.setAttribute('disabled', 'true');
+              void api.acceptBid(id, row.bid.id).then((awarded) => {
+                take.removeAttribute('disabled');
+                if (!awarded.ok) {
+                  if (expired(awarded.failure)) return;
+                  problem.textContent = awarded.failure.detail;
+                  return;
+                }
+                // Awarding opens the trip (ADR-0019), and the shipper wants
+                // to look at the thing they just created rather than go and
+                // find it.
+                window.location.hash = `#/trip/${awarded.value}`;
+              });
+            });
+
+            return el(
+              'div',
+              { class: 'card stack' },
+              el('div', { class: 'corridor' }, row.bid.amountNaira),
+              el(
+                'div',
+                { class: 'row' },
+                el('span', { class: 'label' }, `${Math.round(row.kmToPickup)} km to pickup`),
+                el('span', { class: 'label' }, `${row.bid.tripsCompleted} trips done`),
+                // Null is "not enough history", which is unknown rather than
+                // bad — and a carrier starting out must not read as a carrier
+                // who is late.
+                el(
+                  'span',
+                  { class: 'label' },
+                  row.reliabilityPct === null
+                    ? 'no punctuality record yet'
+                    : `${row.reliabilityPct}% on time`,
+                ),
+              ),
+              el('p', { class: 'label' }, row.because),
+              take,
+            );
+          })),
+    );
+  });
+}
+
 // --- start -----------------------------------------------------------------
 
 /**
@@ -576,8 +936,21 @@ function route(): void {
     return;
   }
 
-  const match = /^#\/trip\/(.+)$/.exec(window.location.hash);
-  if (match?.[1] !== undefined) trip(match[1]);
+  const hash = window.location.hash;
+
+  const onTrip = /^#\/trip\/(.+)$/.exec(hash);
+  if (onTrip?.[1] !== undefined) {
+    trip(onTrip[1]);
+    return;
+  }
+
+  const onLoad = /^#\/load\/(.+)$/.exec(hash);
+  if (onLoad?.[1] !== undefined) {
+    loadBids(onLoad[1]);
+    return;
+  }
+
+  if (hash === '#/loads') loads();
   else trips();
 }
 

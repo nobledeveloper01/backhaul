@@ -76,6 +76,21 @@ public sealed class SignedInResponse
     public bool IsNew { get; set; }
 }
 
+/// <summary>What you are, said once.</summary>
+/// <remarks>
+/// No `reviewer`, and not by omission: it is the one role that confers
+/// authority over other people's records and ADR-0017 rests on it being
+/// unreachable from any public path. The controller refuses it a second time,
+/// because a regular expression is a thing somebody edits.
+/// </remarks>
+public sealed class RoleRequest
+{
+    /// <example>shipper</example>
+    [Required]
+    [RegularExpression("^(driver|carrier|shipper)$")]
+    public string Role { get; set; } = string.Empty;
+}
+
 public sealed class NameRequest
 {
     /// <example>Musa Danjuma</example>

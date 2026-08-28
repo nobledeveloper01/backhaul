@@ -37,7 +37,16 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
 
         var response = await client.PutAsJsonAsync($"/v1/loads/{Guid.NewGuid()}", Load());
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        // 400 and a sentence, not the 404 this used to answer. Hiding a
+        // resource's existence is right where there is a resource to hide;
+        // here there was none — the caller was creating one — and "No such
+        // load" for a create told a person nothing they could act on. See
+        // ADR-0020.
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains(
+            "Only a shipper can post a load",
+            await response.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
     }
 
     [Fact]

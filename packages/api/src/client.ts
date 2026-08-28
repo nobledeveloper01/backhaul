@@ -273,6 +273,23 @@ export class BackhaulApi {
     return this.request<null>('PUT', '/v1/me/name', { name });
   }
 
+  /**
+   * Says what you are. Once, and only before you are on anything.
+   *
+   * A first sign-in mints a driver — the role that can see the least — and
+   * this is the only way to become anything else. Refused with a 409 once a
+   * trip names the account or a load belongs to it, because a role that moves
+   * under an existing trip moves who can see it. `reviewer` is not offered and
+   * the server refuses it. See ADR-0020.
+   *
+   * **The current token keeps its old role**, which is not a bug: a token that
+   * changed meaning under a caller would be worse than one that has to be
+   * re-issued. Sign in again to carry the new one.
+   */
+  async setRole(role: 'driver' | 'carrier' | 'shipper'): Promise<ApiResult<null>> {
+    return this.request<null>('PUT', '/v1/me/role', { role });
+  }
+
   // wired-check: ops and the Swagger page, not a screen. A driver has no use for a store type.
   async health(): Promise<ApiResult<{ status: string; store: string; durable: boolean }>> {
     return this.request('GET', '/healthz');

@@ -69,7 +69,33 @@ public sealed class TokenRepository(BackhaulDbContext db)
             .AsNoTracking()
             .FirstOrDefaultAsync(ct);
 
-        if (row is null || !Enum.TryParse<Role>(row.Role, ignoreCase: true, out var role))
+        if (row is null) return null;
+
+        /*
+            The account's role wins, and the token's is a fallback.
+
+            A role stamped on a token is a stored copy of a fact that lives on
+            the account, and this project's argument against stored copies is
+            already written down twice — a tier is computed on every read
+            because "a copy that drifts is a carrier who is one thing on their
+            own screen and another on a shipper's". A role is the same shape of
+            thing and it drifted the moment `PUT /v1/me/role` existed: somebody
+            said they were a shipper, the account agreed, and every request
+            they made for the next year was still a driver's.
+
+            The fallback is for the tokens ops issues directly with
+            `--issue-token`, which name a role and may have no account behind
+            them at all. See ADR-0020.
+        */
+        var onAccount = await db.Accounts
+            .Where(a => a.Id == row.UserId)
+            .Select(a => a.Role)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ct);
+
+        var spelling = string.IsNullOrWhiteSpace(onAccount) ? row.Role : onAccount;
+
+        if (!Enum.TryParse<Role>(spelling, ignoreCase: true, out var role))
         {
             return null;
         }

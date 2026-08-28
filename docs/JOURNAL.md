@@ -6,6 +6,56 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (very late) — The product had no door into half of itself
+
+**Did.** Finished the console's shipper actions — post, bids, award — and in
+doing so found that nobody could post a load at all. `PUT /v1/me/role`, and the
+signed-in caller now reads their role off the account rather than off the
+token. 196 API tests, `make ci` green.
+
+### What surprised us
+
+**Pressing the button is what found it.** *Post a load* answered *"The server
+answered 404"*, which is what `SaveLoadAsync` returning null becomes. Following
+that back: only a shipper may post, a first sign-in mints a driver, and no
+endpoint anywhere changes a role. Both halves are deliberate and each is
+individually right — the driver default is the role that can see the least, and
+a role any caller can set is an authorisation model with a hole in it. Together
+they meant the marketplace had no door, and every load that has ever existed in
+this repository was minted by a test.
+
+That is a fifth instance of this week's pattern with a twist: not code written
+and never called, but **two correct decisions with nothing between them**.
+Neither is wrong. The gap is invisible from either side.
+
+**A role was stored in two places and drifted the moment it could.** Tokens
+carry a role, accounts carry a role, and until today nothing could change
+either so they never disagreed. The first `PUT /v1/me/role` broke that
+instantly: the console said shipper, the account said shipper, and the token in
+the caller's hand said driver — so the very next request was refused, on the
+screen that had just accepted their answer. The principal reads the account
+now, with the token's spelling as a fallback for the ops-issued tokens that
+have no account behind them.
+
+The argument for that fix was already written down twice in this codebase, both
+times about tiers: *"a stored tier is a stored copy of a rule, and a copy that
+drifts is a carrier who is one thing on their own screen and another on a
+shipper's."* A role is the same shape of thing. It took a drift to notice that
+the same sentence applied.
+
+**A create that 404s is nonsense twice over.** There was no load to not-find —
+the caller was making one — and the actual reason was neither the load nor the
+request. Hiding a resource's existence is right where there is a resource to
+hide, and this pattern had been copied to a place where there is not.
+
+**The window is "before you are on anything", not a clock.** A timer would be
+arbitrary and would still be open at the moment somebody's first trip is
+created. The condition that actually matters is whether changing the role could
+change who can see something that already exists — two queries, on an endpoint
+called at most once per account.
+
+---
+
 ## 2026-08-28 (last) — A gate nobody had written, and a console that found two things
 
 **Did.** Wrote Phase 6's exit gate — it did not have one — and enforced the data

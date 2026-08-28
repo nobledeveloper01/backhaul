@@ -9,6 +9,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Nobody could post a load.** Signing in for the first time mints a driver —
+  the role that can see the least, which is the right guess when nobody has
+  said — and no endpoint changed a role afterwards. Between the two there was
+  no third step, so the only shippers that had ever existed were the ones the
+  test suite minted directly, and the load board, the bid ranking, the award
+  and the trip that comes out of it were reachable from a test and from nowhere
+  else. The demand side of the product had no door into it.
+
+  **You say what you are once, and only before you are on anything.** After a
+  trip names your account or a load belongs to it, the role is fixed — a role
+  that moves under an existing trip moves who can see it, and that is the whole
+  of this server's access control. `reviewer` is not offered and is refused
+  twice, because ADR-0017 rests on it being unreachable. A role is not a claim
+  about anybody: saying you are a carrier proves nothing about your licence,
+  and every paper still needs a reviewer. See
+  [ADR-0020](docs/adr/0020-you-say-what-you-are-once-and-only-before-you-are-on-anything.md).
+
+  **A role no longer lives in two places.** It was stamped on the token as well
+  as the account, so somebody who said "shipper" stayed a driver for the life
+  of that token — they chose, the account agreed, and the very next request
+  refused them. The signed-in caller reads the account now, which is the same
+  argument this codebase already makes about tiers: a stored copy of a fact
+  that lives elsewhere is a copy that drifts.
+
+  And a driver who tried to post got **"The server answered 404"** — a create
+  that 404s, for a reason that is neither the load nor the request. It says
+  what to do about it instead.
+
+- **The console can run a load end to end.** Post it, read the ranked bids with
+  the reason each one ranks where it does, award one — and land on the trip the
+  award opened.
+
 - **A shipper console, in a browser.** A shipper running loads from an office
   has a desktop in front of them, and a list of twenty trips is the wrong shape
   for a phone. It signs in, lists trips and searches them — and it is

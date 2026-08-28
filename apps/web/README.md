@@ -52,7 +52,15 @@ Cors__Origins=http://127.0.0.1:5180
 An empty list means "no browser may call this", which is the right default for
 a deployment that has not thought about it.
 
+## What it does
+
+Signs in, asks once what you are, lists trips and searches them, opens one, and
+— for a shipper — posts a load, reads the ranked bids and awards one. Awarding
+lands on the trip it just opened, because that is what a shipper wants to look
+at next.
+
 ## What it does not do yet
 
-Posting a load, reading bids and awarding are shipper actions that belong here
-and are still only on the phone.
+Incidents, messages, the delivery note, escrow and the dispute pack are all on
+the phone and not here. None of them is blocked; they are simply not built on
+this face.

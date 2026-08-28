@@ -213,6 +213,43 @@ public sealed class SignInRepository(BackhaulDbContext db)
         return true;
     }
 
+    /// <summary>
+    /// Sets a role, but only while the account has never been on anything.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Once a trip names this account or a load belongs to it, the role is
+    /// fixed: <c>TripParties.Admit</c> matches on role *and* id and it is the
+    /// whole of this server's access control, so a role that moves under an
+    /// existing trip moves who can see it. See ADR-0020.
+    /// </para>
+    /// <para>
+    /// Returns false for "no such account" and for "too late" alike; the
+    /// caller distinguishes them, because only one of the two is worth a
+    /// sentence a person can act on.
+    /// </para>
+    /// </remarks>
+    public async Task<bool> RoleAsync(
+        Guid userId,
+        Role role,
+        CancellationToken ct = default)
+    {
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == userId, ct);
+        if (account is null) return false;
+
+        if (await IsNamedAsync(userId, ct)) return false;
+
+        account.Role = role.ToString().ToLowerInvariant();
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Whether anything already points at this account.</summary>
+    public async Task<bool> IsNamedAsync(Guid userId, CancellationToken ct = default) =>
+        await db.Trips.AnyAsync(
+            t => t.DriverId == userId || t.CarrierId == userId || t.ShipperId == userId, ct)
+        || await db.Loads.AnyAsync(l => l.ShipperId == userId, ct);
+
     /// <inheritdoc cref="TokenRepository"/>
     private static string Hash(string code) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(code)));

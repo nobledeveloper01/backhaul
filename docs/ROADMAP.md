@@ -508,7 +508,7 @@ product is fit to put in front of Nigerian drivers had nothing. It is written
 below, before the work, and it is in three parts because three different kinds
 of thing block a release and only one of them is code.
 
-**Software gate — not green.** Two of five are open.
+**Software gate — not green.** One of five is open: push transport, which is credentials rather than code.
 
 | | |
 |---|---|
@@ -517,7 +517,7 @@ of thing block a release and only one of them is code.
 | Features **28–30** shipped | Hausa on the driver face, the driver's earnings statement, recurring lanes — all three built and reading the server |
 | The **battery budget** enforced in CI | **not possible here, and not deferred to a device day either.** A CI box has no battery. What a build can check is what the loop *asks for* — sampling interval, upload cadence, the wake conditions — and that is what the data budget above already pins. The 4%/hour figure is measured on a handset and belongs to the hardware gate |
 | **Deviation and stall alerts reach a phone** | **open, and it is credentials rather than code.** The rule, the dispatcher, the quiet hours and the device registry are all built and parity-tested; `IPushSender` has one implementation and it writes to the log saying it did not send. APNs wants a signed JWT and a p8 key from an Apple developer account, FCM wants a service-account JSON, and neither can be conjured from a repository. F3 in `docs/FEATURE-BACKLOG.md`. The SMS half of the same problem was solved by hosting the gateway rather than buying one, and there is no equivalent trick for push |
-| **The web shipper console** | **started, not finished.** `apps/web` signs in, lists trips and searches them, sharing `@backhaul/domain` and `@backhaul/api` with the phone — no framework, no bundler, an import map and `tsc`. Building it moved the API client out of `apps/mobile` into `packages/api`, where a second face can reach it, and it found the API had no CORS policy at all because a phone sends no preflight. One trip's detail reads six routes and renders every figure out of an engine — `observe`, `eta`, `fixQuality`, `distanceTravelled` — so nothing on the page is decided here. What is left is the shipper actions: posting a load, reading bids, awarding |
+| **The web shipper console** | **started, not finished.** `apps/web` signs in, lists trips and searches them, sharing `@backhaul/domain` and `@backhaul/api` with the phone — no framework, no bundler, an import map and `tsc`. Building it moved the API client out of `apps/mobile` into `packages/api`, where a second face can reach it, and it found the API had no CORS policy at all because a phone sends no preflight. **green for what this phase named.** A shipper signs in, says what they are, posts a load, reads the ranked bids and awards one — landing on the trip the award opened. Every figure on a trip comes out of an engine (`observe`, `eta`, `fixQuality`, `distanceTravelled`), so nothing is decided on this face. Incidents, messages, the delivery note and the dispute pack are phone-only and not blocked |
 
 **Hardware gate:** the five conditions listed at the top of this file. **v1.0
 does not ship until every one is green**, and the device matrix — including a

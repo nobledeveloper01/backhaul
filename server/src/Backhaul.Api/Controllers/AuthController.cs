@@ -202,6 +202,51 @@ public sealed class MeController(SignInRepository signIn) : AuthorisedController
         IsNew = false,
     };
 
+    /// <summary>Say what you are. Once, and only before you are on anything.</summary>
+    /// <remarks>
+    /// Signing in for the first time mints a driver — the role that can see
+    /// the least — and until this existed there was no way to become anything
+    /// else, so nobody could post a load and the whole marketplace half of the
+    /// product was reachable only from a test. See ADR-0020.
+    ///
+    /// `reviewer` is not settable here and never will be: it is the one role
+    /// that confers authority over other people's records, and ADR-0017 rests
+    /// on it being unreachable from any public path. The pattern below refuses
+    /// it and so does the parse.
+    /// </remarks>
+    [HttpPut("role")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetRole([FromBody] RoleRequest body, CancellationToken ct)
+    {
+        var role = body.Role switch
+        {
+            "driver" => Role.Driver,
+            "carrier" => Role.Carrier,
+            "shipper" => Role.Shipper,
+            _ => (Role?)null,
+        };
+
+        if (role is null)
+        {
+            return BadRequest("A role is driver, carrier or shipper.");
+        }
+
+        // Asked before the write so the refusal can say which of the two
+        // reasons it is. "No such account" and "too late to change" are the
+        // same false from the repository and are not the same thing to read.
+        if (await signIn.IsNamedAsync(Caller.UserId, ct))
+        {
+            return Conflict(
+                "Your account is already on a trip or a load, so this cannot change. "
+                    + "Ask us if it is wrong.");
+        }
+
+        var set = await signIn.RoleAsync(Caller.UserId, role.Value, ct);
+        return set ? NoContent() : Conflict("This could not be changed.");
+    }
+
     /// <summary>Set your name, after a first sign-in.</summary>
     [HttpPut("name")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

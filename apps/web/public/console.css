@@ -143,3 +143,15 @@ button.quiet {
 .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .corridor { font-weight: 600; font-size: 1.05rem; }
 .error { color: var(--exception); }
+
+/* The corridor picker, which is the only select on the console. */
+select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
