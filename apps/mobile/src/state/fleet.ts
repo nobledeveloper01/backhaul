@@ -11,6 +11,7 @@ import {
 } from '@backhaul/domain';
 
 import { demoTrips, type DemoTrip } from './demo';
+import { demoIncidents } from './product';
 
 /**
  * The fleet's own view of itself: bids waiting, legs driven, things gone wrong.
@@ -164,6 +165,7 @@ export function demoAlerts(now: Date): Alert[] {
       track: trip.track.kept,
       destination: trip.destination,
       now,
+      incidents: demoIncidents(trip, now),
       truckClass: trip.truck,
     });
 

@@ -149,6 +149,14 @@ export function document(options: {
   readonly destination: Waypoint | null;
   readonly cargo: string;
   readonly reference: string;
+  /**
+   * When the proof stopped being editable, or null while it still is.
+   *
+   * Not optional, so that a caller has to decide. A note handed to a receiver
+   * with no seal on it is a draft that reads like a record, and the reader
+   * cannot tell the difference from the outside.
+   */
+  readonly sealedAt: Date | null;
   readonly formatDate: (at: Date) => string;
 }): readonly PodLine[] {
   const { delivery, destination } = options;
@@ -190,7 +198,40 @@ export function document(options: {
     lines.push({ label: 'Exception', value: describeException(delivery.exception) });
   }
 
+  /*
+    Last, because it is what the lines above are worth.
+
+    Everything before this is a draft until it is sealed, and an unsealed
+    delivery is still editable — photographs can come and go, a name can be
+    rewritten. The seal is the only line that says the rest stopped moving,
+    which is why it sits at the foot of the note like a stamp rather than in
+    the header where a reader skims past it.
+  */
+  if (options.sealedAt !== null) {
+    lines.push({ label: 'Sealed', value: options.formatDate(options.sealedAt) });
+  }
+
   return lines;
+}
+
+/**
+ * The note as one block of text, for handing over.
+ *
+ * The point of a proof is that the copy in the driver's hand, the copy on the
+ * shipper's screen and the copy in a dispute say the same thing, so the
+ * hand-over composes the same `PodLine`s rather than reassembling the delivery
+ * a second time. A screen that built its own string would be the third
+ * rendering this whole module exists to prevent.
+ *
+ * The title is passed in because it is the one part a reader reads in their own
+ * language, and the domain has no reader. Everything below it is the record.
+ */
+export function documentText(options: {
+  readonly title: string;
+  readonly lines: readonly PodLine[];
+}): string {
+  const body = options.lines.map((line) => `${line.label}: ${line.value}`);
+  return [options.title, '', ...body].join('\n');
 }
 
 export function describeException(exception: DeliveryException): string {

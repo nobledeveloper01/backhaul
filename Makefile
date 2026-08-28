@@ -170,10 +170,17 @@ repo-check:
 	@echo "no generated output is tracked"
 
 ## wired-check: fail if something is written, tested, and called by nothing
-##   Three times in one project: the capture loop, the permissions module and
-##   the device registration were each complete, each had passing tests, and
-##   each was invoked by nothing. No other gate asks the question — an export
-##   nobody imports type-checks perfectly.
+##   Four times in one project: the capture loop, the permissions module, the
+##   device registration and the sealing of a proof of delivery were each
+##   complete, each had passing tests, and each was invoked by nothing. The
+##   last one was a driver finishing a delivery and not being paid. No other
+##   gate asks the question — an export nobody imports type-checks perfectly,
+##   and so does a repository method nobody queries.
+##
+##   Covers the app (seam modules, BackhaulApi methods) and the server
+##   (repository methods with no caller in server/src, domain mirrors with
+##   neither a caller nor a parity reference). Controller actions are entry
+##   points and are never reported.
 wired-check:
 	@python3 scripts/wired-check.py
 

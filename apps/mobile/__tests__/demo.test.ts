@@ -97,6 +97,7 @@ describe('the demo dataset', () => {
       track: notStarted.track.kept,
       destination: notStarted.destination,
       now: NOW,
+      incidents: [],
       truckClass: notStarted.truck,
     });
     // Not a guess dressed as an answer.

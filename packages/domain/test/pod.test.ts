@@ -8,6 +8,7 @@ import {
   capturedNear,
   describeException,
   document,
+  documentText,
   seal,
   settlesDespite,
   type Delivery,
@@ -100,12 +101,17 @@ describe('capturedNear', () => {
 });
 
 describe('document', () => {
-  const lines = (over: Partial<Delivery> = {}, destination: Waypoint | null = KANO) =>
+  const lines = (
+    over: Partial<Delivery> = {},
+    destination: Waypoint | null = KANO,
+    sealedAt: Date | null = null,
+  ) =>
     document({
       delivery: delivery(over),
       destination,
       cargo: '18 t of rice',
       reference: 'BH-0417',
+      sealedAt,
       formatDate: (at) => at.toISOString(),
     });
 
@@ -142,6 +148,72 @@ describe('document', () => {
 
   test('a clean delivery has no exception line at all', () => {
     assert.ok(!lines().some((line) => line.label === 'Exception'));
+  });
+
+  test('an unsealed note says nothing about a seal', () => {
+    // A draft that reads like a record is the failure this line exists to
+    // prevent, and a "Sealed: —" would read as a record with a gap in it.
+    assert.ok(!lines().some((line) => line.label === 'Sealed'));
+  });
+
+  test('the seal is the last line, because it is what the rest is worth', () => {
+    const sealedAt = new Date('2026-03-06T15:05:00Z');
+    const withSeal = lines({}, KANO, sealedAt);
+    assert.equal(withSeal[withSeal.length - 1]?.label, 'Sealed');
+    assert.equal(withSeal[withSeal.length - 1]?.value, sealedAt.toISOString());
+  });
+
+  test('the seal stays last even when there is an exception to report', () => {
+    const short = {
+      exception: { kind: 'short' as const, quantity: 3, note: '', photoIds: ['p3'] },
+    };
+    const withSeal = lines(short, KANO, new Date('2026-03-06T15:05:00Z'));
+    assert.equal(withSeal[withSeal.length - 1]?.label, 'Sealed');
+    assert.ok(withSeal.some((line) => line.label === 'Exception'));
+  });
+});
+
+describe('documentText', () => {
+  const note = (sealedAt: Date | null = new Date('2026-03-06T15:05:00Z')) =>
+    documentText({
+      title: 'Takardar mikawa',
+      lines: document({
+        delivery: delivery(),
+        destination: KANO,
+        cargo: '18 t of rice',
+        reference: 'BH-0417',
+        sealedAt,
+        formatDate: (at) => at.toISOString(),
+      }),
+    });
+
+  test('leads with the title, then the record', () => {
+    const [title, blank, first] = note().split('\n');
+    assert.equal(title, 'Takardar mikawa');
+    assert.equal(blank, '');
+    assert.equal(first, 'Reference: BH-0417');
+  });
+
+  test('carries every line the screen shows, and nothing it does not', () => {
+    // The copy in the driver's hand and the copy on the shipper's screen are
+    // the same document. A hand-over that dropped or added a line would be two
+    // proofs of one delivery, which is the argument this module is built on.
+    const composed = document({
+      delivery: delivery(),
+      destination: KANO,
+      cargo: '18 t of rice',
+      reference: 'BH-0417',
+      sealedAt: new Date('2026-03-06T15:05:00Z'),
+      formatDate: (at) => at.toISOString(),
+    });
+    assert.deepEqual(
+      note().split('\n').slice(2),
+      composed.map((line) => `${line.label}: ${line.value}`),
+    );
+  });
+
+  test('an unsealed note is shorter by exactly the seal', () => {
+    assert.equal(note(null).split('\n').length + 1, note().split('\n').length);
   });
 });
 

@@ -16,6 +16,7 @@
  */
 
 import { distance, type Metres, type Position } from './geo.ts';
+import { open, suppressesEta, type Incident } from './incidents.ts';
 
 /** Metres per second. */
 export type Speed = number;
@@ -70,6 +71,7 @@ export const MINIMUM_WINDOW_MS = 30 * 60_000;
 export const MINIMUM_PACE_MS = 1.5;
 
 export type EtaRefusal =
+  | 'blocked'
   | 'no_track'
   | 'not_enough_fixes'
   | 'window_too_short'
@@ -113,6 +115,17 @@ export interface EtaInput {
   readonly track: readonly Position[];
   readonly destination: Position;
   readonly now: Date;
+  /**
+   * Every incident on the trip, open and resolved. Filtered here rather than
+   * by the caller, because a caller that hands over the wrong list gets a
+   * confident estimate out of a broken-down truck and nothing says so.
+   *
+   * Required, and deliberately so. It was optional in spirit for a while —
+   * `suppressesEta` existed, was tested, and was called by nothing, so all
+   * three screens showed an arrival time beside an open breakdown. A rule the
+   * caller has to remember is a rule three callers will forget.
+   */
+  readonly incidents: readonly Incident[];
   /** Used only when the track cannot supply a pace of its own. */
   readonly truckClass?: string;
 }
@@ -125,7 +138,27 @@ export interface EtaInput {
  * a made-up detour factor would bury a guess inside a figure the range is
  * supposed to be carrying. The spread is what absorbs it.
  */
-export function eta({ track, destination, now, truckClass }: EtaInput): Eta {
+export function eta({
+  track,
+  destination,
+  now,
+  incidents,
+  truckClass,
+}: EtaInput): Eta {
+  // Before anything is measured, because nothing measured here is true while
+  // the truck is not moving toward the destination. A blocking incident is the
+  // one case where a perfectly good pace over a perfectly good track produces
+  // a figure that is a lie — the arithmetic is right and the answer is wrong.
+  if (suppressesEta(open(incidents))) {
+    return {
+      kind: 'unknown',
+      reason: 'blocked',
+      detail:
+        'The truck is stopped by an open incident. An estimate returns once ' +
+        'it is cleared.',
+    };
+  }
+
   const last = track.at(-1);
 
   // No fix at all means no position to measure the remaining distance from,

@@ -71,15 +71,34 @@ gateway is built and tested, and **the app says so on the alerts screen** —
 which used to describe which alerts would wake somebody, on an install that had
 never registered for notifications at all.
 
-### F4 — Proof of delivery · *the document*
+### F4 — Proof of delivery · *a rendered file*
 
-Photographs, signature, geotag and timestamp are captured, saved and now
+Photographs, signature, geotag and timestamp are captured, saved and
 **sealed** — the screen offers the one-way door and the server records it,
 which is what the earnings statement and the escrow milestone both hang off.
 
-What is left is the *document*: a PDF a driver can hand over, generated on a
-device that has been offline for the whole trip. `pod.ts` already composes the
-lines; nothing renders them to a file. Roadmap phase 4.
+**The hand-over is built.** `documentText()` composes `document()`'s lines into
+one block of plain text and the proof screen puts it through React Native's own
+`Share`, so the note leaves the phone by WhatsApp, SMS, email or a note app —
+whatever that handset already has. Three things decided it:
+
+- **Text is the format every app on a 2 GB Transsion already receives.** A PDF
+  renderer is a native dependency on a device where every megabyte of install
+  is a real cost, for a document that is nine label-and-value lines.
+- **It works offline**, because it is composed on the device from what the
+  device holds. That was the hard requirement, and it was never the file
+  format that made it hard.
+- **Only once sealed.** `sealedAt !== null` on the server view gates the
+  action. An unsealed delivery is still editable — a photograph can go, a name
+  can be rewritten — so a note handed over from one is a draft that reads like
+  a record, and the receiver cannot tell the difference from the outside. The
+  seal is now a line on the note itself for the same reason.
+
+What is left is a *rendered file*: a PDF with the signature strokes and the
+photographs in it, for the disputes that go past what text can carry. It is a
+smaller and later problem than it looked, because `pod.ts` is already the one
+place the lines are composed and a renderer would consume the same
+`PodLine[]`. Roadmap phase 4.
 
 ### F5 — Waybill OCR
 
@@ -113,23 +132,38 @@ when android-37 reaches the stable channel.
 
 ---
 
-### F11 — Three routes the app can read but not write
+### F11 — Three routes the app can read but not write · *closed*
 
 Found by `make wired-check`, which fails when a client method has no caller.
-All three are the same shape: a screen that shows a thing and cannot act on it.
+All three were the same shape: a screen that shows a thing and cannot act on
+it. All three are now wired, and the `wired-check:` reasons that stood in for
+them are gone from `client.ts`.
 
 - **`issueShare`** — the share screen lists a trip's links and revokes them,
-  and has no way to create one. A shipper can turn sharing off and never on.
-- **`markRead`** — a thread is read and never marked read, so the unread count
-  is whatever it was when the message arrived.
-- **`resolveIncident`** — an incident can be reported and never closed. It sits
-  open on the trip for ever, and `observe()` treats an open incident as a trip
-  that needs a look.
+  and had no way to create one. A shipper could turn sharing off and never on.
+  It now issues one, and the screen is built around the fact that the token
+  comes back **once**: the server keeps a hash, so the token is held in
+  component state, shown in a card that says it will not be shown again, and
+  never written to the list. Dismissing it is a one-way door, and making
+  another link is the only way back — which is the truth rather than a
+  limitation of the screen. The link is issued only once the server has
+  answered; a link drawn optimistically is one a shipper texts to a cargo
+  owner before it exists.
+- **`markRead`** — a thread was read and never marked read, so the unread count
+  was whatever it was when the message arrived. The receipt now goes when the
+  thread is on screen — once the messages themselves have loaded, not when the
+  component mounts, because clearing everyone's badge on a phone that could not
+  fetch the thread means the message has been seen by nobody. A failed receipt
+  says so beside a retry rather than passing silently.
+- **`resolveIncident`** — an incident could be reported and never closed. It sat
+  open on the trip for ever, `observe()` treats an open incident as a trip that
+  needs a look, and a blocking one suppresses the arrival estimate — so a
+  breakdown fixed at noon kept the trip flagged and the ETA off the screen for
+  the rest of the run. The "reported" card on the trip screen closes it.
 
-Each is a screen affordance rather than a technical problem: the route is
-built, parity-tested where it shares a rule, and proven over the wire by the
-round-trip. They carry a `wired-check:` reason in `client.ts` pointing here, so
-the gate passes and the gap is a written decision rather than an oversight.
+All three act only against a server: the walkthrough has none, so the share
+screen says why it cannot make a real link rather than offering a button that
+does nothing, and the incident card offers no close.
 
 `sealDelivery` was a fourth until the same check found it. That one was not a
 missing affordance — the proof screen showed "signed for" from a *local*

@@ -11,6 +11,7 @@ import {
   isLate,
 } from '../src/eta.ts';
 import { distance, type Position } from '../src/geo.ts';
+import type { Incident } from '../src/incidents.ts';
 
 const T0 = new Date('2026-03-04T06:00:00Z');
 const at = (minutes: number): Date => new Date(T0.getTime() + minutes * 60_000);
@@ -63,7 +64,7 @@ describe('effective pace', () => {
 
 describe('what it refuses to estimate', () => {
   test('a trip with no positions', () => {
-    const e = eta({ track: [], destination: KANO, now: T0, truckClass: 'trailer_30t' });
+    const e = eta({ incidents: [], track: [], destination: KANO, now: T0, truckClass: 'trailer_30t' });
     assert.equal(e.kind, 'unknown');
     if (e.kind === 'unknown') assert.equal(e.reason, 'no_track');
   });
@@ -71,7 +72,7 @@ describe('what it refuses to estimate', () => {
   test('a truck that went silent hours ago', () => {
     // The last known pace no longer says anything about now.
     const track = heading(8, 30, 0.05);
-    const e = eta({
+    const e = eta({ incidents: [],
       track,
       destination: KANO,
       now: new Date(track[7]!.at.getTime() + STALE_AFTER_MS + 60_000),
@@ -84,7 +85,7 @@ describe('what it refuses to estimate', () => {
   });
 
   test('too few fixes, with no class to fall back on', () => {
-    const e = eta({ track: heading(2, 30, 0.05), destination: KANO, now: at(35) });
+    const e = eta({ incidents: [], track: heading(2, 30, 0.05), destination: KANO, now: at(35) });
     assert.equal(e.kind, 'unknown');
     if (e.kind === 'unknown') {
       assert.equal(e.reason, 'not_enough_fixes');
@@ -94,7 +95,7 @@ describe('what it refuses to estimate', () => {
 
   test('a window too short to say anything about a day of driving', () => {
     const track = heading(6, 4, 0.01); // 20 minutes of fixes
-    const e = eta({ track, destination: KANO, now: at(21) });
+    const e = eta({ incidents: [], track, destination: KANO, now: at(21) });
     assert.equal(e.kind, 'unknown');
     if (e.kind === 'unknown') assert.equal(e.reason, 'window_too_short');
     assert.equal(MINIMUM_WINDOW_MS, 30 * 60_000);
@@ -102,7 +103,7 @@ describe('what it refuses to estimate', () => {
 
   test('a parked truck, whose pace says nothing about arrival', () => {
     const parked = Array.from({ length: 8 }, (_, i) => fix(6.4550, 3.3841, i * 20));
-    const e = eta({ track: parked, destination: KANO, now: at(145) });
+    const e = eta({ incidents: [], track: parked, destination: KANO, now: at(145) });
     assert.equal(e.kind, 'unknown');
     if (e.kind === 'unknown') assert.equal(e.reason, 'not_moving');
   });
@@ -111,9 +112,9 @@ describe('what it refuses to estimate', () => {
     // A screen that can only render "unavailable" leaves the user with
     // nothing to do about it.
     const cases = [
-      eta({ track: [], destination: KANO, now: T0 }),
-      eta({ track: heading(2, 30, 0.05), destination: KANO, now: at(35) }),
-      eta({ track: heading(6, 4, 0.01), destination: KANO, now: at(21) }),
+      eta({ incidents: [], track: [], destination: KANO, now: T0 }),
+      eta({ incidents: [], track: heading(2, 30, 0.05), destination: KANO, now: at(35) }),
+      eta({ incidents: [], track: heading(6, 4, 0.01), destination: KANO, now: at(21) }),
     ];
     for (const e of cases) {
       assert.equal(e.kind, 'unknown');
@@ -126,14 +127,14 @@ describe('the estimate', () => {
   const track = heading(10, 30, 0.08); // 4.5 hours, moving steadily
 
   test('is a range, ordered, around the expectation', () => {
-    const e = eta({ track, destination: KANO, now: at(275) });
+    const e = eta({ incidents: [], track, destination: KANO, now: at(275) });
     assert.equal(e.kind, 'known');
     if (e.kind !== 'known') return;
     assert.ok(e.earliest < e.expected && e.expected < e.latest);
   });
 
   test("built from this truck's own pace is not marked modelled", () => {
-    const e = eta({ track, destination: KANO, now: at(275), truckClass: 'trailer_30t' });
+    const e = eta({ incidents: [], track, destination: KANO, now: at(275), truckClass: 'trailer_30t' });
     assert.equal(e.kind, 'known');
     if (e.kind === 'known') assert.equal(e.isModelled, false);
   });
@@ -141,7 +142,7 @@ describe('the estimate', () => {
   test('a thin track falls back to the class average, and says so', () => {
     // Measured and modelled are never confused — the same rule Grid enforces
     // on a bill projection.
-    const e = eta({
+    const e = eta({ incidents: [],
       track: heading(2, 20, 0.05),
       destination: KANO,
       now: at(25),
@@ -155,8 +156,8 @@ describe('the estimate', () => {
   });
 
   test('a slower class arrives later over the same road', () => {
-    const one = eta({ track: [LAGOS, fix(6.46, 3.39, 5)], destination: KANO, now: at(6), truckClass: 'pickup' });
-    const other = eta({ track: [LAGOS, fix(6.46, 3.39, 5)], destination: KANO, now: at(6), truckClass: 'lowbed' });
+    const one = eta({ incidents: [], track: [LAGOS, fix(6.46, 3.39, 5)], destination: KANO, now: at(6), truckClass: 'pickup' });
+    const other = eta({ incidents: [], track: [LAGOS, fix(6.46, 3.39, 5)], destination: KANO, now: at(6), truckClass: 'lowbed' });
     assert.equal(one.kind, 'known');
     assert.equal(other.kind, 'known');
     if (one.kind === 'known' && other.kind === 'known') {
@@ -165,7 +166,7 @@ describe('the estimate', () => {
   });
 
   test('remaining distance is the straight line, and is honest about it', () => {
-    const e = eta({ track, destination: KANO, now: at(275) });
+    const e = eta({ incidents: [], track, destination: KANO, now: at(275) });
     assert.equal(e.kind, 'known');
     if (e.kind === 'known') {
       assert.equal(e.remaining, distance(track.at(-1) as Position, KANO));
@@ -174,7 +175,7 @@ describe('the estimate', () => {
 
   test('a truck already at the destination arrives now, not in the past', () => {
     const arrived = [...track, { ...KANO, at: at(300) }];
-    const e = eta({ track: arrived, destination: KANO, now: at(301) });
+    const e = eta({ incidents: [], track: arrived, destination: KANO, now: at(301) });
     assert.equal(e.kind, 'known');
     if (e.kind === 'known') {
       assert.equal(e.remaining, 0);
@@ -190,7 +191,7 @@ describe('lateness', () => {
     // A shipper needs telling while there is still time to do something. An
     // alert that waits for the midpoint to slip arrives after the decision
     // has been made for them.
-    const e = eta({ track, destination: KANO, now: at(275) });
+    const e = eta({ incidents: [], track, destination: KANO, now: at(275) });
     assert.equal(e.kind, 'known');
     if (e.kind !== 'known') return;
 
@@ -201,7 +202,67 @@ describe('lateness', () => {
 
   test('an unknown ETA is never reported as late', () => {
     // "Late" is a claim, and there is nothing here to make it with.
-    const unknown = eta({ track: [], destination: KANO, now: T0 });
+    const unknown = eta({ incidents: [], track: [], destination: KANO, now: T0 });
     assert.equal(isLate(unknown, T0), false);
+  });
+});
+
+describe('an open blocking incident', () => {
+  const incident = (over: Partial<Incident>): Incident => ({
+    id: 'i1',
+    tripId: 't1',
+    kind: 'breakdown',
+    severity: 'blocking',
+    at: at(0),
+    near: null,
+    note: 'Broken down near Jebba',
+    reportedBy: 'driver',
+    photoIds: [],
+    resolvedAt: null,
+    ...over,
+  });
+
+  // A perfectly good track and a perfectly good pace. The arithmetic is right
+  // and the answer is a lie, which is the only reason this check sits above
+  // every other one in `eta()`.
+  const moving = {
+    track: heading(6, 30, 0.2),
+    destination: KANO,
+    now: at(150),
+    truckClass: 'trailer',
+  };
+
+  test('refuses the estimate outright', () => {
+    const known = eta({ ...moving, incidents: [] });
+    assert.equal(known.kind, 'known');
+
+    const blocked = eta({ ...moving, incidents: [incident({})] });
+    assert.equal(blocked.kind, 'unknown');
+    if (blocked.kind !== 'unknown') return;
+    assert.equal(blocked.reason, 'blocked');
+    assert.match(blocked.detail, /cleared/);
+  });
+
+  test('is only the open ones', () => {
+    // Resolved and still on the trip. Every trip that ever had a breakdown
+    // would otherwise lose its estimate for the rest of its life.
+    const done = eta({ ...moving, incidents: [incident({ resolvedAt: at(60) })] });
+    assert.equal(done.kind, 'known');
+  });
+
+  test('is only the blocking ones', () => {
+    // A weighbridge queue delays a truck; it does not stop it heading north,
+    // and the pace already carries the delay.
+    const slow = eta({ ...moving, incidents: [incident({ severity: 'delaying' })] });
+    assert.equal(slow.kind, 'known');
+  });
+
+  test('outranks a refusal that would have been made anyway', () => {
+    // No track at all, and blocked. The screen should say what is actually
+    // wrong — the truck is stopped — not "no positions yet".
+    const nothing = eta({ ...moving, track: [], incidents: [incident({})] });
+    assert.equal(nothing.kind, 'unknown');
+    if (nothing.kind !== 'unknown') return;
+    assert.equal(nothing.reason, 'blocked');
   });
 });

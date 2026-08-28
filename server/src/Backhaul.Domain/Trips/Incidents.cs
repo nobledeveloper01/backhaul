@@ -77,6 +77,16 @@ public static class Incidents
     public static bool NeedsPhoto(IncidentKind kind) =>
         kind is IncidentKind.Cargo or IncidentKind.Accident;
 
+    // wired-check: the mirror of a rule that is now enforced on the app side
+    // and has nowhere to run on this one. This gate found it callerless on
+    // BOTH sides, which meant "arrives 18:40" could sit beside "broken down
+    // near Jebba" on a live trip — `eta()` in packages/domain now takes the
+    // trip's incidents and refuses with `blocked` before it measures anything,
+    // so the app is fixed. Here there is still no ETA path to call it from.
+    // It stays because ADR-0005 says a rule that exists on both sides is held
+    // to the fixtures, and because the day the server serves an ETA — or
+    // decides ShareScope's `Eta` flag on more than the scope — this is the
+    // check it must not reinvent. Not a caller yet; a mirror kept honest.
     /// <summary>Whether the arrival estimate should stop being shown.</summary>
     /// <remarks>
     /// "Arrives 18:40" beside "broken down near Jebba" is the product

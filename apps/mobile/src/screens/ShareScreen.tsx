@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   DEFAULT_SHARE_DAYS,
@@ -17,7 +17,7 @@ import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Unready } from '../components/Unready';
 import { Text } from '../components/Text';
-import { mono, radius, space, target } from '../design/tokens';
+import { mono, radius, space, target, type } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { useSession } from '../state/session';
@@ -84,12 +84,58 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
 
   const visible = visibleUnder(scope);
 
+  /*
+    The token, for as long as this screen is on the phone and no longer.
+
+    `issueShare` returns it once — the server keeps a hash — so it is held in
+    component state and never written to the list, the cache or the log. A
+    screen that stashed it anywhere durable would be the leak the hash exists
+    to prevent. See ADR-0010.
+  */
+  const [issued, setIssued] = useState<{ token: string; label: string } | null>(null);
+  const [label, setLabel] = useState('');
+  const [issuing, setIssuing] = useState(false);
+  const [failed, setFailed] = useState(false);
+
   const message = invite({
     from: 'Sahel Haulage',
     cargo: trip.cargo,
     destination: trip.destinationName,
-    url: 'bkhl.ng/t/9f3a2b1c',
+    // The real link once there is one. The sample reads as a link somebody
+    // could send, and sending the sample reaches nothing.
+    url: issued === null ? 'bkhl.ng/t/9f3a2b1c' : `bkhl.ng/t/${issued.token}`,
   });
+
+  const named = label.trim();
+
+  /*
+    Issued only once the server has answered, and said out loud when it has not.
+
+    A link drawn optimistically is a link a shipper texts to a cargo owner
+    before it exists — the one failure this screen cannot afford, because the
+    person who opens a dead link has no account, no support number and no
+    reason to try again.
+  */
+  const issue = () => {
+    if (named.length === 0 || issuing) return;
+
+    setIssuing(true);
+    setFailed(false);
+
+    void api.issueShare(trip.id, scope, named).then((result) => {
+      setIssuing(false);
+      if (!result.ok) {
+        setFailed(true);
+        return;
+      }
+
+      setLabel('');
+      setIssued({ token: result.value.token, label: result.value.label });
+      // The list carries no tokens, so re-reading it costs nothing and the new
+      // link appears among the others rather than only in the panel above.
+      refresh();
+    });
+  };
 
   const revoke = (id: string) => {
     if (!trip.live) {
@@ -116,7 +162,50 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
 
         {query.state !== 'ready' ? null : (
           <>
-            <Card emphasis="accent" overline={t('what_they_will_see')} icon="link">
+            {/*
+              The token, once, above everything else on the screen.
+
+              It cannot be fetched again — not by this screen, not by the
+              server, not by support — so it is shown where it cannot be
+              scrolled past, and it says that this is the only showing. A
+              person who dismisses it and needs the link again makes another
+              one, which is the only honest way back.
+            */}
+            {issued === null ? null : (
+              <Card emphasis="accent" overline={t('the_new_link')} icon="link">
+                <Text variant="title" numberOfLines={1}>
+                  {issued.label}
+                </Text>
+                <Text variant="body" style={[mono, styles.gapTight]}>
+                  bkhl.ng/t/{issued.token}
+                </Text>
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('shown_once_send_it_now')}
+                </Text>
+                <View style={styles.actions}>
+                  <Press
+                    onPress={() => setIssued(null)}
+                    accessibilityLabel={t('hide_the_link')}
+                    accessibilityHint={t('shown_once_send_it_now')}
+                    feedback="opacity"
+                    style={[styles.secondary, { borderColor: colours.outline }]}
+                  >
+                    <Text variant="title">{t('hide_the_link')}</Text>
+                  </Press>
+                </View>
+              </Card>
+            )}
+
+            {/*
+              One card leads the eye, and which one depends on what is on
+              screen: a token that can never be shown again outranks a choice
+              the reader has already made by the time they can see it.
+            */}
+            <Card
+              emphasis={issued === null ? 'accent' : 'raised'}
+              overline={t('what_they_will_see')}
+              icon="link"
+            >
               {/*
                 Full-width rows rather than chips. As chips the second option — the
                 longer sentence — wrapped onto its own line and the pair read as two
@@ -167,17 +256,77 @@ export function ShareScreen({ trip, onBack, onPreview }: Props) {
                 {message.length} {t('one_sms_and_it_says_who')}
               </Text>
 
+              {/*
+                Who it is for, because the list is how a link gets turned off
+                again. Three unlabelled links on a trip cannot be revoked with
+                any confidence about which one reaches whom, and the shipper
+                turns off all three.
+              */}
+              {trip.live ? (
+                <View style={styles.actions}>
+                  <TextInput
+                    value={label}
+                    onChangeText={setLabel}
+                    placeholder={t('who_is_it_for')}
+                    placeholderTextColor={colours.textSecondary}
+                    accessibilityLabel={t('who_is_it_for')}
+                    style={[
+                      styles.input,
+                      {
+                        color: colours.textPrimary,
+                        backgroundColor: colours.surfaceDim,
+                        borderColor: colours.outline,
+                        fontFamily: type.body.fontFamily,
+                        fontSize: type.body.fontSize,
+                      },
+                    ]}
+                  />
+
+                  {failed ? (
+                    <Text variant="label" tone="exception">
+                      {t('link_not_made')}
+                    </Text>
+                  ) : null}
+
+                  <Press
+                    onPress={issue}
+                    disabled={named.length === 0 || issuing}
+                    accessibilityLabel={t('make_a_link')}
+                    accessibilityHint={t('shown_once_send_it_now')}
+                    // Dimmed by `Press` rather than hidden: a button that
+                    // disappears while the field is empty leaves nothing on
+                    // screen to say what the field is for.
+                    style={[styles.primary, { backgroundColor: colours.accent }]}
+                  >
+                    <View style={styles.centreRow}>
+                      <Icon name="link" size="md" colour={colours.onAccent} />
+                      <Text variant="title" style={{ color: colours.onAccent }}>
+                        {t(issuing ? 'making_the_link' : 'make_a_link')}
+                      </Text>
+                    </View>
+                  </Press>
+                </View>
+              ) : (
+                /*
+                  The walkthrough has no server to issue against, and a token
+                  invented on the phone is a link that reaches nothing. Said
+                  rather than left as a button that does nothing.
+                */
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('walkthrough_makes_no_links')}
+                </Text>
+              )}
+
               <View style={styles.actions}>
                 <Press
                   onPress={onPreview}
                   accessibilityLabel={t('see_what_they_see')}
-                  style={[styles.primary, { backgroundColor: colours.accent }]}
+                  feedback="opacity"
+                  style={[styles.secondary, { borderColor: colours.outline }]}
                 >
                   <View style={styles.centreRow}>
-                    <Icon name="link" size="md" colour={colours.onAccent} />
-                    <Text variant="title" style={{ color: colours.onAccent }}>
-                      {t('see_what_they_see')}
-                    </Text>
+                    <Icon name="link" size="md" colour={colours.textSecondary} />
+                    <Text variant="title">{t('see_what_they_see')}</Text>
                   </View>
                 </Press>
               </View>
@@ -377,10 +526,24 @@ const styles = StyleSheet.create({
   },
   rule: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   sms: { padding: space.md, borderRadius: radius.md },
-  actions: { marginTop: space.sm },
+  actions: { marginTop: space.sm, gap: space.sm },
+  input: {
+    minHeight: target.standard,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
   primary: {
     minHeight: target.standard,
     borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondary: {
+    minHeight: target.standard,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

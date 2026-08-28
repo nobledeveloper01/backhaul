@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -80,6 +80,43 @@ export function MessagesScreen({ trip, onBack }: Props) {
 
   const [draft, setDraft] = useState('');
   const [failed, setFailed] = useState(false);
+  const [unmarked, setUnmarked] = useState(false);
+
+  /*
+    Which trip this device has already told the server it has read.
+
+    The id rather than a flag: this screen is reached from two lists and does
+    not always unmount in between, and a flag would leave the second trip's
+    thread marked read by the first one's receipt.
+  */
+  const marked = useRef<string | null>(null);
+
+  /*
+    Read means read *on a screen*, so this waits for the messages.
+
+    The receipt is what clears the unread count for everyone else on the trip.
+    Sending it when the component mounts would clear it on a phone that never
+    managed to fetch the thread — the badge goes quiet and the message has been
+    seen by nobody.
+  */
+  const markRead = useCallback(() => {
+    if (!trip.live || marked.current === trip.id) return;
+
+    marked.current = trip.id;
+    setUnmarked(false);
+
+    void api.markRead(trip.id, ME).then((result) => {
+      if (result.ok) return;
+      // Cleared so the retry below can try again. Failing silently leaves the
+      // rest of the trip being pinged about a message that has been read.
+      marked.current = null;
+      setUnmarked(true);
+    });
+  }, [api, trip.id, trip.live]);
+
+  useEffect(() => {
+    if (query.state === 'ready') markRead();
+  }, [query.state, markRead]);
 
   const messages = query.state === 'ready' ? query.value : [];
   const ordered = useMemo(() => thread(messages), [messages]);
@@ -168,6 +205,30 @@ export function MessagesScreen({ trip, onBack }: Props) {
           <Text variant="label" tone="exception">
             {t('not_sent_yet')}
           </Text>
+        ) : null}
+
+        {/*
+          Grey rather than red, and beside a way to fix it. Nothing the reader
+          did failed and nothing they wrote was lost — the thread is read and
+          the rest of the trip has not been told yet.
+        */}
+        {unmarked ? (
+          <View style={styles.unmarked}>
+            <Text variant="label" tone="secondary" style={styles.flex}>
+              {t('still_marked_unread')}
+            </Text>
+            <Press
+              onPress={markRead}
+              accessibilityLabel={t('try_again')}
+              feedback="opacity"
+              hitSlop={space.sm}
+              style={[styles.retry, { borderColor: colours.outline }]}
+            >
+              <Text variant="label" tone="accent">
+                {t('try_again')}
+              </Text>
+            </Press>
+          </View>
         ) : null}
 
         {over > 0 ? (
@@ -272,6 +333,14 @@ function Bubble({ message, now }: { message: Message; now: Date }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  flex: { flex: 1 },
+  unmarked: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  retry: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
   thread: { padding: space.lg, gap: space.md },
   lede: { marginBottom: space.sm },
   bubbleRow: { flexDirection: 'row' },

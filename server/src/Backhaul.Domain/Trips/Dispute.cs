@@ -112,6 +112,9 @@ public static class Dispute
     /// <summary>The least tracked time a pack can hold and still be worth arguing from.</summary>
     public static readonly long MinimumCoveredMs = 2 * 60 * 60_000L;
 
+    // wired-check: reached only from Assemble() below, which the dispute parity
+    // case runs over every fixture pack, so each weight this assigns is
+    // compared against TypeScript. Public to match what dispute.ts exports.
     public static Weight Weigh(Evidence item)
     {
         if (item.Source == EvidenceSource.System) return Weight.Measured;

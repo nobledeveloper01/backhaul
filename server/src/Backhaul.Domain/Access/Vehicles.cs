@@ -113,6 +113,10 @@ public static class Vehicles
     public static bool MayCarry(VehicleAssessment assessment) =>
         assessment.Standing is Standing.RoadLegal or Standing.Expiring;
 
+    // wired-check: deliberately callerless, here and in vehicles.ts. It returns
+    // false, and a decision to do nothing needs no caller to be honoured — it
+    // needs to be findable. This is the answer written down where the next
+    // person to ask will look, so the question gets read rather than guessed.
     /// <summary>
     /// Whether a truck already on a trip should be stopped.
     /// </summary>

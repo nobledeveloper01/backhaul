@@ -7,6 +7,29 @@ A phase is done when its exit gate is green — not when the code is written.
 Gates are written before the phase starts and are not softened to fit what got
 built.
 
+**Each gate has two halves.** The **software gate** is everything provable on a
+developer's machine, and it is what blocks the next phase. The **hardware
+gate** is everything that needs a device in a hand; it blocks the *release*,
+never softens, and is deferred to a device day. `PHASE` tracks the software
+gate, because that is the one that says what to work on next. See
+[ADR-0014](adr/0014-a-phase-has-a-software-gate-and-a-hardware-gate.md).
+
+## Deferred to a device day
+
+Three conditions, in the words their own gates use. **v1.0 does not ship until
+every one is green**, and no simulator signs any of them off.
+
+| From | Condition |
+|---|---|
+| Phase 1 | **Under 4% battery per hour**, screen off, on real hardware, both platforms |
+| Phase 1 | **72-hour soak survival** on physical devices including Tecno and Infinix |
+| Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
+
+The risk this accepts is stated in ADR-0014 and is worth reading before adding
+to the pile: everything built from here rests on the assumption that the
+capture loop survives an OEM battery manager. It is the first thing a device
+day tests, not the last.
+
 ---
 
 ## The next fifteen, and where each one lands
@@ -209,7 +232,7 @@ which gates it from being useful to anyone outside this machine.
 
 ---
 
-## Phase 1 — The tracking engine · **current, and the long pole**
+## Phase 1 — The tracking engine · **software gate green; hardware deferred**
 
 Built first and built alone: Android foreground service, iOS background
 location and region monitoring, the native SQLite queue, batched upload with
@@ -226,10 +249,11 @@ The policy those loops follow is already written and tested
 | 2. **Under 4% battery per hour**, screen off, on real hardware, both platforms | blocked on a device |
 | 3. **72-hour soak survival** on physical devices including Tecno and Infinix | blocked on a device |
 
-Gate 1 is about correctness and is met. Gates 2 and 3 are about a handset and
-no simulation stands in for either — the risk they exist to catch is OEM
-battery management killing a foreground service, which only happens on the
-device it happens on.
+Gate 1 is the software gate and it is met. Gates 2 and 3 are the hardware
+gate — no simulation stands in for either, because the risk they exist to catch
+is OEM battery management killing a foreground service, which only happens on
+the device it happens on. Both are on the deferred list at the top of this
+file, and v1.0 does not ship until they are green.
 
 **Built:** the queue policy and the upload loop, both pure and tested; the
 TurboModule contract; and — as of this session — **both native

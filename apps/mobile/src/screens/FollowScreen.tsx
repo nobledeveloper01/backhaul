@@ -26,7 +26,7 @@ import { radius, space } from '../design/tokens';
 import { useColours } from '../design/theme';
 import { useLanguage } from '../state/language';
 import { demoNow, type DemoTrip } from '../state/demo';
-import { demoShareLinks } from '../state/product';
+import { demoIncidents, demoShareLinks } from '../state/product';
 
 interface Props {
   readonly trip: DemoTrip;
@@ -78,6 +78,7 @@ export function FollowScreen({ trip, onBack }: Props) {
         track: trip.track.kept,
         destination: trip.destination,
         now,
+        incidents: demoIncidents(trip, now),
         truckClass: trip.truck,
       }),
     [trip, now],

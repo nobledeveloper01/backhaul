@@ -88,6 +88,18 @@ export type Phrase =
   | 'money_released'
   | 'what_is_owed'
   | 'history'
+  | 'who_is_it_for'
+  | 'make_a_link'
+  | 'making_the_link'
+  | 'link_not_made'
+  | 'the_new_link'
+  | 'shown_once_send_it_now'
+  | 'hide_the_link'
+  | 'walkthrough_makes_no_links'
+  | 'still_marked_unread'
+  | 'mark_it_cleared'
+  | 'clearing_it'
+  | 'not_cleared'
   | 'delivery_document'
   | 'what_the_record_shows'
   | 'call_this_trip_off'
@@ -156,6 +168,9 @@ export type Phrase =
   | 'signed_for'
   | 'the_delivery_note'
   | 'hand_over_here'
+  | 'hand_over_the_note'
+  | 'hand_over_once_signed_off'
+  | 'could_not_hand_it_over'
 
   // --- money on the road ------------------------------------------------
   | 'this_trip'
@@ -724,6 +739,18 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  who_is_it_for: "Who is it for?",
+  make_a_link: "Make a link",
+  making_the_link: "Making the link…",
+  link_not_made: "The link was not made. Try again.",
+  the_new_link: "The new link",
+  shown_once_send_it_now: "This is the only time this link is shown. Send it now — it cannot be shown again.",
+  hide_the_link: "Hide it",
+  walkthrough_makes_no_links: "The walkthrough cannot make a real link. The ones below are examples.",
+  still_marked_unread: "Still marked unread for everyone else.",
+  mark_it_cleared: "Mark it cleared",
+  clearing_it: "Clearing…",
+  not_cleared: "It is still open. Try again.",
   seal_the_proof: "Sign this off",
   not_notifying: "Not notifying",
   at_most_once_every: "at most once every",
@@ -928,6 +955,10 @@ export const EN: Readonly<Record<Phrase, string>> = {
   what_the_cargo_is: 'What the cargo is',
   weight_in_tonnes: 'Weight in tonnes',
   post_this_load: 'Post this load',
+
+  hand_over_the_note: 'Hand over the note',
+  hand_over_once_signed_off: 'You can hand this over once it is signed off.',
+  could_not_hand_it_over: 'It did not go out. Try again.',
 
   utilisation: 'How well the trucks are used',
   your_fleet: 'Your fleet',
@@ -1345,6 +1376,18 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  who_is_it_for: "Ga wa ne?",
+  make_a_link: "Ƙirƙiri hanyar haɗi",
+  making_the_link: "Ana ƙirƙirawa…",
+  link_not_made: "Ba a ƙirƙiri hanyar haɗi ba. Ka sake gwadawa.",
+  the_new_link: "Sabuwar hanyar haɗi",
+  shown_once_send_it_now: "Wannan shi ne lokaci ɗaya tak da za a nuna wannan hanyar haɗi. Ka aika da ita yanzu — ba za a ƙara nuna ta ba.",
+  hide_the_link: "Ɓoye ta",
+  walkthrough_makes_no_links: "Nuni ba zai iya ƙirƙirar hanyar haɗi ta gaskiya ba. Waɗanda ke ƙasa misalai ne.",
+  still_marked_unread: "Har yanzu ana nuna ba a karanta ba ga sauran mutane.",
+  mark_it_cleared: "Nuna an warware shi",
+  clearing_it: "Ana warwarewa…",
+  not_cleared: "Har yanzu a buɗe yake. Ka sake gwadawa.",
   seal_the_proof: "Kammala wannan",
   not_notifying: "Ba a sanarwa",
   at_most_once_every: "sau ɗaya kawai a kowane",
@@ -1549,6 +1592,10 @@ export const HA: Readonly<Record<Phrase, string>> = {
   what_the_cargo_is: 'Wane irin kaya ne',
   weight_in_tonnes: 'Nauyi a tan',
   post_this_load: 'Sanya wannan kaya',
+
+  hand_over_the_note: 'Mika takardar',
+  hand_over_once_signed_off: 'Za ka iya mika wannan bayan an kammala shi.',
+  could_not_hand_it_over: 'Bai fita ba. Sake gwadawa.',
 
   utilisation: 'Yadda ake amfani da motocin',
   your_fleet: 'Motocinka',
@@ -1970,6 +2017,18 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  who_is_it_for: "Fún ta ni?",
+  make_a_link: "Ṣe ọ̀nà asopọ̀",
+  making_the_link: "Ń ṣe é…",
+  link_not_made: "A kò ṣe ọ̀nà asopọ̀ náà. Tún gbìyànjú.",
+  the_new_link: "Ọ̀nà asopọ̀ tuntun",
+  shown_once_send_it_now: "Ìgbà kan ṣoṣo nìyí tí a ó fi ọ̀nà asopọ̀ yìí hàn. Fi í ránṣẹ́ ní báyìí — a kò lè fi hàn mọ́.",
+  hide_the_link: "Fi pamọ́",
+  walkthrough_makes_no_links: "Àpẹẹrẹ kò lè ṣe ọ̀nà asopọ̀ gidi. Àwọn tí ó wà nísàlẹ̀ kì í ṣe gidi.",
+  still_marked_unread: "Ó ṣì wà ní àìkà fún àwọn yòókù.",
+  mark_it_cleared: "Sàmì sí i pé ó ti yanjú",
+  clearing_it: "Ń yanjú rẹ̀…",
+  not_cleared: "Ó ṣì wà ní ṣíṣí. Tún gbìyànjú.",
   seal_the_proof: "Fọwọ́ sí i pé ó parí",
   not_notifying: "A kò ń kìlọ̀",
   at_most_once_every: "ẹ̀ẹ̀kan ṣoṣo ní gbogbo",
@@ -2175,6 +2234,10 @@ export const YO: Readonly<Record<Phrase, string>> = {
   what_the_cargo_is: 'Kín ni ẹrù náà',
   weight_in_tonnes: 'Ìwúwo ní tọ́ọ̀nù',
   post_this_load: 'Gbé ẹrù yìí kalẹ̀',
+
+  hand_over_the_note: 'Fi ìwé náà lé wọn lọ́wọ́',
+  hand_over_once_signed_off: 'O lè fi èyí lé wọn lọ́wọ́ lẹ́yìn tí a bá ti fọwọ́ sí i pé ó parí.',
+  could_not_hand_it_over: 'Kò jáde. Gbìyànjú lẹ́ẹ̀kan si.',
 
   utilisation: 'Bí a ṣe ń lo àwọn ọkọ̀',
   your_fleet: 'Àwọn ọkọ̀ rẹ',
@@ -2595,6 +2658,18 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  who_is_it_for: "Ọ bụ maka onye?",
+  make_a_link: "Mepụta njikọ",
+  making_the_link: "Na-emepụta…",
+  link_not_made: "Emepụtaghị njikọ ahụ. Nwaa ọzọ.",
+  the_new_link: "Njikọ ọhụrụ",
+  shown_once_send_it_now: "Nke a bụ naanị oge a ga-egosi njikọ a. Zipu ya ugbu a — agaghị egosi ya ọzọ.",
+  hide_the_link: "Zoo ya",
+  walkthrough_makes_no_links: "Ihe ngosi apụghị imepụta ezigbo njikọ. Ndị dị n'okpuru bụ ihe atụ.",
+  still_marked_unread: "Ọ ka na-egosi na a gụghị ya maka ndị ọzọ.",
+  mark_it_cleared: "Gosi na edozila ya",
+  clearing_it: "Na-edozi…",
+  not_cleared: "Ọ ka mepere emepe. Nwaa ọzọ.",
   seal_the_proof: "Mechaa nke a",
   not_notifying: "Anaghị akọ",
   at_most_once_every: "naanị otu ugboro kwa",
@@ -2799,6 +2874,10 @@ export const IG: Readonly<Record<Phrase, string>> = {
   what_the_cargo_is: 'Ihe ngwaahịa ahụ bụ',
   weight_in_tonnes: 'Ịdị arọ na tọn',
   post_this_load: 'Bipụta ngwaahịa a',
+
+  hand_over_the_note: 'Nyefee akwụkwọ ahụ',
+  hand_over_once_signed_off: 'Ị nwere ike inyefe nke a mgbe e mechara ya.',
+  could_not_hand_it_over: 'Ọ pụghị. Nwaa ọzọ.',
 
   utilisation: 'Otú e si eji ụgbọ ndị ahụ',
   your_fleet: 'Ụgbọ gị',

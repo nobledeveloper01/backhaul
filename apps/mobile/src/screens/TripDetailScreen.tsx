@@ -98,11 +98,6 @@ export function TripDetailScreen({
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
 
-  const arrival = useMemo(
-    () => eta({ track: trip.track.kept, destination: trip.destination, now, truckClass: trip.truck }),
-    [trip, now],
-  );
-
   const state = trip.history[trip.history.length - 1]?.state ?? 'open';
   const quality = fixQuality(trip.track);
   const { api } = useSession();
@@ -130,6 +125,34 @@ export function TripDetailScreen({
   */
   const [reloads, setReloads] = useState(0);
   const reload = useCallback(() => setReloads((was) => was + 1), []);
+
+  const [clearing, setClearing] = useState(false);
+  const [clearFailed, setClearFailed] = useState(false);
+
+  /*
+    An incident that can be closed, which was the half nobody built.
+
+    An open incident is not decoration: `observe()` reads one as a trip that
+    needs a look, and a blocking one suppresses the arrival estimate outright.
+    A breakdown that was fixed at noon therefore kept the trip on the shipper's
+    "needs a look" list and kept the ETA off the screen for the rest of the
+    run, and there was nothing on any screen to say the truck was moving again.
+
+    Closed against the server, never on the phone alone: the same rule the
+    incident list is read under, and the list is what the next screen believes.
+  */
+  const clearIncident = (incidentId: string) => {
+    if (!trip.live || clearing) return;
+
+    setClearing(true);
+    setClearFailed(false);
+
+    void api.resolveIncident(trip.id, incidentId).then((result) => {
+      setClearing(false);
+      if (result.ok) reload();
+      else setClearFailed(true);
+    });
+  };
 
   const fixes = useTripData(
     trip.live,
@@ -264,6 +287,29 @@ export function TripDetailScreen({
   const messages = thread.state === 'ready' ? thread.value : [];
   const incidents = trouble.state === 'ready' ? trouble.value : [];
   const openIncident = headline(incidents);
+
+  /*
+    Computed here, below the incidents, and not at the top of the component.
+
+    `eta` takes them, and it takes them because the rule that a blocking
+    incident suppresses the estimate lived in the domain, tested, called by
+    nothing, while two comments in this very file said the screen honoured it.
+    It did not. Order matters more than it looks: while `trouble` is still
+    loading this list is empty, so the estimate shows for a moment before an
+    open breakdown arrives and withdraws it. That is the right way round —
+    the alternative is refusing an estimate on a trip that has no incidents.
+  */
+  const arrival = useMemo(
+    () =>
+      eta({
+        track: trip.track.kept,
+        destination: trip.destination,
+        now,
+        incidents,
+        truckClass: trip.truck,
+      }),
+    [trip, now, incidents],
+  );
   const waiting = route.state === 'ready' ? route.value.chargeableWaitingMs : 0;
   const course = useMemo(
     () => deviation(track.kept, trip.destination, now),
@@ -351,6 +397,36 @@ export function TripDetailScreen({
             <Text variant="body" tone="secondary" style={styles.note}>
               Reported by the {openIncident.reportedBy} · {agoLabel(now.getTime() - openIncident.at.getTime(), t)}
             </Text>
+
+            {/*
+              The failure above the button that repeats it, and the incident
+              still on screen. Nothing has been lost — the report stands
+              exactly as it did — and pressing again is the whole recovery.
+            */}
+            {clearFailed ? (
+              <Text variant="label" tone="exception" style={styles.note}>
+                {t('not_cleared')}
+              </Text>
+            ) : null}
+
+            {/*
+              Only against a server. Clearing an incident on the phone alone
+              would hide it here and leave it open for the shipper, the alert
+              loop and the dispute pack.
+            */}
+            {trip.live ? (
+              <Press
+                onPress={() => clearIncident(openIncident.id)}
+                disabled={clearing}
+                accessibilityLabel={t('mark_it_cleared')}
+                accessibilityHint={t('recorded_against_the_trip')}
+                feedback="opacity"
+                style={[styles.clearIncident, { borderColor: colours.outline }]}
+              >
+                <Icon name="check" size="md" colour={colours.textSecondary} />
+                <Text variant="title">{t(clearing ? 'clearing_it' : 'mark_it_cleared')}</Text>
+              </Press>
+            ) : null}
           </Card>
         ) : null}
 
@@ -963,6 +1039,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
     borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+  },
+  clearIncident: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    minHeight: target.standard,
+    marginTop: space.md,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
   milestones: { marginTop: space.md, gap: space.sm },

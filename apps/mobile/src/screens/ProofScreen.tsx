@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   MINIMUM_PHOTOS,
   capturedAwayFromDestination,
   capturedNear,
   document,
+  documentText,
   seal,
   settlesDespite,
   type Delivery,
@@ -167,8 +168,38 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
     destination,
     cargo: trip.cargo,
     reference: `BH-${trip.id.slice(-4).toUpperCase()}`,
+    sealedAt,
     formatDate: stamp,
   });
+
+  /*
+    Whether the last hand-over failed, so the screen can say so.
+
+    `Share.share` rejects when the sheet cannot open at all — no handler on a
+    stripped Transsion ROM is the realistic one. Swallowing that leaves a
+    driver pressing a button that does nothing at the moment they are trying to
+    hand the note over, which is the worst place in this product to be silent.
+    A dismissed sheet is not a failure and resolves normally.
+  */
+  const [handOverFailed, setHandOverFailed] = useState(false);
+
+  /*
+    The note as text, through the share sheet — WhatsApp, SMS, email, notes.
+
+    Plain text rather than a rendered file because this runs on a 2 GB handset
+    that has been offline all trip, and because text is the one format every
+    app on that phone can already receive. The lines are `document()`'s, not
+    this screen's: a hand-over that disagreed with what the shipper reads would
+    be two proofs of one delivery.
+  */
+  const handOver = () => {
+    setHandOverFailed(false);
+    void Share.share({
+      message: documentText({ title: t('the_delivery_note'), lines }),
+      // Android puts this on the chooser and into an email subject; iOS ignores it.
+      title: t('the_delivery_note'),
+    }).catch(() => setHandOverFailed(true));
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colours.surface }]}>
@@ -322,6 +353,42 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                   </Text>
                 </View>
               ))}
+              {/*
+                The hand-over, and only once the proof is sealed.
+
+                An unsealed delivery is still editable — a photograph can go,
+                a name can be rewritten — so a note handed over from one is not
+                proof of anything, and the receiver has no way to tell that
+                from the outside. The button is absent rather than disabled,
+                and the line in its place says what would bring it back; the
+                seal itself is one card up, so there is no dead end here.
+              */}
+              {sealedAt !== null ? (
+                <Press
+                  onPress={handOver}
+                  accessibilityLabel={t('hand_over_the_note')}
+                  style={[styles.handOver, { borderColor: colours.outline }]}
+                >
+                  <Icon name="document" size="md" colour={colours.textSecondary} />
+                  <Text variant="title" style={styles.flex}>
+                    {t('hand_over_the_note')}
+                  </Text>
+                </Press>
+              ) : (
+                <Text variant="label" tone="secondary" style={styles.gapTop}>
+                  {t('hand_over_once_signed_off')}
+                </Text>
+              )}
+
+              {handOverFailed ? (
+                <View style={[styles.state, styles.gapTop]}>
+                  <Icon name="alert" size="md" colour={colours.stopped} beside="body" />
+                  <Text variant="body" style={styles.flex}>
+                    {t('could_not_hand_it_over')}
+                  </Text>
+                </View>
+              ) : null}
+
               <Text variant="label" tone="secondary" style={styles.gapTop}>
                 {t('one_version_note')}
               </Text>
@@ -386,6 +453,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   lineLabel: { width: 110 },
+  // Driver-face target: this is pressed at a gate, one-handed, in sunlight.
+  handOver: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: target.driver,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    marginTop: space.md,
+  },
   review: {
     flexDirection: 'row',
     alignItems: 'center',

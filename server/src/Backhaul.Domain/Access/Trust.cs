@@ -21,6 +21,11 @@ public enum Paper
 
 public sealed record Papers(bool Identity, bool Licence, bool Registration, bool Insurance)
 {
+    // wired-check: nothing calls this and nothing ever has. It has no mirror in
+    // packages/domain/src/trust.ts either — TierOf reads the four fields
+    // directly — so it is a convenience, not a rule, and there is no second
+    // implementation for it to disagree with. Kept because an exhaustive switch
+    // over an enum cannot drift; it is dead weight rather than a hazard.
     public bool Has(Paper paper) => paper switch
     {
         Paper.Identity => Identity,

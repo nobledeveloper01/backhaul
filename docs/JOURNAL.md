@@ -6,6 +6,80 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 — Four agents, and a rule everybody had already written down
+
+**Did.** Split every phase gate into a software gate and a hardware gate
+(ADR-0014) and marked Phase 1's software gate green, with the three conditions
+that need a handset listed in one place in `docs/ROADMAP.md` and counted —
+v1.0 does not ship until they are green. Then ran three build agents in
+parallel over disjoint files and one reviewer over what they produced: the
+three dead API methods wired to screens (issue a link, mark a thread read,
+clear an incident), the delivery note handed over through the platform share
+sheet once sealed (ADR-0015), and `make wired-check` extended to read the .NET
+server. `make ci` green, round trip clean.
+
+### What surprised us
+
+**The gate found the defect the comments had already described.** `make
+wired-check` asks one question — *does anything call this* — and pointed at
+`suppressesEta`. Written, tested, exported, and called by nothing on either
+side. Then `TripDetailScreen.tsx` turned out to contain two comments, in the
+prose voice this project uses for settled rules, saying the screen suppresses
+the estimate when a blocking incident is open. It did not. Neither did the
+follow screen nor the fleet alerts. A shipper could read "arrives 18:40"
+directly under "broken down near Jebba", and a share link could carry that
+contradiction to a stranger who has no other view of the trip.
+
+That is never-traded rule 7 — *no estimate is presented as a measurement* —
+failing in the most ordinary way available: not an argument lost, not a
+shortcut taken, just three call sites that never learned about a fourth
+argument. Nobody would have found it by reading the code, because the code
+reads correct. Two people had documented the rule and neither had run it.
+
+**So the fix was not three call sites.** Putting `suppressesEta` into each
+caller restores the behaviour and leaves the shape that produced the bug
+intact: the fourth call site, whenever it arrives, forgets again. `eta()` now
+takes the trip's incidents as a **required** argument and refuses before it
+measures anything. Required, not optional, for the same reason `document()`
+takes a required `sealedAt` — an argument a caller may omit is an argument
+some caller will omit, and both of these produce a confident-looking answer
+when they are wrong. It filters the open ones itself too, so passing the
+unfiltered list is not a way to lose your estimate for the rest of the trip.
+
+The check sits above every other refusal in the function. Its own test pins
+that: a trip with no track *and* a blocking incident refuses with `blocked`,
+not `no_track`, because "no positions yet" is true and useless next to a truck
+that is stopped.
+
+**Two agents editing one file at two anchors worked, and that is not a
+general result.** A and B both added phrases to the four language tables,
+inserting at different anchor lines, and both landed clean — B reported the
+file growing 24 lines between its read and its edit. That is anchored
+insertion into a list, which is about the only concurrent edit that survives.
+It would not have survived either of them *reasoning* about the file's
+contents. The partition by file is what made the parallelism safe; the one
+shared file was safe by accident of its shape.
+
+**A gate can be green and blind.** Extending `wired-check` to C# needed a
+small parser, and its first return-type pattern rejected tuples — so
+`ShareRepository.IssueAsync` and `ResolveAsync` were invisible to it. The
+check would have reported "everything is wired" while silently skipping
+methods, which is the exact failure mode it exists to prevent. Found by
+probing rather than by reading: an unreferenced method added, watched to fire;
+the exemption comment added directly above, watched to suppress; the comment
+moved one line up, watched to fire again. This is the third guard on this
+project proved by making it fail on purpose, and the second time that proof
+found a bug in the guard.
+
+**A hardware blocker is not a reason to stop.** The battery and soak gates
+need a Tecno nobody here has, and read strictly the roadmap rule said the
+project stops until one arrives. The split in ADR-0014 keeps the rule intact
+where it bites — the deferred gates never soften and block the release — while
+letting the software gate say what to work on next. The risk is written down
+rather than filed away: everything built from here rests on the assumption
+that the capture loop survives an OEM battery manager, and that is the first
+thing a device day tests, not the last.
+
 ## 2026-08-27 (last) — Every screen reads the server, and the loop nobody started
 
 > A note on the dates below this one. The headings from here down run

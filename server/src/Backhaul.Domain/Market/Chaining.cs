@@ -109,6 +109,10 @@ public static class Chaining
         return new Fit.Ok(reposition);
     }
 
+    // wired-check: reached only from Build() below, which the chaining parity
+    // case does exercise, so the totals here are compared against TypeScript
+    // on every run. Public because packages/domain exports summarise() and a
+    // mirror that hides half its surface is a mirror nothing can be held to.
     /// <summary>Totals a chain: what it pays, what it drives laden, what it drives empty.</summary>
     public static Chain Summarise(IReadOnlyList<ChainLeg> legs)
     {

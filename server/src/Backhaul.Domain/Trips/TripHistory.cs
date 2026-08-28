@@ -37,6 +37,12 @@ public abstract record TransitionResult
 
 public static class TripHistory
 {
+    // wired-check: dead on both sides — trip.ts's currentState() has no caller
+    // either. The server never derives state from history: TripRepository
+    // carries a denormalised State column that AppendAsync writes from the
+    // accepted transition, precisely so a list of twenty trips does not load
+    // twenty histories. Reported rather than deleted, because removing one half
+    // of a mirror is a parity decision and belongs in an ADR, not a tidy-up.
     public static TripState? Current(IReadOnlyList<TripEvent> history) =>
         history.Count == 0 ? null : history[^1].State;
 

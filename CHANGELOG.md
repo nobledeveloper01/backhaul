@@ -9,6 +9,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **An arrival time no longer appears beside an open breakdown.** The rule
+  existed. `suppressesEta()` was written, tested, exported — and called by
+  nothing, on either side. Two comments in `TripDetailScreen` said the screen
+  honoured it. It did not, and neither did the follow screen or the fleet
+  alerts, so a shipper could read "arrives 18:40" directly under "broken down
+  near Jebba" and a share link could carry the same contradiction to a
+  stranger.
+
+  The fix is not three call sites remembering. `eta()` now takes the trip's
+  incidents as a **required** argument and refuses before it measures anything,
+  because a rule the caller has to remember is a rule three callers will
+  forget — which is exactly what happened. It filters the open ones itself, so
+  handing it the wrong list is not a way to get a confident estimate out of a
+  stopped truck. A resolved breakdown does not cost a trip its estimate for the
+  rest of its life, and a delaying incident does not either: the pace already
+  carries a weighbridge queue.
+
+- **The delivery note can be handed over.** Once the proof is sealed, the note
+  the screen already renders goes out through the phone's own share sheet —
+  WhatsApp, SMS, mail, a paste to the consignee's clerk. Plain text, not a PDF:
+  it works offline, needs no dependency, and arrives on a 2 GB Transsion with
+  400 MB free at the end of a Lagos–Kano run. The same lines the screen shows,
+  asserted equal in a test, because two renderings of one document diverge and
+  then a dispute has two versions of the truth. Before the seal the button is
+  absent rather than dead, with the seal action one card above it. See
+  [ADR-0015](docs/adr/0015-the-delivery-note-is-plain-text-and-the-seal-is-what-releases-it.md).
+
+- **Three more things the app could do and never offered.** A shipper can now
+  issue a tracking link from the share screen — shown once, in a card that says
+  so, dismissed by hand and never recoverable. A message thread marks itself
+  read when it has actually been fetched, not when the screen mounts, because
+  marking a thread read on a phone that never loaded it clears a badge for a
+  message nobody saw. And an open incident can be marked cleared from the trip
+  screen, which is what now returns the arrival estimate above.
+
+- **The wired check reads the server too.** `make wired-check` asks the one
+  question no other gate asks — *does anything call this* — and it only asked
+  it of the app. It now reads repository and domain methods in C# as well.
+  Sixty-six repository methods, every one wired. Ten domain methods with no
+  caller: six are in-file steps of a parity-tested entry point, two are
+  deliberate, and two were real. One of those two is the ETA defect above.
+
 - **1.3 MB of build output was in the repository.** 168 `.dex` files, compiled
   classes and Gradle transform caches from `packages/tracking-native`, and
   every `git status` for weeks reported a clean tree — because a tracked file
