@@ -38,39 +38,71 @@ Full analysis in [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md).
 8. [Correctness notes](#8-correctness-notes)
 9. [Running it](#9-running-it)
 10. [The gates](#10-the-gates)
-11. [What is deliberately missing](#11-what-is-deliberately-missing)
+11. [What is not done, and why](#11-what-is-not-done-and-why)
+    · [Licensing](#11a-licensing)
 12. [Documents](#12-documents)
 
 ---
 
 ## 1. Where this is
 
-**Phase 0 is complete.** Its exit gate is green: the domain package is
-importable by consumers that are not React Native, the boundary rule is proven
-to fire, both platforms build in CI on every push, and the app has been walked
-through on a device — which is where most of the defects in §8 were found.
+**Phases 0 to 5 have green software gates. Phase 6 — hardening and launch — is
+current, and it is the last one before v1.0.**
 
-**Phase 1 is under way, and it is the long pole**: the native tracking loop.
-Its first exit gate — *zero position loss across a simulated 1,000 km
-airplane-mode trip* — is **met in software** (ADR-0009). The other two need a
-physical Transsion handset and no simulation stands in for them.
+Every gate on this project is split in two.
+[ADR-0014](docs/adr/0014-a-phase-has-a-software-gate-and-a-hardware-gate.md):
+the **software gate** is everything provable on a developer's machine and it is
+what blocks the next phase; the **hardware gate** is everything that needs a
+device in a hand, and it blocks the *release*. `PHASE` tracks the first,
+because that is the one that says what to work on next. **v1.0 does not ship
+until every deferred gate is green** — they are listed in §11 and at the top of
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 | | |
 |---|---|
-| Domain tests | **176** passing |
-| Server parity cases | **106** passing |
-| Server endpoint tests | **16** passing |
-| App tests | **33** passing |
+| Domain tests | **585** passing |
+| Server tests | **196** endpoint, **136** domain and parity |
+| App tests | **88** passing |
+| Console tests | **3** passing |
+| Parity fixtures | generated from `packages/domain`, compared on every build |
 | Verified against real PostgreSQL | yes, including a process restart |
-| Screens | shipper, carrier and driver faces, both themes, iOS and Android |
-| Authentication | bearer tokens; authorisation filtered at the query layer |
-| Server tests | **27** endpoint tests, 11 of them authorisation |
+| Faces | shipper, carrier, driver — and a web console |
+| Screens | **27**, four languages, both themes, iOS and Android |
+| Decisions written down | **20** ADRs |
 
-Phase gates and what finishes each one: [`docs/ROADMAP.md`](docs/ROADMAP.md).
+### What works end to end
 
----
+A shipper signs in with a phone number and a code, says what they are, and
+posts a load. A carrier bids. The shipper reads the ranked bids — cheapest is
+not first, and the reason each one ranks where it does is printed beside it —
+and awards one, **which opens the trip in the same transaction**. The driver's
+phone captures positions natively, keeps them when the network goes, and
+uploads when it returns. At the gate the driver photographs the goods, takes a
+signature and seals the delivery **with no network at all**; the phone holds it
+and sends it when it can. The shipper follows the truck the whole way, on a
+phone or in a browser, and can hand a stranger a scoped, revocable link that
+shows the corridor and nothing else.
+
+None of that requires the marketplace. A shipper who agreed a load on WhatsApp
+— which is almost all of them — types the two numbers they have been messaging
+and tracks the truck from there. That is the wedge, and it is
+[ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md).
 
 ## 2. What is built
+
+Four languages, one product. Each was chosen for where the hard part of that
+layer actually is.
+
+| Layer | Language | Why that one |
+|---|---|---|
+| `packages/domain` | **TypeScript**, no runtime deps | Every rule, shared by three faces without a build step. Node runs it directly through type stripping — no jest, no loader, no bundler |
+| `packages/api` | **TypeScript** | The wire, once. It imports nothing platform-specific and never did |
+| `apps/mobile` | **TypeScript** + React Native 0.87 | One binary, three faces, iOS and Android |
+| `packages/tracking-native` | **Kotlin** and **Swift** | The tracking loop is a foreground service and a region-monitoring wake-up. Neither exists in JavaScript, and this is the part the product is |
+| `apps/web` | **TypeScript**, no framework | A shipper's console. Three views and a list; `tsc`, an import map, and the browser's own module loader |
+| `server/` | **C#** on .NET 9 | Mirrors the rules the domain holds and is checked against it by fixtures on every build |
+| Tooling | **Python**, **Bash** | The gates: `wired-check`, `untranslated-check`, `doc-check`, `boundary-check`, `make-icons` |
+| Data | **PostgreSQL** via EF Core | Migrations checked in; every suite runs against the real thing as well as in-memory |
 
 ### `packages/domain` — pure TypeScript
 
@@ -85,24 +117,47 @@ fails if the rule stays quiet.
 | `tracking.ts` | How often to sample, when to upload, when silence means something |
 | `money.ts` | Integer kobo, displayed in whole naira |
 | `pricing.ts` | Indicative rates, demurrage, settlement |
-| `eta.ts` | An arrival window, or a refusal with a reason |
+| `eta.ts` | An arrival window, or a refusal with a reason — and it refuses outright while an incident is blocking |
 | `matching.ts` | Which load a carrier should take, and whose bid a shipper should accept |
+| `trust.ts` | What a carrier has proved, from evidence they cannot write |
+| `pod.ts` | Whether a delivery is proved, and the note that comes out of it |
 | `queue.ts` | What may be deleted from the phone, and when |
+| `budget.ts` | What the tracking costs a driver in data, and when to say so |
 | `stops.ts` | Every stop on a trip, and how long it lasted |
 | `utilisation.ts` | How much of a fleet's driving was paid for |
+| `language.ts` | Every word on every screen, in English, Hausa, Yorùbá and Igbo |
+
+It is licensed **Apache-2.0**, separately from the rest of the repository, so
+that anyone auditing the arithmetic behind a price, a settlement or a delivery
+note can use it without reference to the server's terms.
 
 ### `apps/mobile` — the three faces
 
 Three faces in one binary, consuming the domain package directly. See §3.
 
+### `apps/web` — the shipper's console
+
+The fourth face, in a browser: sign in, list and search trips, open one, post a
+load, read the ranked bids, award one. It shares `@backhaul/domain` and
+`@backhaul/api` with the phone, so the matcher that finds *Port Harcourt* from
+`port-harcourt` is the same function on both. No framework and no bundler.
+[`apps/web/README.md`](apps/web/README.md).
+
+### `packages/tracking-native` — Kotlin and Swift
+
+An Android foreground service with a SQLite queue, a boot receiver and
+OEM-restriction reporting; iOS background location with the same queue behind
+the same TurboModule contract. This is the part of the product that cannot be
+written in JavaScript, and it is why the app is React Native rather than a web
+view.
+
 ### `server/` — ASP.NET Core on .NET 9
 
 EF Core against PostgreSQL, Swagger generated from the controllers' own XML
-comments. Trips, the ingest path, cleaned tracks, pricing and settlement.
+comments. Trips, the ingest path, cleaned tracks, pricing, settlement, the
+market, identity and the public share route.
 
 Details: [`server/README.md`](server/README.md).
-
----
 
 ## 3. The app
 
@@ -846,36 +901,111 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 
 ---
 
-## 11. What is deliberately missing
+## 11. What is not done, and why
 
-- **Phone-plus-OTP sign-in.** Tokens exist, are checked, and gate every
-  endpoint; what does not exist is a way for a user to *obtain* one without
-  somebody running a command. There is no SMS provider, and a fake login flow
-  is worse than an honest command. Phase 3.
-- **Verification tiers and rate limiting.** Both in the backend spec, neither
-  built. Rate limiting belongs with a reverse proxy rather than in the
-  application.
-- **A real map.** The shipper sees a corridor drawn to scale, not tiles. That
-  is deliberate for phase 0 and pinned to phase 2's exit gate rather than to
-  anyone's judgement about whether it still feels sufficient — see ADR-0006.
-- **Android on real hardware.** The app builds for Android; the definition of
-  done requires a physical Transsion handset — a Tecno or an Infinix — which is
-  where the battery and OEM-kill risks actually live, and no emulator stands in
-  for them.
-- **Corridor-segmented ETA.** What exists is the fallback tier — pace from the
-  trip's own track, or a class average, marked as modelled either way. The
-  empirical model needs a corpus of completed trips; building it now would
-  produce a model fitted to nothing, dressed in the authority of a
-  distribution. See [`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md).
-- **The marketplace.** Loads, bids and awards. The ranking engines are written
-  and tested; nothing surfaces them.
-- **PostGIS.** In the compose image, unused. The first geometry column arrives
-  with load search in phase 5.
-- **Bulk ingest.** Samples insert row by row. The Redis buffer and bulk `COPY`
-  in the backend spec matter at ~850,000 samples a day; at pilot volume they
-  would be a premature complication.
+Three kinds of thing block v1.0, and **only one of them is code**. Nothing here
+is a matter of more time at this keyboard, which is why each is written down
+with what would actually close it rather than left as a to-do.
+
+### Deferred to a device day
+
+Five conditions, in the words their own gates use. **v1.0 does not ship until
+every one is green**, and no simulator signs any of them off.
+
+| From | Condition |
+|---|---|
+| Phase 1 | **Under 4% battery per hour**, screen off, on real hardware, both platforms |
+| Phase 1 | **72-hour soak survival** on physical devices including Tecno and Infinix |
+| Phase 2 | **A shipper tracks a real truck on a real corridor**, end to end, on both platforms |
+| Phase 5 | **The first return load**, matched and completed by a real carrier and a real shipper |
+| Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
+
+**The risk this accepts is worth stating plainly.** Everything built since
+phase 1 rests on an assumption a device day tests first: that the capture loop
+survives an OEM battery manager. Transsion's power management is aggressive and
+undocumented, and it is the single failure that would invalidate the most work
+here. The app reports OEM restrictions rather than assuming they do not apply,
+and that is the most a repository can do about it.
+
+### Deferred to a native speaker
+
+| Table | Read by a speaker |
+|---|---|
+| `ha` — Hausa | **no** |
+| `yo` — Yorùbá | **no** |
+| `ig` — Igbo | **no** |
+
+Roughly 640 keys each, written by somebody who does not speak the language.
+`scripts/untranslated-check.py` proves every string on every screen goes
+through the table — it reports **0 hard-coded strings across 27 screens** — and
+it cannot prove that any one of them is right.
+
+A driver face in bad Hausa is worse than one in English. English is understood
+to be foreign; bad Hausa reads as a company that thinks it is doing you a
+favour. This is on the same footing as the hardware gates and for the same
+reason: it cannot be closed from here, and pretending otherwise is how it stays
+open until somebody notices in a store review.
+
+### Deferred to an account somebody has to open
+
+**Push notifications reach nothing.** The rule, the dispatcher, the quiet hours
+and the device registry are all built and parity-tested; `IPushSender` has one
+implementation, `LoggingPushSender`, which writes the notification to a log and
+says on every line that it did not send. APNs wants a signed JWT and a p8 key
+from an Apple developer account; FCM wants a service-account JSON.
+
+The app never registers a placeholder token, and that matters more than it
+looks:
+[ADR-0013](docs/adr/0013-the-app-registers-a-real-push-token-or-says-it-has-none.md)
+— a `Devices` row with an invented token is a promise the platform cannot keep,
+and it fails in the worst direction. The dispatcher records the alert as sent,
+`repeatAfterMs` suppresses the retry, and the shipper is never told about the
+stall.
+
+The SMS half of the same problem was solved by hosting the gateway rather than
+buying one — `android-sms-gateway` and a spare handset with a Nigerian SIM.
+There is no equivalent trick for push.
+
+### Still code, and still open
+
+| Open | Why it is not closed |
+|---|---|
+| **A carrier cannot hand a trip to a driver** | Awarding a bid puts the carrier in the driver's slot ([ADR-0019](docs/adr/0019-an-awarded-load-becomes-a-trip-and-the-carrier-drives-until-they-say-otherwise.md)), which is right for the owner-operators who are most of this market and leaves a fleet's carrier as driver of record |
+| **The delivery note is plain text** | It carries neither the signature strokes nor the photographs. Text works offline on a 2 GB handset with 400 MB free, which a PDF renderer does not; a rendered file is what a *disputed* delivery eventually needs. F4 |
+| **The outbox is not a background task** | It sweeps when the app runs and when it returns to the foreground. A phone that is never opened again still holds its delivery, and the fix is the native queue the tracker already uses |
+| **Corridor-segmented ETA** | What exists is the fallback tier — the trip's own pace, or a class average, marked modelled either way. The empirical model needs a corpus of completed trips, and building it now would fit a distribution to nothing while wearing its authority. F1 |
+| **Rate bands from corridor history** | Same reason. Prices are per kilometre of truck from a table, marked indicative, never presented as a market rate. F2 |
+| **Waybill OCR** | Needs photographs of real waybills. F5 |
+| **A shipper ladder** | `trust.ts` is carrier-shaped — licence, cover, punctuality. What makes a *shipper* worth working for is whether they pay and whether they pay on time, off different evidence, and nobody has decided what it is. `shipperTier` is null rather than a badge nobody earned. F10 |
+| **A real map** | The shipper sees a corridor drawn to scale, not tiles. Deliberate, and pinned to a gate rather than to anyone's judgement about whether it still feels sufficient — [ADR-0006](docs/adr/0006-the-corridor-view-is-not-a-map.md) |
+| **Bulk ingest** | Samples insert row by row. The Redis buffer and bulk `COPY` matter at ~850,000 samples a day; at pilot volume they are a premature complication |
+| **Review is manual and unqueued** | A reviewer confirms papers one at a time with no notification that something is waiting. Right for a pilot with one operator; at a hundred carriers a week the thing to build is the queue, not an automatic approval ([ADR-0017](docs/adr/0017-a-tier-is-earned-from-evidence-the-carrier-cannot-write.md)) |
+
+### What a reviewed paper does *not* mean
+
+A tier says somebody looked at an upload. It does not say the licence is real,
+the insurance is current, or the person holding the phone is the person on the
+ID. Liveness and ID match are phase 3 features and are not built, and no screen
+renders a tier as more than what it is.
 
 ---
+
+## 11a. Licensing
+
+Two licences, because the two halves have opposite jobs.
+
+**The application is under the [Business Source License 1.1](LICENSE).** You may
+run it in production to move, track and settle your own freight and your own
+customers', including as part of a haulage service you provide them. You may
+not offer Backhaul itself to third parties as a hosted load-matching or freight
+tracking service. On **2030-08-28** it converts to Apache-2.0 automatically.
+
+**The domain package is Apache-2.0**: [`packages/domain`](packages/domain/).
+Every rule that decides a price, a settlement, an arrival estimate or whether a
+delivery is proved lives there, and a carrier who wants to check the arithmetic
+behind a figure they were paid should be able to read and run it without a
+lawyer. A rules engine nobody outside the company may audit is a rules engine
+nobody outside the company should trust.
 
 ## 12. Documents
 
@@ -891,3 +1021,6 @@ for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 | [`DESIGN.md`](DESIGN.md) | Colour, type, targets, voice |
 | [`server/README.md`](server/README.md) | The API in detail |
 | [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | What to install, and what goes wrong installing it |
+| [`apps/web/README.md`](apps/web/README.md) | The shipper's console, and why it has no bundler |
+| [`LICENSE`](LICENSE) | Business Source License 1.1, converting to Apache-2.0 on 2030-08-28 |
+| [`packages/domain/LICENSE`](packages/domain/LICENSE) | Apache-2.0, for the rules |
