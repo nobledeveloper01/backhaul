@@ -55,6 +55,19 @@ apps/mobile/android/build/
 apps/mobile/android/app/build/
 apps/mobile/.xcode.env.local
 
+# Gradle and Xcode output from *any* module, not only the app's.
+#
+# A gitignore pattern containing a slash is anchored to the file it is written
+# in, so every `android/build/` rule above matches the repository root and
+# nothing else. `packages/tracking-native` is also an Android module, and 168
+# of its `.dex` files, class files and transform caches were committed — 1.3 MB
+# of build output that `git status` reported as clean, because tracked files
+# are not untracked files. Unanchored, so the next native module is covered
+# before it exists.
+**/android/build/
+**/android/.gradle/
+**/ios/build/
+
 # Local development tokens and the log of the server that seeded them. Both are
 # written by `make round-trip`, both die with that process, and neither belongs
 # anywhere near a commit.

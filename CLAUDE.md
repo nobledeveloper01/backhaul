@@ -147,6 +147,14 @@ At the end of every phase, before the last commit:
 - `git status` should be clean and `make doc-check` green. If `git status` is
   clean *and* a file you expected to ship is missing from `git ls-files`, that
   is the allow-list bug above, not a clean tree.
+- **`git status` cannot see the opposite mistake either.** A tracked file is
+  not an untracked file, so generated output that has been committed once
+  reports clean for ever after — 1.3 MB of `.dex` files sat in
+  `packages/tracking-native/android/build` through every clean status this
+  project reported, because the `android/build/` gitignore rule was anchored to
+  the repository root and that module is not there. `make repo-check` is the
+  gate for it, and gitignore rules for build output are unanchored (`**/`) so
+  the next native module is covered before it exists.
 
 ## Definition of done
 

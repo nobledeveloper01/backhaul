@@ -95,6 +95,28 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**Every `git status` had been lying by omission.**
+
+1.3 MB of Gradle output — `.dex` files, compiled classes, transform caches —
+committed under `packages/tracking-native/android/build`, and a clean tree
+reported every single time. Of course it was: gitignore stops things being
+*added*, and `git status` compares the working tree to the index. Something
+already in the index is invisible to both.
+
+The rule that should have stopped it was `android/build/`. **A gitignore
+pattern containing a slash is anchored to the file it is written in**, so that
+line matches the repository root and nothing below it. `apps/mobile/android` is
+covered by an explicit path; `packages/tracking-native/android` is a second
+Android module and nobody wrote its path down. The patterns are `**/`-prefixed
+now, which covers the third module before it exists.
+
+The generalisation is the useful part: the repository hygiene note already
+warns about a file that should ship being absent from `git ls-files` while the
+tree reports clean. This is the same blind spot in the other direction and the
+note did not have it. `make repo-check` is the gate, and I checked that it
+fires by committing a probe `.dex` and watching the build fail — a guard nobody
+has seen fail is a guard nobody knows works.
+
 **"Powered by React Native", in 17pt, on every cold start.**
 
 The launch screen was the template's: the Xcode target name in 36pt bold and a

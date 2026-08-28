@@ -9,6 +9,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **1.3 MB of build output was in the repository.** 168 `.dex` files, compiled
+  classes and Gradle transform caches from `packages/tracking-native`, and
+  every `git status` for weeks reported a clean tree — because a tracked file
+  is not an untracked file, and gitignore only stops things being added.
+
+  The rule that should have caught them was `android/build/`, which contains a
+  slash and is therefore anchored to the repository root. `apps/mobile` is
+  covered by it; a second Android module is not. The patterns are unanchored
+  now, and `make repo-check` fails the build if generated output is ever
+  committed again — a gate, because the thing that failed here was somebody
+  looking.
+
 - **An icon, and a splash the app draws itself.** The launcher showed React
   Native's stock green robot and the iOS icon slot was empty. The launch screen
   said "BackhaulApp" in 36pt bold with **"Powered by React Native"** along the

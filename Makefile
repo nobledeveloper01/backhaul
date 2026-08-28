@@ -145,8 +145,23 @@ fixtures-check:
 	}
 	@echo "parity fixtures are current"
 
+## repo-check: fail if generated output has been committed
+##   `git status` cannot catch this. A tracked file is not an untracked file,
+##   so 1.3 MB of `.dex` files sat in `packages/tracking-native/android/build`
+##   through every clean status this project ever reported. The gitignore rule
+##   that should have stopped them was anchored to the repository root.
+repo-check:
+	@bad=$$(git ls-files | grep -E '(^|/)(build|bin|obj|dist|\.gradle|\.transforms|node_modules|Pods|DerivedData)/' \
+		| grep -vE '^apps/mobile/android/(gradlew|gradle/)' || true); \
+	if [ -n "$$bad" ]; then \
+		echo "generated output is committed:"; echo "$$bad" | sed 's/^/  /'; \
+		echo "add it to .gitignore and 'git rm -r --cached' it"; \
+		exit 1; \
+	fi
+	@echo "no generated output is tracked"
+
 ## gates: the blocking checks alone
-gates: typecheck app-typecheck lint boundary doc-check fixtures-check
+gates: typecheck app-typecheck lint boundary doc-check fixtures-check repo-check
 
 ## ci: everything
 ##   `round-trip` is last because it is the only step that starts a server, and
@@ -188,6 +203,11 @@ clean:
 	rm -rf server/src/*/bin server/src/*/obj server/tests/*/bin server/tests/*/obj
 	rm -rf apps/mobile/ios/build apps/mobile/android/build apps/mobile/android/app/build
 	rm -rf apps/mobile/android/.gradle
+	@# Every Android module, not only the app's. `packages/tracking-native` is
+	@# one too, and its build output was missed here for the same reason it was
+	@# missed in .gitignore: the paths were written out one at a time.
+	find . -type d \( -name build -o -name .gradle \) -path '*/android/*' \
+		-not -path './node_modules/*' -prune -exec rm -rf {} +
 	find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
 	@echo "cleaned — node_modules left alone; make setup-clean to drop that too"
 
@@ -198,4 +218,4 @@ setup-clean: clean
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
 	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip \
-	round-trip-only domain-build
+	round-trip-only domain-build repo-check
