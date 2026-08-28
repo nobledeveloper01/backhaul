@@ -158,6 +158,29 @@ public sealed class MarketEndpointTests(ApiFactory factory) : IClassFixture<ApiF
     }
 
     [Fact]
+    public async Task A_board_with_no_position_to_rank_from_comes_back_unranked()
+    {
+        // Unranked, not ranked around a guess. The app used to send a
+        // hard-coded Kano — the same two coordinates for every carrier on the
+        // platform, so everybody saw the same board in the same order under a
+        // line telling them their truck was in Kano.
+        var (_, shipper) = await ShipperAsync();
+        await PostAsync(shipper, Guid.NewGuid(), Load());
+
+        var carrier = await Identities.IssueAsync(factory, Role.Carrier);
+        var client = carrier.Carrying(factory.CreateClient());
+
+        var board = await client.GetFromJsonAsync<List<RankedLoadView>>(
+            "/v1/loads?truck=trailer_30t",
+            Json);
+
+        // A carrier whose first trip has not started has no position, and the
+        // board says nothing about distance rather than inventing one.
+        Assert.NotEmpty(board!);
+        Assert.All(board!, row => Assert.Equal(0, row.DeadheadKm));
+    }
+
+    [Fact]
     public async Task A_new_carrier_is_scored_as_unknown_rather_than_as_unreliable()
     {
         // A marketplace that never surfaces a new carrier never gets a second

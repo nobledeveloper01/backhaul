@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The adaptive icon: a colour behind the mark, so the launcher can move the
+    two against each other and mask them to whatever shape the OEM ships.
+
+    No <monochrome>: a themed icon has to work as a single-colour silhouette,
+    and this mark's meaning is the arrow knocked out of the box. Flattened to
+    one colour the arrow disappears and it becomes a plain van. Better to
+    decline the themed slot than to ship a mark that says something else.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

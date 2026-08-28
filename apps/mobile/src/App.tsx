@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from './components/Icon';
 import { OfflineBanner } from './components/OfflineBanner';
+import { Splash, SPLASH_FIELD } from './components/Splash';
 import { Text } from './components/Text';
 import { ThemeProvider, useColours, useTheme } from './design/theme';
 import { radius, space, target } from './design/tokens';
@@ -330,22 +331,54 @@ function Tab({
 function Gate() {
   const { who, ready, api, signIn } = useSession();
   const { chosen, ready: languageReady, setLanguage } = useLanguage();
-  const colours = useColours();
+
+  /*
+    The splash covers the frames of nothing.
+
+    Storage has to answer before either screen can be shown — showing one
+    early flashes the wrong one at somebody — and on the handsets this product
+    is built for that answer, plus the cold start before it, is over a second.
+    That second used to be a blank rectangle in whatever the theme's surface
+    colour happened to be.
+
+    It sits *over* the tree rather than instead of it, so the app mounts and
+    settles behind it and there is nothing left to wait for when it leaves.
+  */
+  const [splashDone, setSplashDone] = useState(false);
+  const settled = ready && languageReady;
 
   // A frame of nothing while storage answers. Showing either screen before
   // then flashes the wrong one at somebody.
-  if (!ready || !languageReady) {
-    return <View style={[styles.root, { backgroundColor: colours.surface }]} />;
+  if (!settled) {
+    return (
+      // The splash's own field, not the theme's surface. The theme is not
+      // known yet — the stored appearance is read from the same storage this
+      // is waiting on — so `colours.surface` is white here even on a phone set
+      // to dark, and the splash's fade-out revealed it for a few frames.
+      <View style={[styles.root, { backgroundColor: SPLASH_FIELD }]}>
+        {splashDone ? null : <Splash ready={false} onDone={() => setSplashDone(true)} />}
+      </View>
+    );
   }
 
   // Before the phone number, before anything. A sign-in screen in the wrong
   // language is the first thing a person cannot get past.
+  const over = splashDone ? null : (
+    <Splash ready={settled} onDone={() => setSplashDone(true)} />
+  );
+
   if (!chosen) {
-    return <LanguageScreen onChoose={setLanguage} />;
+    return (
+      <>
+        <LanguageScreen onChoose={setLanguage} />
+        {over}
+      </>
+    );
   }
 
   if (who === null) {
     return (
+      <>
       <SignInScreen
         onRequestCode={async (phone) => {
           const result = await api.requestCode(phone);
@@ -373,10 +406,17 @@ function Gate() {
           return null;
         }}
       />
+      {over}
+      </>
     );
   }
 
-  return <Shell />;
+  return (
+    <>
+      <Shell />
+      {over}
+    </>
+  );
 }
 
 export default function App() {

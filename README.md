@@ -91,7 +91,7 @@ fails if the rule stays quiet.
 | `stops.ts` | Every stop on a trip, and how long it lasted |
 | `utilisation.ts` | How much of a fleet's driving was paid for |
 
-### `apps/mobile` — React Native 0.87, New Architecture
+### `apps/mobile` — the three faces
 
 Three faces in one binary, consuming the domain package directly. See §3.
 
@@ -106,8 +106,8 @@ Details: [`server/README.md`](server/README.md).
 
 ## 3. The app
 
-React Native 0.87 on the New Architecture, TypeScript strict, consuming
-`@backhaul/domain` directly — the screens render decisions they did not make.
+TypeScript strict, consuming `@backhaul/domain` directly — the screens render
+decisions they did not make.
 
 **Three faces, one binary.** They are not the same product with different data:
 a driver did not choose this app, is paid whether or not they use it, and is

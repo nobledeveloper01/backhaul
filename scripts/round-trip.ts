@@ -499,6 +499,28 @@ async function main(): Promise<void> {
   {
     const board = await api.loads();
     check('the load board reads back', board.ok, board.ok ? '' : board.failure.detail);
+
+    /*
+      Ranked from where the truck actually is, with no position sent.
+
+      The app used to send a hard-coded Kano — the same two coordinates for
+      every carrier on the platform. This driver's trip has real fixes on it by
+      now, so the server has a real position to rank from, and a ranked board
+      is the proof that it found one.
+    */
+    const unpositioned = await api.loads({ truck: 'trailer_30t' });
+    check(
+      'and ranks from the caller\'s own last known position',
+      unpositioned.ok,
+      unpositioned.ok ? '' : unpositioned.failure.detail,
+    );
+    if (unpositioned.ok && unpositioned.value.length > 0) {
+      check(
+        'which is a real distance rather than a default',
+        unpositioned.value.some((row) => row.deadheadKm > 0),
+        String(unpositioned.value[0]?.deadheadKm),
+      );
+    }
     if (board.ok && board.value.length > 0) {
       // The coordinates travel: "going your way" is a claim about exactly
       // these four numbers, and a client that cannot place a load cannot

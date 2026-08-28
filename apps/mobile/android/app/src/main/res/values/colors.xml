@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The product's own accent, from `apps/mobile/src/design/tokens.ts`.
+
+        Repeated here because Android needs it before any JavaScript runs — the
+        launcher icon's background and the window the app opens into are both
+        drawn by the system. Two copies of a colour is a thing that drifts, so
+        `scripts/make-icons.py` reads the same value and this file says where
+        it came from.
+    -->
+    <color name="ic_launcher_background">#1A4FA0</color>
+
+    <!-- The window behind the app while it starts. Same blue, so there is no
+         white flash between the launcher and the splash. -->
+    <color name="launch_background">#1A4FA0</color>
+</resources>

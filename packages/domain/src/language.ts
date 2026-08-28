@@ -187,6 +187,7 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'no_position_to_rank_from'
   | 'location_blocked'
   | 'location_denied'
   | 'notifications_missing'
@@ -715,6 +716,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  no_position_to_rank_from: "No truck has reported yet, so this is not sorted by distance.",
   location_blocked: "Location is switched off for Backhaul. Your trip is not being recorded — turn it on in Settings.",
   location_denied: "Backhaul needs your location to record this trip. Nothing is recorded until you allow it.",
   notifications_missing: "Without a notification, your phone may stop the recording in the background. Your trip may end up with gaps.",
@@ -1231,7 +1233,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   runs_you_make_again: "Runs you make again",
   nothing_on_the_board_for_that: "Nothing on the board for that",
   ranking_note: "Ranked on what the trip pays, how far you run empty to reach it, and how much of the run home it covers.",
-  your_trailer_is_free: "Your trailer is free in Kano. Home is Lagos, 830 km away — empty, that costs you.",
+  your_trailer_is_free: "A leg you run empty is diesel, tyres and a day paid for by nothing.",
   stayed: 'stayed',
   appearance_light: 'Light',
   appearance_dark: 'Dark',
@@ -1327,6 +1329,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  no_position_to_rank_from: "Babu motar da ta ba da rahoto tukuna, don haka ba a jera wannan ta nisa ba.",
   location_blocked: "An kashe wurin zama don Backhaul. Ba a rubuta tafiyarka ba — ka kunna shi a cikin Saituna.",
   location_denied: "Backhaul na buƙatar wurin da kake don rubuta wannan tafiyar. Ba a rubuta komai sai ka yarda.",
   notifications_missing: "Idan babu sanarwa, wayarka na iya dakatar da rubutun a baya. Tafiyarka na iya samun gibi.",
@@ -1843,7 +1846,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   runs_you_make_again: "Tafiye-tafiyen da ka saba yi",
   nothing_on_the_board_for_that: "Babu abin da ke kan allon don haka",
   ranking_note: "An jera su bisa abin da tafiyar ke biya, nisan da za ka yi babu kaya kafin ka kai ga kayan, da kuma yawan hanyar dawowa da yake rufewa.",
-  your_trailer_is_free: "Babbar motarka a Kano ba ta da kaya. Gida Legas ne, nisan kilomita 830 — idan ba ta ɗauki kaya ba, kuɗinka ne.",
+  your_trailer_is_free: "Tafiyar da ka yi babu kaya man fetur ne, tayoyi da ranar aiki da ba a biya ba.",
   stayed: 'ya jima',
   appearance_light: 'Haske',
   appearance_dark: 'Duhu',
@@ -1943,6 +1946,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  no_position_to_rank_from: "Kò sí ọkọ̀ tí ó ti ròyìn síbẹ̀, nítorí náà a kò to èyí ní ìbámu pẹ̀lú ìjìnnà.",
   location_blocked: "A ti pa ipò ibi fún Backhaul. A kò ń kọ ìrìn rẹ sílẹ̀ — tan án nínú Ètò.",
   location_denied: "Backhaul nílò ibi tí o wà láti kọ ìrìn yìí sílẹ̀. A kò ní kọ ohunkóhun títí tí o fi gbà.",
   notifications_missing: "Láìsí ìkìlọ̀, fóònù rẹ lè dá àkọsílẹ̀ dúró lẹ́yìn ìpìlẹ̀. Ìrìn rẹ lè ní àwọn àlàfo.",
@@ -2460,7 +2464,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   runs_you_make_again: "Àwọn ìrìn tí o máa ń tún ṣe",
   nothing_on_the_board_for_that: "Kò sí nǹkan lórí pátákó fún ìyẹn",
   ranking_note: "A tò wọ́n lórí ohun tí ìrìn náà ń san, ìjìnnà tí o máa rìn ní òfìfo kí o tó dé ibẹ̀, àti iye ọ̀nà ìpadàbọ̀ tí ó bò.",
-  your_trailer_is_free: "Ọkọ̀ rẹ kò ní ẹrù ní Kànò. Ilé ni Léégọ̀s, ìjìnnà kílómítà 830 — bí kò bá ní ẹrù, owó rẹ ni.",
+  your_trailer_is_free: "Ìrìn tí o bá rìn ní òfìfo jẹ́ epo, táyà àti ọjọ́ iṣẹ́ tí kò sí ẹni tí ó san.",
   stayed: 'ó lo àkókò',
   appearance_light: 'Ìmọ́lẹ̀',
   appearance_dark: 'Òkùnkùn',
@@ -2559,6 +2563,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  no_position_to_rank_from: "Ọ dịghị ụgbọ akọọla ka ugbu a, ya mere edoghị nke a n’usoro dịka anya.",
   location_blocked: "Agbanyụọla ebe maka Backhaul. Anaghị edekọ njem gị — gbanye ya na Ntọala.",
   location_denied: "Backhaul chọrọ ebe ị nọ iji dekọọ njem a. Anaghị edekọ ihe ọ bụla ruo mgbe ị kwere.",
   notifications_missing: "Ma ọ bụrụ na enweghị ọkwa, ekwentị gị nwere ike ịkwụsị ndekọ n’azụ. Njem gị nwere ike inwe oghere.",
@@ -3075,7 +3080,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   runs_you_make_again: "Njem ị na-emeghachi",
   nothing_on_the_board_for_that: "Ọ dịghị ihe dị na bọọdụ maka nke ahụ",
   ranking_note: "E dobere ha n’ihi ihe njem ahụ na-akwụ, ebe ị ga-aga n’efu iji rute ya, na ole n’ime ụzọ nlọghachi ọ na-ekpuchi.",
-  your_trailer_is_free: "Ụgbọ gị enweghị ibu na Kano. Ụlọ bụ Legos, kilomita 830 site ebe ahụ — ma ọ gwụla, ego gị ka ọ na-efu.",
+  your_trailer_is_free: "Njem ị na-aga na-enweghị ibu bụ mmanụ, taya na ụbọchị ọrụ nke onye ọ bụla na-akwụghị ụgwọ ya.",
   stayed: 'ọ nọrọ',
   appearance_light: 'Ìhè',
   appearance_dark: 'Ọchịchịrị',

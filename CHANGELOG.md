@@ -9,6 +9,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **An icon, and a splash the app draws itself.** The launcher showed React
+  Native's stock green robot and the iOS icon slot was empty. The launch screen
+  said "BackhaulApp" in 36pt bold with **"Powered by React Native"** along the
+  bottom — one is an Xcode target name and the other is an advertisement for a
+  framework, and neither is for the person holding the phone.
+
+  The mark is a truck with a left-pointing arrow knocked out of its cargo box:
+  the load coming *back*, which is the whole product in one shape. Filled
+  rather than stroked, because the app's own icon set is a 1.75px line family
+  that disappears at 40px on a launcher, and a launcher is exactly where this
+  has to survive a busy wallpaper on a 5" screen. No text — "Backhaul" at 40px
+  is four grey pixels. `scripts/make-icons.py` draws every size both platforms
+  want, so the day the accent changes the icon changes with it.
+
+  The splash animates the same sentence: the truck arrives from the left and
+  the arrow lands behind it. It never blocks — it leaves when the app is ready
+  *and* the mark has been up long enough, so it is neither a flash on a fast
+  phone nor a picture holding a ready app back on a slow one. Reduced motion
+  gets the finished mark, held, rather than no splash at all.
+
+  Getting the hand-over clean took four passes, and each one was one frame of
+  the wrong colour: the storyboard's white, the window's white, React's root
+  view's white, and the theme's surface showing through the splash's own
+  fade-out — because the stored appearance is read from the same storage the
+  splash is waiting on. A cold start is now the product's blue from the first
+  frame to the last.
+
 - **Alerts now have somewhere to go.** `alerts.ts` has decided who is told
   what, how loudly and how often since before there was any way to send one —
   exactly one kind is urgent, a push inside quiet hours is held rather than

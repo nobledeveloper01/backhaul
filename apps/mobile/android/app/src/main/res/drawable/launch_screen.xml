@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    What the system draws between the launcher and the first frame.
+
+    Deliberately only the field and the mark — no words, no spinner. It is on
+    screen for a few hundred milliseconds on a good phone and a second or two
+    on the Transsion handsets this product is built for, and anything that
+    animates here is animated by the OS, not by us. The animated part is the
+    app's own splash, which takes over from this one without a colour change.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/launch_background" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/ic_launcher_foreground" />
+    </item>
+</layer-list>

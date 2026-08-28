@@ -95,6 +95,56 @@ it straight put those words under a Yorùbá heading. The enum crosses the
 boundary and the words do not; that rule already existed for levy kinds and
 paper names, and this screen had simply never been held to it.
 
+**"Powered by React Native", in 17pt, on every cold start.**
+
+The launch screen was the template's: the Xcode target name in 36pt bold and a
+framework advertisement along the bottom, on white. The launcher icon was React
+Native's green robot. Nobody had looked at either, because neither is on a
+screen you navigate to — they are the two seconds before the app exists.
+
+The mark is a truck with a left-pointing arrow knocked out of the cargo box.
+Filled, not stroked: the app's icon set is a 1.75px line family and at 40px on
+a launcher a stroke that thin is gone. The first draw put it low and left with
+a band of empty blue above, because I positioned it by arithmetic on the glyph
+coordinates; cropping to the ink and centring that fixed it and survives the
+glyph changing.
+
+**The splash took four passes, and every one was a single frame of the wrong
+colour.** In order:
+
+1. The storyboard's own white background.
+2. `UIWindow.backgroundColor`, which iOS cross-fades the launch screen *into*.
+3. React's root view, which the factory paints white — the window alone left
+   one pale frame in the middle of the fade.
+4. The `!settled` fallback behind the splash, which used the theme's surface —
+   and the theme is read from the same storage the splash is waiting on, so it
+   is white even on a phone set to dark. Visible only during the splash's own
+   fade-out.
+
+Each was invisible until the one before it was fixed. The way I found them was
+bursts of `simctl io screenshot` and a script that printed the pixel at 10%,30%
+— eyeballing a two-second start does not work.
+
+**Two things went wrong on the way that were worth more than the splash.**
+
+Rebuilding by hand with `xcodebuild` left stale codegen, and the app came up
+with a redbox: *Unable to find module for SampleTurboModule* — React Native's
+own sample, listed in RN's generated main-queue-setup provider. I nearly shipped
+a `LogBox.ignoreLogs` for it. It was a stale build; `pod install` regenerated
+the file without it. **An ignore for a symptom would have hidden the cause and
+stayed in the repository forever.**
+
+And a blanket `str.replace` in a patch script added an argument to *two*
+constructors — the ranked load and the ranked bid, which happened to end with
+the same two lines. `dotnet test` passed because it used a cached assembly;
+`make ci` did not. The gate earning its keep.
+
+**A splash is nearly impossible to check by looking**, so it has tests now:
+that it does not leave before the app is ready however long that takes, that it
+does not leave the instant it is either, that reduced motion holds the mark
+rather than skipping it, and that the word on it is the product's and not a
+framework's. Two of those four assertions come from getting it wrong first.
+
 **The alerts engine had been right and idle for weeks.**
 
 `alerts.ts` decides who hears what and how loudly — one urgent kind, a push

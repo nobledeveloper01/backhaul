@@ -36,15 +36,6 @@ const km = (metres: number) => Math.round(metres / 1_000);
  * one that pays four times as much and starts 800 km away, with the sentence
  * explaining why it was passed over, is what makes the choice checkable.
  */
-/**
- * Where the truck is.
- *
- * Hard-coded, and it is the last thing on this screen that is: a carrier's
- * position comes from the tracker on their own phone, and the screen that
- * reads it is the driver face rather than this one. Named so the day it is
- * wired the change is one line.
- */
-const KANO = { lat: 12.0022, lon: 8.592 };
 
 export function ChainScreen({ onBack }: Props) {
   const colours = useColours();
@@ -62,7 +53,10 @@ export function ChainScreen({ onBack }: Props) {
     when they ask "what else could I do with this run".
   */
   const { query: board } = useMine(
-    () => api.loads({ lat: KANO.lat, lon: KANO.lon, truck: 'trailer_30t' }),
+    // No position: the server ranks from where this carrier's truck was last
+    // seen. It used to send a hard-coded Kano, which ranked every carrier's
+    // chain from the same city.
+    () => api.loads({ truck: 'trailer_30t' }),
     [api],
   );
 

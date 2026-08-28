@@ -82,7 +82,14 @@ public sealed record RankedLoadResponse(
     string? Blocked,
     int DeadheadKm,
     int ProgressHomeKm,
-    string Because);
+    string Because,
+    // Whether there was a position to rank from.
+    //
+    // False when the caller gave no coordinates and nothing has ever reported
+    // on their trips. The distances are then zero because nothing was
+    // measured, not because the truck is at the pickup — and a screen that
+    // cannot tell those apart tells a carrier they have no empty running to do.
+    bool Ranked);
 
 public sealed class BidRequest
 {

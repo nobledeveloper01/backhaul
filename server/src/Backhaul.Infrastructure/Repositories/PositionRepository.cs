@@ -118,6 +118,68 @@ public sealed class PositionRepository(BackhaulDbContext db)
     /// trip id is itself information.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// Where this principal's truck was last seen, across all their trips.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// What the load board is ranked from. It used to be ranked from a
+    /// hard-coded Kano, in the app, for every carrier — so every carrier on
+    /// the platform saw the same board in the same order, and the sentence
+    /// above it told them their truck was in Kano.
+    /// </para>
+    /// <para>
+    /// The newest sample on any trip they are a party to, and nothing about
+    /// which truck: a carrier with five is being shown loads near the one that
+    /// reported most recently, which is the best guess available without
+    /// asking them to pick. Null when nothing has ever reported — a carrier
+    /// whose first trip has not started has no position, and an invented one
+    /// would rank the whole board around a place they are not.
+    /// </para>
+    /// <para>
+    /// Cleaned, like every other read of a track: a cell-tower fix 800 km out
+    /// is exactly the kind of sample that would put the board in the wrong
+    /// city, and <c>clean</c> is what already knows to throw it away.
+    /// </para>
+    /// </remarks>
+    public async Task<Position?> LastSeenAsync(
+        Principal principal,
+        CancellationToken ct = default)
+    {
+        // The same filter as every other read on this repository, written out
+        // rather than shared because it is the query EF has to translate.
+        var trips = await db.Trips
+            .Where(trip =>
+                (principal.Role == Role.Driver && trip.DriverId == principal.UserId) ||
+                (principal.Role == Role.Carrier && trip.CarrierId == principal.UserId) ||
+                (principal.Role == Role.Shipper && trip.ShipperId == principal.UserId))
+            .Select(t => t.Id)
+            .ToListAsync(ct);
+
+        if (trips.Count == 0) return null;
+
+        // The last few rather than the last one: `clean` judges a fix against
+        // the one before it, and a single sample has nothing to be judged
+        // against. Twenty is enough for the rejection rules to have an opinion
+        // and small enough to stay one index seek.
+        var recent = await db.Positions
+            .Where(p => trips.Contains(p.TripId))
+            .OrderByDescending(p => p.At)
+            .Take(20)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        if (recent.Count == 0) return null;
+
+        var ordered = recent
+            .OrderBy(p => p.At)
+            .Select(p => new Position(p.Lat, p.Lon, p.Accuracy, p.At, p.Speed))
+            .ToList();
+
+        var cleaned = Geo.Clean(ordered);
+        return cleaned.Kept.Count == 0 ? null : cleaned.Kept[^1];
+    }
+
     public async Task<IReadOnlyList<Position>> ForTripAsync(
         Guid tripId,
         Principal principal,

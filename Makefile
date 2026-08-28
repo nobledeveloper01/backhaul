@@ -112,13 +112,20 @@ server-up:
 ROUND_TRIP_TOKENS := $(CURDIR)/.dev-tokens.json
 ROUND_TRIP_LOG := $(CURDIR)/.round-trip-server.log
 
-round-trip:
+## Builds the domain first: `round-trip.ts` imports the mobile client, which
+## imports `@backhaul/domain` by its package entry rather than its source. After
+## a `make clean` that entry does not exist, and the failure is a module
+## resolution error thirty lines long that says nothing about the missing build.
+round-trip: | domain-build
 	@rm -f "$(ROUND_TRIP_TOKENS)" "$(ROUND_TRIP_LOG)"
 	@BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" $(MAKE) --no-print-directory server-run 		> "$(ROUND_TRIP_LOG)" 2>&1 & echo $$! > "$(CURDIR)/.round-trip-server.pid"
 	@trap 'kill $$(cat "$(CURDIR)/.round-trip-server.pid" 2>/dev/null) 2>/dev/null; 		pkill -f "Backhaul.Api" 2>/dev/null; 		rm -f "$(ROUND_TRIP_TOKENS)" "$(CURDIR)/.round-trip-server.pid"' EXIT; 	for i in $$(seq 1 90); do 		if [ -s "$(ROUND_TRIP_TOKENS)" ] && curl -fsS http://127.0.0.1:5111/healthz >/dev/null 2>&1; then 			break; 		fi; 		sleep 1; 	done; 	if [ ! -s "$(ROUND_TRIP_TOKENS)" ]; then 		echo "the server did not start — its output:"; 		tail -30 "$(ROUND_TRIP_LOG)"; 		exit 1; 	fi; 	BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" node scripts/round-trip.ts
 
+domain-build:
+	@pnpm --filter @backhaul/domain build >/dev/null
+
 ## round-trip-only: the same checks against a server you started yourself
-round-trip-only:
+round-trip-only: | domain-build
 	node scripts/round-trip.ts
 
 ## server-down: stop it and drop its scratch database
@@ -190,4 +197,5 @@ setup-clean: clean
 
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
-	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip
+	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip \
+	round-trip-only domain-build

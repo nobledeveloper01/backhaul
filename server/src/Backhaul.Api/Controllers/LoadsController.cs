@@ -29,10 +29,13 @@ namespace Backhaul.Api.Controllers;
 [ApiController]
 [Route("v1/loads")]
 [Tags("market")]
-public sealed class LoadsController(MarketRepository market, TimeProvider clock) : AuthorisedController
+public sealed class LoadsController(
+    MarketRepository market,
+    PositionRepository positions,
+    TimeProvider clock) : AuthorisedController
 {
     /// <summary>
-    /// The board, ranked for one truck when it says where it is.
+    /// The board, ranked for one truck when there is a position to rank from.
     /// </summary>
     /// <remarks>
     /// Without a position this is the raw board, soonest to expire first. With
@@ -98,7 +101,22 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
             board = board.Where(load => kept.Contains(load.Id)).ToList();
         }
 
-        if (lat is null || lon is null || truck is null)
+        /*
+            Where the truck actually is, when the caller did not say.
+
+            The app used to send a hard-coded Kano — the same coordinates for
+            every carrier on the platform, so everybody saw the same board in
+            the same order and the line above it told them their truck was in
+            Kano. The server knows better: the newest cleaned fix across the
+            trips this caller can see is a real position, and a carrier whose
+            first trip has not started has none, which leaves the board
+            unranked rather than ranked around a place they are not.
+        */
+        var at = lat is { } gotLat && lon is { } gotLon
+            ? new Position(gotLat, gotLon, 10, now)
+            : await positions.LastSeenAsync(Caller, ct);
+
+        if (at is null || truck is null)
         {
             return board.Select(load => Unranked(load, now)).ToList();
         }
@@ -107,7 +125,7 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         if (truckClass is null) return BadRequest($"Unknown truck class '{truck}'.");
 
         var carrier = new Carrier(
-            new Position(lat.Value, lon.Value, 10, now),
+            at,
             now,
             truckClass.Value,
             baseLat is null || baseLon is null
@@ -128,7 +146,8 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
                 scored.Blocked is null ? null : BlockerWire(scored.Blocked.Value),
                 (int)Math.Floor(scored.DeadheadM / 1000 + 0.5),
                 (int)Math.Floor(scored.ProgressHomeM / 1000 + 0.5),
-                scored.Because))
+                scored.Because,
+                true))
             .ToList();
     }
 
@@ -251,6 +270,8 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
                     ? null
                     : (int?)Math.Floor(scored.Reliability.Value * 100 + 0.5),
                 scored.KmToPickup,
+                // No `ranked` flag here, unlike a load: a bid is always ranked
+                // from the load's own pickup, which is known by definition.
                 scored.Because))
             .ToList();
     }
@@ -300,8 +321,14 @@ public sealed class LoadsController(MarketRepository market, TimeProvider clock)
         new Position(row.AtLat, row.AtLon, 10, row.PlacedAt),
         row.PlacedAt);
 
+    /// <summary>A load on the board with nothing measured about it.</summary>
+    /// <remarks>
+    /// The zeroes are "not measured", not "zero kilometres away" — which is
+    /// why the last argument is there. A screen that cannot tell the two apart
+    /// tells a carrier they have no empty running to do.
+    /// </remarks>
     private static RankedLoadResponse Unranked(LoadRecord row, DateTimeOffset now) =>
-        new(ToResponse(row), 0, null, 0, 0, string.Empty);
+        new(ToResponse(row), 0, null, 0, 0, string.Empty, false);
 
     private static LoadResponse ToResponse(LoadRecord row) => new(
         row.Id,

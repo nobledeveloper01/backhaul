@@ -6,4 +6,20 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <!--
+        The window the app opens into.
+
+        Its background is the launch screen, so the first thing drawn is the
+        product's own blue rather than a white rectangle. On a 2 GB Transsion
+        handset the gap between tapping the icon and the first React frame is
+        over a second, and a white flash in the middle of it is the difference
+        between an app that feels slow and one that feels broken.
+
+        `windowDisablePreview` is deliberately *not* set: the preview window is
+        the whole point.
+    -->
+    <style name="LaunchTheme" parent="AppTheme">
+        <item name="android:windowBackground">@drawable/launch_screen</item>
+    </style>
+
 </resources>

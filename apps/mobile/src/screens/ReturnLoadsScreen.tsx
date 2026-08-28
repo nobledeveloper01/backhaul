@@ -11,7 +11,6 @@ import {
   fromNaira,
   quote,
   type LoadFilter,
-  type Position,
   type Blocker,
   type Kobo,
   type TruckClass,
@@ -32,13 +31,6 @@ import { useSession } from '../state/session';
 import { useMine } from '../state/server';
 import type { RankedLoadView } from '../api/client';
 import { BLOCKER_WORDS, whyNoLoads, whyThisFare, whyThisLoad } from '../state/words';
-
-const at = (lat: number, lon: number, when: Date): Position => ({
-  lat,
-  lon,
-  accuracy: 20,
-  at: when,
-});
 
 /**
  * What to take back — the reason this product is called Backhaul.
@@ -69,9 +61,6 @@ export function ReturnLoadsScreen({
   const now = useMemo(() => new Date(), []);
   const { t } = useLanguage();
 
-  const KANO = at(12.0022, 8.592, now);
-  const LAGOS = at(6.455, 3.3841, now);
-
 
   const { api } = useSession();
   const [filter, setFilter] = useState<LoadFilter>(NO_LOAD_FILTER);
@@ -90,12 +79,23 @@ export function ReturnLoadsScreen({
   */
   const { query, refresh } = useMine(
     () =>
+      /*
+        No position, and no home base.
+
+        Both used to be here as constants — a hard-coded Kano and a hard-coded
+        Lagos, the same two for every carrier on the platform, so everybody saw
+        the same board in the same order. The server ranks from where this
+        carrier's truck was actually last seen, and when nothing has reported
+        yet the board comes back unranked rather than ranked around a place
+        they are not.
+
+        The home base is not sent at all, because nothing knows it. A carrier's
+        yard is a real thing this product does not store, and `RankLoads`
+        already answers without one — it drops the "how much of the way home"
+        term rather than inventing a yard to measure from.
+      */
       api.loads({
-        lat: KANO.lat,
-        lon: KANO.lon,
         truck: 'trailer_30t',
-        baseLat: LAGOS.lat,
-        baseLon: LAGOS.lon,
         ...(filter.text.trim() === '' ? {} : { text: filter.text }),
         ...(filter.minimumOffer === null ? {} : { minimumOfferKobo: filter.minimumOffer }),
       }),
@@ -388,9 +388,25 @@ function LoadRow({ scored, rank }: { scored: RankedLoadView; rank: number }) {
       ) : (
         <>
           <View style={styles.metaRow}>
-            <Icon name={homeward ? 'swap' : 'route'} size="sm" colour={colours.textSecondary} />
+            <Icon
+              name={homeward ? 'swap' : 'route'}
+              size="sm"
+              colour={colours.textSecondary}
+              beside="body"
+            />
             <Text variant="body" tone="secondary" style={styles.flex}>
-              {whyThisLoad(scored.deadheadKm * 1_000, scored.progressHomeKm * 1_000, true, t)}
+              {/*
+                Nothing about distance until something has been measured.
+
+                An unranked board carries zeroes because nothing reported, not
+                because the truck is at the pickup — and "0 km empty to the
+                pickup" is a fact about a carrier's position that nobody knows.
+                It says where the load is going instead, which is true either
+                way.
+              */}
+              {scored.ranked
+                ? whyThisLoad(scored.deadheadKm * 1_000, scored.progressHomeKm * 1_000, false, t)
+                : t('no_position_to_rank_from')}
             </Text>
           </View>
 

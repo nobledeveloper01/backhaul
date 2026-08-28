@@ -1713,10 +1713,20 @@ export interface RankedLoadView {
   readonly deadheadKm: number;
   readonly progressHomeKm: number;
   readonly because: string;
+  /**
+   * Whether there was a position to rank from.
+   *
+   * False when nothing has ever reported on this carrier's trips. The
+   * distances are then zero because nothing was measured, not because the
+   * truck is at the pickup — and a screen that cannot tell those apart tells a
+   * carrier they have no empty running to do.
+   */
+  readonly ranked: boolean;
 }
 
 interface RawRankedLoad {
   load: RawLoad;
+  ranked: boolean;
   scorePct: number;
   blocked: string | null;
   deadheadKm: number;
