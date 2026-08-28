@@ -47,6 +47,25 @@ allow-list is by name, a `*` throws at start-up, and the default is empty —
 thought about it. It goes before the bearer middleware, because a preflight is
 an `OPTIONS` with no `Authorization` on it by design.
 
+**Then the trip page found three more, and all three needed a person looking.**
+A stale token rendered as *"Could not reach the server"* with a **Try again**
+that could never work — a dead end dressed as a retry, and the failure a real
+session expiry produces. A 429 from the sign-in limiter, which answers *"A code
+was just sent. Wait a moment before asking for another."* with the milliseconds
+to wait, was replaced by the console with *"The code could not be sent"* —
+throwing away the only part a person can act on. And a trip that had gone quiet
+showed a chip reading `silent`, the raw key, because the word table was a
+partial `Record<string, string>` with a `?? observation` fallback.
+
+That last one is the general lesson: **a lookup table with a fallback is a
+table that never tells you it is missing an entry.** Typed against the union it
+would not have compiled, and the compiler is what should notice when the domain
+grows a sixth observation. It is typed now.
+
+Three defects, three screens, zero automated checks that could have found any
+of them — and every one is the same failure to render what the system already
+knew.
+
 **Every corridor in the list rendered invisible, and nothing caught it.** The
 stylesheet gave `button` the accent fill, and the trip cards are buttons — so
 `Lagos → Kano` was painted in `--on-accent`, which in dark mode is the page

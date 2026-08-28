@@ -21,6 +21,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `tsc` emits ordinary ESM and an import map gives the two workspace packages a
   name.
 
+  A trip opens on its own page — where it is, whether an arrival can be
+  estimated, how much of the track survived cleaning and what happened in
+  order. Every figure comes out of an engine: `observe` says whether it is
+  moving, `eta` gives a range or refuses in its own words, `fixQuality` says
+  how much was discarded. Nothing on that page is decided by the console.
+
   Building it surfaced two things. **The API client was 1,960 lines that import
   nothing from React Native**, sitting in `apps/mobile` where only one face
   could reach it; it is `@backhaul/api` now, because a second implementation of

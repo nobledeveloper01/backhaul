@@ -54,6 +54,5 @@ a deployment that has not thought about it.
 
 ## What it does not do yet
 
-One trip's detail — the corridor, the track, the ETA — is not built; the list
-routes to a hash that nothing renders. Posting a load, reading bids and
-awarding are all shipper actions that belong here and are only on the phone.
+Posting a load, reading bids and awarding are shipper actions that belong here
+and are still only on the phone.

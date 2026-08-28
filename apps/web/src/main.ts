@@ -1,8 +1,15 @@
 import { BackhaulApi, type SignedIn, type TripSummaryView } from '@backhaul/api';
 import {
   NO_TRIP_FILTER,
+  SIGNAL_LOST_AFTER_MS,
+  distanceTravelled,
+  eta,
   filterTrips,
+  fixQuality,
   normalisePhone,
+  observe,
+  silentFor,
+  type Observation,
   type TripSummary,
 } from '@backhaul/domain';
 
@@ -86,7 +93,18 @@ function signIn(): void {
     void api.requestCode(number).then((result) => {
       send.removeAttribute('disabled');
       if (!result.ok) {
-        problem.textContent = 'The code could not be sent. Try again.';
+        /*
+          The server's own sentence, not a generic one.
+
+          It knows whether a code was just sent, whether too many have been
+          asked for, or whether the number is one it cannot reach — and it
+          answers "A code was just sent. Wait a moment before asking for
+          another." with the number of milliseconds to wait. Replacing that
+          with "The code could not be sent" throws away the only part a person
+          can act on, and it is what this screen did until somebody sat in
+          front of it and pressed the button twice.
+        */
+        problem.textContent = result.failure.detail;
         return;
       }
       enterCode(number, result.value.phone);
@@ -164,16 +182,57 @@ function held(who: SignedIn): void {
 
 // --- the list --------------------------------------------------------------
 
-function chip(observation: string): HTMLElement {
-  const words: Record<string, string> = {
+/**
+ * Whether a failure means the session is over, and ends it if so.
+ *
+ * A 401 is not "could not reach the server". The first cut rendered every
+ * failure the same way and offered *Try again* on a token that will never work
+ * again — a dead end dressed as a retry, on the one screen a shipper opens
+ * first. It happened the moment the API restarted and the in-memory store
+ * forgot every token, which is a development accident and exactly what a real
+ * expiry looks like from here.
+ */
+function expired(failure: { kind: string; status?: number }): boolean {
+  if (failure.kind !== 'refused' || failure.status !== 401) return false;
+
+  localStorage.removeItem(TOKEN_KEY);
+  api.setToken(null);
+  signIn();
+  return true;
+}
+
+/**
+ * One chip per `Observation`, and the table is exhaustive on purpose.
+ *
+ * It was a partial `Record<string, string>` with a `?? observation` fallback,
+ * which printed the raw key `silent` on the first trip that went quiet — a
+ * lookup table with a fallback is a table that never tells you it is missing
+ * an entry. Typed against the union, the compiler is what notices when the
+ * domain grows a sixth state.
+ *
+ * **Stale is grey, never red.** A gap in coverage is a fact about Nigerian
+ * network infrastructure, not the driver's fault, and colouring it as an alarm
+ * trains shippers to distrust drivers for something nobody controls. Only
+ * `stalled` — stopped away from anywhere it should be — is amber.
+ */
+function chip(observation: Observation): HTMLElement {
+  const words: Record<Observation, string> = {
     moving: 'Moving',
     stopped: 'Stopped',
-    signal_lost: 'No signal',
+    stalled: 'Not moving',
+    silent: 'No signal',
     unknown: 'No data yet',
   };
-  const tone =
-    observation === 'moving' ? 'moving' : observation === 'stopped' ? 'stopped' : 'stale';
-  return el('span', { class: `chip ${tone}` }, words[observation] ?? observation);
+
+  const tones: Record<Observation, string> = {
+    moving: 'moving',
+    stopped: 'stopped',
+    stalled: 'stopped',
+    silent: 'stale',
+    unknown: 'stale',
+  };
+
+  return el('span', { class: `chip ${tones[observation]}` }, words[observation]);
 }
 
 /**
@@ -223,6 +282,8 @@ function trips(): void {
 
   void api.trips().then((result) => {
     if (!result.ok) {
+      if (expired(result.failure)) return;
+
       // Which of the five it is, not "no trips". A shipper reading "no trips"
       // on a bad connection concludes their trucks are idle.
       render(
@@ -271,16 +332,22 @@ function list(all: readonly TripSummaryView[]): void {
       ...(shown.length === 0
         ? [el('p', { class: 'muted' }, text === '' ? 'Nothing on the road.' : 'Nothing matches that.')]
         : shown.map((trip) => {
-            const observation = trip.tracking
-              ? trip.lastSeenAt === null
+            /*
+              The list route carries an age, not a track, so this is the one
+              place a judgement is made outside an engine — and it is kept to
+              the same threshold `tracking.ts` uses for silence, named here
+              rather than invented. `observe()` needs the recent fixes and the
+              summary does not carry them; asking for every trip's track to
+              draw a list of twenty is what the summary exists to avoid.
+            */
+            const observation: Observation =
+              !trip.tracking || trip.lastSeenAt === null
                 ? 'unknown'
-                : now.getTime() - trip.lastSeenAt.getTime() > 20 * 60_000
-                  ? 'signal_lost'
-                  : 'moving'
-              : 'unknown';
+                : now.getTime() - trip.lastSeenAt.getTime() > SIGNAL_LOST_AFTER_MS
+                  ? 'silent'
+                  : 'moving';
 
-            const tone =
-              observation === 'moving' ? 'moving' : observation === 'unknown' ? 'stale' : 'stopped';
+            const tone = observation === 'moving' ? 'moving' : 'stale';
 
             const card = el(
               'button',
@@ -323,7 +390,196 @@ function list(all: readonly TripSummaryView[]): void {
   draw();
 }
 
+// --- one trip ---------------------------------------------------------------
+
+/**
+ * A trip, as the shipper sees it.
+ *
+ * Six reads, and every figure on the page comes out of an engine rather than
+ * out of this file: `observe` says whether it is moving, `eta` says when it
+ * arrives or refuses to, `fixQuality` says how much of the track survived
+ * cleaning and `distanceTravelled` sums what is left. Nothing here decides
+ * anything.
+ */
+function trip(id: string): void {
+  render(el('h1', {}, 'Trip'), el('p', { class: 'muted' }, 'Loading…'));
+
+  void Promise.all([api.trip(id), api.fixes(id), api.deviation(id)]).then(
+    ([held, track, drift]) => {
+      if (!held.ok) {
+        if (expired(held.failure)) return;
+
+        render(
+          backLink(),
+          el(
+            'div',
+            { class: 'card stack' },
+            el('p', {}, 'Could not open that trip.'),
+            el('p', { class: 'muted' }, held.failure.detail),
+          ),
+        );
+        return;
+      }
+
+      const now = new Date();
+      const cleaned = track.ok ? track.value : { kept: [], dropped: [] };
+      const observation = observe(cleaned.kept, now);
+      const silent = silentFor(cleaned.kept, now);
+
+      /*
+        The destination is the last fix's own position when there is nothing
+        better, which makes the arrival estimate refuse rather than lie. The
+        summary route carries a corridor by name and no coordinates, and
+        inventing one from a town name is the sort of guess this product does
+        not make — it would produce a confident figure from nothing.
+      */
+      const last = cleaned.kept.at(-1);
+      const arrival =
+        last === undefined
+          ? null
+          : eta({
+              track: cleaned.kept,
+              destination: last,
+              now,
+              incidents: [],
+            });
+
+      const events = held.value.history;
+      const state = events.at(-1)?.state ?? held.value.state;
+
+      render(
+        backLink(),
+        el('h1', {}, `BH-${id.slice(-4).toUpperCase()}`),
+
+        el(
+          'div',
+          { class: 'card stack' },
+          el('h2', {}, 'Where it is'),
+          el(
+            'div',
+            { class: 'row' },
+            chip(observation),
+            el('span', { class: 'label' }, silent === null
+              ? 'no data yet'
+              : `last heard ${age(last?.at ?? null, now)}`),
+          ),
+          el('p', { class: 'label' }, `State: ${state.replace('_', ' ')}`),
+        ),
+
+        el(
+          'div',
+          { class: 'card stack' },
+          el('h2', {}, 'Arrival'),
+          arrival === null || arrival.kind === 'unknown'
+            ? el(
+                'p',
+                { class: 'muted' },
+                arrival?.detail ?? 'No positions yet. An estimate appears once the truck starts.',
+              )
+            : el(
+                'div',
+                {},
+                el('p', { class: 'corridor' }, `${clock(arrival.earliest)} – ${clock(arrival.latest)}`),
+                // Never silently. An estimate built from a class average
+                // rather than this truck's own pace says so, beside the
+                // figure — the measured/modelled rule does not stop at the
+                // edge of the engine.
+                arrival.isModelled
+                  ? el('span', { class: 'chip stopped' }, 'Estimated')
+                  : el('span', { class: 'label' }, "from this truck's own pace"),
+              ),
+        ),
+
+        el(
+          'div',
+          { class: 'card stack' },
+          el('h2', {}, 'The track'),
+          el(
+            'p',
+            {},
+            `${Math.round(distanceTravelled(cleaned) / 1000)} km travelled, `
+              + `${cleaned.kept.length} position${cleaned.kept.length === 1 ? '' : 's'} kept`,
+          ),
+          // What was thrown away and why. A driver whose distance is disputed
+          // is owed the answer to "what did you discard?", and a track that is
+          // 40% dropped is a broken phone somebody should replace.
+          el(
+            'p',
+            { class: 'label' },
+            cleaned.dropped.length === 0
+              ? 'Nothing was discarded.'
+              : `${cleaned.dropped.length} discarded — ${Math.round(fixQuality(cleaned) * 100)}% usable`,
+          ),
+          /*
+            `unknown` is not `on_course`, and the difference is the whole
+            point of the field. A console that showed nothing for both would
+            tell a shipper their truck is fine when the truth is that nobody
+            can say — the server's own sentence is rendered rather than a
+            verdict this file invents.
+          */
+          ...(drift.ok && drift.value.kind === 'deviating'
+            ? [
+                el(
+                  'p',
+                  { class: 'chip stopped' },
+                  drift.value.detail ?? 'Moving away from where it is going',
+                ),
+              ]
+            : []),
+        ),
+
+        el(
+          'div',
+          { class: 'card stack' },
+          el('h2', {}, 'What happened'),
+          ...events
+            .slice()
+            .reverse()
+            .map((event) =>
+              el(
+                'p',
+                { class: 'label' },
+                `${event.state.replace('_', ' ')} — ${age(event.at, now)}, by the ${event.actor}`,
+              ),
+            ),
+        ),
+      );
+    },
+  );
+}
+
+function clock(at: Date): string {
+  return at.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function backLink(): HTMLElement {
+  const back = el('button', { class: 'quiet' }, '‹ All trips');
+  back.addEventListener('click', () => {
+    window.location.hash = '';
+  });
+  return back;
+}
+
 // --- start -----------------------------------------------------------------
 
-if (localStorage.getItem(TOKEN_KEY) === null) signIn();
-else trips();
+/**
+ * One route, read from the hash.
+ *
+ * A hash rather than a path because this is a static bundle: a real path needs
+ * the host to rewrite every unknown URL back to `index.html`, and a console
+ * that 404s when somebody refreshes on a trip is worse than one with a `#` in
+ * the address bar.
+ */
+function route(): void {
+  if (localStorage.getItem(TOKEN_KEY) === null) {
+    signIn();
+    return;
+  }
+
+  const match = /^#\/trip\/(.+)$/.exec(window.location.hash);
+  if (match?.[1] !== undefined) trip(match[1]);
+  else trips();
+}
+
+window.addEventListener('hashchange', route);
+route();
