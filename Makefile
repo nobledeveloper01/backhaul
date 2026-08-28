@@ -169,8 +169,16 @@ repo-check:
 	fi
 	@echo "no generated output is tracked"
 
+## wired-check: fail if something is written, tested, and called by nothing
+##   Three times in one project: the capture loop, the permissions module and
+##   the device registration were each complete, each had passing tests, and
+##   each was invoked by nothing. No other gate asks the question — an export
+##   nobody imports type-checks perfectly.
+wired-check:
+	@python3 scripts/wired-check.py
+
 ## gates: the blocking checks alone
-gates: typecheck app-typecheck lint boundary doc-check fixtures-check repo-check
+gates: typecheck app-typecheck lint boundary doc-check fixtures-check repo-check wired-check
 
 ## ci: everything
 ##   `round-trip` is last because it is the only step that starts a server, and
@@ -234,4 +242,4 @@ setup-clean: clean
 .PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
 	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip \
-	round-trip-only domain-build repo-check
+	round-trip-only domain-build repo-check wired-check

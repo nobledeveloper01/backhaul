@@ -187,6 +187,7 @@ export type Phrase =
 
   // --- the fleet --------------------------------------------------------
   | 'utilisation'
+  | 'seal_the_proof'
   | 'not_notifying'
   | 'at_most_once_every'
   | 'role_shipper'
@@ -723,6 +724,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   money_released: 'Money released so far',
   what_is_owed: 'What is owed',
   history: 'History',
+  seal_the_proof: "Sign this off",
   not_notifying: "Not notifying",
   at_most_once_every: "at most once every",
   role_shipper: "shipper",
@@ -1343,6 +1345,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   money_released: 'Kuɗin da aka fitar',
   what_is_owed: 'Abin da ake bin ka',
   history: 'Tarihi',
+  seal_the_proof: "Kammala wannan",
   not_notifying: "Ba a sanarwa",
   at_most_once_every: "sau ɗaya kawai a kowane",
   role_shipper: "mai kaya",
@@ -1967,6 +1970,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   money_released: 'Owó tí a ti tú sílẹ̀',
   what_is_owed: 'Ohun tí a jẹ ọ',
   history: 'Ìtàn',
+  seal_the_proof: "Fọwọ́ sí i pé ó parí",
   not_notifying: "A kò ń kìlọ̀",
   at_most_once_every: "ẹ̀ẹ̀kan ṣoṣo ní gbogbo",
   role_shipper: "olówó ẹrù",
@@ -2591,6 +2595,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   money_released: 'Ego ewepụtala',
   what_is_owed: 'Ihe a ji gị',
   history: 'Akụkọ',
+  seal_the_proof: "Mechaa nke a",
   not_notifying: "Anaghị akọ",
   at_most_once_every: "naanị otu ugboro kwa",
   role_shipper: "onye nwe ngwaahịa",

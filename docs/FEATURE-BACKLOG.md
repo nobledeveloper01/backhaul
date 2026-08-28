@@ -108,6 +108,32 @@ when android-37 reaches the stable channel.
 
 ---
 
+### F10 — Three routes the app can read but not write
+
+Found by `make wired-check`, which fails when a client method has no caller.
+All three are the same shape: a screen that shows a thing and cannot act on it.
+
+- **`issueShare`** — the share screen lists a trip's links and revokes them,
+  and has no way to create one. A shipper can turn sharing off and never on.
+- **`markRead`** — a thread is read and never marked read, so the unread count
+  is whatever it was when the message arrived.
+- **`resolveIncident`** — an incident can be reported and never closed. It sits
+  open on the trip for ever, and `observe()` treats an open incident as a trip
+  that needs a look.
+
+Each is a screen affordance rather than a technical problem: the route is
+built, parity-tested where it shares a rule, and proven over the wire by the
+round-trip. They carry a `wired-check:` reason in `client.ts` pointing here, so
+the gate passes and the gap is a written decision rather than an oversight.
+
+`sealDelivery` was a fourth until the same check found it. That one was not a
+missing affordance — the proof screen showed "signed for" from a *local*
+readiness check while the server's delivery was never sealed, and nothing
+downstream of a sealed proof could fire: the earnings statement skips a
+delivered trip with no sealed proof, and the escrow milestone never releases.
+
+---
+
 ## Blocked on a decision
 
 ### F10 — A shipper ladder

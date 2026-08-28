@@ -256,14 +256,17 @@ export class BackhaulApi {
     return result;
   }
 
+  // wired-check: the session comes back from `verifyCode`; re-reading it is for a client that lost its copy.
   async me(): Promise<ApiResult<SignedIn>> {
     return this.request<SignedIn>('GET', '/v1/me');
   }
 
+  // wired-check: no screen asks for a name yet. Sign-in takes a phone number and nothing else.
   async setName(name: string): Promise<ApiResult<null>> {
     return this.request<null>('PUT', '/v1/me/name', { name });
   }
 
+  // wired-check: ops and the Swagger page, not a screen. A driver has no use for a store type.
   async health(): Promise<ApiResult<{ status: string; store: string; durable: boolean }>> {
     return this.request('GET', '/healthz');
   }
@@ -275,6 +278,7 @@ export class BackhaulApi {
    * against — the caller must be one of them or the server refuses. See
    * ADR-0008.
    */
+  // wired-check: the app never creates a trip. A shipper writes one down elsewhere; this face tracks it.
   async openTrip(
     id: string,
     parties: TripParties,
@@ -371,6 +375,7 @@ export class BackhaulApi {
     });
   }
 
+  // wired-check: the trip screen reads `fixes()`, which carries what was thrown away as well as what was kept.
   async track(tripId: string): Promise<ApiResult<TrackView>> {
     return this.request<TrackView>('GET', `/v1/tracking/trip/${tripId}/track`);
   }
@@ -382,6 +387,7 @@ export class BackhaulApi {
    * exists in readable form anywhere. A caller that discards it cannot get it
    * back and has to issue another. See ADR-0010.
    */
+  // wired-check: GAP — the share screen lists and revokes but cannot create a link. See F10 in docs/FEATURE-BACKLOG.md.
   async issueShare(
     tripId: string,
     scope: ShareScope,
@@ -435,6 +441,7 @@ export class BackhaulApi {
     );
   }
 
+  // wired-check: GAP — the thread is read and never marked read. See F10 in docs/FEATURE-BACKLOG.md.
   async markRead(tripId: string, by: string): Promise<ApiResult<null>> {
     return this.request<null>('POST', `/v1/trips/${tripId}/messages/read`, { by });
   }
@@ -467,6 +474,7 @@ export class BackhaulApi {
     );
   }
 
+  // wired-check: GAP — an incident can be reported and never closed. See F10 in docs/FEATURE-BACKLOG.md.
   async resolveIncident(tripId: string, incidentId: string): Promise<ApiResult<null>> {
     return this.request<null>('POST', `/v1/trips/${tripId}/incidents/${incidentId}/resolve`);
   }
@@ -588,6 +596,7 @@ export class BackhaulApi {
     return map(await this.request<RawPack>('GET', `/v1/trips/${tripId}/dispute`), toPack);
   }
 
+  // wired-check: the trip screen computes it from the track it already has rather than asking twice.
   async deviation(tripId: string): Promise<ApiResult<DeviationView>> {
     return this.request<DeviationView>('GET', `/v1/trips/${tripId}/deviation`);
   }
@@ -602,6 +611,7 @@ export class BackhaulApi {
     return this.request<CancellationView>('GET', `/v1/trips/${tripId}/cancellation?by=${by}`);
   }
 
+  // wired-check: no screen shows a carrier their cost model yet.
   async costs(
     tripId: string,
     options: {
@@ -621,6 +631,7 @@ export class BackhaulApi {
     return this.request<CostsView>('GET', `/v1/trips/${tripId}/costs?${query.toString()}`);
   }
 
+  // wired-check: commercial terms are agreed off the platform for now. No screen collects them.
   async saveTerms(tripId: string, terms: TermsDraft): Promise<ApiResult<TermsView>> {
     return map(
       await this.request<RawTerms>('PUT', `/v1/trips/${tripId}/terms`, {
@@ -703,10 +714,12 @@ export class BackhaulApi {
     );
   }
 
+  // wired-check: lanes are read-only in the app. Creating one has no screen yet.
   async saveLane(laneId: string, lane: LaneDraft): Promise<ApiResult<LaneView>> {
     return map(await this.request<RawLane>('PUT', `/v1/me/lanes/${laneId}`, lane), toLane);
   }
 
+  // wired-check: the lanes screen lists; recording a run against a lane has no screen yet.
   async recordLaneRun(laneId: string, paidKobo: number, at: Date): Promise<ApiResult<LaneView>> {
     return map(
       await this.request<RawLane>('POST', `/v1/me/lanes/${laneId}/runs`, {
@@ -790,6 +803,7 @@ export class BackhaulApi {
     );
   }
 
+  // wired-check: the bids screen is the shipper reading and awarding. A carrier bidding has no screen yet.
   async placeBid(
     loadId: string,
     bid: { readonly amountKobo: number; readonly atLat: number; readonly atLon: number },
@@ -845,6 +859,7 @@ export class BackhaulApi {
 
   // --- pricing ------------------------------------------------------------
 
+  // wired-check: the posting screen prices locally from `pricing.ts` — same engine, same answer, no round trip while somebody types.
   async quote(truck: string, distanceMetres: number): Promise<ApiResult<QuoteView>> {
     return this.request<QuoteView>(
       'GET',

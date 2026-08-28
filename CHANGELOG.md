@@ -76,6 +76,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   register a device until it has a token to register, and that needs a native
   module this build does not have.
 
+- **A proof of delivery was never actually sealed.** The screen ran the
+  domain's `seal()` — which answers *is this enough* — and rendered "signed
+  for" the moment it passed. `api.sealDelivery` was called by nothing. So a
+  driver finished a handover, the screen said it was done, and the server's
+  delivery had no seal on it: the earnings statement skips a delivered trip
+  with no sealed proof, and the escrow milestone that depends on one never
+  releases. The screen now shows the *server's* state and offers sealing as a
+  deliberate action, because it is a one-way door.
+
 - **Notifications are delivered, not just decided.** The policy, the
   dispatcher, the device registry, the sender seam and their tests were all
   built — and `registerDevice` was never called by anything. So there were no

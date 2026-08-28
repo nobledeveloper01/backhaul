@@ -307,6 +307,30 @@ no gate. It refuses to start when the port is held now, and says which of the
 two things to do about it. Checked by holding the port and watching it refuse —
 the same discipline as `repo-check`, and for the same reason.
 
+**So I wrote the gate, and it immediately found a fourth.**
+
+After the notification layer I noted that "does anything call this" is a
+question none of our gates ask, and that the fourth instance was probably
+already in the code. `scripts/wired-check.py` is that question: a client method
+with no caller outside `client.ts`, or a seam under `native/` and `state/` that
+only tests import.
+
+It found fifteen client methods on its first run. Twelve are routes the app has
+no screen for yet and now carry a written reason. Three are real gaps, recorded
+as F10. The fourth was `sealDelivery`, and it was the one worth building the
+gate for: the proof screen ran the domain's `seal()` — *is this enough* — and
+rendered "signed for" when it passed, while the server's delivery was never
+sealed. Everything downstream hangs off that seal. A driver would have finished
+the handover, seen it confirmed, and not been paid.
+
+**And the gate lied to me the first time I checked it.** I removed one
+exemption to watch it fail, and it passed — because `exempted_above` looked
+back five hundred characters and split on blank lines, so a method inherited
+its neighbour's reason. The check now requires the marker directly above the
+declaration, and removing a reason does fail the build. This is the second time
+today that proving a guard fires has been worth more than writing it; the first
+was `repo-check`.
+
 **The third thing this week that was built, tested, and never called.**
 
 The notification layer, in full: `alerts.ts` deciding who hears what and how

@@ -80,8 +80,11 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
     async () =>
       map(await api.delivery(trip.id), (view) =>
         view === null
-          ? { ...captured, photoIds: [], signature: null }
+          ? { delivery: { ...captured, photoIds: [], signature: null }, sealedAt: null, canSeal: false }
           : {
+            sealedAt: view.sealedAt,
+            canSeal: view.canSeal,
+            delivery: {
               tripId: trip.id,
               at: view.at,
               photoIds: view.photoIds,
@@ -107,16 +110,20 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                       photoIds: [],
                     },
             },
+          },
       ),
-    () => ({ ...captured, photoIds: [], signature: null }),
+    () => ({
+      delivery: { ...captured, photoIds: [], signature: null },
+      sealedAt: null,
+      canSeal: false,
+    }),
     [api, trip.id, captured],
   );
 
-  const delivery: Delivery = query.state === 'ready' ? query.value : {
-    ...captured,
-    photoIds: [],
-    signature: null,
-  };
+  const delivery: Delivery =
+    query.state === 'ready'
+      ? query.value.delivery
+      : { ...captured, photoIds: [], signature: null };
 
   /** Saves the draft and re-reads it, so the screen shows what the server holds. */
   const save = (next: Delivery) => {
@@ -134,7 +141,24 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
       .then(() => refresh());
   };
 
-  const sealed = seal(delivery);
+  /*
+    Whether the server holds a sealed proof, and whether it would accept one.
+
+    `seal()` answers "is this enough" from what is on the screen. It is not the
+    same question as "has this been sealed", and the screen was rendering the
+    first as though it were the second: a driver saw "signed for" the moment
+    the local check passed, and `api.sealDelivery` was never called by
+    anything. Nothing downstream fires without it — a delivered trip with no
+    sealed proof has no date to hang the pay on, so the earnings statement
+    skips it and the escrow milestone never releases.
+
+    The walkthrough has no server to ask, so it keeps the local answer. That is
+    the same split as every other screen here.
+  */
+  const held = query.state === 'ready' && trip.live ? query.value : null;
+  const sealedAt = held?.sealedAt ?? null;
+  const sealed = sealedAt !== null ? { ok: true as const } : seal(delivery);
+  const canSeal = held === null ? seal(delivery).ok : held.canSeal;
   const away = capturedNear(delivery, destination);
   const far = capturedAwayFromDestination(delivery, destination);
 
@@ -180,6 +204,28 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                   {sealed.ok ? t('signed_for') : sealed.detail}
                 </Text>
               </View>
+
+              {/*
+                The one-way door, and only when the server would open it.
+
+                Sealing is the moment the proof stops being editable, which is
+                why it is a deliberate action rather than something that
+                happens when the last photograph lands. Once it is through, the
+                button is gone — there is nothing to press twice.
+              */}
+              {trip.live && sealedAt === null && canSeal ? (
+                <Press
+                  onPress={() => {
+                    void api.sealDelivery(trip.id).then(() => refresh());
+                  }}
+                  accessibilityLabel={t('seal_the_proof')}
+                  style={[styles.seal, { backgroundColor: colours.accent }]}
+                >
+                  <Text variant="title" style={{ color: colours.onAccent }}>
+                    {t('seal_the_proof')}
+                  </Text>
+                </Press>
+              ) : null}
 
               <View style={styles.capture}>
                 <Press
@@ -325,6 +371,13 @@ const styles = StyleSheet.create({
     padding: space.sm,
   },
   gapTop: { marginTop: space.md },
+  seal: {
+    minHeight: target.driver,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: space.md,
+  },
   line: {
     flexDirection: 'row',
     alignItems: 'flex-start',
