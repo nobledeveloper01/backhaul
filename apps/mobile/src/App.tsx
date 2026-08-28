@@ -30,6 +30,7 @@ import { ReturnLoadsScreen } from './screens/ReturnLoadsScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
 import { ShareScreen } from './screens/ShareScreen';
 import { TripDetailScreen } from './screens/TripDetailScreen';
+import { TrackTripScreen } from './screens/TrackTripScreen';
 import { TripsScreen } from './screens/TripsScreen';
 import { VehiclesScreen } from './screens/VehiclesScreen';
 import { VerificationScreen } from './screens/VerificationScreen';
@@ -113,7 +114,10 @@ function Shell() {
 
       <View style={styles.body}>
         {current.name === 'trips' ? (
-          <TripsScreen onOpen={(trip) => push({ name: 'trip', trip })} />
+          <TripsScreen
+            onOpen={(trip) => push({ name: 'trip', trip })}
+            onTrack={() => push({ name: 'track' })}
+          />
         ) : null}
         {current.name === 'trip' ? (
           <TripDetailScreen
@@ -165,6 +169,7 @@ function Shell() {
             onPairs={() => push({ name: 'pairs' })}
           />
         ) : null}
+        {current.name === 'track' ? <TrackTripScreen onBack={pop} /> : null}
         {current.name === 'post' ? <PostLoadScreen onBack={pop} /> : null}
         {current.name === 'chain' ? <ChainScreen onBack={pop} /> : null}
         {current.name === 'lanes' ? (

@@ -313,6 +313,20 @@ export type Phrase =
   | 'under_answers'
   | 'answers'
   | 'optional'
+  | 'track_a_trip'
+  | 'arranged_anywhere'
+  | 'where_it_loads'
+  | 'where_it_unloads'
+  | 'the_drivers_number'
+  | 'the_carriers_number'
+  | 'the_shippers_number'
+  | 'what_it_is_carrying'
+  | 'start_tracking_it'
+  | 'starting_to_track'
+  | 'could_not_start_tracking'
+  | 'not_a_number_this_can_reach'
+  | 'it_is_on_your_list_now'
+  | 'walkthrough_opens_no_trips'
   | 'add_a_note'
   | 'the_route'
   | 'the_cargo'
@@ -865,6 +879,20 @@ export const EN: Readonly<Record<Phrase, string>> = {
   under_answers: 'Under',
   answers: 'answers',
   optional: 'Optional',
+  track_a_trip: "Track a trip",
+  arranged_anywhere: "For a load you agreed somewhere else. No board, no bids — just the truck, followed from here.",
+  where_it_loads: "Where it loads",
+  where_it_unloads: "Where it unloads",
+  the_drivers_number: "The driver's number",
+  the_carriers_number: "The carrier's number",
+  the_shippers_number: "The shipper's number",
+  what_it_is_carrying: "What it is carrying",
+  start_tracking_it: "Start tracking it",
+  starting_to_track: "Starting…",
+  could_not_start_tracking: "The trip was not opened. Nothing was sent to anybody. Try again.",
+  not_a_number_this_can_reach: "That is not a number this can reach.",
+  it_is_on_your_list_now: "It is on your list of trips now.",
+  walkthrough_opens_no_trips: "The walkthrough cannot open a real trip. Sign in to open one.",
   add_a_note: 'Add a note',
   the_route: 'Route',
   the_cargo: 'Cargo',
@@ -1505,6 +1533,20 @@ export const HA: Readonly<Record<Phrase, string>> = {
   under_answers: 'Ƙasa da',
   answers: 'amsoshi',
   optional: 'Na zaɓi',
+  track_a_trip: "Bi diddigin tafiya",
+  arranged_anywhere: "Don kaya da ka yarda a wani wuri. Ba allo, ba tayi — motar kawai, ana bi daga nan.",
+  where_it_loads: "Inda ake ɗaukar kaya",
+  where_it_unloads: "Inda ake saukar da kaya",
+  the_drivers_number: "Lambar direba",
+  the_carriers_number: "Lambar mai mota",
+  the_shippers_number: "Lambar mai kaya",
+  what_it_is_carrying: "Abin da take ɗauke da shi",
+  start_tracking_it: "Fara bi",
+  starting_to_track: "Ana farawa…",
+  could_not_start_tracking: "Ba a buɗe tafiyar ba. Ba a aika wa kowa ba. Sake gwadawa.",
+  not_a_number_this_can_reach: "Wannan ba lamba ce da za a iya kaiwa ba.",
+  it_is_on_your_list_now: "Yanzu tana cikin jerin tafiye-tafiyenka.",
+  walkthrough_opens_no_trips: "Nuni ba zai iya buɗe tafiya ta gaskiya ba. Shiga don buɗe ɗaya.",
   add_a_note: 'Ƙara bayani',
   the_route: 'Hanya',
   the_cargo: 'Kaya',
@@ -2149,6 +2191,20 @@ export const YO: Readonly<Record<Phrase, string>> = {
   under_answers: 'Kò tó',
   answers: 'ìdáhùn',
   optional: 'Kò dandan',
+  track_a_trip: "Tọpa ìrìn àjò",
+  arranged_anywhere: "Fún ẹrù tí o ti gbà níbòmíràn. Kò sí pátákó, kò sí ìdíyelé — ọkọ̀ nìkan, tí a ń tọ̀ láti ibí.",
+  where_it_loads: "Ibi tí a ti kó o",
+  where_it_unloads: "Ibi tí a ó ti sọ ọ́ kalẹ̀",
+  the_drivers_number: "Nọ́mbà awakọ̀",
+  the_carriers_number: "Nọ́mbà onítọ̀ọ̀kọ̀",
+  the_shippers_number: "Nọ́mbà oníṣòwò",
+  what_it_is_carrying: "Ohun tí ó ń gbé",
+  start_tracking_it: "Bẹ̀rẹ̀ sí tọ̀ ọ́",
+  starting_to_track: "Ń bẹ̀rẹ̀…",
+  could_not_start_tracking: "A kò ṣí ìrìn àjò náà. A kò fi ohunkóhun ránṣẹ́ sí ẹnikẹ́ni. Gbìyànjú lẹ́ẹ̀kansi.",
+  not_a_number_this_can_reach: "Ìyẹn kì í ṣe nọ́mbà tí èyí lè dé.",
+  it_is_on_your_list_now: "Ó ti wà nínú àkójọ ìrìn àjò rẹ báyìí.",
+  walkthrough_opens_no_trips: "Àpẹẹrẹ kò lè ṣí ìrìn àjò gidi. Wọlé láti ṣí ọ̀kan.",
   add_a_note: 'Fi àkọsílẹ̀ kún un',
   the_route: 'Ọ̀nà',
   the_cargo: 'Ẹrù',
@@ -2793,6 +2849,20 @@ export const IG: Readonly<Record<Phrase, string>> = {
   under_answers: 'N’okpuru',
   answers: 'azịza',
   optional: 'Ọ dịghị mkpa',
+  track_a_trip: "Soro njem",
+  arranged_anywhere: "Maka ibu i kwekọrịtara n'ebe ọzọ. Enweghị bọọdụ, enweghị ọnụahịa — naanị ụgbọala, a na-eso ya site ebe a.",
+  where_it_loads: "Ebe a na-ebu ya",
+  where_it_unloads: "Ebe a ga-ebudata ya",
+  the_drivers_number: "Nọmba onye ọkwọ ụgbọala",
+  the_carriers_number: "Nọmba onye nwe ụgbọala",
+  the_shippers_number: "Nọmba onye nwe ngwongwo",
+  what_it_is_carrying: "Ihe ọ na-ebu",
+  start_tracking_it: "Malite iso ya",
+  starting_to_track: "Na-amalite…",
+  could_not_start_tracking: "Emepeghị njem ahụ. E zigaghị onye ọ bụla ihe. Nwaa ọzọ.",
+  not_a_number_this_can_reach: "Nke ahụ abụghị nọmba nke a nwere ike iru.",
+  it_is_on_your_list_now: "Ọ dị na ndepụta njem gị ugbu a.",
+  walkthrough_opens_no_trips: "Ihe ngosi apụghị imepe ezigbo njem. Banye iji mepe otu.",
   add_a_note: 'Tinye ihe odide',
   the_route: 'Ụzọ',
   the_cargo: 'Ngwaahịa',

@@ -251,8 +251,8 @@ public sealed class MoneyEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
         var driver = await Identities.IssueAsync(factory, Role.Driver);
         var client = driver.Carrying(factory.CreateClient());
 
-        var proved = await OpenAsync(client, driver.UserId);
-        var claimed = await OpenAsync(client, driver.UserId);
+        var proved = await OpenAsync(client);
+        var claimed = await OpenAsync(client);
 
         foreach (var trip in new[] { proved, claimed })
         {
@@ -314,10 +314,10 @@ public sealed class MoneyEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
     {
         var driver = await Identities.IssueAsync(factory, Role.Driver);
         var client = driver.Carrying(factory.CreateClient());
-        return (await OpenAsync(client, driver.UserId), client);
+        return (await OpenAsync(client), client);
     }
 
-    private static async Task<Guid> OpenAsync(HttpClient client, Guid driverId)
+    private static async Task<Guid> OpenAsync(HttpClient client)
     {
         var trip = Guid.NewGuid();
 
@@ -325,9 +325,8 @@ public sealed class MoneyEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId,
-                carrierId = Guid.NewGuid(),
-                shipperId = Guid.NewGuid(),
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

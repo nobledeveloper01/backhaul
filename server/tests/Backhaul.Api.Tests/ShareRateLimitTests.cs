@@ -67,7 +67,7 @@ public sealed class ShareRateLimitTests(ThrottledApiFactory factory)
         // alone.
         var shipper = await Identities.IssueAsync(factory.Services, Role.Shipper);
         var client = shipper.Carrying(factory.CreateClient());
-        var trip = await OpenAsync(client, shipper.UserId);
+        var trip = await OpenAsync(client);
 
         var mine = await client.GetAsync($"/v1/trips/{trip}");
         Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
@@ -77,7 +77,7 @@ public sealed class ShareRateLimitTests(ThrottledApiFactory factory)
     {
         var shipper = await Identities.IssueAsync(factory.Services, Role.Shipper);
         var client = shipper.Carrying(factory.CreateClient());
-        var trip = await OpenAsync(client, shipper.UserId);
+        var trip = await OpenAsync(client);
 
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}/share",
@@ -88,16 +88,15 @@ public sealed class ShareRateLimitTests(ThrottledApiFactory factory)
         return issued!.Token;
     }
 
-    private static async Task<Guid> OpenAsync(HttpClient client, Guid shipperId)
+    private static async Task<Guid> OpenAsync(HttpClient client)
     {
         var trip = Guid.NewGuid();
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId,
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

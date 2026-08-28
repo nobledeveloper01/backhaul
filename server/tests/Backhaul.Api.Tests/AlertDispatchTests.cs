@@ -140,9 +140,8 @@ public sealed class AlertDispatchTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId = shipper.UserId,
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

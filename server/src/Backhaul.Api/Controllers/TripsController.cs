@@ -6,24 +6,37 @@ using Backhaul.Domain.Market;
 using Backhaul.Domain.Trips;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backhaul.Api.Controllers;
 
 [ApiController]
 [Route("v1/trips")]
 [Tags("trips")]
-public sealed class TripsController(TripRepository trips, TimeProvider clock)
+public sealed class TripsController(TripRepository trips, SignInRepository accounts, TimeProvider clock)
     : AuthorisedController
 {
     /// <summary>Open a trip.</summary>
     /// <remarks>
+    /// <para>
     /// The client supplies the id. Trips are created on a phone that may be
     /// offline for days, so the identifier cannot come from the server without
     /// making trip creation require a network — which is exactly what the
     /// product promises it does not.
+    /// </para>
+    /// <para>
+    /// This is the wedge: a trip agreed somewhere else — on WhatsApp, on a
+    /// call, in a yard — tracked here, with no marketplace involved. The
+    /// parties come as phone numbers because that is what the person who
+    /// agreed it has. See ADR-0016 for why there is no lookup to turn one into
+    /// an identifier, and why this endpoint answers the same way whether it
+    /// found an account or made one.
+    /// </para>
     /// </remarks>
     [HttpPost("{tripId:guid}")]
+    [EnableRateLimiting(RateLimits.OpenTrip)]
     [ProducesResponseType<TripResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TripResponse>> Open(
         Guid tripId,
@@ -40,11 +53,75 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
             return Conflict("A trip with this id already exists.");
         }
 
-        var parties = new TripParties(body.DriverId, body.CarrierId, body.ShipperId);
+        // The caller's own slot comes from their token, never from the body.
+        // A trip you would not be able to see is a trip you cannot open, and
+        // filling your own slot from a number you typed is how you create a
+        // record and immediately lose it.
+        var mine = Caller.Role switch
+        {
+            Role.Driver => nameof(body.DriverPhone),
+            Role.Carrier => nameof(body.CarrierPhone),
+            Role.Shipper => nameof(body.ShipperPhone),
+            _ => null,
+        };
 
-        // A trip you would not be able to see is a trip you cannot open. It is
-        // otherwise possible to create a record and immediately lose it.
-        if (!parties.Admit(Caller))
+        if (mine is null)
+        {
+            return BadRequest("Only a driver, a carrier or a shipper can open a trip.");
+        }
+
+        var given = new Dictionary<string, string?>
+        {
+            [nameof(body.DriverPhone)] = body.DriverPhone,
+            [nameof(body.CarrierPhone)] = body.CarrierPhone,
+            [nameof(body.ShipperPhone)] = body.ShipperPhone,
+        };
+
+        // Your own slot may be left out or filled in, but a number that
+        // disagrees with your token is refused rather than silently
+        // overwritten — that is somebody about to open a trip for a person
+        // they are not, and they would be left reading a trip they believe
+        // names somebody else. Looked up without creating: a number nobody
+        // holds must not mint an account on its way to being rejected, and
+        // the only fact this can yield is whether the number is the caller's
+        // own, which is not the lookup ADR-0016 forbids.
+        if (given[mine] is { } own)
+        {
+            var normalised = Otp.NormalisePhone(own);
+            if (normalised is null || await accounts.FindAsync(normalised, ct) != Caller.UserId)
+            {
+                return BadRequest($"{Lower(mine)} is not the number you signed in with.");
+            }
+        }
+
+        var parties = new Dictionary<string, Guid> { [mine] = Caller.UserId };
+        var now = clock.GetUtcNow();
+
+        foreach (var (slot, raw) in given)
+        {
+            if (slot == mine) continue;
+
+            var phone = raw is null ? null : Otp.NormalisePhone(raw);
+            if (phone is null)
+            {
+                return BadRequest(
+                    raw is null
+                        ? $"{Lower(slot)} is required — a trip has three parties."
+                        : $"{Lower(slot)} is not a phone number this can reach.");
+            }
+
+            parties[slot] = await accounts.PartyAsync(phone, now, ct);
+        }
+
+        var trip = new TripParties(
+            parties[nameof(body.DriverPhone)],
+            parties[nameof(body.CarrierPhone)],
+            parties[nameof(body.ShipperPhone)]);
+
+        // Belt and braces: `mine` is filled from the token, so this cannot
+        // fail today. It is the invariant every later read depends on and it
+        // costs one comparison to keep saying so out loud.
+        if (!trip.Admit(Caller))
         {
             return BadRequest("You must be one of the three parties on a trip you open.");
         }
@@ -67,13 +144,21 @@ public sealed class TripsController(TripRepository trips, TimeProvider clock)
         var record = await trips.CreateAsync(
             tripId,
             new Corridor(body.Origin, body.Destination),
-            parties,
+            trip,
             accepted.Event,
             clock.GetUtcNow(),
             ct);
 
         return CreatedAtAction(nameof(Get), new { tripId }, ToResponse(record));
     }
+
+    /// <summary>`DriverPhone` as the caller wrote it in the body.</summary>
+    /// <remarks>
+    /// The message names the field the sender can fix. `nameof` gives the C#
+    /// spelling and the wire is camelCase, and an error naming a field that is
+    /// not in the request the caller sent is worse than one naming none.
+    /// </remarks>
+    private static string Lower(string slot) => char.ToLowerInvariant(slot[0]) + slot[1..];
 
     /// <summary>A trip and its full history.</summary>
     /// <summary>

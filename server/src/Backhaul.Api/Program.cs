@@ -75,6 +75,12 @@ var sharePerHour = builder.Configuration.GetValue("RateLimits:PublicSharePerHour
 // walking through a range of numbers.
 var authPerHour = builder.Configuration.GetValue("RateLimits:PublicAuthPerHour", 20);
 
+// Per account, not per address, because this caller is authenticated. Twenty
+// an hour: a busy shipper opens a handful of trips in a morning, and the
+// number that matters is not how many trips are plausible but how many
+// strangers' phones one account can make ring. See ADR-0016.
+var openTripPerHour = builder.Configuration.GetValue("RateLimits:OpenTripPerHour", 20);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -102,6 +108,21 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = authPerHour,
+                Window = TimeSpan.FromHours(1),
+                QueueLimit = 0,
+            }));
+
+    options.AddPolicy(RateLimits.OpenTrip, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            // The account, falling back to the address for a request the
+            // pipeline somehow let through unauthenticated. Named partitions
+            // rather than one shared empty key, so the fallback is explicit.
+            context.Principal()?.UserId.ToString()
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = openTripPerHour,
                 Window = TimeSpan.FromHours(1),
                 QueueLimit = 0,
             }));

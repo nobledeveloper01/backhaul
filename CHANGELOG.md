@@ -9,6 +9,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **A shipper can track a truck the product never sold them.** This is the
+  feature the whole thing is built on — *tracking is the wedge; matching is the
+  business* — and it did not exist. Every trip arrived by post-a-load-take-a-bid,
+  which is worth nothing until there is liquidity. **Track a trip** now sits at
+  the top of the shipper's list: where it loads, where it unloads, and the two
+  numbers you have been messaging all morning.
+
+  The parties are **phone numbers**, because a number is what somebody who
+  agreed a load on WhatsApp actually has. A number with no account behind it
+  gets one, holding the number and nothing else until its owner signs in with
+  that SIM — and the trips already naming them are simply there when they do.
+  Your own slot comes from your token, so the form asks for the two parties you
+  are not, and a number in your own slot that is not yours is refused rather
+  than quietly overwritten.
+
+  **There is no way to look a number up, and there never will be.** An endpoint
+  that turns a phone number into an identity is a list of which drivers and
+  carriers are running loads, for the price of one account. This one creates
+  rather than answers, and it replies identically whether it found an account
+  or made one — a test compares the two bodies with identifiers blanked, and if
+  it ever fails the fix is to make the answers agree. Twenty trips an hour per
+  account, because opening one can make two strangers' phones ring. See
+  [ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md).
+
+  Not yet built: the SMS that tells the driver. The gateway is there and the
+  message is one call; what it should say to somebody who has never heard of
+  this product and has just been named on somebody else's freight is not a
+  plumbing question, and it is not being answered by accident.
+
 - **A tracking link can be sent, not transcribed.** It was shown once and
   there was no way to use it but to read thirty-two characters off a 5" screen
   and retype them into WhatsApp — on the screen the product calls its wedge.

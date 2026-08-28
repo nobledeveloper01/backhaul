@@ -20,6 +20,7 @@ import { Appear } from '../components/Appear';
 import { Chip } from '../components/Chip';
 import { Empty } from '../components/Empty';
 import { Icon, type IconName } from '../components/Icon';
+import { Press } from '../components/Press';
 import { PositionAge } from '../components/PositionAge';
 import { SearchField } from '../components/SearchField';
 import { StatusChip } from '../components/StatusChip';
@@ -36,6 +37,7 @@ import { refusalWords } from '../state/words';
 
 interface Props {
   readonly onOpen: (trip: DemoTrip) => void;
+  readonly onTrack: () => void;
 }
 
 /**
@@ -137,7 +139,7 @@ const STATE_FILTERS: readonly {
  * *stopped* and *unknown*: a shipper on a bad connection has trips, and this
  * phone cannot see them.
  */
-export function TripsScreen({ onOpen }: Props) {
+export function TripsScreen({ onOpen, onTrack }: Props) {
   const colours = useColours();
   const insets = useSafeAreaInsets();
   const now = useMemo(demoNow, []);
@@ -208,6 +210,29 @@ export function TripsScreen({ onOpen }: Props) {
               usually "no", which is worth saying rather than making them read
               six rows to work out.
             */}
+            {/*
+              Above the search field, because it is the only thing on this
+              screen that makes the list longer.
+
+              A shipper whose loads are all agreed on WhatsApp arrives here
+              with an empty list and, before this, nothing to do about it —
+              posting a load is a different product and takes bids nobody may
+              give. This is the wedge: one truck, no marketplace, followed from
+              here. See ADR-0016 for how the other two parties are named.
+            */}
+            <Press
+              onPress={onTrack}
+              accessibilityLabel={t('track_a_trip')}
+              accessibilityHint={t('arranged_anywhere')}
+              feedback="opacity"
+              style={[styles.track, { backgroundColor: colours.accent }]}
+            >
+              <Icon name="route" size="md" colour={colours.onAccent} />
+              <Text variant="title" style={{ color: colours.onAccent }}>
+                {t('track_a_trip')}
+              </Text>
+            </Press>
+
             <SearchField
               value={filter.text}
               onChange={(text) => setFilter((was) => ({ ...was, text }))}
@@ -489,6 +514,14 @@ function needsAttention(trip: DemoTrip, now: Date): boolean {
 }
 
 const styles = StyleSheet.create({
+  track: {
+    minHeight: target.standard,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+  },
   screen: { flex: 1 },
   list: { paddingHorizontal: space.lg },
   header: { marginBottom: space.lg, gap: space.md },

@@ -123,21 +123,7 @@ public sealed class SignInRepository(BackhaulDbContext db)
         var challenge = await db.SignInChallenges.FirstAsync(c => c.Id == challengeId, ct);
         challenge.ConsumedAt = now;
 
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Phone == phone, ct);
-        var isNew = account is null;
-
-        if (account is null)
-        {
-            account = new AccountEntity
-            {
-                Id = Guid.NewGuid(),
-                Phone = phone,
-                Role = "driver",
-                Name = string.Empty,
-                CreatedAt = now,
-            };
-            db.Accounts.Add(account);
-        }
+        var (account, isNew) = await ResolveAsync(phone, now, ct);
 
         await db.SaveChangesAsync(ct);
 
@@ -146,6 +132,74 @@ public sealed class SignInRepository(BackhaulDbContext db)
             : Role.Driver;
 
         return new SignedIn(account.Id, role, account.Name, isNew);
+    }
+
+    /// <summary>
+    /// The account for a phone number, created if there is not one yet.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Two callers reach this. Signing in is one. Opening a trip is the other:
+    /// a shipper who agreed a load on WhatsApp names the driver and the
+    /// carrier by the numbers they have been messaging, and neither may have
+    /// installed anything. See ADR-0016.
+    /// </para>
+    /// <para>
+    /// A minted account holds the number and the same first-time role signing
+    /// in would give it — <c>driver</c>, because it is the role that can see
+    /// the least. It becomes that person's real account the first time they
+    /// sign in with the SIM, and the trips already naming them are simply
+    /// there. Nothing here tells the caller whether the account existed, and
+    /// nothing may: an endpoint that answers that question about an arbitrary
+    /// number is the list ADR-0016 exists to prevent.
+    /// </para>
+    /// <para>
+    /// Does not save. The caller decides the transaction, so opening a trip
+    /// commits its parties and its first event together or not at all.
+    /// </para>
+    /// </remarks>
+    public async Task<Guid> PartyAsync(string phone, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var (account, _) = await ResolveAsync(phone, now, ct);
+        await db.SaveChangesAsync(ct);
+        return account.Id;
+    }
+
+    /// <summary>The account for a phone number, or null. Creates nothing.</summary>
+    /// <remarks>
+    /// Used for one thing: checking that the number a caller wrote in their
+    /// own slot is their own. That is not the lookup ADR-0016 forbids — the
+    /// only fact it can yield is "this number is you" or "it is not", about a
+    /// caller who already holds the token. Do not reach for it anywhere the
+    /// answer would be about somebody else.
+    /// </remarks>
+    public async Task<Guid?> FindAsync(string phone, CancellationToken ct = default)
+    {
+        return await db.Accounts
+            .AsNoTracking()
+            .Where(a => a.Phone == phone)
+            .Select(a => (Guid?)a.Id)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    private async Task<(AccountEntity Account, bool IsNew)> ResolveAsync(
+        string phone,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Phone == phone, ct);
+        if (account is not null) return (account, false);
+
+        account = new AccountEntity
+        {
+            Id = Guid.NewGuid(),
+            Phone = phone,
+            Role = "driver",
+            Name = string.Empty,
+            CreatedAt = now,
+        };
+        db.Accounts.Add(account);
+        return (account, true);
     }
 
     /// <summary>What a person calls themselves. Set once, after the first code.</summary>

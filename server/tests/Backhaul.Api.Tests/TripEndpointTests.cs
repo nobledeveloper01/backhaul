@@ -49,9 +49,9 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
             $"/v1/trips/{trip}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId = Guid.NewGuid(),
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,
@@ -175,9 +175,9 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
             $"/v1/trips/{id}",
             new
             {
-                driverId = driver.UserId,
-                carrierId = Guid.NewGuid(),
-                shipperId = Guid.NewGuid(),
+                driverPhone = driver.Phone,
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,
@@ -222,7 +222,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         var client = mine.Carrying(factory.CreateClient());
         var trip = Guid.NewGuid();
 
-        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(mine.UserId));
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open());
         opened.EnsureSuccessStatusCode();
 
         var stranger = await Identities.IssueAsync(factory, Role.Shipper);
@@ -244,7 +244,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         var client = shipper.Carrying(factory.CreateClient());
         var trip = Guid.NewGuid();
 
-        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(shipper.UserId));
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open());
         opened.EnsureSuccessStatusCode();
 
         var list = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips", Json);
@@ -263,7 +263,7 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         var client = shipper.Carrying(factory.CreateClient());
         var trip = Guid.NewGuid();
 
-        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open(shipper.UserId));
+        var opened = await client.PostAsJsonAsync($"/v1/trips/{trip}", Open());
         opened.EnsureSuccessStatusCode();
 
         var found = await client.GetFromJsonAsync<List<SummaryView>>("/v1/trips?text=KANO", Json);
@@ -285,11 +285,14 @@ public sealed class TripEndpointTests(ApiFactory factory) : IClassFixture<ApiFac
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private static object Open(Guid shipperId) => new
+    /// <summary>
+    /// A trip body for a shipper to post. Their own slot is left out because
+    /// it comes from their token — see ADR-0016.
+    /// </summary>
+    private static object Open() => new
     {
-        driverId = Guid.NewGuid(),
-        carrierId = Guid.NewGuid(),
-        shipperId,
+        driverPhone = Identities.NextPhone(),
+        carrierPhone = Identities.NextPhone(),
         origin = "Lagos",
         destination = "Kano",
         at = DateTimeOffset.UtcNow.AddHours(-3),

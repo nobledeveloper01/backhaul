@@ -122,13 +122,17 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // The caller is the driver, so the driver is one of the three parties. A
-  // trip you would not be able to see is a trip the server will not let you
-  // open.
+  // The caller is the driver, so the driver's slot is filled from the token
+  // and is not sent. The other two are phone numbers — see ADR-0016 — and
+  // these two have no accounts behind them, which is the ordinary case: the
+  // carrier's office and the cargo owner have not installed anything yet.
+  // Eight digits, taken from the low end of the run seed: `run` is a second
+  // count and is already nine digits, and padStart does not truncate — a
+  // number one digit too long is not a Nigerian number and the server says so.
+  const line = (n: number) => `+23480${String((run + n) % 100_000_000).padStart(8, '0')}`;
   const parties = {
-    driverId: DRIVER_ID,
-    carrierId: uuid(run + 900),
-    shipperId: uuid(run + 901),
+    carrierPhone: line(900),
+    shipperPhone: line(901),
   };
 
   const opened = await api.openTrip(
@@ -182,13 +186,44 @@ async function main(): Promise<void> {
     // A driver screen decides whether it is looking at its own trip by
     // comparing these against the signed-in principal, so a trip that comes
     // back without them is a screen that quietly shows somebody else's chrome.
+    //
+    // The driver's slot is the caller's own id and was never sent — the token
+    // filled it. The other two were phone numbers on the way in and are
+    // identifiers on the way out, which is the whole of ADR-0016 in one
+    // request.
+    const { driverId, carrierId, shipperId } = running.value;
     check(
-      'and it names the three parties it was opened with',
-      running.value.driverId === parties.driverId &&
-        running.value.carrierId === parties.carrierId &&
-        running.value.shipperId === parties.shipperId,
-      `${running.value.driverId} / ${running.value.carrierId} / ${running.value.shipperId}`,
+      'and it names the caller as the driver',
+      driverId === DRIVER_ID,
+      `${driverId} vs ${DRIVER_ID}`,
     );
+    check(
+      'and it minted the other two from their numbers',
+      carrierId !== '' &&
+        shipperId !== '' &&
+        new Set([driverId, carrierId, shipperId]).size === 3,
+      `${driverId} / ${carrierId} / ${shipperId}`,
+    );
+
+    // The same number twice is the same person. Without this, a shipper who
+    // opens two trips with one driver has two drivers, and neither of them
+    // can see both trips when they finally sign in.
+    const again = await api.openTrip(
+      uuid(run + 902),
+      parties,
+      { origin: 'Lagos', destination: 'Ibadan' },
+      at(0),
+      'driver',
+    );
+    check('a second trip opens against the same numbers', again.ok,
+      again.ok ? '' : again.failure.detail);
+    if (again.ok) {
+      check(
+        'and resolves them to the same two people',
+        again.value.carrierId === carrierId && again.value.shipperId === shipperId,
+        `${again.value.carrierId} / ${again.value.shipperId}`,
+      );
+    }
   }
 
   // A batch with one fix the cleaner will throw away.

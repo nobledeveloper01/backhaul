@@ -208,7 +208,7 @@ a broker account actually *is* — an agent acting for a shipper, a shipper in
 their own right, or a distinct third role — has not been decided, and the
 matching engine's shape depends on the answer.
 
-### F12 — The wedge is not built · **the largest gap in the product**
+### F12 — The wedge · *closed*
 
 `CLAUDE.md` opens with the sentence that decides most arguments here:
 
@@ -263,6 +263,22 @@ or not** — which is what stops an endpoint that creates something from being a
 oracle. A minted account holds the number and nothing else until its owner
 signs in.
 
-What is left, in order: the endpoint change and its tests, the screen, the SMS
-invite, and a per-account rate limit on trip creation. Phase 2's software gate
-is not honestly green until a shipper can open a trip no marketplace created.
+**Built.** `POST /v1/trips/{id}` takes `driverPhone`, `carrierPhone` and
+`shipperPhone`; your own slot is filled from your token, and a number in it
+that is not yours is refused rather than overwritten. *Track a trip* sits at the
+top of the shipper's list and asks for the two parties you are not, adapting to
+your role. `normalisePhone` runs on the phone before the request goes out —
+the same function the server uses, so a typo costs nothing on a corridor where
+a round trip costs thirty seconds. Twenty trips an hour per account, because
+opening one can make two strangers' phones ring.
+
+`OpenTripTests` pins the load-bearing claim: **the response is identical
+whether the number was known**, compared body-for-body with identifiers
+blanked. If that ever fails, the fix is to make the answers agree.
+
+**What is still deferred: the SMS invite.** A driver named on a trip is not yet
+told. The gateway exists (`HttpSmsSender`, `android-sms-gateway`), the account
+exists, and the message is one call — what is not decided is what it should say
+to somebody who has never heard of this product and has just been named on
+somebody else's freight, which is a copy and consent question rather than a
+plumbing one. Until then the shipper tells them the way they already were.

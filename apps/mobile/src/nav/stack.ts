@@ -12,6 +12,7 @@ import type { DemoTrip } from '../state/demo';
  */
 export type Route =
   | { readonly name: 'trips' }
+  | { readonly name: 'track' }
   | { readonly name: 'trip'; readonly trip: DemoTrip }
   | { readonly name: 'share'; readonly trip: DemoTrip }
   | { readonly name: 'follow'; readonly trip: DemoTrip }

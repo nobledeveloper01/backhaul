@@ -58,11 +58,18 @@ export type ApiResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly failure: ApiFailure };
 
-/** Who can see a trip: its driver, its carrier and its shipper. */
+/**
+ * The two parties you are not, by phone number.
+ *
+ * Numbers rather than identifiers, because a shipper who agreed a load on
+ * WhatsApp has a number and nothing else, and there is no lookup that turns
+ * one into the other — deliberately, see ADR-0016. Your own slot is filled
+ * from your token, so it is not here to fill in.
+ */
 export interface TripParties {
-  readonly driverId: string;
-  readonly carrierId: string;
-  readonly shipperId: string;
+  readonly driverPhone?: string;
+  readonly carrierPhone?: string;
+  readonly shipperPhone?: string;
 }
 
 /**
@@ -272,20 +279,15 @@ export class BackhaulApi {
   }
 
   /**
-   * Opens a trip.
+   * Opens a trip that no marketplace created.
    *
-   * The three parties are fixed here and are what every later read is filtered
-   * against — the caller must be one of them or the server refuses. See
-   * ADR-0008.
+   * The wedge: a load agreed on WhatsApp, on a call or in a yard, tracked
+   * here. The three parties are fixed at this moment and are what every later
+   * read is filtered against (ADR-0008); your own slot comes from your token,
+   * and the other two are the numbers you have been messaging. A number with
+   * no account behind it gets one, and this call answers the same way either
+   * way — see ADR-0016 for why that is the whole point.
    */
-  // wired-check: F12 — the wedge, and the exemption here used to read "the app
-  // never creates a trip. A shipper writes one down elsewhere; this face tracks
-  // it." That is not a reason, it is the gap restated. docs/ROADMAP.md carries
-  // "standalone tracking of a trip arranged elsewhere" as feature 2 of phase 2
-  // and calls it **the wedge**; CLAUDE.md opens with "tracking is the wedge".
-  // The one way a trip arranged on WhatsApp reaches this product is somebody
-  // opening it here, and nothing does. What blocks it is named in F12: the
-  // request takes three party GUIDs and a shipper has a phone number.
   async openTrip(
     id: string,
     parties: TripParties,
@@ -295,9 +297,7 @@ export class BackhaulApi {
     note?: string,
   ): Promise<ApiResult<TripView>> {
     const result = await this.request<RawTrip>('POST', `/v1/trips/${id}`, {
-      driverId: parties.driverId,
-      carrierId: parties.carrierId,
-      shipperId: parties.shipperId,
+      ...parties,
       origin: corridor.origin,
       destination: corridor.destination,
       at: at.toISOString(),

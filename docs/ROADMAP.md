@@ -297,23 +297,24 @@ tested.
 both platforms, **and the public share route is rate limited**. First external
 pilot users onboard here — before any marketplace exists.
 
-**Software gate — one condition open.**
+**Software gate — green.**
 
 | | |
 |---|---|
 | The public share route is rate limited | **green** — sixty an hour per address, partitioned so one abusive caller cannot take the feature away from everybody else, proven to fire by `ShareRateLimitTests` |
-| A shipper can open a trip that no marketplace created | **open** — the app cannot. `POST /v1/trips/{id}` is served and `openTrip` is written against it; nothing calls it, because the request takes three party GUIDs and a shipper has a phone number. F12 in `docs/FEATURE-BACKLOG.md`; [ADR-0016](adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md) settles how, and the endpoint, screen and invite are what remain |
+| A shipper can open a trip that no marketplace created | **green** — *Track a trip* on the shipper's list. The two other parties are named by phone number and the endpoint answers identically whether it found an account or made one; twenty an hour per account. `OpenTripTests`, `OpenTripRateLimitTests`, and the round trip opens two trips against one pair of numbers and checks they resolve to the same two people. See [ADR-0016](adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md) |
 
 **Hardware gate:** *a real truck on a real corridor, end to end, on both
-platforms* — deferred with the rest, listed at the top of this file.
+platforms* — deferred with the rest, listed at the top of this file. The pilot
+is what closes it, and the pilot is now possible: a shipper with one truck and
+nobody else on the platform has something worth using.
 
-The open condition is the whole phase, not a loose end. Feature 2 is the one
-the product statement calls the wedge: worth paying for with one truck and no
-other user on the platform. Everything else in phase 2 — the corridor, the
-share link, waypoints, messages, deviation, alerts, the data budget — is built
-and reads the server, and every one of them is a thing you do *to a trip that
-already exists*. Today the only way one exists is the marketplace route, which
-is the half that is worth nothing until there is liquidity.
+The second condition was the whole phase, not a loose end. Feature 2 is the one
+the product statement calls the wedge, and everything else in phase 2 — the
+corridor, the share link, waypoints, messages, deviation, alerts, the data
+budget — is a thing you do *to a trip that already exists*. Until this landed
+the only way one existed was post-a-load-take-a-bid, which is the half that is
+worth nothing until there is liquidity.
 
 The rate limit is on the gate rather than in the backlog because
 `GET /v1/share/{token}` is the only route in the product that answers an

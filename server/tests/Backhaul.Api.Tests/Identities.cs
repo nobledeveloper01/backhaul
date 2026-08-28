@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 
 using Backhaul.Domain.Access;
+using Backhaul.Infrastructure;
+using Backhaul.Infrastructure.Entities;
 using Backhaul.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +23,19 @@ public sealed class Identity
     public required Role Role { get; init; }
 
     public required string Token { get; init; }
+
+    /// <summary>
+    /// The number this identity signed in with, in the shape the API takes.
+    /// </summary>
+    /// <remarks>
+    /// Opening a trip names the other two parties by phone (ADR-0016), so a
+    /// test that wants a known driver on a trip has to be able to say which
+    /// number is theirs. Every identity gets a real account row for the same
+    /// reason: a token whose id has no account behind it is a caller who could
+    /// never have signed in, and a trip opened against them would resolve to a
+    /// different account than the one holding the token.
+    /// </remarks>
+    public required string Phone { get; init; }
 
     public HttpClient Carrying(HttpClient client)
     {
@@ -46,8 +61,21 @@ public static class Identities
     {
         using var scope = services.CreateScope();
         var tokens = scope.ServiceProvider.GetRequiredService<TokenRepository>();
+        var db = scope.ServiceProvider.GetRequiredService<BackhaulDbContext>();
 
         var userId = Guid.NewGuid();
+        var phone = NextPhone();
+
+        db.Accounts.Add(new AccountEntity
+        {
+            Id = userId,
+            Phone = phone,
+            Role = role.ToString().ToLowerInvariant(),
+            Name = string.Empty,
+            CreatedAt = Issued,
+        });
+        await db.SaveChangesAsync();
+
         var token = await tokens.IssueAsync(
             userId,
             role,
@@ -55,8 +83,22 @@ public static class Identities
             issuedAt: Issued,
             expiresAt: Issued.AddYears(1));
 
-        return new Identity { UserId = userId, Role = role, Token = token };
+        return new Identity { UserId = userId, Role = role, Token = token, Phone = phone };
     }
+
+    private static int minted;
+
+    /// <summary>
+    /// A distinct MTN number per identity, in the E.164 shape the API stores.
+    /// </summary>
+    /// <remarks>
+    /// Distinct because two identities sharing a number would share an
+    /// account, and the test that noticed would be some unrelated one failing
+    /// for a reason nobody could see. Counted rather than random so a failure
+    /// is the same failure twice.
+    /// </remarks>
+    public static string NextPhone() =>
+        $"+23480{Interlocked.Increment(ref minted):D8}";
 
     /// <summary>A token that has already expired.</summary>
     public static async Task<Identity> IssueExpiredAsync(ApiFactory factory, Role role)
@@ -72,6 +114,6 @@ public static class Identities
             issuedAt: Issued.AddYears(-2),
             expiresAt: Issued.AddYears(-1));
 
-        return new Identity { UserId = userId, Role = role, Token = token };
+        return new Identity { UserId = userId, Role = role, Token = token, Phone = NextPhone() };
     }
 }

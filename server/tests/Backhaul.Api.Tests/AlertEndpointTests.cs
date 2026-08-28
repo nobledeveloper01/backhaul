@@ -159,9 +159,9 @@ public sealed class AlertEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId = driver.UserId,
-                carrierId = Guid.NewGuid(),
-                shipperId = shipper.UserId,
+                driverPhone = driver.Phone,
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = shipper.Phone,
                 origin = "Lagos",
                 destination = "Kano",
                 at = start,

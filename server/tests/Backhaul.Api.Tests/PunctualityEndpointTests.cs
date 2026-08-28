@@ -35,7 +35,7 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
         var driver = await Identities.IssueAsync(factory, Role.Driver);
         var client = driver.Carrying(factory.CreateClient());
 
-        await DeliverAsync(client, driver.UserId, promised: null, sealedAt: T0.AddHours(20));
+        await DeliverAsync(client, driver.Phone, promised: null, sealedAt: T0.AddHours(20));
 
         var seen = await client.GetFromJsonAsync<VerificationView>("/v1/me/verification", Json);
 
@@ -54,7 +54,7 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
         var client = driver.Carrying(factory.CreateClient());
 
         // Promised by the 7th at 06:00, sealed eight hours after it.
-        await DeliverAsync(client, driver.UserId, promised: T0.AddDays(1), sealedAt: T0.AddDays(1).AddHours(8));
+        await DeliverAsync(client, driver.Phone, promised: T0.AddDays(1), sealedAt: T0.AddDays(1).AddHours(8));
 
         var seen = await client.GetFromJsonAsync<VerificationView>("/v1/me/verification", Json);
 
@@ -68,7 +68,7 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
         var driver = await Identities.IssueAsync(factory, Role.Driver);
         var client = driver.Carrying(factory.CreateClient());
 
-        await DeliverAsync(client, driver.UserId, promised: T0.AddDays(1), sealedAt: T0.AddHours(20));
+        await DeliverAsync(client, driver.Phone, promised: T0.AddDays(1), sealedAt: T0.AddHours(20));
 
         var seen = await client.GetFromJsonAsync<VerificationView>("/v1/me/verification", Json);
 
@@ -86,7 +86,7 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
         // would enter it as a trip they were always going to miss.
         var driver = await Identities.IssueAsync(factory, Role.Driver);
         var client = driver.Carrying(factory.CreateClient());
-        var trip = await OpenAsync(client, driver.UserId);
+        var trip = await OpenAsync(client, driver.Phone);
 
         var response = await PutTermsAsync(client, trip, deliverBy: T0.AddHours(-1));
 
@@ -98,11 +98,11 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
     /// <summary>A trip taken all the way to a sealed delivery.</summary>
     private async Task DeliverAsync(
         HttpClient client,
-        Guid driverId,
+        string driverPhone,
         DateTimeOffset? promised,
         DateTimeOffset sealedAt)
     {
-        var trip = await OpenAsync(client, driverId);
+        var trip = await OpenAsync(client, driverPhone);
         (await PutTermsAsync(client, trip, promised)).EnsureSuccessStatusCode();
 
         foreach (var state in new[] { "assigned", "loading", "in_transit", "arrived", "delivered" })
@@ -133,16 +133,17 @@ public sealed class PunctualityEndpointTests(ApiFactory factory) : IClassFixture
         done.EnsureSuccessStatusCode();
     }
 
-    private async Task<Guid> OpenAsync(HttpClient client, Guid driverId)
+    private async Task<Guid> OpenAsync(HttpClient client, string driverPhone)
     {
         var trip = Guid.NewGuid();
         var response = await client.PostAsJsonAsync(
             $"/v1/trips/{trip}",
             new
             {
-                driverId,
-                carrierId = driverId,
-                shipperId = Guid.NewGuid(),
+                // The driver's own number in the carrier slot: an
+                // owner-operator, which is most of this market.
+                carrierPhone = driverPhone,
+                shipperPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

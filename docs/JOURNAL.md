@@ -6,6 +6,66 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-28 (later) — The wedge, and the endpoint that refuses to answer
+
+**Did.** Built feature 2. `POST /v1/trips/{id}` now takes phone numbers instead
+of party GUIDs, resolving or creating an account for each; *Track a trip* sits
+at the top of the shipper's list and asks for the two parties you are not.
+Rate limited per account. Phase 2's software gate is green — both conditions —
+and the hardware half is the pilot, which is now a thing somebody could
+actually run. 178 API tests, 135 domain tests, `make ci` green, round trip
+clean.
+
+### What surprised us
+
+**The hard part was not the screen, and it was not the endpoint.** It was that
+the obvious design is an enumeration oracle. A shipper has a phone number and
+the server wants a GUID, so the shape that writes itself is
+`GET /v1/identities?phone=…` — and that endpoint, callable by any signed-in
+account, is a list of which drivers and which carriers are running loads,
+sold to whoever wants it for the price of one account. Rate limiting does not
+fix it. It slows it down.
+
+What settles it is a distinction worth keeping: **an endpoint that creates
+something is not an oracle, provided its answer does not vary with what it
+found.** Opening a trip names two numbers and mints accounts for the ones
+nobody holds. The caller learns that the trip they just created has a driver on
+it, which they knew before they asked. `OpenTripTests` compares the two
+response bodies with every identifier blanked, and the comment on it says what
+to do if it ever fails: make the answers agree, do not relax the test.
+
+**Filling your own slot from your token deleted a test rather than fixing
+one.** `You_cannot_open_a_trip_you_are_not_on` had been passing for weeks. With
+the caller's slot coming from the token, the mistake it guarded against is not
+expressible — you cannot name three other people and lose the record the moment
+you make it. The test now pins what *is* still expressible: somebody else's
+number where your own goes, refused rather than overwritten, because a caller
+who does that is about to read a trip they believe names somebody it does not.
+A test whose premise has been designed away is not a passing test, it is a
+sentence about a product that no longer exists.
+
+**One number, one person, was the assertion the round trip was missing.** The
+suite proved a trip opens. It did not prove that opening two trips against the
+same driver's number produces the same driver — and without that, a shipper
+with two loads on one truck has two drivers, neither of whom can see both trips
+when they finally sign in. The check is four lines and it is the one that would
+have caught a `Guid.NewGuid()` in the resolve path.
+
+**`normalisePhone` on the phone is not a second implementation.** It is the
+first one, used twice. Four people write one number four ways and every one
+means the same driver; running the same function client-side means a typo is
+caught before the request leaves, on a corridor where a round trip costs thirty
+seconds. This is the one place in the codebase where duplicating a check is
+right, and it is right because there is exactly one function.
+
+**What is deliberately not built: the SMS.** A driver named on a trip is not
+told. The gateway exists, the account exists, the call is one line — and what
+it should say to somebody who has never heard of Backhaul and has just been
+named on a stranger's freight is a consent question, not a plumbing one.
+Shipping the plumbing first would have answered it by accident.
+
+---
+
 ## 2026-08-28 — Four agents, and a rule everybody had already written down
 
 **Did.** Split every phase gate into a software gate and a hardware gate

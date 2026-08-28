@@ -209,9 +209,9 @@ public sealed class ShareEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId = shipper.UserId,
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = shipper.Phone,
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

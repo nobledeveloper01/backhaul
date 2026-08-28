@@ -135,16 +135,23 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
     [Fact]
     public async Task You_cannot_open_a_trip_you_are_not_on()
     {
-        // Otherwise it is possible to create a record and immediately lose it.
+        // You cannot, and you no longer can by construction: your own slot is
+        // filled from your token, so the old way to get this wrong — naming
+        // three other people and losing the record the moment you created it —
+        // is not expressible. What is still expressible is putting somebody
+        // else's number where your own goes, and that is refused rather than
+        // overwritten, because a caller who did it is about to read a trip
+        // they believe names somebody it does not.
         var caller = await Identities.IssueAsync(factory, Role.Shipper);
+        var somebodyElse = await Identities.IssueAsync(factory, Role.Shipper);
 
         var response = await caller.Carrying(factory.CreateClient()).PostAsJsonAsync(
             $"/v1/trips/{Guid.NewGuid()}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId = Guid.NewGuid(),
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = somebodyElse.Phone,
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,
@@ -152,6 +159,33 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
             });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains(
+            "not the number you signed in with",
+            await response.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Your_own_number_in_your_own_slot_is_accepted()
+    {
+        // Left out or filled in, both work. A client that sends all three is
+        // not wrong, it is just saying something the token already said.
+        var caller = await Identities.IssueAsync(factory, Role.Shipper);
+
+        var response = await caller.Carrying(factory.CreateClient()).PostAsJsonAsync(
+            $"/v1/trips/{Guid.NewGuid()}",
+            new
+            {
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = caller.Phone,
+                origin = "Lagos",
+                destination = "Kano",
+                at = T0,
+                actor = "shipper",
+            });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
@@ -168,9 +202,8 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId = Guid.NewGuid(),
-                carrierId = Guid.NewGuid(),
-                shipperId = stranger.UserId,
+                driverPhone = Identities.NextPhone(),
+                carrierPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,
@@ -193,9 +226,8 @@ public sealed class AuthorisationTests(ApiFactory factory) : IClassFixture<ApiFa
             $"/v1/trips/{trip}",
             new
             {
-                driverId = driver.UserId,
-                carrierId = carrier.UserId,
-                shipperId = shipper.UserId,
+                driverPhone = driver.Phone,
+                carrierPhone = carrier.Phone,
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

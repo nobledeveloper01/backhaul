@@ -275,9 +275,9 @@ public sealed class DeliveryEndpointTests(ApiFactory factory) : IClassFixture<Ap
             $"/v1/trips/{trip}",
             new
             {
-                driverId = driver.UserId,
-                carrierId = Guid.NewGuid(),
-                shipperId = Guid.NewGuid(),
+                driverPhone = driver.Phone,
+                carrierPhone = Identities.NextPhone(),
+                shipperPhone = Identities.NextPhone(),
                 origin = "Lagos",
                 destination = "Kano",
                 at = T0,

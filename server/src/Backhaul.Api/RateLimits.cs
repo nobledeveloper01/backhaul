@@ -20,4 +20,17 @@ public static class RateLimits
     /// stop somebody walking through a range of numbers.
     /// </remarks>
     public const string PublicAuth = "public-auth";
+
+    /// <summary>Opening a trip.</summary>
+    /// <remarks>
+    /// Partitioned by account rather than by address, which is the whole
+    /// difference between this and the two above: the caller here is
+    /// authenticated, so the limit attaches to something that cost a working
+    /// Nigerian SIM to obtain rather than to an address anybody can change.
+    ///
+    /// Opening a trip names two phone numbers and can cause an SMS to be sent
+    /// to each. That is the residual abuse surface ADR-0016 accepts, and this
+    /// is what bounds it.
+    /// </remarks>
+    public const string OpenTrip = "open-trip";
 }

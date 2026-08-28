@@ -158,9 +158,9 @@ public sealed class ReviewEndpointTests(ApiFactory factory) : IClassFixture<ApiF
             $"/v1/trips/{trip}",
             new
             {
-                driverId = driver.UserId,
-                carrierId = carrier.UserId,
-                shipperId = shipper.UserId,
+                driverPhone = driver.Phone,
+                carrierPhone = carrier.Phone,
+                shipperPhone = shipper.Phone,
                 origin = "Lagos",
                 destination = "Kano",
                 at = start,
