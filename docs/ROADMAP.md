@@ -27,6 +27,26 @@ every one is green**, and no simulator signs any of them off.
 | Phase 5 | **The first return load**, matched and completed by a real carrier and a real shipper |
 | Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
 
+## Deferred to a native speaker
+
+Three tables, roughly 640 keys each, written by somebody who does not speak the
+language. Every one of them reaches a screen — `untranslated-check.py` proves
+that much — and none of them has been read by a person who would notice a
+sentence that is grammatical and wrong. A driver face in bad Hausa is worse
+than one in English: English is understood to be foreign, and bad Hausa reads
+as a company that thinks it is doing you a favour.
+
+| Table | Read by a speaker |
+|---|---|
+| `ha` — Hausa | **no** |
+| `yo` — Yorùbá | **no** |
+| `ig` — Igbo | **no** |
+
+**v1.0 does not ship until every one is green.** It is on the same footing as
+the hardware gates and for the same reason: it cannot be closed from here, and
+pretending otherwise is how it stays open until somebody notices in a store
+review.
+
 The risk this accepts is stated in ADR-0014 and is worth reading before adding
 to the pile: everything built from here rests on the assumption that the
 capture loop survives an OEM battery manager. It is the first thing a device
@@ -481,6 +501,33 @@ statement and recurring lanes moved *in*, because each one is about keeping
 people rather than about acquiring them.
 
 **v1.0 ships to both stores.**
+
+**This phase had no exit gate.** Every other one was written before the phase
+started, which is this file's own rule, and the phase that decides whether a
+product is fit to put in front of Nigerian drivers had nothing. It is written
+below, before the work, and it is in three parts because three different kinds
+of thing block a release and only one of them is code.
+
+**Software gate — not green.** Two of five are open.
+
+| | |
+|---|---|
+| The **data budget** holds | **green** — a month of continuous tracking at the fastest interval must cost less than the app's own `WORTH_MENTIONING` line. It is ₦4.80 against ₦50. Not a number picked for the test: it is the point at which the product would have to start apologising to a driver for what it costs, so crossing it becomes a decision somebody takes rather than one a review discovers. `budget.test.ts` |
+| Every never-traded rule still has a **live guard** | **green** — `make gates`: the domain boundary, the parity fixtures, the wired check, the repository check and the documentation check, each proved to fire by being made to fail on purpose |
+| Features **28–30** shipped | Hausa on the driver face, the driver's earnings statement, recurring lanes — all three built and reading the server |
+| The **battery budget** enforced in CI | **not possible here, and not deferred to a device day either.** A CI box has no battery. What a build can check is what the loop *asks for* — sampling interval, upload cadence, the wake conditions — and that is what the data budget above already pins. The 4%/hour figure is measured on a handset and belongs to the hardware gate |
+| **Deviation and stall alerts reach a phone** | **open, and it is credentials rather than code.** The rule, the dispatcher, the quiet hours and the device registry are all built and parity-tested; `IPushSender` has one implementation and it writes to the log saying it did not send. APNs wants a signed JWT and a p8 key from an Apple developer account, FCM wants a service-account JSON, and neither can be conjured from a repository. F3 in `docs/FEATURE-BACKLOG.md`. The SMS half of the same problem was solved by hosting the gateway rather than buying one, and there is no equivalent trick for push |
+| **The web shipper console** | **open, and not started.** It is named in this phase and it is a second platform, not a screen. A shipper can do everything from the mobile app today, which is why this has not blocked anything — but it is on the gate rather than quietly dropped, because a phase description that lists a thing and a gate that does not is how scope goes missing |
+
+**Hardware gate:** the five conditions listed at the top of this file. **v1.0
+does not ship until every one is green**, and the device matrix — including a
+reference Transsion handset — is the phase's own contribution to that list.
+
+**Language gate:** the Hausa, Yorùbá and Igbo tables have never been read by a
+native speaker. `untranslated-check` proves every string on every screen goes
+through the table; it cannot prove any of them is right. This is not a device
+problem and it will not be solved by a device day — it needs three people, and
+it is listed below so it stops being invisible.
 
 ---
 

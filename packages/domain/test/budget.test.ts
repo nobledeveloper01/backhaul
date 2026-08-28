@@ -9,8 +9,8 @@ import {
   describeBytes,
   describeCost,
   describeMonthly,
-  monthlyCost,
   estimateCost,
+  monthlyCost,
   usage,
   worthMentioning,
 } from '../src/budget.ts';
@@ -127,5 +127,54 @@ describe('worthMentioning', () => {
     });
     assert.equal(worthMentioning(cost), false);
     assert.equal(worthMentioning(WORTH_MENTIONING), true);
+  });
+});
+
+describe('the budget a build is not allowed to break', () => {
+  /*
+    Phase 6's exit gate says data budgets are enforced in CI. This is that,
+    and the threshold is not a number somebody picked for this test — it is
+    `WORTH_MENTIONING`, the line the app itself uses to decide whether the
+    cost of tracking is worth saying out loud to a driver.
+
+    That makes the gate self-consistent rather than arbitrary: the build fails
+    at exactly the point where the product would have to start apologising for
+    what it costs somebody on a prepaid bundle. Crossing it is not forbidden —
+    it is a decision, and this is what makes somebody take it on purpose
+    instead of discovering it in a review of a driver's data usage.
+  */
+  test('a month of continuous tracking stays under what is worth mentioning', () => {
+    const fastest = dailyCost({
+      interval: INTERVAL.moving,
+      uploadEveryMs: UPLOAD_EVERY_MS,
+    });
+
+    const month = monthlyCost(fastest.cost);
+
+    assert.ok(
+      !worthMentioning(month),
+      `a month at the fastest interval costs ${describeMonthly(month)}, which ` +
+        `is over the ${describeMonthly(WORTH_MENTIONING)} the app treats as ` +
+        `worth telling a driver about. Either the sampling ladder got faster, ` +
+        `a field was added to a position fix, or the data price moved — all ` +
+        `three are decisions, and this is the one place they all show up.`,
+    );
+  });
+
+  test('and every rung of the ladder is cheaper than the one above it', () => {
+    // The ladder exists to spend less when there is less to record. A change
+    // that makes a slower interval cost more has inverted it, and nothing
+    // else in the suite would notice — each rung is individually plausible.
+    const rungs = [INTERVAL.moving, INTERVAL.crawling, INTERVAL.stopped, INTERVAL.conserving];
+
+    const costs = rungs.map(
+      (interval) => dailyCost({ interval, uploadEveryMs: UPLOAD_EVERY_MS }).cost,
+    );
+
+    for (let i = 1; i < costs.length; i++) {
+      const above = costs[i - 1] ?? 0;
+      const here = costs[i] ?? 0;
+      assert.ok(here < above, `rung ${i} costs ${here} against ${above} above it`);
+    }
   });
 });
