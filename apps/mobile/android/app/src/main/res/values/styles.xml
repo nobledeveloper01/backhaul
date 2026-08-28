@@ -4,6 +4,20 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!--
+            The window behind React, in the product's own blue.
+
+            `MainActivity` swaps from `LaunchTheme` to this one before React
+            has drawn anything, so whatever this window's background is, is
+            what fills the gap. It was the platform default — white — which
+            put a white rectangle between the blue launch screen and the blue
+            splash, on a phone the driver may well have set to dark.
+
+            Every screen paints its own surface over this, so it is only ever
+            seen in that gap. On the handsets this product is built for the gap
+            is over a second.
+        -->
+        <item name="android:windowBackground">@color/launch_background</item>
     </style>
 
     <!--

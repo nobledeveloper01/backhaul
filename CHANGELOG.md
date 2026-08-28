@@ -76,6 +76,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   register a device until it has a token to register, and that needs a native
   module this build does not have.
 
+- **An icon, a launch screen, and a splash the app draws itself.** There was no
+  icon — an empty asset catalogue on iOS and React Native's stock green robot
+  on Android — and the launch screen said "BackhaulApp" in 36 pt over "Powered
+  by React Native", on white. An Xcode target name, an advertisement for a
+  framework, and a white flash before a blue app.
+
+  The mark is a truck with the load coming *back* through it, filled rather
+  than stroked because the app's own line family disappears at 40 px on a
+  launcher with a photograph behind it. `scripts/make-icons.py` draws it from
+  the same accent the app uses, at every density both platforms ask for, so the
+  icon cannot drift from the product.
+
+  The system's launch screen and the app's own splash are the same blue with
+  the same mark in the same place, so the hand-over is invisible. The splash
+  leaves when the app is ready *and* the mark has been up long enough to be
+  seen — a splash that departs on the frame it completes reads as a glitch, and
+  somebody who has asked their phone to stop animating gets the finished mark
+  held rather than skipped.
+
+  Two white flashes went with it: one on iOS where the frame behind the splash
+  used the theme's surface before the stored appearance had been read, and one
+  on Android where the window reverted to the platform default between the
+  launch theme and the first React frame.
+
+- **Every Android screenshot was taken on a screen smaller than any real
+  phone.** The emulator was 320×640 dp; a Tecno Spark — the class of handset
+  this product is built for — is 360×800. Type at its designed size therefore
+  filled more of the screen than it ever would on a driver's phone, and the
+  README described that as "a useful proxy" for exactly the handsets it was
+  under-representing. Re-shot at the real geometry.
+
+- **The app called itself "BackhaulApp".** On both home screens. That is the
+  React Native template's project name, which still has to match the registered
+  component — so the component keeps it and the two labels a person reads do
+  not.
+
 - **The capture loop is connected.** `Tracker` was written and tested,
   `permissions.ts` was written and tested, the Android foreground service and
   the iOS location manager were both built — and nothing in the app ever called

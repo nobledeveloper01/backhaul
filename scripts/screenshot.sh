@@ -48,8 +48,16 @@ if command -v pngquant >/dev/null 2>&1; then
 elif command -v sips >/dev/null 2>&1; then
   # sips cannot quantise, but it can halve the pixel dimensions, which is the
   # next best thing and is on every Mac.
+  #
+  # Only when there is something to give away. A phone screenshot is 1200 px
+  # across and halves to something a reviewer can still read; the small-screen
+  # Android emulator is 320 px and halved to 160, which is a thumbnail of a
+  # screen rather than a screenshot of one. Below this width the file is
+  # already small and the pixels are worth more than the bytes.
   width=$(sips -g pixelWidth "$out" | awk '/pixelWidth/ {print $2}')
-  sips --resampleWidth $((width / 2)) "$out" >/dev/null
+  if [ "$width" -ge 800 ]; then
+    sips --resampleWidth $((width / 2)) "$out" >/dev/null
+  fi
 fi
 
 printf '%s  %s\n' "$out" "$(du -h "$out" | cut -f1)"

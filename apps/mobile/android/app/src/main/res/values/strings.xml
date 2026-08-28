@@ -1,3 +1,12 @@
 <resources>
-    <string name="app_name">BackhaulApp</string>
+    <!--
+        The launcher label, and the name on the tracking service's ongoing
+        notification. "BackhaulApp" is the React Native template's project
+        name; the product is called Backhaul.
+
+        Not the same string as the registered component name, which stays
+        `BackhaulApp` in `app.json` and `MainActivity.getMainComponentName()`
+        and must keep matching it.
+    -->
+    <string name="app_name">Backhaul</string>
 </resources>

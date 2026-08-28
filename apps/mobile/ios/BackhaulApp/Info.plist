@@ -6,8 +6,16 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<!--
+	    What the home screen calls it.
+
+	    "BackhaulApp" is the Xcode target name. Nobody holding the phone knows
+	    or cares what the target is called, and the product is called Backhaul.
+	    The target name stays as it is: renaming it churns the project file,
+	    the scheme, the workspace and the pod integration for no gain.
+	-->
 	<key>CFBundleDisplayName</key>
-	<string>BackhaulApp</string>
+	<string>Backhaul</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

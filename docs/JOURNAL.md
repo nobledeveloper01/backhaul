@@ -293,6 +293,78 @@ exact thing `tierOf`'s own comment says is wrong, and an incentive to stay quiet
 in a product whose evidence depends on drivers speaking up. So it is zero, with
 the reason written where the zero is.
 
+**The wire gate could grade the wrong server.**
+
+`make round-trip` starts its own API, waits for `/healthz`, and runs. A server I
+had left running for the Android walk-through was already on 5111, so the new
+one failed to bind — but it had already written its seeded tokens to disk by
+then, and the health check was answered by the *other* server. The run went
+thirty checks deep and failed with "This endpoint needs a bearer token", which
+is true and says nothing about the cause.
+
+A gate that can silently grade something other than what it built is worse than
+no gate. It refuses to start when the port is held now, and says which of the
+two things to do about it. Checked by holding the port and watching it refuse —
+the same discipline as `repo-check`, and for the same reason.
+
+**"The Android fonts are big now."**
+
+They were not. Font scale 1.0, every size as designed, nothing changed. The
+*emulator* was 320×640 dp — smaller in dp than any phone on sale — so the same
+type filled more of the screen, and every Android screenshot in this repository
+had been taken on it.
+
+The README called that AVD "a useful proxy for the low-end Transsion handsets
+that dominate the driver segment", which is exactly backwards: a Tecno Spark is
+360×800 dp, *larger* than what we were testing on. Testing below the floor is
+worth doing; photographing it and calling it representative is not. `wm size
+720x1600` and `wm density 320` gets the real geometry without building a new
+AVD, and the Android screenshots are re-shot on it.
+
+The lesson is not about Android. It is that "somebody looked at it and said it
+seemed off" caught something eight tests and two gates did not, because nothing
+was broken — the reference was wrong.
+
+**"Powered by React Native", in 17 pt, on every cold start.**
+
+The launch screen was the React Native template's, untouched: "BackhaulApp" in
+36 pt bold, "Powered by React Native" along the bottom, on white. An Xcode
+target name and an advertisement, in front of a driver who wants to know
+whether their trip is recording. The home screen said "BackhaulApp" too, under
+an icon that on Android was still the stock green robot and on iOS was an empty
+asset catalogue.
+
+None of that is a bug in the sense of something behaving wrongly. It is the
+scaffolding nobody removed, which is worse, because it is invisible to every
+test and to anybody who has stopped seeing it.
+
+**What the icon had to survive.** Forty pixels, on a launcher, over a
+photograph, on a 5-inch screen. The app's own icon set is a 1.75 px line family
+and it vanishes at that size — so the mark is filled, and the return arrow is
+knocked out of the cargo box rather than drawn beside it, because two elements
+at 40 px are one smudge. The first draft put it low and left with a band of
+empty blue above; the generator now crops to the ink and centres that, so the
+composition survives changing the glyph.
+
+**And three white flashes, each found by looking rather than by thinking.**
+Between the launch screen and the splash on iOS, because the frame behind the
+splash used the theme's surface and the stored appearance had not been read
+yet — white, on a phone set to dark. Between the launch theme and the first
+React frame on Android, because `MainActivity` swaps back to `AppTheme` before
+React draws and that theme's window background was the platform default. And a
+redbox on every cold start about `SampleTurboModule`, React Native's own
+example module, which turned out to be stale codegen from a hand-rolled
+`xcodebuild` — `pod install` regenerated it away.
+
+The splash itself is a second of the product's own sentence: the truck arrives,
+the load arrives behind it. It leaves when the app is ready *and* the mark has
+been up long enough — the first version left on the frame the animation
+finished, which on a fast phone is a flash, and its reduced-motion path cut the
+duration to a millisecond and called that "held". Four tests pin those two
+rules, because a splash is close to impossible to check by looking: it is on
+screen for a second and a half, it is the same colour as the launch screen it
+replaces, and every screenshot I took landed either side of it.
+
 **The loop that is the product was never started.**
 
 `Tracker` — 200 lines, seven tests, the one rule the whole subsystem is

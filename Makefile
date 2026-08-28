@@ -117,6 +117,15 @@ ROUND_TRIP_LOG := $(CURDIR)/.round-trip-server.log
 ## a `make clean` that entry does not exist, and the failure is a module
 ## resolution error thirty lines long that says nothing about the missing build.
 round-trip: | domain-build
+	@# Nothing else may be on the port. A server already listening on 5111
+	@# passes the health check below, so the run would silently grade a
+	@# different build — and the tokens this one seeded do not work against it,
+	@# which surfaces as "This endpoint needs a bearer token" thirty checks in
+	@# rather than as "something else is on the port".
+	@if lsof -ti :5111 >/dev/null 2>&1; then \
+		echo "port 5111 is already in use — stop it, or use 'make round-trip-only'"; \
+		exit 1; \
+	fi
 	@rm -f "$(ROUND_TRIP_TOKENS)" "$(ROUND_TRIP_LOG)"
 	@BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" $(MAKE) --no-print-directory server-run 		> "$(ROUND_TRIP_LOG)" 2>&1 & echo $$! > "$(CURDIR)/.round-trip-server.pid"
 	@trap 'kill $$(cat "$(CURDIR)/.round-trip-server.pid" 2>/dev/null) 2>/dev/null; 		pkill -f "Backhaul.Api" 2>/dev/null; 		rm -f "$(ROUND_TRIP_TOKENS)" "$(CURDIR)/.round-trip-server.pid"' EXIT; 	for i in $$(seq 1 90); do 		if [ -s "$(ROUND_TRIP_TOKENS)" ] && curl -fsS http://127.0.0.1:5111/healthz >/dev/null 2>&1; then 			break; 		fi; 		sleep 1; 	done; 	if [ ! -s "$(ROUND_TRIP_TOKENS)" ]; then 		echo "the server did not start — its output:"; 		tail -30 "$(ROUND_TRIP_LOG)"; 		exit 1; 	fi; 	BACKHAUL_DEV_TOKENS="$(ROUND_TRIP_TOKENS)" node scripts/round-trip.ts
@@ -201,6 +210,12 @@ journal:
 clean:
 	rm -rf packages/*/dist packages/*/.turbo .turbo
 	rm -rf server/src/*/bin server/src/*/obj server/tests/*/bin server/tests/*/obj
+	@# `ios/build` holds the codegen `pod install` produces — TurboModule specs
+	@# and the dependency provider. Deleting it is right (stale codegen caused a
+	@# start-up redbox about a module that does not exist), but the next
+	@# `xcodebuild` then fails with "Build input file cannot be found", which
+	@# reads like a broken checkout rather than a missing step. Hence the line
+	@# printed at the end of this target.
 	rm -rf apps/mobile/ios/build apps/mobile/android/build apps/mobile/android/app/build
 	rm -rf apps/mobile/android/.gradle
 	@# Every Android module, not only the app's. `packages/tracking-native` is
@@ -210,6 +225,7 @@ clean:
 		-not -path './node_modules/*' -prune -exec rm -rf {} +
 	find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
 	@echo "cleaned — node_modules left alone; make setup-clean to drop that too"
+	@echo "run 'make app-pods' before the next iOS build: the codegen went with it"
 
 ## setup-clean: clean plus node_modules
 setup-clean: clean
