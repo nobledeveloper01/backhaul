@@ -442,7 +442,7 @@ two days sends nothing until the driver opens the trip again.
 
 ---
 
-## Phase 5 — Marketplace and matching · **current**
+## Phase 5 — Marketplace and matching · **software gate green; pilot deferred**
 
 Load posting, bidding, award and assignment, proactive return-load alerts,
 reverse discovery, fleet utilisation reporting.
@@ -489,7 +489,7 @@ record. Driver assignment is feature 19's other half.
 
 ---
 
-## Phase 6 — Hardening and launch
+## Phase 6 — Hardening and launch · **current, and the last one before v1.0**
 
 Device matrix including Transsion handsets, battery and data budgets enforced
 in CI, deviation alerts, waybill OCR, Hausa driver localisation, web shipper
