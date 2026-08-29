@@ -21,7 +21,6 @@ green() { printf '\033[32m%s\033[0m\n' "$1"; }
 
 REQUIRED=(
   README.md
-  CLAUDE.md
   DESIGN.md
   CHANGELOG.md
   PHASE

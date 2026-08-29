@@ -74,3 +74,7 @@ apps/mobile/.xcode.env.local
 .dev-tokens.json
 .round-trip-server.log
 .round-trip-server.pid
+
+# Engineering standards for whoever works in here. Kept out of the published
+# repository; the ADRs carry the reasoning meant to be read from outside.
+CLAUDE.md
