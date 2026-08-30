@@ -75,6 +75,19 @@ if [ -f PHASE ]; then
   elif [ -f docs/ROADMAP.md ] && ! grep -q "Phase $phase" docs/ROADMAP.md; then
     red "PHASE says $phase and docs/ROADMAP.md does not mention Phase $phase"
     fail=1
+  elif [ -f docs/ROADMAP.md ]; then
+    # Mentioning the phase is not the same as marking it. Asking only whether
+    # the number appears anywhere leaves the roadmap free to say a different
+    # phase is current for as long as nobody happens to read both files.
+    current=$(grep -n '^## Phase .*\*\*current' docs/ROADMAP.md | head -1 || true)
+    if [ -z "$current" ]; then
+      red "docs/ROADMAP.md marks no phase as **current**"
+      fail=1
+    elif ! echo "$current" | grep -q "Phase $phase"; then
+      red "PHASE says $phase but docs/ROADMAP.md marks a different phase as **current**:"
+      red "  ${current#*:}"
+      fail=1
+    fi
   fi
 fi
 

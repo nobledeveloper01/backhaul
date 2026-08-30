@@ -183,14 +183,37 @@ def sweep(paths):
                     found[p].append((i, text.strip()))
     return found
 
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SCREENS = ROOT / 'apps/mobile/src'
+
 if __name__ == '__main__':
-    args = sys.argv[1:] or [
-        str(p) for p in sorted(pathlib.Path('apps/mobile/src').rglob('*.tsx'))
-    ]
+    # Anchored to the repository rather than to the working directory. The
+    # relative path this used to carry made the sweep read nothing from any
+    # directory but the root, and print a clean line while doing it.
+    args = sys.argv[1:] or [str(p) for p in sorted(SCREENS.rglob('*.tsx'))]
+
+    if not args:
+        print(f'this gate read no .tsx files under {SCREENS.relative_to(ROOT)}')
+        print('the path is wrong or the screens moved — it cannot pass by finding nothing')
+        sys.exit(1)
+
     found = sweep(args)
     total = sum(len(v) for v in found.values())
-    print(f'{total} strings across {len(found)} files\n')
+    # Files *scanned*, not files with findings. The old wording said
+    # "0 strings across 0 files" over a clean sweep of fifty-one, which reads
+    # exactly like a sweep that never happened.
+    print(f'{total} untranslated strings across {len(args)} files scanned\n')
     for path, hits in sorted(found.items(), key=lambda kv: -len(kv[1])):
         print(f'--- {path} ({len(hits)})')
         for i, s in hits[:200]:
             print(f'  {i}: {s}')
+
+    if total:
+        print()
+        print("put it through t(), or write it in every language, but do not ship it in one")
+
+    # Exits non-zero. This script existed for months, returned 0 whatever it
+    # found, and was not named in `make gates` — so it was neither a gate nor
+    # reachable. Both halves are fixed together, because either one alone still
+    # leaves it useless.
+    sys.exit(1 if total else 0)

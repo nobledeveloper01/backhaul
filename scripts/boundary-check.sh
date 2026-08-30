@@ -13,7 +13,19 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-TARGET=packages/domain/src/trip.ts
+# Whichever domain file comes first, rather than one named here.
+#
+# Naming `trip.ts` meant this gate would go quietly green the day somebody
+# renamed it — `cp` would fail, `set -uo pipefail` has no `-e`, and the eslint
+# run below would find no violation in a file that does not exist. The same
+# defect was found in the sibling project's copy of this script and fixed there
+# first.
+TARGET=$(find packages/domain/src -name '*.ts' -not -name 'index.ts' | sort | head -1)
+if [ -z "$TARGET" ] || [ ! -f "$TARGET" ]; then
+  echo "boundary gate found no domain source to test against — the path is wrong or the code moved" >&2
+  exit 1
+fi
+
 BACKUP=$(mktemp)
 cp "$TARGET" "$BACKUP"
 restore() { cp "$BACKUP" "$TARGET"; rm -f "$BACKUP"; }

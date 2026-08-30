@@ -184,8 +184,12 @@ repo-check:
 wired-check:
 	@python3 scripts/wired-check.py
 
+## untranslated: no screen ships one language
+untranslated:
+	@python3 scripts/untranslated-check.py
+
 ## gates: the blocking checks alone
-gates: typecheck app-typecheck lint boundary doc-check fixtures-check repo-check wired-check
+gates: typecheck app-typecheck lint boundary doc-check fixtures-check repo-check wired-check untranslated
 
 ## ci: everything
 ##   `round-trip` is last because it is the only step that starts a server, and
@@ -246,7 +250,7 @@ clean:
 setup-clean: clean
 	find . -name node_modules -maxdepth 3 -type d -prune -exec rm -rf {} +
 
-.PHONY: help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
+.PHONY: untranslated help setup test typecheck lint boundary doc-check gates ci adr journal clean setup-clean \
 	fixtures fixtures-check server-build server-test server-run server-up server-down \
 	app-typecheck app-test app-pods app-ios app-android app-apk shot round-trip \
 	round-trip-only domain-build repo-check wired-check

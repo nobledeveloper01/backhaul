@@ -7,6 +7,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`untranslated-check.py` was neither a gate nor reachable.** It was not named
+  in `make gates`, and it returned zero whatever it found, and it resolved its
+  scan path against the working directory so it read nothing from anywhere but
+  the repository root. It now exits non-zero on findings, fails when it reads no
+  files at all, reports files *scanned* rather than files with findings — the
+  old wording said "0 strings across 0 files" over a clean sweep of fifty-one,
+  which reads exactly like a sweep that never happened — and it runs in
+  `make gates`. Proved by planting an English string in a screen.
+
+  It reports zero findings across all fifty-one screens, so nothing was
+  shipped in one language. The discipline held without the gate; the gate was
+  still fiction.
+
+- **`boundary-check.sh` named `packages/domain/src/trip.ts`.** The day that file
+  is renamed, `cp` fails, `set -uo pipefail` carries no `-e`, and the gate goes
+  quietly green over a file that does not exist. It now takes whichever domain
+  source comes first and fails loudly when it finds none.
+
+- **`doc-check.sh` asked only whether the roadmap mentioned the current phase**,
+  not whether it marked it. That is the check the sibling project's roadmap
+  passed for the whole of a phase while still saying the previous one was
+  current. Both directions proved.
+
+These were all found by auditing this repository's gates against the ones ported
+from it, after three of the ported copies turned out to be incapable of failing.
+
+
 ### Added
 
 - **A sealed delivery now sends itself, even with the screen closed.** It

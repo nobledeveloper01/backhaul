@@ -6,6 +6,57 @@ changelog with worse formatting.
 
 ---
 
+## 2026-08-30 — Auditing this repo's gates against the copies made from them
+
+**Did.** Three of this project's gates were ported to the next one, and all
+three turned out to be incapable of failing there. Came back and checked the
+originals. Two of the three defects were here too, plus one that is worse.
+
+### What surprised us
+
+**`untranslated-check.py` was not a gate.** It was not named in `make gates`, so
+nothing ran it; and it returned zero whatever it found, so nothing would have
+happened if something had. It has been in `scripts/` for months looking like
+coverage.
+
+Running it by hand reports zero findings across all fifty-one screens — so
+nothing was shipped in one language and the discipline held without it. That
+makes it a *lucky* fiction rather than a harmful one, which is worth writing
+down, because "we never had a problem" is exactly what a broken gate produces
+right up until the day it doesn't.
+
+**`boundary-check.sh` named `packages/domain/src/trip.ts` directly.** The gate
+appends a `react-native` import to a real domain file, runs eslint, and asserts
+the boundary rule fires. If that file is ever renamed, `cp` fails, and
+`set -uo pipefail` carries no `-e` — so the run continues, eslint finds no
+violation in a file that does not exist, and the gate reports clean over an
+unchecked boundary. Now it takes whichever domain source comes first and fails
+loudly when there is none.
+
+**`doc-check.sh` asked whether the roadmap *mentioned* the phase, not whether it
+*marked* it.** In the sibling project that check passed for an entire phase while
+the roadmap still said the previous one was current.
+
+**And the gates cannot be run here at all**, because `node_modules` was removed
+during a storage clean-up. The two fixes above that need no dependencies were
+proved by breaking what they guard; the boundary fix was proved only on its
+failure branch, because eslint is not installed. `make setup` restores it, and
+`make ci` should be run before this repository is trusted again.
+
+### The pattern, stated once
+
+A gate is not done when it passes. It is done when you have watched it fail.
+Five of them across these two repositories were green and could not have been
+otherwise: one scanning directories that no longer existed, one exiting zero
+unconditionally, one never wired into the build, one whose config filter dropped
+the database URL it was handed, and one comparing against a path that a rename
+would silently empty.
+
+None of them were hard to write. All of them were hard to notice, because a
+passing gate and an absent gate look identical from the outside.
+
+---
+
 ## 2026-08-28 (end) — The retry that only ran while somebody watched
 
 **Did.** The delivery outbox: every sealed hand-over this phone holds is swept
