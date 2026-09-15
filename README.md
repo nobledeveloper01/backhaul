@@ -1,17 +1,25 @@
 # Backhaul
 
-**Truck load matching and freight visibility for Nigerian road logistics.**
+Truck load matching and freight visibility for Nigerian road logistics.
+
+Backhaul is a two-sided freight platform with tracking as its spine: post a
+load, take bids from verified carriers, watch the cargo move, prove the
+delivery — and, as a truck nears its destination, surface the loads going back
+the other way.
+
+| Trips | A trip | The driver |
+|---|---|---|
+| ![The trip list](docs/screenshots/01-trips.png) | ![A trip](docs/screenshots/02-trip-detail.png) | ![The driver face: one screen, one action](docs/screenshots/05-driver.png) |
+
+---
+
+## 1. The problem
 
 A 30-tonne truck leaves Lagos loaded and arrives in Kano three days later. It
 unloads. Then, very often, it drives 1,000 km back **empty**. The fuel is
 burned, the driver is paid, the tyres wear — and no revenue is earned against
 any of it. That cost is priced into the outbound leg, which is why Nigerian
 freight rates are high relative to distance.
-
-Backhaul is a two-sided freight platform with tracking as its spine: post a
-load, take bids from verified carriers, watch the cargo move, prove the
-delivery — and, as a truck nears its destination, surface the loads going back
-the other way.
 
 > **Tracking is the wedge; matching is the business.**
 >
@@ -24,140 +32,225 @@ the other way.
 
 Full analysis in [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md).
 
+### What it is not
+
+**Backhaul does not hold money.** Parties settle directly; holding freight
+payments would make this a regulated financial business for no strategic
+gain. What the platform does is compute — the fare, the demurrage, the
+settlement and the milestones at which each part changes hands, in integer
+kobo, from rules anyone may read. Its commission is taken on the agreed fare
+only and never on demurrage, because demurrage compensates a delay the
+platform did not cause, and taking a cut of it would mean earning more the
+worse a trip goes.
+
+**Nothing that is an estimate is rendered as a measurement.** The arrival
+window refuses outright rather than guessing while an incident is blocking,
+and says what would fix it; a price from the table is marked *indicative* and
+never presented as a market rate; the corridor is drawn to scale and is not a
+map ([ADR-0006](docs/adr/0006-the-corridor-view-is-not-a-map.md)).
+
+**A phone number names a party and never answers a question.** A shipper who
+agreed a load on WhatsApp types the two numbers they have been messaging and
+tracks the truck from there; nothing about either number is looked up,
+scored or inferred
+([ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md)).
+
+
 ---
 
-## Contents
+## 2. How it works
 
-1. [Where this is](#1-where-this-is)
-2. [What is built](#2-what-is-built)
-3. [The app](#3-the-app)
-4. [How it fits together](#4-how-it-fits-together)
-5. [The trip](#5-the-trip)
-6. [The ingest path](#6-the-ingest-path)
-7. [Two languages, one set of answers](#7-two-languages-one-set-of-answers)
-8. [Correctness notes](#8-correctness-notes)
-9. [Running it](#9-running-it)
-10. [The gates](#10-the-gates)
-11. [What is not done, and why](#11-what-is-not-done-and-why)
-    · [Licensing](#11a-licensing)
-12. [Documents](#12-documents)
+```mermaid
+graph TB
+    subgraph device["Driver's phone — authoritative for capture"]
+        native["Native TurboModule<br/>Android foreground service · iOS region monitoring"]
+        queue[("SQLite queue<br/>survives kill, reboot, dead zone")]
+        rn["React Native UI"]
+        native --> queue
+        queue -.->|"batched, on signal"| api
+        rn --> domain1
+    end
+
+    subgraph shared["packages/domain — pure TypeScript"]
+        domain1["trip · geo · tracking · money<br/>pricing · eta · matching"]
+    end
+
+    subgraph server["server/ — authoritative for distribution"]
+        api["ASP.NET Core Web API"]
+        csharp["Backhaul.Domain (C#)"]
+        db[("PostgreSQL")]
+        api --> csharp
+        api --> db
+    end
+
+    domain1 -.->|"make fixtures"| fixtures[/"fixtures/parity.json"/]
+    fixtures -.->|"106 cases assert<br/>the same answers"| csharp
+
+    native -->|"asks the policy"| domain1
+
+    shipper["Shipper — web console"] --> api
+```
+
+**The device is authoritative for capturing and preserving a position; the
+server is authoritative for distributing it.** A truck driving through 400 km
+of dead zone loses nothing — the samples are on the phone, in order, and they
+arrive complete when signal returns.
+
+### The trip
+
+The state machine is written as **data, not control flow** — an explicit edge
+set that a test asserts exactly, so adding a transition fails the build rather
+than quietly permitting a new way for cargo to change hands.
+
+```mermaid
+stateDiagram-v2
+    [*] --> open
+    open --> assigned
+    open --> cancelled
+    assigned --> loading
+    assigned --> cancelled
+    assigned --> disputed
+    loading --> in_transit
+    loading --> cancelled
+    loading --> disputed
+
+    state "recording positions" as recording {
+        in_transit --> signal_lost
+        in_transit --> stalled
+        signal_lost --> in_transit
+        signal_lost --> stalled
+        stalled --> in_transit
+        stalled --> signal_lost
+    }
+
+    in_transit --> arrived
+    signal_lost --> arrived
+    stalled --> arrived
+    in_transit --> disputed
+    signal_lost --> disputed
+    stalled --> disputed
+
+    arrived --> delivered
+    arrived --> disputed
+    disputed --> delivered
+    disputed --> cancelled
+
+    delivered --> [*]
+    cancelled --> [*]
+```
+
+Three things in that diagram are deliberate and easy to get wrong:
+
+- **The three transit states move freely between one another.** Signal and
+  movement come and go on a Lagos–Kano corridor several times a trip, and each
+  drop must not need a human to un-stick it.
+- **`signal_lost` still records.** Stopping capture when the network drops
+  loses precisely the stretch of road nobody can account for afterwards.
+- **A dispute never returns to the road.** Resolution is a human decision
+  recorded as an event, never inferred from tracking data — the reason a trip
+  is disputed is that the tracking data is being argued about. A resumed trip
+  is a new trip.
+
+The history is **append-only**. No update path, no delete path; a correction is
+a new event and the original survives (ADR-0003).
+
+### The ingest path
+
+The one endpoint with a contract that cannot be relaxed.
+
+```mermaid
+sequenceDiagram
+    participant P as Phone (native)
+    participant Q as SQLite queue
+    participant A as POST /v1/tracking/batch
+    participant D as PostgreSQL
+
+    P->>Q: write fix (every 60–900s, by speed and battery)
+    Note over Q: rows stay here — no signal, no problem
+
+    Q->>A: batch (≤200 samples, batchId, tripId)
+    A->>A: is this trip recording?
+    A->>D: samples + batch row, one transaction
+    D-->>A: committed
+    A-->>Q: 200 {accepted, duplicate, replayed}
+    Q->>Q: delete local rows — only now
+
+    Note over Q,A: no acknowledgement → retry same batchId<br/>→ original outcome replayed, nothing written twice
+```
+
+- **Acknowledges only once committed, never optimistically.** The device
+  deletes its local rows on that acknowledgement and on nothing else. Making
+  this endpoint faster by responding earlier does not make it faster; it makes
+  it destroy the evidence the product exists to keep.
+- **The batch row and the samples commit together.** Written separately, a
+  crash between them acknowledges a batch whose samples were never stored.
+- **Duplicate delivery is expected**, not exceptional. Samples deduplicate on
+  their client-generated id, which is the primary key, so a repeat is a no-op
+  by construction.
+- **Samples are stored exactly as sent.** Fixes the phone could not vouch for
+  are excluded when a track is *read*, where what was excluded is shown beside
+  the figure it was excluded from. A server that quietly discards fixes
+  destroys the evidence a driver needs to argue with their invoice.
+- **There is no off-trip tracking.** The server rejects samples for a trip that
+  is not under way rather than trusting the client not to send them.
+
+Verified rather than asserted: an acknowledged batch, its trip and its history
+survive a process restart against real PostgreSQL, and replaying that batch
+afterwards returns the original outcome and writes nothing.
+
+### Two languages, one set of answers
+
+The server is .NET; the domain is TypeScript. Every rule that exists on both
+sides therefore exists **twice**, and two implementations of a demurrage rule
+is two answers to give a shipper.
+
+`packages/domain` is the source of truth. `make fixtures` regenerates
+`fixtures/parity.json` from it, and the C# suite asserts the same answers:
+
+| Covered | Cases |
+|---|---|
+| Trip machine — complete edge set, terminal and tracking flags | 24 transitions, 10 states |
+| Refusal messages, **word for word** | 5 |
+| Time-in-state arithmetic | 3 |
+| Quotes across four real corridors × five truck classes | 20 |
+| Demurrage, including boundary minutes | 30 |
+| Settlement, on deliberately awkward figures | 7 |
+| Percentage rounding, both signs | 10 |
+| Truck classing at capacity boundaries | 11 |
+| Haversine distances between real cities | 10 |
+| Track cleaning outcomes | 5 |
+| Stall and silence detection | 7 |
+
+`make fixtures-check` fails the build on stale fixtures, so forgetting to
+regenerate surfaces as *"you forgot a step"* rather than *"the server is
+broken"*. Full argument: [ADR-0005](docs/adr/0005-the-server-is-dotnet-and-parity-is-a-test.md).
+
+#### And the wire formats, which fixtures cannot check
+
+Fixtures hold the two *domains* to the same answers. Nothing was holding the
+two *serialisers* to each other — and the last time these two spoke different
+spellings of the same instant, it took a fixture comparing refusal wording to
+notice.
+
+`make round-trip` drives the running server through the app's own client and
+demands they agree:
+
+```
+ok    an illegal transition is refused
+ok    the refusal carries the sentence, not a status line
+ok    timestamps survive the round trip exactly
+ok    the same batch replays rather than writing twice
+ok    the tower fix was excluded
+ok    the server and the app clean the track identically
+ok    and agree on the distance, to the metre
+ok    and on what the truck is doing
+```
+
+The last three run the same position fixes through the TypeScript domain and
+compare against what the C# server returned — the whole stack, end to end, on
+one set of numbers.
 
 ---
-
-## 1. Where this is
-
-**Phases 0 to 5 have green software gates. Phase 6 — hardening and launch — is
-current, and it is the last one before v1.0.**
-
-Every gate on this project is split in two.
-[ADR-0014](docs/adr/0014-a-phase-has-a-software-gate-and-a-hardware-gate.md):
-the **software gate** is everything provable on a developer's machine and it is
-what blocks the next phase; the **hardware gate** is everything that needs a
-device in a hand, and it blocks the *release*. `PHASE` tracks the first,
-because that is the one that says what to work on next. **v1.0 does not ship
-until every deferred gate is green** — they are listed in §11 and at the top of
-[`docs/ROADMAP.md`](docs/ROADMAP.md).
-
-| | |
-|---|---|
-| Domain tests | **585** passing |
-| Server tests | **196** endpoint, **136** domain and parity |
-| App tests | **88** passing |
-| Console tests | **3** passing |
-| Parity fixtures | generated from `packages/domain`, compared on every build |
-| Verified against real PostgreSQL | yes, including a process restart |
-| Faces | shipper, carrier, driver — and a web console |
-| Screens | **27**, four languages, both themes, iOS and Android |
-| Decisions written down | **20** ADRs |
-
-### What works end to end
-
-A shipper signs in with a phone number and a code, says what they are, and
-posts a load. A carrier bids. The shipper reads the ranked bids — cheapest is
-not first, and the reason each one ranks where it does is printed beside it —
-and awards one, **which opens the trip in the same transaction**. The driver's
-phone captures positions natively, keeps them when the network goes, and
-uploads when it returns. At the gate the driver photographs the goods, takes a
-signature and seals the delivery **with no network at all**; the phone holds it
-and sends it when it can. The shipper follows the truck the whole way, on a
-phone or in a browser, and can hand a stranger a scoped, revocable link that
-shows the corridor and nothing else.
-
-None of that requires the marketplace. A shipper who agreed a load on WhatsApp
-— which is almost all of them — types the two numbers they have been messaging
-and tracks the truck from there. That is the wedge, and it is
-[ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md).
-
-## 2. What is built
-
-Four languages, one product. Each was chosen for where the hard part of that
-layer actually is.
-
-| Layer | Language | Why that one |
-|---|---|---|
-| `packages/domain` | **TypeScript**, no runtime deps | Every rule, shared by three faces without a build step. Node runs it directly through type stripping — no jest, no loader, no bundler |
-| `packages/api` | **TypeScript** | The wire, once. It imports nothing platform-specific and never did |
-| `apps/mobile` | **TypeScript** + React Native 0.87 | One binary, three faces, iOS and Android |
-| `packages/tracking-native` | **Kotlin** and **Swift** | The tracking loop is a foreground service and a region-monitoring wake-up. Neither exists in JavaScript, and this is the part the product is |
-| `apps/web` | **TypeScript**, no framework | A shipper's console. Three views and a list; `tsc`, an import map, and the browser's own module loader |
-| `server/` | **C#** on .NET 9 | Mirrors the rules the domain holds and is checked against it by fixtures on every build |
-| Tooling | **Python**, **Bash** | The gates: `wired-check`, `untranslated-check`, `doc-check`, `boundary-check`, `make-icons` |
-| Data | **PostgreSQL** via EF Core | Migrations checked in; every suite runs against the real thing as well as in-memory |
-
-### `packages/domain` — pure TypeScript
-
-No React Native, no DOM, no I/O, no clock, no randomness. Enforced by lint
-(ADR-0001) and by `scripts/boundary-check.sh`, which injects a violation and
-fails if the rule stays quiet.
-
-| Module | Decides |
-|---|---|
-| `trip.ts` | Whether a trip may change state, and refuses with a sentence a driver can read |
-| `geo.ts` | Which position fixes are worth believing, and what was discarded |
-| `tracking.ts` | How often to sample, when to upload, when silence means something |
-| `money.ts` | Integer kobo, displayed in whole naira |
-| `pricing.ts` | Indicative rates, demurrage, settlement |
-| `eta.ts` | An arrival window, or a refusal with a reason — and it refuses outright while an incident is blocking |
-| `matching.ts` | Which load a carrier should take, and whose bid a shipper should accept |
-| `trust.ts` | What a carrier has proved, from evidence they cannot write |
-| `pod.ts` | Whether a delivery is proved, and the note that comes out of it |
-| `queue.ts` | What may be deleted from the phone, and when |
-| `budget.ts` | What the tracking costs a driver in data, and when to say so |
-| `stops.ts` | Every stop on a trip, and how long it lasted |
-| `utilisation.ts` | How much of a fleet's driving was paid for |
-| `language.ts` | Every word on every screen, in English, Hausa, Yorùbá and Igbo |
-
-It is licensed **Apache-2.0**, separately from the rest of the repository, so
-that anyone auditing the arithmetic behind a price, a settlement or a delivery
-note can use it without reference to the server's terms.
-
-### `apps/mobile` — the three faces
-
-Three faces in one binary, consuming the domain package directly. See §3.
-
-### `apps/web` — the shipper's console
-
-The fourth face, in a browser: sign in, list and search trips, open one, post a
-load, read the ranked bids, award one. It shares `@backhaul/domain` and
-`@backhaul/api` with the phone, so the matcher that finds *Port Harcourt* from
-`port-harcourt` is the same function on both. No framework and no bundler.
-[`apps/web/README.md`](apps/web/README.md).
-
-### `packages/tracking-native` — Kotlin and Swift
-
-An Android foreground service with a SQLite queue, a boot receiver and
-OEM-restriction reporting; iOS background location with the same queue behind
-the same TurboModule contract. This is the part of the product that cannot be
-written in JavaScript, and it is why the app is React Native rather than a web
-view.
-
-### `server/` — ASP.NET Core on .NET 9
-
-EF Core against PostgreSQL, Swagger generated from the controllers' own XML
-comments. Trips, the ingest path, cleaned tracks, pricing, settlement, the
-market, identity and the public share route.
-
-Details: [`server/README.md`](server/README.md).
 
 ## 3. The app
 
@@ -602,207 +695,112 @@ which is why the screenshot is in this README rather than a claim that it works.
 
 ---
 
-## 4. How it fits together
+## 4. What each layer does
 
-```mermaid
-graph TB
-    subgraph device["Driver's phone — authoritative for capture"]
-        native["Native TurboModule<br/>Android foreground service · iOS region monitoring"]
-        queue[("SQLite queue<br/>survives kill, reboot, dead zone")]
-        rn["React Native UI"]
-        native --> queue
-        queue -.->|"batched, on signal"| api
-        rn --> domain1
-    end
+Four languages, one product. Each was chosen for where the hard part of that
+layer actually is.
 
-    subgraph shared["packages/domain — pure TypeScript"]
-        domain1["trip · geo · tracking · money<br/>pricing · eta · matching"]
-    end
+| Layer | Language | Why that one |
+|---|---|---|
+| `packages/domain` | **TypeScript**, no runtime deps | Every rule, shared by three faces without a build step. Node runs it directly through type stripping — no jest, no loader, no bundler |
+| `packages/api` | **TypeScript** | The wire, once. It imports nothing platform-specific and never did |
+| `apps/mobile` | **TypeScript** + React Native 0.87 | One binary, three faces, iOS and Android |
+| `packages/tracking-native` | **Kotlin** and **Swift** | The tracking loop is a foreground service and a region-monitoring wake-up. Neither exists in JavaScript, and this is the part the product is |
+| `apps/web` | **TypeScript**, no framework | A shipper's console. Three views and a list; `tsc`, an import map, and the browser's own module loader |
+| `server/` | **C#** on .NET 9 | Mirrors the rules the domain holds and is checked against it by fixtures on every build |
+| Tooling | **Python**, **Bash** | The gates: `wired-check`, `untranslated-check`, `doc-check`, `boundary-check`, `make-icons` |
+| Data | **PostgreSQL** via EF Core | Migrations checked in; every suite runs against the real thing as well as in-memory |
 
-    subgraph server["server/ — authoritative for distribution"]
-        api["ASP.NET Core Web API"]
-        csharp["Backhaul.Domain (C#)"]
-        db[("PostgreSQL")]
-        api --> csharp
-        api --> db
-    end
+### `packages/domain` — pure TypeScript
 
-    domain1 -.->|"make fixtures"| fixtures[/"fixtures/parity.json"/]
-    fixtures -.->|"106 cases assert<br/>the same answers"| csharp
+No React Native, no DOM, no I/O, no clock, no randomness. Enforced by lint
+(ADR-0001) and by `scripts/boundary-check.sh`, which injects a violation and
+fails if the rule stays quiet.
 
-    native -->|"asks the policy"| domain1
-
-    shipper["Shipper — web console"] --> api
-```
-
-**The device is authoritative for capturing and preserving a position; the
-server is authoritative for distributing it.** A truck driving through 400 km
-of dead zone loses nothing — the samples are on the phone, in order, and they
-arrive complete when signal returns.
-
----
-
-## 5. The trip
-
-The state machine is written as **data, not control flow** — an explicit edge
-set that a test asserts exactly, so adding a transition fails the build rather
-than quietly permitting a new way for cargo to change hands.
-
-```mermaid
-stateDiagram-v2
-    [*] --> open
-    open --> assigned
-    open --> cancelled
-    assigned --> loading
-    assigned --> cancelled
-    assigned --> disputed
-    loading --> in_transit
-    loading --> cancelled
-    loading --> disputed
-
-    state "recording positions" as recording {
-        in_transit --> signal_lost
-        in_transit --> stalled
-        signal_lost --> in_transit
-        signal_lost --> stalled
-        stalled --> in_transit
-        stalled --> signal_lost
-    }
-
-    in_transit --> arrived
-    signal_lost --> arrived
-    stalled --> arrived
-    in_transit --> disputed
-    signal_lost --> disputed
-    stalled --> disputed
-
-    arrived --> delivered
-    arrived --> disputed
-    disputed --> delivered
-    disputed --> cancelled
-
-    delivered --> [*]
-    cancelled --> [*]
-```
-
-Three things in that diagram are deliberate and easy to get wrong:
-
-- **The three transit states move freely between one another.** Signal and
-  movement come and go on a Lagos–Kano corridor several times a trip, and each
-  drop must not need a human to un-stick it.
-- **`signal_lost` still records.** Stopping capture when the network drops
-  loses precisely the stretch of road nobody can account for afterwards.
-- **A dispute never returns to the road.** Resolution is a human decision
-  recorded as an event, never inferred from tracking data — the reason a trip
-  is disputed is that the tracking data is being argued about. A resumed trip
-  is a new trip.
-
-The history is **append-only**. No update path, no delete path; a correction is
-a new event and the original survives (ADR-0003).
-
----
-
-## 6. The ingest path
-
-The one endpoint with a contract that cannot be relaxed.
-
-```mermaid
-sequenceDiagram
-    participant P as Phone (native)
-    participant Q as SQLite queue
-    participant A as POST /v1/tracking/batch
-    participant D as PostgreSQL
-
-    P->>Q: write fix (every 60–900s, by speed and battery)
-    Note over Q: rows stay here — no signal, no problem
-
-    Q->>A: batch (≤200 samples, batchId, tripId)
-    A->>A: is this trip recording?
-    A->>D: samples + batch row, one transaction
-    D-->>A: committed
-    A-->>Q: 200 {accepted, duplicate, replayed}
-    Q->>Q: delete local rows — only now
-
-    Note over Q,A: no acknowledgement → retry same batchId<br/>→ original outcome replayed, nothing written twice
-```
-
-- **Acknowledges only once committed, never optimistically.** The device
-  deletes its local rows on that acknowledgement and on nothing else. Making
-  this endpoint faster by responding earlier does not make it faster; it makes
-  it destroy the evidence the product exists to keep.
-- **The batch row and the samples commit together.** Written separately, a
-  crash between them acknowledges a batch whose samples were never stored.
-- **Duplicate delivery is expected**, not exceptional. Samples deduplicate on
-  their client-generated id, which is the primary key, so a repeat is a no-op
-  by construction.
-- **Samples are stored exactly as sent.** Fixes the phone could not vouch for
-  are excluded when a track is *read*, where what was excluded is shown beside
-  the figure it was excluded from. A server that quietly discards fixes
-  destroys the evidence a driver needs to argue with their invoice.
-- **There is no off-trip tracking.** The server rejects samples for a trip that
-  is not under way rather than trusting the client not to send them.
-
-Verified rather than asserted: an acknowledged batch, its trip and its history
-survive a process restart against real PostgreSQL, and replaying that batch
-afterwards returns the original outcome and writes nothing.
-
----
-
-## 7. Two languages, one set of answers
-
-The server is .NET; the domain is TypeScript. Every rule that exists on both
-sides therefore exists **twice**, and two implementations of a demurrage rule
-is two answers to give a shipper.
-
-`packages/domain` is the source of truth. `make fixtures` regenerates
-`fixtures/parity.json` from it, and the C# suite asserts the same answers:
-
-| Covered | Cases |
+| Module | Decides |
 |---|---|
-| Trip machine — complete edge set, terminal and tracking flags | 24 transitions, 10 states |
-| Refusal messages, **word for word** | 5 |
-| Time-in-state arithmetic | 3 |
-| Quotes across four real corridors × five truck classes | 20 |
-| Demurrage, including boundary minutes | 30 |
-| Settlement, on deliberately awkward figures | 7 |
-| Percentage rounding, both signs | 10 |
-| Truck classing at capacity boundaries | 11 |
-| Haversine distances between real cities | 10 |
-| Track cleaning outcomes | 5 |
-| Stall and silence detection | 7 |
+| `trip.ts` | Whether a trip may change state, and refuses with a sentence a driver can read |
+| `geo.ts` | Which position fixes are worth believing, and what was discarded |
+| `tracking.ts` | How often to sample, when to upload, when silence means something |
+| `money.ts` | Integer kobo, displayed in whole naira |
+| `pricing.ts` | Indicative rates, demurrage, settlement |
+| `eta.ts` | An arrival window, or a refusal with a reason — and it refuses outright while an incident is blocking |
+| `matching.ts` | Which load a carrier should take, and whose bid a shipper should accept |
+| `trust.ts` | What a carrier has proved, from evidence they cannot write |
+| `pod.ts` | Whether a delivery is proved, and the note that comes out of it |
+| `queue.ts` | What may be deleted from the phone, and when |
+| `budget.ts` | What the tracking costs a driver in data, and when to say so |
+| `stops.ts` | Every stop on a trip, and how long it lasted |
+| `utilisation.ts` | How much of a fleet's driving was paid for |
+| `language.ts` | Every word on every screen, in English, Hausa, Yorùbá and Igbo |
 
-`make fixtures-check` fails the build on stale fixtures, so forgetting to
-regenerate surfaces as *"you forgot a step"* rather than *"the server is
-broken"*. Full argument: [ADR-0005](docs/adr/0005-the-server-is-dotnet-and-parity-is-a-test.md).
+It is licensed **Apache-2.0**, separately from the rest of the repository, so
+that anyone auditing the arithmetic behind a price, a settlement or a delivery
+note can use it without reference to the server's terms.
 
-### And the wire formats, which fixtures cannot check
+### `apps/mobile` — the three faces
 
-Fixtures hold the two *domains* to the same answers. Nothing was holding the
-two *serialisers* to each other — and the last time these two spoke different
-spellings of the same instant, it took a fixture comparing refusal wording to
-notice.
+Three faces in one binary, consuming the domain package directly. See [§3](#3-the-app).
 
-`make round-trip` drives the running server through the app's own client and
-demands they agree:
+### `apps/web` — the shipper's console
 
-```
-ok    an illegal transition is refused
-ok    the refusal carries the sentence, not a status line
-ok    timestamps survive the round trip exactly
-ok    the same batch replays rather than writing twice
-ok    the tower fix was excluded
-ok    the server and the app clean the track identically
-ok    and agree on the distance, to the metre
-ok    and on what the truck is doing
-```
+The fourth face, in a browser: sign in, list and search trips, open one, post a
+load, read the ranked bids, award one. It shares `@backhaul/domain` and
+`@backhaul/api` with the phone, so the matcher that finds *Port Harcourt* from
+`port-harcourt` is the same function on both. No framework and no bundler.
+[`apps/web/README.md`](apps/web/README.md).
 
-The last three run the same position fixes through the TypeScript domain and
-compare against what the C# server returned — the whole stack, end to end, on
-one set of numbers.
+### `packages/tracking-native` — Kotlin and Swift
+
+An Android foreground service with a SQLite queue, a boot receiver and
+OEM-restriction reporting; iOS background location with the same queue behind
+the same TurboModule contract. This is the part of the product that cannot be
+written in JavaScript, and it is why the app is React Native rather than a web
+view.
+
+### `server/` — ASP.NET Core on .NET 9
+
+EF Core against PostgreSQL, Swagger generated from the controllers' own XML
+comments. Trips, the ingest path, cleaned tracks, pricing, settlement, the
+market, identity and the public share route.
+
+Details: [`server/README.md`](server/README.md).
 
 ---
 
-## 8. Correctness notes
+## 5. Quick start
+
+```bash
+make setup          # install
+make ci             # everything: gates, domain, app and server tests
+```
+
+The app, on the iOS simulator:
+
+```bash
+make app-pods       # CocoaPods, with the locale it needs
+make app-ios
+```
+
+The server, on an in-memory store — no database needed, Swagger at `/swagger`:
+
+```bash
+make server-run
+```
+
+Against real PostgreSQL, in Docker:
+
+```bash
+make server-up      # http://localhost:8080/swagger
+make server-down    # and drop its scratch database
+```
+
+The .NET SDK is installed per-user at `~/.dotnet` and is not on a default
+PATH; the Makefile's `DOTNET` variable points at it and is overridable for CI.
+
+---
+
+## 6. Correctness notes
 
 The defects worth recording are the ones a green test suite did not catch.
 
@@ -846,68 +844,172 @@ trusted.
 
 ---
 
-## 9. Running it
+## 7. The documentation pipeline
 
-```bash
-make setup          # install
-make ci             # everything: gates, domain, app and server tests
-```
+Five documents move as the work moves, and a gate in
+[`scripts/doc-check.sh`](scripts/doc-check.sh) runs in `make ci`.
 
-The app, on the iOS simulator:
+| Document | Answers | Updated |
+| --- | --- | --- |
+| [`docs/JOURNAL.md`](docs/JOURNAL.md) | What did we do, and what surprised us? | Every session — `make journal` |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed for someone using this? | Every user-visible change |
+| [`docs/adr/`](docs/adr/) | Why is it built this way? | Any non-obvious decision — `make adr` |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) + `PHASE` | Where are we, and what finishes this phase? | When a software gate goes green; the hardware gates stay listed at the top |
+| [`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md) | What is missing, why, and what would unblock it? | When features are sourced or cut |
 
-```bash
-make app-pods       # CocoaPods, with the locale it needs
-make app-ios
-```
+The gate checks that every required document is **tracked by git**, not
+merely present on disk — a sibling project had a document written, committed
+with a message saying so, and absent from GitHub for a day, because `docs/*`
+is an allow-list and `git add` had nothing to add. The rest of the reading:
+[`DESIGN.md`](DESIGN.md) for colour, type, targets and voice;
+[`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) for what to install and what goes
+wrong installing it; [`server/README.md`](server/README.md) for the API in
+detail; [`apps/web/README.md`](apps/web/README.md) for the console and why it
+has no bundler; [`CLAUDE.md`](CLAUDE.md) for how to work in this repository.
 
-The server, on an in-memory store — no database needed, Swagger at `/swagger`:
-
-```bash
-make server-run
-```
-
-Against real PostgreSQL, in Docker:
-
-```bash
-make server-up      # http://localhost:8080/swagger
-make server-down    # and drop its scratch database
-```
-
-The .NET SDK is installed per-user at `~/.dotnet` and is not on a default
-PATH; the Makefile's `DOTNET` variable points at it and is overridable for CI.
 
 ---
 
-## 10. The gates
+## 8. Data handling
 
-`make gates` runs the blocking checks. Three of them exist because something
+The device is authoritative for capturing a position; the server for
+distributing it; and nobody sees more of a trip than their part in it.
+
+| Class | Examples | Rule |
+| --- | --- | --- |
+| On the phone until acknowledged | Position fixes, the sealed delivery | A SQLite queue that survives kill, reboot and a dead zone; a fix is deleted only when the server acknowledged it ([ADR-0009](docs/adr/0009-a-fix-is-deleted-only-when-the-server-acknowledged-it.md)) |
+| Scoped by query, not by check | Who may read a trip, who may write positions to it | Authorisation is a query filter ([ADR-0008](docs/adr/0008-authorisation-is-a-query-filter-not-a-controller-check.md)); a caller reading a trip they are not on gets nothing, and a test says so |
+| A capability, not an account | The share link | Shows the corridor and nothing else, revocable, and its endpoint is public because the link *is* the permission ([ADR-0010](docs/adr/0010-a-share-link-is-a-capability-and-its-endpoint-is-public.md)) |
+| Append-only | The trip history, every event on it | No update, no delete; a correction is a new event ([ADR-0003](docs/adr/0003-a-trip-history-is-append-only.md)) |
+| Sealed on the device, countersigned by the server | The delivery: photographs, signature, the note | ([ADR-0018](docs/adr/0018-the-device-seals-a-delivery-and-the-server-countersigns.md)) |
+| Never invented | A push token | The app registers a real one or says it has none; a placeholder would record an alert as sent that reached nobody ([ADR-0013](docs/adr/0013-the-app-registers-a-real-push-token-or-says-it-has-none.md)) |
+| Never inferred | Anything from a phone number | It names a party; it answers no question ([ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md)) |
+| Never held | Money | Parties settle directly; the platform computes the figure and the milestones and takes its commission on the fare alone |
+
+
+---
+
+## 9. Development
+
+```bash
+make ci             # everything: gates, domain, app and server tests, the round trip
+make gates          # the blocking checks alone
+make fixtures       # regenerate fixtures/parity.json from packages/domain
+make shot           # a screenshot into docs/screenshots
+make adr            # a new ADR, numbered and templated
+make journal
+```
+
+`make gates` runs the blocking checks. Several of them exist because something
 was missed, not in anticipation of it:
 
 | Gate | Catches |
 |---|---|
-| `make typecheck` | TypeScript, strict, with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` |
+| `make typecheck`, `make app-typecheck` | TypeScript, strict, with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`, in the domain and the app alike |
 | `make lint` | The domain purity boundary, and reading the clock |
 | `make boundary` | **The purity rule having silently stopped matching** — injects a violation and fails if lint stays quiet |
 | `make doc-check` | A required document missing, malformed, **or present on disk and untracked by git** |
 | `make fixtures-check` | **Fixtures stale after a rule changed on the TypeScript side** |
-| `make app-typecheck` | The app, under the same strict settings as the domain |
-| `make server-test` | 106 parity cases, 16 endpoint tests |
+| `make repo-check` | Build output tracked by git |
+| `make wired-check` | Something exported, tested, and called by nothing |
+| `make untranslated` | A string rendered by a screen without going through the table — 0 across 27 screens |
+| `make test`, `make app-test`, `make server-test` | The domain, the app, and the server's endpoint, domain and parity suites |
 | `make round-trip` | The app's client and the real server disagreeing about the wire format |
-| `make server-test` (auth) | A caller reading a trip they are not on, or writing positions to one they only watch |
 
 The doc gate's git-tracked check exists because a sibling project had a
 document written, committed with a message saying so, and absent from GitHub
 for a day — `docs/*` is an allow-list and `git add` had nothing to add.
 
+### Before a feature is called done
+
+- The rule is in `packages/domain`, tested, and the C# agrees with it by fixture
+- Every string on every screen goes through the table, in four languages
+- Both themes; both text extremes; 64 dp targets on the driver face
+- Nothing that is an estimate is rendered as a measurement
+- The hardware half of the gate is written down in `docs/ROADMAP.md` if it cannot be closed here
+- An ADR for any non-obvious decision; `CHANGELOG.md` and the journal updated
+- `make ci` green
+
+
 ---
 
-## 11. What is not done, and why
+## 10. Layout
+
+```text
+packages/domain/src/          trip, geo, tracking, money, pricing, eta, matching, trust, pod,
+                              queue, budget, stops, utilisation, language — pure TypeScript,
+                              no runtime deps, Apache-2.0
+packages/api/                 the wire, once
+packages/tracking-native/     the Kotlin foreground service and the Swift region monitor,
+                              behind one TurboModule contract, with the SQLite queue
+apps/mobile/src/screens/      the twenty-seven screens across three faces
+apps/mobile/src/native/       the bridge to the tracker
+apps/mobile/src/design/       DESIGN.md as code
+apps/web/                     the shipper's console — tsc, an import map, no bundler
+server/src/Backhaul.Domain/   the rules, in C#, held to the TypeScript by fixture
+server/src/Backhaul.Infrastructure/  EF Core, PostgreSQL, the migrations
+server/src/Backhaul.Api/      trips, ingest, tracks, pricing, settlement, the market, identity, share
+server/tests/                 the endpoint suite; the parity suite over fixtures/parity.json
+fixtures/parity.json          what the TypeScript said, for the C# to agree with
+docs/adr/                     the twenty decisions
+docs/screenshots/             the fifty-one screens the README shows
+scripts/                      the gates, make-icons.py
+```
+
+
+---
+
+## 11. Status
+
+**Phases 0 to 5 have green software gates. Phase 6 — hardening and launch — is
+current, and it is the last one before v1.0.**
+
+Every gate on this project is split in two.
+[ADR-0014](docs/adr/0014-a-phase-has-a-software-gate-and-a-hardware-gate.md):
+the **software gate** is everything provable on a developer's machine and it is
+what blocks the next phase; the **hardware gate** is everything that needs a
+device in a hand, and it blocks the *release*. `PHASE` tracks the first,
+because that is the one that says what to work on next. **v1.0 does not ship
+until every deferred gate is green** — they are listed below and at the top of
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+| | |
+|---|---|
+| Domain tests | **585** passing |
+| Server tests | **196** endpoint, **136** domain and parity |
+| App tests | **88** passing |
+| Console tests | **3** passing |
+| Parity fixtures | generated from `packages/domain`, compared on every build |
+| Verified against real PostgreSQL | yes, including a process restart |
+| Faces | shipper, carrier, driver — and a web console |
+| Screens | **27**, four languages, both themes, iOS and Android |
+| Decisions written down | **20** ADRs |
+
+### What works end to end
+
+A shipper signs in with a phone number and a code, says what they are, and
+posts a load. A carrier bids. The shipper reads the ranked bids — cheapest is
+not first, and the reason each one ranks where it does is printed beside it —
+and awards one, **which opens the trip in the same transaction**. The driver's
+phone captures positions natively, keeps them when the network goes, and
+uploads when it returns. At the gate the driver photographs the goods, takes a
+signature and seals the delivery **with no network at all**; the phone holds it
+and sends it when it can. The shipper follows the truck the whole way, on a
+phone or in a browser, and can hand a stranger a scoped, revocable link that
+shows the corridor and nothing else.
+
+None of that requires the marketplace. A shipper who agreed a load on WhatsApp
+— which is almost all of them — types the two numbers they have been messaging
+and tracks the truck from there. That is the wedge, and it is
+[ADR-0016](docs/adr/0016-a-phone-number-names-a-party-and-never-answers-a-question.md).
+
+### What is not done, and why
 
 Three kinds of thing block v1.0, and **only one of them is code**. Nothing here
 is a matter of more time at this keyboard, which is why each is written down
 with what would actually close it rather than left as a to-do.
 
-### Deferred to a device day
+#### Deferred to a device day
 
 Five conditions, in the words their own gates use. **v1.0 does not ship until
 every one is green**, and no simulator signs any of them off.
@@ -927,7 +1029,7 @@ undocumented, and it is the single failure that would invalidate the most work
 here. The app reports OEM restrictions rather than assuming they do not apply,
 and that is the most a repository can do about it.
 
-### Deferred to a native speaker
+#### Deferred to a native speaker
 
 | Table | Read by a speaker |
 |---|---|
@@ -946,7 +1048,7 @@ favour. This is on the same footing as the hardware gates and for the same
 reason: it cannot be closed from here, and pretending otherwise is how it stays
 open until somebody notices in a store review.
 
-### Deferred to an account somebody has to open
+#### Deferred to an account somebody has to open
 
 **Push notifications reach nothing.** The rule, the dispatcher, the quiet hours
 and the device registry are all built and parity-tested; `IPushSender` has one
@@ -966,7 +1068,7 @@ The SMS half of the same problem was solved by hosting the gateway rather than
 buying one — `android-sms-gateway` and a spare handset with a Nigerian SIM.
 There is no equivalent trick for push.
 
-### Still code, and still open
+#### Still code, and still open
 
 | Open | Why it is not closed |
 |---|---|
@@ -981,7 +1083,7 @@ There is no equivalent trick for push.
 | **Bulk ingest** | Samples insert row by row. The Redis buffer and bulk `COPY` matter at ~850,000 samples a day; at pilot volume they are a premature complication |
 | **Review is manual and unqueued** | A reviewer confirms papers one at a time with no notification that something is waiting. Right for a pilot with one operator; at a hundred carriers a week the thing to build is the queue, not an automatic approval ([ADR-0017](docs/adr/0017-a-tier-is-earned-from-evidence-the-carrier-cannot-write.md)) |
 
-### What a reviewed paper does *not* mean
+#### What a reviewed paper does *not* mean
 
 A tier says somebody looked at an upload. It does not say the licence is real,
 the insurance is current, or the person holding the phone is the person on the
@@ -990,7 +1092,7 @@ renders a tier as more than what it is.
 
 ---
 
-## 11a. Licensing
+## 12. Licensing
 
 Two licences, because the two halves have opposite jobs.
 
@@ -1007,20 +1109,12 @@ behind a figure they were paid should be able to read and run it without a
 lawyer. A rules engine nobody outside the company may audit is a rules engine
 nobody outside the company should trust.
 
-## 12. Documents
+---
 
-| Document | Answers |
-|---|---|
-| [`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) | Why this exists |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Where the work is, and what finishes each phase |
-| [`docs/JOURNAL.md`](docs/JOURNAL.md) | What we did, and what surprised us |
-| [`docs/adr/`](docs/adr/) | Why it is built this way |
-| [`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md) | What is missing, why, and what would unblock it |
-| [`CHANGELOG.md`](CHANGELOG.md) | What changed for someone using this |
-| [`CLAUDE.md`](CLAUDE.md) | How to work in this repository |
-| [`DESIGN.md`](DESIGN.md) | Colour, type, targets, voice |
-| [`server/README.md`](server/README.md) | The API in detail |
-| [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | What to install, and what goes wrong installing it |
-| [`apps/web/README.md`](apps/web/README.md) | The shipper's console, and why it has no bundler |
-| [`LICENSE`](LICENSE) | Business Source License 1.1, converting to Apache-2.0 on 2030-08-28 |
-| [`packages/domain/LICENSE`](packages/domain/LICENSE) | Apache-2.0, for the rules |
+Read [`CHANGELOG.md`](CHANGELOG.md) for what changed and why,
+[`docs/ROADMAP.md`](docs/ROADMAP.md) for the phases, their software gates and
+the hardware gates that block the release,
+[`docs/FEATURE-BACKLOG.md`](docs/FEATURE-BACKLOG.md) for what is missing and
+what would unblock it, [`docs/adr/`](docs/adr/) for the twenty decisions, and
+[`docs/00-PRODUCT-STATEMENT.md`](docs/00-PRODUCT-STATEMENT.md) for the full
+problem analysis.

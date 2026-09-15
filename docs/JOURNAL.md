@@ -2482,3 +2482,22 @@ the combined uncertainty of both fixes before it counts as movement at all.
 - No screens. Nothing here has been looked at, and Grid's clearest lesson is
   that the worst defects are invisible to a green test suite and surface only
   from looking at rendered output.
+
+## 2026-09-15 — The README in Grid's shape
+
+Reordered the README into Grid's twelve sections, at the user's ask across the
+portfolio. This one already had twelve numbered sections and most of the
+material; the work was moving it — how it fits together, the trip, the ingest
+path and the two-languages section become *How it works*; what is built
+becomes *What each layer does*; running it becomes *Quick start*; the gates
+become *Development*; where this is and what is not done become *Status* —
+and writing the three that were missing: the problem with its *what it is
+not*, data handling, and layout.
+
+The gates table had drifted: it still said sixteen endpoint tests where the
+status table said 196, and named none of `repo-check`, `wired-check`,
+`untranslated`, `app-test` or `round-trip`. It is the Makefile's list now.
+And the first draft of *what it is not* said the platform earns nothing from a
+settlement, which `pricing.ts` contradicts in its own comment — commission on
+the fare, never on demurrage. Read the source before writing the sentence
+about it.
