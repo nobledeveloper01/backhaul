@@ -19,7 +19,8 @@ namespace Backhaul.Api.Controllers;
 [Tags("identity")]
 public sealed class VerificationController(
     IdentityRepository identity,
-    BackhaulDbContext db) : AuthorisedController
+    BackhaulDbContext db,
+    TimeProvider clock) : AuthorisedController
 {
     [HttpGet]
     [ProducesResponseType<VerificationResponse>(StatusCodes.Status200OK)]
@@ -48,7 +49,7 @@ public sealed class VerificationController(
         var which = Papers_.Parse(paper);
         if (which is null) return BadRequest($"Unknown paper '{paper}'.");
 
-        var row = await identity.SetPaperAsync(Caller.UserId, which.Value, body.Held, ct);
+        var row = await identity.SetPaperAsync(Caller.UserId, which.Value, body.Held, clock.GetUtcNow(), ct);
         return ToResponse(row, await CarrierRecord.ForAsync(db, Caller.UserId, ct));
     }
 
@@ -116,8 +117,30 @@ public static class Reviewed_
 [ApiController]
 [Route("v1/verification")]
 [Tags("identity")]
-public sealed class ReviewController(IdentityRepository identity) : AuthorisedController
+public sealed class ReviewController(
+    IdentityRepository identity,
+    TimeProvider clock) : AuthorisedController
 {
+    /// <summary>The papers nobody has answered about, oldest first.</summary>
+    /// <remarks>
+    /// Each entry says how long it has waited, which is the point: a reviewer
+    /// sees not that work exists but which of it has been waiting a week.
+    /// Nothing is approved for waiting; a claim nobody reviews waits. See
+    /// ADR-0022.
+    /// </remarks>
+    [HttpGet("queue")]
+    [ProducesResponseType<List<QueuedPaperResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<QueuedPaperResponse>>> Queue(CancellationToken ct)
+    {
+        if (Caller.Role != Role.Reviewer) return NotFound();
+
+        var queue = await identity.QueueAsync(clock.GetUtcNow(), ct);
+        return queue
+            .Select(c => new QueuedPaperResponse(c.CarrierId, c.Paper, c.ClaimedAt, (long)c.Waited.TotalSeconds))
+            .ToList();
+    }
+
     /// <summary>Confirm or withdraw a paper somebody claimed.</summary>
     [HttpPut("{carrierId:guid}/{paper}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -137,7 +160,7 @@ public sealed class ReviewController(IdentityRepository identity) : AuthorisedCo
         var which = Papers_.Parse(paper);
         if (which is null) return BadRequest($"Unknown paper '{paper}'.");
 
-        var row = await identity.ReviewPaperAsync(carrierId, which.Value, body.Held, ct);
+        var row = await identity.ReviewPaperAsync(carrierId, which.Value, body.Held, Caller.UserId, clock.GetUtcNow(), ct);
         return row is null
             ? NotFound("That carrier has not said they hold this paper.")
             : NoContent();

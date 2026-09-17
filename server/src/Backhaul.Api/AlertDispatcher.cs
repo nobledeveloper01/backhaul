@@ -98,6 +98,58 @@ public sealed class AlertDispatcher(
         }
     }
 
+    /// <summary>How old the oldest waiting paper must be before a reviewer is told.</summary>
+    /// <remarks>A claim made a minute ago does not need a message. See ADR-0022.</remarks>
+    public static readonly TimeSpan QueueWorthTelling = TimeSpan.FromHours(1);
+
+    /// <summary>How often a reviewer is told, while the queue stays non-empty.</summary>
+    public static readonly TimeSpan TellReviewersEvery = TimeSpan.FromHours(24);
+
+    /// <summary>The kind recorded when a reviewer is told; there is no trip, so the trip is empty.</summary>
+    public const string PapersWaiting = "papers_waiting";
+
+    /// <summary>
+    /// A reviewer has no trips. What they have is a queue, and they are told
+    /// about it once a day.
+    /// </summary>
+    /// <remarks>
+    /// Forty pushes a day is a reviewer who reads none of them, which is the
+    /// same argument the alert thresholds make. The message carries the count
+    /// and the oldest age and names nobody, because a push is a channel this
+    /// product does not control. See ADR-0022.
+    /// </remarks>
+    private async Task ForReviewerAsync(
+        IServiceProvider services,
+        Guid userId,
+        IReadOnlyList<DeviceRecord> phones,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var identity = services.GetRequiredService<IdentityRepository>();
+        var sent = services.GetRequiredService<NotificationRepository>();
+
+        var queue = await identity.QueueAsync(now, ct);
+        if (queue.Count == 0 || queue[0].Waited < QueueWorthTelling) return;
+
+        var already = await sent.LastSentAsync(userId, ct);
+        if (already.TryGetValue((Guid.Empty, PapersWaiting), out var last) && now - last < TellReviewersEvery) return;
+
+        var oldest = queue[0].Waited;
+        var age = oldest.TotalDays >= 1
+            ? $"{(int)oldest.TotalDays} day{((int)oldest.TotalDays == 1 ? "" : "s")}"
+            : $"{(int)oldest.TotalHours} hour{((int)oldest.TotalHours == 1 ? "" : "s")}";
+        var body = queue.Count == 1
+            ? $"1 paper is waiting for review. It has waited {age}."
+            : $"{queue.Count} papers are waiting for review. The oldest has waited {age}.";
+
+        foreach (var phone in phones)
+        {
+            await push.SendAsync(new Notification(phone.Token, phone.Platform, "Papers waiting", body, false), ct);
+        }
+
+        await sent.RecordAsync(userId, Guid.Empty, PapersWaiting, now, ct);
+    }
+
     private async Task ForOneAsync(
         IServiceProvider services,
         Guid userId,
@@ -112,6 +164,12 @@ public sealed class AlertDispatcher(
         // signal dropping, which they can see out of the window.
         var role = await sent.RoleOfAsync(userId, ct);
         if (role is null) return;
+
+        if (role == Role.Reviewer)
+        {
+            await ForReviewerAsync(services, userId, phones, now, ct);
+            return;
+        }
 
         var audience = role switch
         {

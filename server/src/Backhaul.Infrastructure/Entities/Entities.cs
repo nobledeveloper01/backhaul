@@ -45,6 +45,37 @@ public sealed class TripEntity
     public List<TripEventEntity> Events { get; } = [];
 }
 
+/// <summary>A paper a carrier says they hold, waiting for somebody to look.</summary>
+/// <remarks>
+/// The <c>Has…</c>/<c>Verified…</c> flags on the profile are the fast read
+/// the tier ladder uses; this is the history and the queue. One open row per
+/// carrier and paper at a time — claiming again while unreviewed is a no-op,
+/// claiming again after a review opens a fresh row, because a new upload is a
+/// new claim. See ADR-0022.
+/// </remarks>
+public sealed class PaperClaimEntity
+{
+    public long Id { get; set; }
+
+    public Guid CarrierId { get; set; }
+
+    /// <summary>identity, licence, registration or insurance.</summary>
+    public string Paper { get; set; } = "";
+
+    public DateTimeOffset ClaimedAt { get; set; }
+
+    /// <summary>When a reviewer answered, or null while it waits.</summary>
+    public DateTimeOffset? ReviewedAt { get; set; }
+
+    public Guid? ReviewedBy { get; set; }
+
+    /// <summary>The reviewer's answer. Null until there is one.</summary>
+    public bool? Verified { get; set; }
+
+    /// <summary>When the carrier withdrew the claim before anyone looked.</summary>
+    public DateTimeOffset? WithdrawnAt { get; set; }
+}
+
 /// <summary>Who has held the driver's slot on a trip, and since when.</summary>
 /// <remarks>
 /// Append-only, like the history: the first row is written when the trip

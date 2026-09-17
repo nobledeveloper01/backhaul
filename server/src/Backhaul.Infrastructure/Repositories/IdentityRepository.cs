@@ -4,6 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backhaul.Infrastructure.Repositories;
 
+/// <summary>One paper waiting for a reviewer, and how long it has waited.</summary>
+public sealed record QueuedClaim(
+    Guid CarrierId,
+    string Paper,
+    DateTimeOffset ClaimedAt,
+    TimeSpan Waited);
+
 /// <summary>Who a carrier is, what they drive, and when a driver is in trouble.</summary>
 public sealed class IdentityRepository(BackhaulDbContext db)
 {
@@ -43,9 +50,34 @@ public sealed class IdentityRepository(BackhaulDbContext db)
         Guid userId,
         Paper paper,
         bool held,
+        DateTimeOffset now,
         CancellationToken ct = default)
     {
         var row = await ProfileAsync(userId, ct);
+
+        /*
+            The claim as a row, beside the flag.
+
+            The flag is what the tier ladder reads; the row is what a reviewer
+            reads, and it is the only thing that knows how long a paper has
+            waited. Claiming again while a row is open changes nothing —
+            tapping the same switch twice is not two uploads. Claiming after
+            a review opens a fresh row, and withdrawing closes the open one
+            without an answer. See ADR-0022.
+        */
+        var name = Wire(paper);
+        var open = await db.PaperClaims
+            .Where(c => c.CarrierId == userId && c.Paper == name && c.ReviewedAt == null && c.WithdrawnAt == null)
+            .FirstOrDefaultAsync(ct);
+
+        if (held && open is null)
+        {
+            db.PaperClaims.Add(new PaperClaimEntity { CarrierId = userId, Paper = name, ClaimedAt = now });
+        }
+        else if (!held && open is not null)
+        {
+            open.WithdrawnAt = now;
+        }
 
         switch (paper)
         {
@@ -84,6 +116,8 @@ public sealed class IdentityRepository(BackhaulDbContext db)
         Guid carrierId,
         Paper paper,
         bool verified,
+        Guid reviewerId,
+        DateTimeOffset now,
         CancellationToken ct = default)
     {
         var row = await ProfileAsync(carrierId, ct);
@@ -107,9 +141,56 @@ public sealed class IdentityRepository(BackhaulDbContext db)
             case Paper.Insurance: row.VerifiedInsurance = verified; break;
         }
 
+        // The answer closes the open claim, if there is one to close. A
+        // refusal of a paper nobody currently claims still clears the flag
+        // above; it has no row to answer.
+        var name = Wire(paper);
+        var open = await db.PaperClaims
+            .Where(c => c.CarrierId == carrierId && c.Paper == name && c.ReviewedAt == null && c.WithdrawnAt == null)
+            .FirstOrDefaultAsync(ct);
+        if (open is not null)
+        {
+            open.ReviewedAt = now;
+            open.ReviewedBy = reviewerId;
+            open.Verified = verified;
+        }
+
         await db.SaveChangesAsync(ct);
         return row;
     }
+
+    /// <summary>
+    /// The papers nobody has answered about, oldest first.
+    /// </summary>
+    /// <remarks>
+    /// Age is the queue's whole point: not that work exists but which of it
+    /// has been waiting a week. Computed against the clock passed in, so the
+    /// dispatcher and the route agree on what "an hour old" means.
+    /// </remarks>
+    public async Task<IReadOnlyList<QueuedClaim>> QueueAsync(
+        DateTimeOffset now,
+        CancellationToken ct = default)
+    {
+        var rows = await db.PaperClaims
+            .Where(c => c.ReviewedAt == null && c.WithdrawnAt == null)
+            .OrderBy(c => c.ClaimedAt)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        return rows
+            .Select(c => new QueuedClaim(c.CarrierId, c.Paper, c.ClaimedAt, now - c.ClaimedAt))
+            .ToList();
+    }
+
+    /// <summary>The paper's name on the wire, which is also its name in the row.</summary>
+    private static string Wire(Paper paper) => paper switch
+    {
+        Paper.Identity => "identity",
+        Paper.Licence => "licence",
+        Paper.Registration => "registration",
+        Paper.Insurance => "insurance",
+        _ => throw new ArgumentOutOfRangeException(nameof(paper)),
+    };
 
     // --- vehicles ----------------------------------------------------------
 

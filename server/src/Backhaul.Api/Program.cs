@@ -304,6 +304,9 @@ static async Task SeedDevelopmentTokensAsync(IServiceProvider services, ILogger 
         (Backhaul.Domain.Access.Role.Driver, new Guid("d0000000-0000-4000-8000-000000000001")),
         (Backhaul.Domain.Access.Role.Carrier, new Guid("c0000000-0000-4000-8000-000000000002")),
         (Backhaul.Domain.Access.Role.Shipper, new Guid("50000000-0000-4000-8000-000000000003")),
+        // The desk. Unreachable from any public path (ADR-0017); seeded here
+        // so the round trip can read the queue it is told about.
+        (Backhaul.Domain.Access.Role.Reviewer, new Guid("4e000000-0000-4000-8000-000000000004")),
     ];
 
     var lines = new List<string>();

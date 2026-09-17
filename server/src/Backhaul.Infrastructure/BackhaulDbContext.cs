@@ -12,6 +12,8 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<TripDriverEntity> TripDrivers => Set<TripDriverEntity>();
 
+    public DbSet<PaperClaimEntity> PaperClaims => Set<PaperClaimEntity>();
+
     public DbSet<PositionSampleEntity> Positions => Set<PositionSampleEntity>();
 
     public DbSet<IngestBatchEntity> IngestBatches => Set<IngestBatchEntity>();
@@ -109,6 +111,16 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             row.HasKey(r => r.Id);
             // Read as "who has driven this trip", newest last.
             row.HasIndex(r => new { r.TripId, r.Since });
+        });
+
+        model.Entity<PaperClaimEntity>(claim =>
+        {
+            claim.HasKey(c => c.Id);
+            claim.Property(c => c.Paper).HasMaxLength(16);
+            // The queue is "what has nobody answered", oldest first; the
+            // carrier's own lookup is "is there an open row for this paper".
+            claim.HasIndex(c => new { c.CarrierId, c.Paper });
+            claim.HasIndex(c => new { c.ReviewedAt, c.WithdrawnAt, c.ClaimedAt });
         });
 
         model.Entity<PositionSampleEntity>(sample =>

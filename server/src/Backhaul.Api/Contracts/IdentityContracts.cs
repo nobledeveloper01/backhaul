@@ -8,6 +8,18 @@ public sealed class PaperRequest
     public bool Held { get; set; }
 }
 
+/// <summary>One paper waiting for a reviewer.</summary>
+/// <remarks>
+/// How long it has waited travels as seconds rather than a sentence: the
+/// console says "3 days" in its own words and the dispatcher compares it to
+/// an hour.
+/// </remarks>
+public sealed record QueuedPaperResponse(
+    Guid CarrierId,
+    string Paper,
+    DateTimeOffset ClaimedAt,
+    long WaitedSeconds);
+
 public sealed class VerificationResponse
 {
     /// <summary>unverified, verified, business or trusted.</summary>

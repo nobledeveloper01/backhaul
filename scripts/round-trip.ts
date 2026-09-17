@@ -314,6 +314,45 @@ async function main(): Promise<void> {
   }
 
 
+  // A paper claimed is a paper in the queue, and the queue exists only for a
+  // reviewer (ADR-0022). The seeded carrier claims one; the seeded desk sees
+  // it, oldest first, with how long it has waited; the driver is told there
+  // is no such route.
+  const reviewerToken = SEEDED['reviewer'] ?? null;
+  if (carrierToken !== null && reviewerToken !== null) {
+    const carrier = new BackhaulApi(BASE, carrierToken);
+    const claimed = await carrier.recordPaper('insurance', true);
+    check('a carrier claims a paper', claimed.ok, claimed.ok ? '' : claimed.failure.detail);
+
+    const queue = await fetch(`${BASE}/v1/verification/queue`, {
+      headers: { authorization: `Bearer ${reviewerToken}` },
+    });
+    check('the desk reads the queue', queue.status === 200, String(queue.status));
+    if (queue.status === 200) {
+      const rows = (await queue.json()) as ReadonlyArray<{
+        carrierId: string;
+        paper: string;
+        waitedSeconds: number;
+      }>;
+      const ours = rows.find(
+        (r) => r.carrierId === SEEDED['carrierId'] && r.paper === 'insurance',
+      );
+      check('and the claim is in it, with an age', ours !== undefined && ours.waitedSeconds >= 0,
+        JSON.stringify(rows).slice(0, 120));
+      const ages = rows.map((r) => r.waitedSeconds);
+      check('oldest first', ages.every((a, i) => i === 0 || a <= (ages[i - 1] ?? a)),
+        ages.join(','));
+    }
+
+    const hidden = await fetch(`${BASE}/v1/verification/queue`, {
+      headers: { authorization: `Bearer ${TOKEN ?? ''}` },
+    });
+    check('a driver is told there is no such route', hidden.status === 404, String(hidden.status));
+
+    const withdrawn = await carrier.recordPaper('insurance', false);
+    check('the carrier withdraws it', withdrawn.ok, withdrawn.ok ? '' : withdrawn.failure.detail);
+  }
+
   // --- everything the screens read ----------------------------------------
   //
   // One call per client method, checked for a field the server actually fills.
