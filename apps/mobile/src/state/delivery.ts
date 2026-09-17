@@ -3,6 +3,7 @@ import { seal, type Delivery } from '@backhaul/domain';
 
 import type { BackhaulApi } from '@backhaul/api';
 import { readDraft, send, writeDraft, type Draft } from './drafts';
+import { wakeForOutbox } from './outbox';
 
 /**
  * A delivery, captured on the phone and sent when there is a network.
@@ -153,7 +154,14 @@ export function useDelivery(
         sealedAt,
         acknowledgedAt: was.acknowledgedAt,
       };
-      void writeDraft(draft).then(() => push(draft));
+      // Written, then sent, then — whether or not the send got through — the
+      // OS is asked to wake the outbox later. The wake is what reaches the
+      // delivery in a pocketed phone (ADR-0023); the immediate send is the
+      // one most likely to have signal.
+      void writeDraft(draft).then(() => {
+        wakeForOutbox();
+        return push(draft);
+      });
       return { ...was, sealedAt };
     });
   }, [push]);

@@ -25,6 +25,23 @@ import { BackhaulApi, DEFAULT_BASE_URL, type SignedIn } from '@backhaul/api';
 const TOKEN_KEY = 'backhaul.token.v1';
 const WHO_KEY = 'backhaul.who.v1';
 
+/**
+ * The stored token, for code that runs with no session around it.
+ *
+ * The headless outbox sweep (ADR-0023) runs when the app is not open and no
+ * `SessionProvider` has mounted; it needs the same token the foreground would
+ * carry, read from the same place, so the delivery it sends is sent by the
+ * same person. Null when nobody is signed in — and then there is nothing to
+ * send anyway, because a draft is only ever written by somebody who was.
+ */
+export async function storedToken(): Promise<string | null> {
+  try {
+    return (await AsyncStorage.getItem(TOKEN_KEY)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface Session {
   readonly who: SignedIn | null;
   /** False until storage has been read. The app shows nothing decisive until then. */

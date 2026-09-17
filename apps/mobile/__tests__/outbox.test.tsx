@@ -1,9 +1,10 @@
 import { act, create } from 'react-test-renderer';
-import { Text } from 'react-native';
+import { DeviceEventEmitter, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BackhaulApi } from '@backhaul/api';
-import { useOutbox } from '../src/state/outbox';
+import { OUTBOX_REFRESH_EVENT, type OutboxSpec } from '@backhaul/tracking-native';
+import { outboxTask, sweepOutbox, useOutbox, wakeForOutbox } from '../src/state/outbox';
 import { unsent, writeDraft, type Draft } from '../src/state/drafts';
 
 /**
@@ -32,8 +33,38 @@ const draft = (tripId: string, sealed: boolean): Draft => ({
 
 let seen = 0;
 
-function Probe({ api, online }: { api: BackhaulApi; online: boolean }) {
-  const outbox = useOutbox(api, online);
+/** The native seam, remembering only what it was told. */
+function fakeNative(): OutboxSpec & { readonly calls: string[] } {
+  const calls: string[] = [];
+  return {
+    calls,
+    schedule: () => {
+      calls.push('schedule');
+      return Promise.resolve();
+    },
+    cancel: () => {
+      calls.push('cancel');
+      return Promise.resolve();
+    },
+    finished: () => {
+      calls.push('finished');
+      return Promise.resolve();
+    },
+    addListener: () => {},
+    removeListeners: () => {},
+  };
+}
+
+function Probe({
+  api,
+  online,
+  native = null,
+}: {
+  api: BackhaulApi;
+  online: boolean;
+  native?: OutboxSpec | null;
+}) {
+  const outbox = useOutbox(api, online, native);
   seen = outbox.waiting;
   return <Text>{String(outbox.waiting)}</Text>;
 }
@@ -115,6 +146,121 @@ describe('the outbox', () => {
     await act(settle);
 
     expect(saved).not.toHaveBeenCalled();
+    tree.unmount();
+  });
+
+  /*
+    ADR-0023: one sweep, three callers. The tests below hold the other two —
+    the headless task Android's job starts and the event iOS's refresh task
+    posts — to the same function, and hold the native seam to knowing
+    nothing but "something is waiting".
+  */
+
+  test('the sweep itself sends in order and says what is left', async () => {
+    await writeDraft(draft('s1', true));
+    await writeDraft(draft('s2', true));
+
+    const api = new BackhaulApi('http://127.0.0.1:1', null, 50);
+    const order: string[] = [];
+    jest.spyOn(BackhaulApi.prototype, 'saveDelivery').mockImplementation((tripId) => {
+      order.push(tripId);
+      return Promise.resolve({ ok: true, value: {} as never });
+    });
+    jest
+      .spyOn(BackhaulApi.prototype, 'sealDelivery')
+      .mockImplementation((tripId) =>
+        Promise.resolve(
+          tripId === 's1'
+            ? { ok: true, value: { sealedAt: AT } as never }
+            : { ok: false, failure: { kind: 'unreachable' } as never },
+        ),
+      );
+
+    const swept = await sweepOutbox(api);
+
+    expect(swept).toEqual({ held: 2, left: 1 });
+    expect(order).toEqual(['s1', 's2']);
+  });
+
+  test('sealing asks the OS to wake the phone later, and says nothing else', () => {
+    const native = fakeNative();
+    wakeForOutbox(native);
+    expect(native.calls).toEqual(['schedule']);
+  });
+
+  test('the headless task sends with the stored token and stops the wake when nothing is left', async () => {
+    await writeDraft(draft('h1', true));
+    await AsyncStorage.setItem('backhaul.token.v1', 'tok-driver');
+
+    const tokens: (string | null)[] = [];
+    jest.spyOn(BackhaulApi.prototype, 'saveDelivery').mockImplementation(function (this: BackhaulApi) {
+      tokens.push((this as unknown as { token: string | null }).token);
+      return Promise.resolve({ ok: true, value: {} as never });
+    });
+    jest
+      .spyOn(BackhaulApi.prototype, 'sealDelivery')
+      .mockResolvedValue({ ok: true, value: { sealedAt: AT } as never });
+
+    const native = fakeNative();
+    await outboxTask(native);
+
+    expect(tokens).toEqual(['tok-driver']);
+    expect((await unsent()).length).toBe(0);
+    expect(native.calls).toEqual(['cancel']);
+  });
+
+  test('the headless task leaves the wake armed while something is still held', async () => {
+    await writeDraft(draft('h2', true));
+    await AsyncStorage.setItem('backhaul.token.v1', 'tok-driver');
+
+    // The API points at a port nothing listens on: the draft stays, and so
+    // does the job that will try again at the next network.
+    const native = fakeNative();
+    await outboxTask(native);
+
+    expect((await unsent()).length).toBe(1);
+    expect(native.calls).toEqual([]);
+  });
+
+  test('the headless task with nobody signed in sends nothing and disarms', async () => {
+    const saved = jest.spyOn(BackhaulApi.prototype, 'saveDelivery');
+    const native = fakeNative();
+    await outboxTask(native);
+
+    expect(saved).not.toHaveBeenCalled();
+    expect(native.calls).toEqual(['cancel']);
+  });
+
+  test('the iOS refresh event runs the sweep and ends the task', async () => {
+    const api = new BackhaulApi('http://127.0.0.1:1', null, 50);
+    const native = fakeNative();
+
+    const tree = create(<Probe api={api} online native={native} />);
+    await act(settle);
+    await act(settle);
+
+    // Sealed after the app was already up: the foreground sweep found
+    // nothing, and it is the refresh that must find this one.
+    await writeDraft(draft('r1', true));
+    jest
+      .spyOn(BackhaulApi.prototype, 'saveDelivery')
+      .mockResolvedValue({ ok: true, value: {} as never });
+    const sealed = jest
+      .spyOn(BackhaulApi.prototype, 'sealDelivery')
+      .mockResolvedValue({ ok: true, value: { sealedAt: AT } as never });
+
+    await act(async () => {
+      DeviceEventEmitter.emit(OUTBOX_REFRESH_EVENT);
+      await settle();
+      await settle();
+      await settle();
+    });
+
+    expect(sealed).toHaveBeenCalledTimes(1);
+    expect((await unsent()).length).toBe(0);
+    // Ended, whether or not anything was sent; and the wake cancelled,
+    // because nothing is left.
+    expect(native.calls).toEqual(['cancel', 'finished']);
     tree.unmount();
   });
 });

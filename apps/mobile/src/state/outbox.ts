@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, NativeEventEmitter } from 'react-native';
 
-import type { BackhaulApi } from '@backhaul/api';
+import { BackhaulApi, DEFAULT_BASE_URL } from '@backhaul/api';
+import {
+  NativeOutbox,
+  OUTBOX_REFRESH_EVENT,
+  type OutboxSpec,
+} from '@backhaul/tracking-native';
 import { send, unsent } from './drafts';
+import { storedToken } from './session';
 
 /**
  * Every sealed delivery this phone is still holding, sent when it can be.
@@ -18,19 +24,90 @@ import { send, unsent } from './drafts';
  * proof and the escrow milestone never releases, so a delivery that sits on a
  * phone is a driver who finished the run and is not paid. See ADR-0018.
  *
- * Deliberately **not** a background task. This sweeps when the app is running
- * and when it comes back to the foreground, which is the same shape as every
- * other retry in this app and needs no new native surface. A driver who never
- * opens the app again still has an unsent delivery — and the thing that fixes
- * *that* is the native queue the tracker already uses, which is a different
- * piece of work and is written down rather than pretended.
+ * The sweep is **one function, called from three places**: the foreground
+ * effect below, the Android headless task and the iOS refresh listener. One
+ * place a draft is sent and one place it is acknowledged. The native side
+ * only wakes it (ADR-0023); it reads no draft and holds no token.
  */
 export interface Outbox {
   /** How many sealed deliveries this phone is still holding. */
   readonly waiting: number;
 }
 
-export function useOutbox(api: BackhaulApi, online: boolean): Outbox {
+export interface Sweep {
+  /** How many were waiting when the sweep began. */
+  readonly held: number;
+  /** How many are still waiting after it. */
+  readonly left: number;
+}
+
+/** The native seam, or nothing — Jest, the web console, an unlinked build. */
+export type OutboxModule = OutboxSpec | null;
+
+/**
+ * Sends everything waiting, in order, and says what is left.
+ *
+ * In order, not in parallel. A phone with four unsent deliveries is a phone
+ * that has been out of signal for days, and firing four requests at the
+ * first bar of signal is how none of them completes.
+ */
+export async function sweepOutbox(
+  api: BackhaulApi,
+  onCounted?: (held: number) => void,
+): Promise<Sweep> {
+  const held = await unsent();
+  onCounted?.(held.length);
+
+  let left = held.length;
+  for (const draft of held) {
+    const acknowledged = await send(api, draft);
+    if (acknowledged !== null) left -= 1;
+  }
+
+  return { held: held.length, left };
+}
+
+/**
+ * A delivery was just sealed: ask the OS to wake this side when it can.
+ *
+ * Called from `useDelivery.close`, once, when the draft is written. Nothing
+ * is passed but the fact — the native side learns that something is waiting,
+ * and nothing about what.
+ */
+export function wakeForOutbox(native: OutboxModule = NativeOutbox ?? null): void {
+  void native?.schedule().catch(() => {
+    // A phone that cannot schedule still sweeps on the next foreground; the
+    // draft is on disk either way.
+  });
+}
+
+/**
+ * The sweep with no app around it.
+ *
+ * What Android's periodic job runs (registered as a headless task in
+ * `index.js`) — the app is not open, no provider has mounted, and this
+ * builds the same client the foreground would from the same stored token.
+ * When nothing is left it tells the OS to stop waking the phone; when
+ * something is, the job stays and tries again at the next network.
+ */
+export async function outboxTask(native: OutboxModule = NativeOutbox ?? null): Promise<void> {
+  const token = await storedToken();
+  if (token === null) {
+    // Nobody is signed in, so nothing was ever sealed by anybody. Stop.
+    await native?.cancel().catch(() => {});
+    return;
+  }
+
+  const api = new BackhaulApi(DEFAULT_BASE_URL, token);
+  const swept = await sweepOutbox(api);
+  if (swept.left === 0) await native?.cancel().catch(() => {});
+}
+
+export function useOutbox(
+  api: BackhaulApi,
+  online: boolean,
+  native: OutboxModule = NativeOutbox ?? null,
+): Outbox {
   const [waiting, setWaiting] = useState(0);
 
   /*
@@ -51,23 +128,15 @@ export function useOutbox(api: BackhaulApi, online: boolean): Outbox {
       sweeping.current = true;
 
       try {
-        const held = await unsent();
+        const swept = await sweepOutbox(api, (held) => {
+          if (alive) setWaiting(held);
+        });
         if (!alive) return;
 
-        setWaiting(held.length);
-        if (held.length === 0) return;
-
-        // In order, not in parallel. A phone with four unsent deliveries is a
-        // phone that has been out of signal for days, and firing four requests
-        // at the first bar of signal is how none of them completes.
-        let left = held.length;
-        for (const draft of held) {
-          if (!alive) return;
-          const acknowledged = await send(api, draft);
-          if (acknowledged !== null) left -= 1;
-        }
-
-        if (alive) setWaiting(left);
+        setWaiting(swept.left);
+        // A phone with no deliveries costs nothing: the wake is cancelled the
+        // moment the last one is acknowledged, from whichever sweep did it.
+        if (swept.left === 0 && swept.held > 0) await native?.cancel().catch(() => {});
       } finally {
         sweeping.current = false;
       }
@@ -82,11 +151,29 @@ export function useOutbox(api: BackhaulApi, online: boolean): Outbox {
       if (state === 'active') void sweep();
     });
 
+    /*
+      iOS wakes this side rather than running anything of its own.
+
+      The refresh task posts one event; the sweep runs inside the task's
+      window and `finished` lets the task end. `finished` is called whether
+      or not anything was sent, because a task that is not ended is one iOS
+      stops granting.
+    */
+    const refreshed =
+      native === null
+        ? null
+        : new NativeEventEmitter(native).addListener(OUTBOX_REFRESH_EVENT, () => {
+            void sweep().finally(() => {
+              void native.finished().catch(() => {});
+            });
+          });
+
     return () => {
       alive = false;
       woke.remove();
+      refreshed?.remove();
     };
-  }, [api, online]);
+  }, [api, online, native]);
 
   return { waiting };
 }

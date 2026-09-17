@@ -14,3 +14,12 @@
 
 export { default as NativeTracking } from './NativeTracking.ts';
 export type { NativeFix, TrackingStatus, Spec } from './NativeTracking.ts';
+
+export { default as NativeOutbox } from './NativeOutbox.ts';
+export type { Spec as OutboxSpec } from './NativeOutbox.ts';
+
+/** The event the iOS refresh task posts; the sweep runs when it arrives. */
+export const OUTBOX_REFRESH_EVENT = 'outboxRefresh';
+
+/** The headless task Android's periodic job starts. Registered in `index.js`. */
+export const OUTBOX_TASK = 'BackhaulOutboxSweep';

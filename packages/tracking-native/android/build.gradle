@@ -46,4 +46,8 @@ repositories {
 
 dependencies {
   implementation "com.facebook.react:react-android"
+  // The periodic job that wakes the outbox sweep (ADR-0023). WorkManager
+  // rather than JobScheduler directly: it survives reboots and process death
+  // on its own, which is the whole case it exists for.
+  implementation "androidx.work:work-runtime:2.10.0"
 }

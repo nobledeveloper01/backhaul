@@ -23,7 +23,8 @@ Pod::Spec.new do |s|
   # Declared here rather than added to the app's Xcode project by hand: a
   # linker flag buried in `project.pbxproj` is a linker flag nobody finds when
   # the build breaks on somebody else's machine.
-  s.frameworks   = "CoreLocation"
+  # BackgroundTasks for the refresh that wakes the outbox sweep (ADR-0023).
+  s.frameworks   = "CoreLocation", "BackgroundTasks"
   s.libraries    = "sqlite3"
 
   install_modules_dependencies(s)

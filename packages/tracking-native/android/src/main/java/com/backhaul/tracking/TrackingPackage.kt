@@ -16,13 +16,25 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 class TrackingPackage : BaseReactPackage() {
 
   override fun getModule(name: String, context: ReactApplicationContext): NativeModule? =
-    if (name == TrackingModule.NAME) TrackingModule(context) else null
+    when (name) {
+      TrackingModule.NAME -> TrackingModule(context)
+      OutboxModule.NAME -> OutboxModule(context)
+      else -> null
+    }
 
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider = ReactModuleInfoProvider {
     mapOf(
       TrackingModule.NAME to ReactModuleInfo(
         TrackingModule.NAME,
         TrackingModule.NAME,
+        false, // canOverrideExistingModule
+        false, // needsEagerInit
+        false, // isCxxModule
+        true, // isTurboModule
+      ),
+      OutboxModule.NAME to ReactModuleInfo(
+        OutboxModule.NAME,
+        OutboxModule.NAME,
         false, // canOverrideExistingModule
         false, // needsEagerInit
         false, // isCxxModule

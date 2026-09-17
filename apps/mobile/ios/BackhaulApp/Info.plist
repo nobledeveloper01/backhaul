@@ -48,6 +48,11 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.backhaul.outbox.refresh</string>
 	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
