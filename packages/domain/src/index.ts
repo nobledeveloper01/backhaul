@@ -32,6 +32,7 @@ export * from './trust.ts';
 export * from './messages.ts';
 export * from './incidents.ts';
 export * from './pod.ts';
+export * from './pdf.ts';
 export * from './ratings.ts';
 export * from './search.ts';
 export * from './chaining.ts';

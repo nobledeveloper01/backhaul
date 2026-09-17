@@ -174,6 +174,7 @@ export type Phrase =
   | 'hand_over_the_note'
   | 'hand_over_once_signed_off'
   | 'could_not_hand_it_over'
+  | 'hand_over_as_a_file'
 
   // --- money on the road ------------------------------------------------
   | 'this_trip'
@@ -1023,6 +1024,7 @@ export const EN: Readonly<Record<Phrase, string>> = {
   hand_over_the_note: 'Hand over the note',
   hand_over_once_signed_off: 'You can hand this over once it is signed off.',
   could_not_hand_it_over: 'It did not go out. Try again.',
+  hand_over_as_a_file: 'Hand over as a file',
 
   utilisation: 'How well the trucks are used',
   your_fleet: 'Your fleet',
@@ -1696,6 +1698,7 @@ export const HA: Readonly<Record<Phrase, string>> = {
   hand_over_the_note: 'Mika takardar',
   hand_over_once_signed_off: 'Za ka iya mika wannan bayan an kammala shi.',
   could_not_hand_it_over: 'Bai fita ba. Sake gwadawa.',
+  hand_over_as_a_file: 'Mika a matsayin fayil',
 
   utilisation: 'Yadda ake amfani da motocin',
   your_fleet: 'Motocinka',
@@ -2374,6 +2377,7 @@ export const YO: Readonly<Record<Phrase, string>> = {
   hand_over_the_note: 'Fi ìwé náà lé wọn lọ́wọ́',
   hand_over_once_signed_off: 'O lè fi èyí lé wọn lọ́wọ́ lẹ́yìn tí a bá ti fọwọ́ sí i pé ó parí.',
   could_not_hand_it_over: 'Kò jáde. Gbìyànjú lẹ́ẹ̀kan si.',
+  hand_over_as_a_file: 'Fi lé wọn lọ́wọ́ gẹ́gẹ́ bí fáìlì',
 
   utilisation: 'Bí a ṣe ń lo àwọn ọkọ̀',
   your_fleet: 'Àwọn ọkọ̀ rẹ',
@@ -3050,6 +3054,7 @@ export const IG: Readonly<Record<Phrase, string>> = {
   hand_over_the_note: 'Nyefee akwụkwọ ahụ',
   hand_over_once_signed_off: 'Ị nwere ike inyefe nke a mgbe e mechara ya.',
   could_not_hand_it_over: 'Ọ pụghị. Nwaa ọzọ.',
+  hand_over_as_a_file: 'Nyefee dị ka faịlụ',
 
   utilisation: 'Otú e si eji ụgbọ ndị ahụ',
   your_fleet: 'Ụgbọ gị',

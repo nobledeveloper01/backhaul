@@ -6,6 +6,7 @@ import {
   capturedAwayFromDestination,
   capturedNear,
   document,
+  documentPdf,
   documentText,
   seal,
   settlesDespite,
@@ -13,6 +14,7 @@ import {
 } from '@backhaul/domain';
 
 import { Card } from '../components/Card';
+import { canHandOverFile, handOverFile } from '../native/documents';
 import { Icon } from '../components/Icon';
 import { Press } from '../components/Press';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -135,6 +137,28 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
     void Share.share({
       message: documentText({ title: t('the_delivery_note'), lines }),
       // Android puts this on the chooser and into an email subject; iOS ignores it.
+      title: t('the_delivery_note'),
+    }).catch(() => setHandOverFailed(true));
+  };
+
+  /*
+    The same note as a file, for the consignee who files things.
+
+    Written on the phone by `documentPdf()` from the same lines — no
+    renderer, no dependency (ADR-0024) — and handed to the share sheet as a
+    `.pdf` with a name. The photographs and the signature strokes are the
+    app's to supply and today it cannot: capture on this screen mints an id
+    and takes no picture, and the signature is a name with no pad. So the
+    file says, in a sentence on its own page, that no photograph was
+    attached, and the text note above stays for the phone with no share
+    target. The button is absent, not disabled, in a build with no seam.
+  */
+  const handOverAsFile = () => {
+    setHandOverFailed(false);
+    const bytes = documentPdf({ lines, photographs: [], signature: [] });
+    void handOverFile(bytes, {
+      fileName: `delivery-note-${trip.id.slice(-4).toUpperCase()}.pdf`,
+      mimeType: 'application/pdf',
       title: t('the_delivery_note'),
     }).catch(() => setHandOverFailed(true));
   };
@@ -327,16 +351,30 @@ export function ProofScreen({ trip, onBack, onReview }: Props) {
                 seal itself is one card up, so there is no dead end here.
               */}
               {sealedAt !== null ? (
-                <Press
-                  onPress={handOver}
-                  accessibilityLabel={t('hand_over_the_note')}
-                  style={[styles.handOver, { borderColor: colours.outline }]}
-                >
-                  <Icon name="document" size="md" colour={colours.textSecondary} />
-                  <Text variant="title" style={styles.flex}>
-                    {t('hand_over_the_note')}
-                  </Text>
-                </Press>
+                <>
+                  <Press
+                    onPress={handOver}
+                    accessibilityLabel={t('hand_over_the_note')}
+                    style={[styles.handOver, { borderColor: colours.outline }]}
+                  >
+                    <Icon name="document" size="md" colour={colours.textSecondary} />
+                    <Text variant="title" style={styles.flex}>
+                      {t('hand_over_the_note')}
+                    </Text>
+                  </Press>
+                  {canHandOverFile() ? (
+                    <Press
+                      onPress={handOverAsFile}
+                      accessibilityLabel={t('hand_over_as_a_file')}
+                      style={[styles.handOver, { borderColor: colours.outline }]}
+                    >
+                      <Icon name="document" size="md" colour={colours.textSecondary} />
+                      <Text variant="title" style={styles.flex}>
+                        {t('hand_over_as_a_file')}
+                      </Text>
+                    </Press>
+                  ) : null}
+                </>
               ) : (
                 /*
                   Two different sentences, because "sign it off first" is only

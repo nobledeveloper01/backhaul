@@ -19,6 +19,7 @@ class TrackingPackage : BaseReactPackage() {
     when (name) {
       TrackingModule.NAME -> TrackingModule(context)
       OutboxModule.NAME -> OutboxModule(context)
+      DocumentsModule.NAME -> DocumentsModule(context)
       else -> null
     }
 
@@ -35,6 +36,14 @@ class TrackingPackage : BaseReactPackage() {
       OutboxModule.NAME to ReactModuleInfo(
         OutboxModule.NAME,
         OutboxModule.NAME,
+        false, // canOverrideExistingModule
+        false, // needsEagerInit
+        false, // isCxxModule
+        true, // isTurboModule
+      ),
+      DocumentsModule.NAME to ReactModuleInfo(
+        DocumentsModule.NAME,
+        DocumentsModule.NAME,
         false, // canOverrideExistingModule
         false, // needsEagerInit
         false, // isCxxModule

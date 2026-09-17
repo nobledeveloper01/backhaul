@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Where DocumentsModule writes the file it offers to share, and nothing
+  wider: a provider that exposed the whole cache would hand any app that
+  asked the outbox's drafts.
+-->
+<paths>
+  <cache-path name="documents" path="documents/" />
+</paths>

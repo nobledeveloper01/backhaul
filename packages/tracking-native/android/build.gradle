@@ -50,4 +50,6 @@ dependencies {
   // rather than JobScheduler directly: it survives reboots and process death
   // on its own, which is the whole case it exists for.
   implementation "androidx.work:work-runtime:2.10.0"
+  // FileProvider, for the delivery note handed over as a file (ADR-0024).
+  implementation "androidx.core:core:1.13.1"
 }

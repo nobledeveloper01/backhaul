@@ -28,6 +28,20 @@
       android:exported="false"
       android:foregroundServiceType="location" />
 
+    <!--
+      How one app hands another a file (ADR-0024). The authority carries the
+      application id so the library serves whichever package links it.
+    -->
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="${applicationId}.backhaul.documents"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/backhaul_documents_paths" />
+    </provider>
+
     <receiver
       android:name=".BootReceiver"
       android:enabled="true"
