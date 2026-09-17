@@ -18,6 +18,7 @@ import { DropsScreen } from './screens/DropsScreen';
 import { DriverScreen } from './screens/DriverScreen';
 import { DriverHistoryScreen } from './screens/DriverHistoryScreen';
 import { FleetScreen } from './screens/FleetScreen';
+import { HandOverScreen } from './screens/HandOverScreen';
 import { FollowScreen } from './screens/FollowScreen';
 import { IncidentScreen } from './screens/IncidentScreen';
 import { LanesScreen } from './screens/LanesScreen';
@@ -195,9 +196,11 @@ function Shell() {
             onOpenBids={() => push({ name: 'bids' })}
             onOpenVerification={() => push({ name: 'verification' })}
             onOpenVehicles={() => push({ name: 'vehicles' })}
+            onOpenHandOver={() => push({ name: 'hand-over' })}
             onOpenAlerts={() => push({ name: 'alerts' })}
           />
         ) : null}
+        {current.name === 'hand-over' ? <HandOverScreen onBack={pop} /> : null}
         {current.name === 'bids' ? <BidsScreen onBack={pop} /> : null}
         {current.name === 'verification' ? <VerificationScreen onBack={pop} /> : null}
         {current.name === 'vehicles' ? <VehiclesScreen onBack={pop} /> : null}

@@ -31,61 +31,71 @@
         "state": "open",
         "terminal": false,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": true
       },
       {
         "state": "assigned",
         "terminal": false,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": true
       },
       {
         "state": "loading",
         "terminal": false,
         "tracks": true,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": true
       },
       {
         "state": "in_transit",
         "terminal": false,
         "tracks": true,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": false
       },
       {
         "state": "signal_lost",
         "terminal": false,
         "tracks": true,
-        "systemRaised": true
+        "systemRaised": true,
+        "handsOver": false
       },
       {
         "state": "stalled",
         "terminal": false,
         "tracks": true,
-        "systemRaised": true
+        "systemRaised": true,
+        "handsOver": false
       },
       {
         "state": "arrived",
         "terminal": false,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": false
       },
       {
         "state": "delivered",
         "terminal": true,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": false
       },
       {
         "state": "disputed",
         "terminal": false,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": false
       },
       {
         "state": "cancelled",
         "terminal": true,
         "tracks": false,
-        "systemRaised": false
+        "systemRaised": false,
+        "handsOver": false
       }
     ],
     "transitions": [

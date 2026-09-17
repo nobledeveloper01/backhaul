@@ -278,7 +278,8 @@ public sealed class MarketRepository(BackhaulDbContext db, TripRepository trips)
             new Corridor(load.OriginName, load.DestinationName),
             parties,
             accepted.Event,
-            now);
+            now,
+            load.ShipperId);
 
         // One save. Both rows, or neither.
         await db.SaveChangesAsync(ct);

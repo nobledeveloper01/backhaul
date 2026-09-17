@@ -10,6 +10,7 @@ import {
   isActive,
   isTerminal,
   shouldTrack,
+  canHandOver,
   timeIn,
   transition,
   type TripEvent,
@@ -322,5 +323,25 @@ describe('the history', () => {
 
   test('an empty history has no current state, rather than a default one', () => {
     assert.equal(currentState([]), undefined);
+  });
+});
+
+describe('handing a trip to a driver', () => {
+  test('is allowed only before the wheel turns', () => {
+    assert.deepEqual(TRIP_STATES.filter(canHandOver), ['open', 'assigned', 'loading']);
+  });
+
+  test('is refused in every state the tracker runs in, bar loading', () => {
+    // ADR-0021: mid-transit the tracker is on one phone and a second has
+    // never seen the trip. A relief driver there is a fleet-phase design.
+    for (const state of TRIP_STATES.filter(shouldTrack)) {
+      if (state !== 'loading') assert.equal(canHandOver(state), false, state);
+    }
+  });
+
+  test('is refused once the trip is over', () => {
+    for (const state of TRIP_STATES.filter(isTerminal)) {
+      assert.equal(canHandOver(state), false, state);
+    }
   });
 });

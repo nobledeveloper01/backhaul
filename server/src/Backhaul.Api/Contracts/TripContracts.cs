@@ -2,6 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backhaul.Api.Contracts;
 
+/// <summary>The driver a carrier hands a trip to, by phone number (ADR-0021).</summary>
+public sealed class HandOverRequest
+{
+    /// <summary>Who will drive, as the carrier has them: a phone number.</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string DriverPhone { get; set; } = string.Empty;
+}
+
+/// <summary>One holder of the driver's slot, and since when.</summary>
+public sealed record TripDriverResponse(Guid DriverId, Guid? FromDriverId, Guid ByUserId, DateTimeOffset Since);
+
 public sealed class OpenTripRequest
 {
     /// <summary>Who carries it, by phone number.</summary>

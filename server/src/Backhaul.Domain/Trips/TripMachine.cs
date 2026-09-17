@@ -97,6 +97,15 @@ public static class TripMachine
         state is TripState.Loading or TripState.InTransit
             or TripState.SignalLost or TripState.Stalled;
 
+    /// <summary>Whether the carrier may still hand the trip to a driver.</summary>
+    /// <remarks>
+    /// Only before the wheel turns: once in transit the tracker is on one
+    /// phone and the fixes between two would belong to whoever the slot said.
+    /// See ADR-0021, and the parity row that holds this to the domain.
+    /// </remarks>
+    public static bool CanHandOver(TripState state) =>
+        state is TripState.Open or TripState.Assigned or TripState.Loading;
+
     /// <summary>States the tracker raises, never a person.</summary>
     /// <remarks>
     /// <see cref="TripState.SignalLost"/> and <see cref="TripState.Stalled"/>

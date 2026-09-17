@@ -147,6 +147,7 @@ public sealed class TripsController(TripRepository trips, SignInRepository accou
             trip,
             accepted.Event,
             clock.GetUtcNow(),
+            Caller.UserId,
             ct);
 
         return CreatedAtAction(nameof(Get), new { tripId }, ToResponse(record));
@@ -249,6 +250,75 @@ public sealed class TripsController(TripRepository trips, SignInRepository accou
         // forbidden: the existence of a trip id is itself information, and a
         // 403 confirms it.
         return record is null ? NotFound("No such trip.") : ToResponse(record);
+    }
+
+    /// <summary>The carrier hands the trip to a driver.</summary>
+    /// <remarks>
+    /// Before the wheel turns only — while the trip is open, assigned or
+    /// loading. The driver is named by phone number, as at opening (ADR-0016):
+    /// a number nobody holds yet still names a party, and the trip is theirs
+    /// when they arrive. Handing a trip to its current driver is refused as a
+    /// mistake rather than passed as a no-op. See ADR-0021.
+    /// </remarks>
+    [HttpPost("{tripId:guid}/driver")]
+    [ProducesResponseType<TripResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<TripResponse>> HandOver(
+        Guid tripId,
+        [FromBody] HandOverRequest body,
+        CancellationToken ct)
+    {
+        var phone = Otp.NormalisePhone(body.DriverPhone);
+        if (phone is null) return BadRequest("driverPhone is not a phone number this can reach.");
+
+        var now = clock.GetUtcNow();
+        // Existence and role first, so a number is not minted into a party
+        // on its way to a refusal.
+        var state = await trips.StateOfAsync(tripId, Caller, ct);
+        if (state is null) return NotFound("No such trip.");
+        if (Caller.Role != Role.Carrier)
+        {
+            return UnprocessableEntity("Only the carrier hands a trip to a driver.");
+        }
+        if (!TripMachine.CanHandOver(state.Value.State))
+        {
+            return UnprocessableEntity(
+                "This trip has started. A driver can be named only while it is open, assigned or loading.");
+        }
+
+        var driverId = await accounts.PartyAsync(phone, now, ct);
+        var (parties, refusal) = await trips.HandOverAsync(tripId, Caller, driverId, now, ct);
+        if (parties is null)
+        {
+            return refusal switch
+            {
+                TripRepository.HandOverRefusal.AlreadyTheDriver =>
+                    UnprocessableEntity("That number already drives this trip."),
+                TripRepository.HandOverRefusal.WheelHasTurned =>
+                    UnprocessableEntity(
+                        "This trip has started. A driver can be named only while it is open, assigned or loading."),
+                TripRepository.HandOverRefusal.NotTheCarrier =>
+                    UnprocessableEntity("Only the carrier hands a trip to a driver."),
+                _ => NotFound("No such trip."),
+            };
+        }
+
+        var record = await trips.GetAsync(tripId, Caller, ct);
+        return record is null ? NotFound("No such trip.") : ToResponse(record);
+    }
+
+    /// <summary>Who has driven this trip, oldest first.</summary>
+    /// <remarks>Visible to the trip's three parties, like the trip itself.</remarks>
+    [HttpGet("{tripId:guid}/drivers")]
+    [ProducesResponseType<List<TripDriverResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<TripDriverResponse>>> Drivers(Guid tripId, CancellationToken ct)
+    {
+        var rows = await trips.DriversAsync(tripId, Caller, ct);
+        if (rows is null) return NotFound("No such trip.");
+        return rows.Select(r => new TripDriverResponse(r.DriverId, r.FromDriverId, r.ByUserId, r.Since)).ToList();
     }
 
     /// <summary>Record a state transition.</summary>

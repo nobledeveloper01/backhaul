@@ -226,6 +226,46 @@ async function main(): Promise<void> {
     }
   }
 
+  // The carrier hands a trip to a driver before the wheel turns (ADR-0021).
+  // The seeded carrier opens one, driving it themselves as an awarded load
+  // does, names a driver, and is refused once it is in transit.
+  const carrierToken = SEEDED['carrier'] ?? null;
+  if (carrierToken !== null) {
+    const carrier = new BackhaulApi(BASE, carrierToken);
+    const fleetTrip = uuid(run + 903);
+    const firstDriver = line(904);
+    const opened = await carrier.openTrip(
+      fleetTrip,
+      { driverPhone: firstDriver, shipperPhone: line(901) },
+      { origin: 'Onitsha', destination: 'Abuja' },
+      at(0),
+      'carrier',
+    );
+    check('a carrier opens a trip to hand over', opened.ok, opened.ok ? '' : opened.failure.detail);
+    if (opened.ok) {
+      const before = opened.value.driverId;
+      const handed = await carrier.handOver(fleetTrip, line(905));
+      check('the carrier hands it to a driver', handed.ok, handed.ok ? '' : handed.failure.detail);
+      if (handed.ok) {
+        check('and the driver slot moved', handed.value.driverId !== before,
+          `${before} → ${handed.value.driverId}`);
+        check('while the carrier stayed', handed.value.carrierId === opened.value.carrierId);
+      }
+      const same = await carrier.handOver(fleetTrip, line(905));
+      check('handing it to the same number is refused',
+        !same.ok && same.failure.kind === 'refused' && same.failure.status === 422);
+
+      for (const state of ['assigned', 'loading', 'in_transit'] as const) {
+        const moved = await carrier.recordEvent(fleetTrip, state, at(1), state === 'in_transit' ? 'driver' : 'carrier');
+        if (!moved.ok) { check(`it moves to ${state}`, false, moved.failure.detail); break; }
+      }
+      const late = await carrier.handOver(fleetTrip, line(906));
+      check('once the wheel has turned the handover is refused',
+        !late.ok && late.failure.kind === 'refused' && late.failure.status === 422,
+        late.ok ? 'it was accepted' : late.failure.detail);
+    }
+  }
+
   // A batch with one fix the cleaner will throw away.
   const samples = [
     fix(6.455, 3.3841, 125, uuid(run + 1)),

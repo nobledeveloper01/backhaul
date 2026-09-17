@@ -29,6 +29,7 @@ interface Props {
   readonly onOpenBids: () => void;
   readonly onOpenVerification: () => void;
   readonly onOpenVehicles: () => void;
+  readonly onOpenHandOver: () => void;
   readonly onOpenAlerts: () => void;
 }
 
@@ -44,6 +45,7 @@ export function FleetScreen({
   onOpenBids,
   onOpenVerification,
   onOpenVehicles,
+  onOpenHandOver,
   onOpenAlerts,
 }: Props) {
   const colours = useColours();
@@ -226,6 +228,30 @@ export function FleetScreen({
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
 
+      {/*
+        Every awarded load opens with this carrier as its driver (ADR-0019).
+        For an owner-operator that is the truth; for a fleet it is a slot to
+        fill before the wheel turns, and this is where it is filled.
+      */}
+      <Press
+        onPress={onOpenHandOver}
+        accessibilityLabel={t('hand_to_a_driver')}
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="wheel" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">{t('hand_to_a_driver')}</Text>
+          <Text variant="label" tone="secondary">
+            {t('waiting_for_a_driver')}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
+
       <Press
         onPress={onOpenVehicles}
         accessibilityLabel={t('trucks_and_papers')}
@@ -261,6 +287,30 @@ export function FleetScreen({
         <Icon name="chevron-right" size="md" colour={colours.outline} />
       </Press>
 
+      {/*
+        Every awarded load opens with this carrier as its driver (ADR-0019).
+        For an owner-operator that is the truth; for a fleet it is a slot to
+        fill before the wheel turns, and this is where it is filled.
+      */}
+      <Press
+        onPress={onOpenHandOver}
+        accessibilityLabel={t('hand_to_a_driver')}
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="wheel" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">{t('hand_to_a_driver')}</Text>
+          <Text variant="label" tone="secondary">
+            {t('waiting_for_a_driver')}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
+
       <Press
         onPress={onOpenAlerts}
         accessibilityLabel={t('what_reaches_your_phone')}
@@ -276,6 +326,30 @@ export function FleetScreen({
           <Text variant="title">{t('what_reaches_your_phone')}</Text>
           <Text variant="label" tone="secondary">
             {t('one_thing_wakes_you')}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="md" colour={colours.outline} />
+      </Press>
+
+      {/*
+        Every awarded load opens with this carrier as its driver (ADR-0019).
+        For an owner-operator that is the truth; for a fleet it is a slot to
+        fill before the wheel turns, and this is where it is filled.
+      */}
+      <Press
+        onPress={onOpenHandOver}
+        accessibilityLabel={t('hand_to_a_driver')}
+        feedback="opacity"
+        style={[
+          styles.verify,
+          { backgroundColor: colours.surfaceRaised, borderColor: colours.outline },
+        ]}
+      >
+        <Icon name="wheel" size="md" colour={colours.textSecondary} />
+        <View style={styles.verifyBody}>
+          <Text variant="title">{t('hand_to_a_driver')}</Text>
+          <Text variant="label" tone="secondary">
+            {t('waiting_for_a_driver')}
           </Text>
         </View>
         <Icon name="chevron-right" size="md" colour={colours.outline} />

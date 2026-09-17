@@ -120,6 +120,19 @@ export function isSystemRaised(state: TripState): boolean {
  * `signal_lost` counts. A shipper watching a truck cross a dead zone should
  * see "no signal since 14:20", not a trip that has silently left the list.
  */
+/**
+ * Whether the carrier may still hand this trip to a driver.
+ *
+ * Only before the wheel turns. Once the trip is in transit the tracker is on
+ * one phone and a second phone has never seen the trip, so the fixes between
+ * the two would belong to whoever the slot said at upload — a relief driver
+ * mid-corridor is a real thing and a fleet-phase design, not a slot swap.
+ * Terminal trips have nobody to drive them. See ADR-0021.
+ */
+export function canHandOver(state: TripState): boolean {
+  return state === 'open' || state === 'assigned' || state === 'loading';
+}
+
 export function isActive(state: TripState): boolean {
   return !isTerminal(state) && state !== 'open';
 }

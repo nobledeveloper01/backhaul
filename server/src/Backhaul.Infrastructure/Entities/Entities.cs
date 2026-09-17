@@ -45,6 +45,31 @@ public sealed class TripEntity
     public List<TripEventEntity> Events { get; } = [];
 }
 
+/// <summary>Who has held the driver's slot on a trip, and since when.</summary>
+/// <remarks>
+/// Append-only, like the history: the first row is written when the trip
+/// opens (from nobody), and every handover adds one. The trip's own
+/// <c>DriverId</c> is the fast read authorisation uses; this is the record of
+/// how it got there. See ADR-0021.
+/// </remarks>
+public sealed class TripDriverEntity
+{
+    public long Id { get; set; }
+
+    public Guid TripId { get; set; }
+
+    /// <summary>Who drives from <see cref="Since"/>.</summary>
+    public Guid DriverId { get; set; }
+
+    /// <summary>Who drove before, or null for the first row.</summary>
+    public Guid? FromDriverId { get; set; }
+
+    /// <summary>Who made the change — the carrier, or whoever opened the trip.</summary>
+    public Guid ByUserId { get; set; }
+
+    public DateTimeOffset Since { get; set; }
+}
+
 /// <summary>One entry in a trip's append-only history.</summary>
 /// <remarks>
 /// There is no update or delete path onto this table, by design and not by

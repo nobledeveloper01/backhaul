@@ -110,6 +110,7 @@ public sealed class ParityTests
             Assert.Equal(row.Terminal, TripMachine.IsTerminal(state));
             Assert.Equal(row.Tracks, TripMachine.ShouldTrack(state));
             Assert.Equal(row.SystemRaised, TripMachine.IsSystemRaised(state));
+            Assert.Equal(row.HandsOver, TripMachine.CanHandOver(state));
         }
     }
 

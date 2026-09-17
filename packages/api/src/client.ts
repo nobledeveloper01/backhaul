@@ -325,6 +325,19 @@ export class BackhaulApi {
   }
 
   /**
+   * The carrier hands a trip to a driver, by phone number (ADR-0021).
+   *
+   * Refused once the trip is in transit: the tracker is on one phone and a
+   * second has never seen the trip. The server's sentence is the one to show.
+   */
+  async handOver(tripId: string, driverPhone: string): Promise<ApiResult<TripView>> {
+    const result = await this.request<RawTrip>('POST', `/v1/trips/${tripId}/driver`, {
+      driverPhone,
+    });
+    return map(result, toTrip);
+  }
+
+  /**
    * Every trip this caller may see, newest first.
    *
    * Filtered on the server by the same engine the app filters with, so a

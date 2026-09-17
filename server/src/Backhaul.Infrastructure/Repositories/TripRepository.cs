@@ -201,9 +201,10 @@ public sealed class TripRepository(BackhaulDbContext db)
         TripParties parties,
         TripEvent first,
         DateTimeOffset recordedAt,
+        Guid by,
         CancellationToken ct = default)
     {
-        var record = Stage(id, corridor, parties, first, recordedAt);
+        var record = Stage(id, corridor, parties, first, recordedAt, by);
         await db.SaveChangesAsync(ct);
         return record;
     }
@@ -227,7 +228,8 @@ public sealed class TripRepository(BackhaulDbContext db)
         Corridor corridor,
         TripParties parties,
         TripEvent first,
-        DateTimeOffset recordedAt)
+        DateTimeOffset recordedAt,
+        Guid by)
     {
         db.Trips.Add(new TripEntity
         {
@@ -240,7 +242,83 @@ public sealed class TripRepository(BackhaulDbContext db)
             Destination = corridor.Destination,
         });
         db.TripEvents.Add(ToEntity(id, 0, first, recordedAt));
+        // The first row of who drives, from nobody, so the table reads as the
+        // trip's whole driving history and not only its changes (ADR-0021).
+        db.TripDrivers.Add(new TripDriverEntity
+        {
+            TripId = id,
+            DriverId = parties.DriverId,
+            FromDriverId = null,
+            ByUserId = by,
+            Since = recordedAt,
+        });
         return new TripRecord(id, corridor, parties, [first]);
+    }
+
+    /// <summary>Why a handover was refused.</summary>
+    public enum HandOverRefusal
+    {
+        NoSuchTrip,
+        NotTheCarrier,
+        WheelHasTurned,
+        AlreadyTheDriver,
+    }
+
+    /// <summary>
+    /// The carrier hands the trip to a driver (ADR-0021).
+    /// </summary>
+    /// <remarks>
+    /// The slot moves and a row records the move, in one save. Filtered by
+    /// the same predicate every read uses, so a carrier who cannot see the
+    /// trip cannot hand it over — and a driver or shipper who can see it is
+    /// refused by role, not by visibility, which is why the trip is loaded
+    /// before the role is checked: the 404 must not distinguish "not yours"
+    /// from "not a carrier" (ADR-0008).
+    /// </remarks>
+    public async Task<(TripParties? Parties, HandOverRefusal? Refusal)> HandOverAsync(
+        Guid id,
+        Principal principal,
+        Guid toDriverId,
+        DateTimeOffset at,
+        CancellationToken ct = default)
+    {
+        var trip = await Visible(principal).FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (trip is null) return (null, HandOverRefusal.NoSuchTrip);
+        if (principal.Role != Role.Carrier) return (null, HandOverRefusal.NotTheCarrier);
+
+        var state = TripMachine.FromWire(trip.State);
+        if (state is null || !TripMachine.CanHandOver(state.Value))
+        {
+            return (null, HandOverRefusal.WheelHasTurned);
+        }
+        if (trip.DriverId == toDriverId) return (null, HandOverRefusal.AlreadyTheDriver);
+
+        db.TripDrivers.Add(new TripDriverEntity
+        {
+            TripId = id,
+            DriverId = toDriverId,
+            FromDriverId = trip.DriverId,
+            ByUserId = principal.UserId,
+            Since = at,
+        });
+        trip.DriverId = toDriverId;
+        await db.SaveChangesAsync(ct);
+
+        return (new TripParties(trip.DriverId, trip.CarrierId, trip.ShipperId), null);
+    }
+
+    /// <summary>Who has driven a trip, oldest first. Visible to its parties.</summary>
+    public async Task<IReadOnlyList<TripDriverEntity>?> DriversAsync(
+        Guid id,
+        Principal principal,
+        CancellationToken ct = default)
+    {
+        if (!await Visible(principal).AnyAsync(t => t.Id == id, ct)) return null;
+        return await db.TripDrivers
+            .Where(r => r.TripId == id)
+            .OrderBy(r => r.Since).ThenBy(r => r.Id)
+            .AsNoTracking()
+            .ToListAsync(ct);
     }
 
     /// <summary>Appends an event and moves the denormalised state with it.</summary>

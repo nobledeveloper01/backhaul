@@ -10,6 +10,8 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
 
     public DbSet<TripEventEntity> TripEvents => Set<TripEventEntity>();
 
+    public DbSet<TripDriverEntity> TripDrivers => Set<TripDriverEntity>();
+
     public DbSet<PositionSampleEntity> Positions => Set<PositionSampleEntity>();
 
     public DbSet<IngestBatchEntity> IngestBatches => Set<IngestBatchEntity>();
@@ -100,6 +102,13 @@ public sealed class BackhaulDbContext(DbContextOptions<BackhaulDbContext> option
             // The history's order, and a guard against a concurrent append
             // producing two events claiming the same position in it.
             evt.HasIndex(e => new { e.TripId, e.Sequence }).IsUnique();
+        });
+
+        model.Entity<TripDriverEntity>(row =>
+        {
+            row.HasKey(r => r.Id);
+            // Read as "who has driven this trip", newest last.
+            row.HasIndex(r => new { r.TripId, r.Since });
         });
 
         model.Entity<PositionSampleEntity>(sample =>

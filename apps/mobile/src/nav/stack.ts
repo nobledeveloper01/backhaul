@@ -33,6 +33,7 @@ export type Route =
   | { readonly name: 'bids' }
   | { readonly name: 'verification' }
   | { readonly name: 'vehicles' }
+  | { readonly name: 'hand-over' }
   | { readonly name: 'alerts' }
   | { readonly name: 'driver' }
   | { readonly name: 'history' }

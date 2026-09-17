@@ -23,6 +23,7 @@ import {
   transition,
   type TripEvent,
   type TripState,
+  canHandOver,
 } from '../packages/domain/src/trip.ts';
 import { fromNaira, percent, ZERO, type Kobo } from '../packages/domain/src/money.ts';
 import {
@@ -248,6 +249,7 @@ const states = TRIP_STATES.map((state) => ({
   terminal: isTerminal(state),
   tracks: shouldTrack(state),
   systemRaised: isSystemRaised(state),
+  handsOver: canHandOver(state),
 }));
 
 /**

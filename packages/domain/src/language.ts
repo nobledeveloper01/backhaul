@@ -327,7 +327,6 @@ export type Phrase =
   | 'arranged_anywhere'
   | 'where_it_loads'
   | 'where_it_unloads'
-  | 'the_drivers_number'
   | 'the_carriers_number'
   | 'the_shippers_number'
   | 'who_is_on_it'
@@ -350,6 +349,15 @@ export type Phrase =
   | 'km_loaded'
   | 'km_empty'
   | 'trucks_and_papers'
+  | 'hand_to_a_driver'
+  | 'waiting_for_a_driver'
+  | 'you_are_driving_these'
+  | 'no_trips_waiting_for_a_driver'
+  | 'the_drivers_number'
+  | 'give_the_trip'
+  | 'handed_over'
+  | 'a_driver_can_be_named_only_before_it_starts'
+  | 'the_driver_sees_it_now'
   | 'verification'
   | 'what_reaches_your_phone'
   | 'road_legal'
@@ -1022,6 +1030,14 @@ export const EN: Readonly<Record<Phrase, string>> = {
   km_loaded: 'Loaded',
   km_empty: 'Empty',
   trucks_and_papers: 'Trucks and papers',
+  hand_to_a_driver: 'Hand to a driver',
+  waiting_for_a_driver: 'Waiting for a driver',
+  you_are_driving_these: 'You are the driver of record on these. Hand each one to the person who will drive it, before it starts.',
+  no_trips_waiting_for_a_driver: 'No trips waiting for a driver.',
+  give_the_trip: 'Give the trip',
+  handed_over: 'Handed over',
+  a_driver_can_be_named_only_before_it_starts: 'A driver can be named only before the trip starts.',
+  the_driver_sees_it_now: 'The driver sees this trip on their phone now.',
   verification: 'Verification',
   what_reaches_your_phone: 'What reaches your phone',
   road_legal: 'Road legal',
@@ -1687,6 +1703,14 @@ export const HA: Readonly<Record<Phrase, string>> = {
   km_loaded: 'Da kaya',
   km_empty: 'Babu kaya',
   trucks_and_papers: 'Motoci da takardu',
+  hand_to_a_driver: 'Miƙa wa direba',
+  waiting_for_a_driver: 'Ana jiran direba',
+  you_are_driving_these: 'Kai ne direban da aka rubuta a kan waɗannan. Miƙa kowanne ga wanda zai tuƙa shi, kafin ya fara.',
+  no_trips_waiting_for_a_driver: 'Babu tafiyar da ke jiran direba.',
+  give_the_trip: 'Ba da tafiyar',
+  handed_over: 'An miƙa',
+  a_driver_can_be_named_only_before_it_starts: 'Ana iya sanya sunan direba kafin tafiyar ta fara kawai.',
+  the_driver_sees_it_now: 'Direba na ganin wannan tafiyar a wayarsa yanzu.',
   verification: 'Tabbatarwa',
   what_reaches_your_phone: 'Abin da ke isa wayarka',
   road_legal: 'Ya cika sharuɗɗan hanya',
@@ -2357,6 +2381,14 @@ export const YO: Readonly<Record<Phrase, string>> = {
   km_loaded: 'Pẹ̀lú ẹrù',
   km_empty: 'Òfìfo',
   trucks_and_papers: 'Ọkọ̀ àti ìwé',
+  hand_to_a_driver: 'Fi lé awakọ̀ lọ́wọ́',
+  waiting_for_a_driver: 'Ń dúró de awakọ̀',
+  you_are_driving_these: 'Ìwọ ni awakọ̀ tí a kọ sílẹ̀ lórí àwọn wọ̀nyí. Fi ọ̀kọ̀ọ̀kan lé ẹni tí yóò wà á lọ́wọ́, kí ó tó bẹ̀rẹ̀.',
+  no_trips_waiting_for_a_driver: 'Kò sí ìrìn àjò tó ń dúró de awakọ̀.',
+  give_the_trip: 'Fi ìrìn àjò náà lé lọ́wọ́',
+  handed_over: 'A ti fi lé lọ́wọ́',
+  a_driver_can_be_named_only_before_it_starts: 'A lè dárúkọ awakọ̀ kí ìrìn àjò tó bẹ̀rẹ̀ nìkan.',
+  the_driver_sees_it_now: 'Awakọ̀ rí ìrìn àjò yìí lórí fóònù rẹ̀ báyìí.',
   verification: 'Ìfẹsẹ̀múlẹ̀',
   what_reaches_your_phone: 'Ohun tí ó dé fóònù rẹ',
   road_legal: 'Ó bá òfin ojú ọ̀nà mu',
@@ -3025,6 +3057,14 @@ export const IG: Readonly<Record<Phrase, string>> = {
   km_loaded: 'Nwere ibu',
   km_empty: 'Ọ tọgbọrọ chakoo',
   trucks_and_papers: 'Ụgbọ na akwụkwọ',
+  hand_to_a_driver: 'Nyefee onye ọkwọ ụgbọ',
+  waiting_for_a_driver: 'Na-echere onye ọkwọ ụgbọ',
+  you_are_driving_these: 'Ị bụ onye ọkwọ ụgbọ e dere na ndị a. Nyefee nke ọ bụla onye ga-akwọ ya, tupu ọ malite.',
+  no_trips_waiting_for_a_driver: 'Enweghị njem na-echere onye ọkwọ ụgbọ.',
+  give_the_trip: 'Nye njem ahụ',
+  handed_over: 'Enyefeela',
+  a_driver_can_be_named_only_before_it_starts: 'Enwere ike ịkpọ aha onye ọkwọ ụgbọ naanị tupu njem amalite.',
+  the_driver_sees_it_now: 'Onye ọkwọ ụgbọ na-ahụ njem a na ekwentị ya ugbu a.',
   verification: 'Nkwenye',
   what_reaches_your_phone: 'Ihe na-eru ekwentị gị',
   road_legal: 'Ọ kwadoro maka okporo ụzọ',
