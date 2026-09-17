@@ -7,6 +7,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **A carrier can hand a trip to a driver.** Awarding a bid put the carrier in
+  the driver's slot and nothing moved it, so a fleet's owner was driver of
+  record for every truck they own. The fleet screen now has *Hand to a driver*:
+  the carrier names a number, and the trip's driver slot moves while the trip
+  is open, assigned or loading — never once the wheel has turned, because a
+  driver named mid-journey is a driver who never held the phone that captured
+  the track. Every handover is a row, the first written when the trip opens,
+  so *who was driving at 03:14* is a read and not a guess. The rule is held to
+  the domain by a parity fixture. `POST /v1/trips/{id}/driver`,
+  `GET /v1/trips/{id}/drivers`.
+  [ADR-0021](docs/adr/0021-a-carrier-hands-a-trip-to-a-driver-before-the-wheel-turns-and-the-handover-is-a-row.md).
+
+- **Papers wait in a queue that says how long.** A claimed paper is a row —
+  when it was claimed, and, once a reviewer answers, when and what — and
+  `GET /v1/verification/queue` lists what nobody has answered, oldest first,
+  with the wait beside each. Reviewers only; anyone else is told there is no
+  such route. A reviewer with a registered phone is told once a day that the
+  queue holds something older than an hour — the count and the age, no
+  names — through the same dispatcher that reaches everyone else. Nothing is
+  approved for waiting.
+  [ADR-0022](docs/adr/0022-papers-wait-in-a-queue-that-says-how-long-and-a-reviewer-is-told-once-a-day.md).
+
+- **A sealed delivery leaves a pocketed phone.** The outbox swept only while
+  the app was in front; a driver who sealed at the gate and never opened the
+  app again held a delivery the server never saw, and a delivery on a phone
+  is a driver who is not paid. The phone is now woken to send it: a
+  WorkManager job on Android when the network is there, a refresh task on
+  iOS when iOS allows — and what runs when it wakes is the same JavaScript
+  sweep the foreground runs, with the same drafts and the same token. The
+  native side is told *something is waiting* and *nothing is*, and knows
+  nothing else. A phone with no deliveries costs nothing.
+  [ADR-0023](docs/adr/0023-the-phone-is-woken-to-send-what-it-holds-and-decides-nothing-while-awake.md).
+
+- **The delivery note as a file.** Beside *Hand over the note*, the proof
+  screen now offers *Hand over as a file*: the same lines written as a PDF on
+  the phone with no renderer and no dependency — one font, the signature as
+  strokes, photographs verbatim — handed to the share sheet as a `.pdf` with
+  a name. The photographs and strokes are the camera's and the pad's to
+  supply and today they cannot, so the file's evidence page says *no
+  photograph was attached* rather than leaving a gap. The text note stays,
+  in the reader's language; the file is the record and the record is in
+  English.
+  [ADR-0024](docs/adr/0024-the-delivery-note-is-a-file-the-phone-writes-with-no-renderer.md).
+
 ### Fixed
 
 - **`untranslated-check.py` was neither a gate nor reachable.** It was not named

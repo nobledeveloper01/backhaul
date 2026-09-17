@@ -6,6 +6,77 @@ changelog with worse formatting.
 
 ---
 
+## 2026-09-17 — The last four code items
+
+**Did.** Closed the four rows of the README's *still code, and still open*
+table that were code and not data, decisions or scale: a carrier hands a trip
+to a driver (ADR-0021), papers wait in a queue with an age on each and a
+reviewer is told once a day (ADR-0022), the phone is woken to send the
+deliveries it holds (ADR-0023), and the delivery note is a PDF written on the
+phone with no renderer (ADR-0024). Four ADRs before any code, four commits
+after, each with its test and its round-trip check.
+
+### What surprised us
+
+**The obvious background uploader fails two rules at once.** Storing the
+sealed delivery in native SQLite and letting a native job send it would have
+the native side holding a bearer token, retrying, and marking
+acknowledgements — deciding a great deal, against ADR-0002 — and it would put
+a second copy of a credential beside the one `session.tsx` rotates. The
+shape that survives both rules is a native side that knows one boolean:
+*something is waiting*. It wakes the JavaScript sweep the foreground already
+runs; one function, three callers.
+
+**Android refuses a service started from a job.** The textbook
+`HeadlessJsTaskService` is a `Service`, and a service started from the
+background is refused on Android 8 and later unless it goes foreground with a
+notification — and *sending a form you already signed* is not a notification
+a driver should see. The worker gets the React context the same way the
+service does and starts the task without a service. Nine minutes of
+WorkManager's ten, then it lets go.
+
+**`pod install` cannot run on this Mac and the lock carries a checksum.** The
+podspec gained `BackgroundTasks` and `Podfile.lock` records a SHA of the
+podspec; the lapsed Xcode licence hangs `pod install` inside `use_react_native!`.
+CI runs `pod install` without `--deployment`, so it rewrites the checksum
+itself and builds. The stale line in the lock is noted here rather than
+faked.
+
+**Helvetica stops at Latin-1.** The PDF has one font and no embedded glyphs,
+which is what keeps it dependency-free, and it cannot write the dot under an
+Igbo *ọ* or a Yorùbá *ṣ*. The first cut normalised to NFD and dropped every
+combining mark, which turned *Adéyẹmí* into *Adeyemi* — the *é* is one Latin-1
+code point and never needed decomposing. Now only what the font truly lacks
+is lost: *Ṣola Adéyẹmí* is written *Sola Adéyemí*, and the text note the
+driver hands over keeps every mark. The file is the record and the record is
+in English; the copy gate agreed, once the title moved into the domain.
+
+**The gate caught the PDF's title.** `untranslated-check.py` flagged
+`'Delivery note'` in the proof screen the moment it was typed there. Right
+call: an English literal in a screen is exactly what it exists to find, and
+the fix was not an exemption but putting the constant where the other English
+labels of the record already live, in `pod.ts`'s neighbour.
+
+**A reviewer has no trips, so the dispatcher had nothing to say to one.** The
+loop groups registered phones by person and asks the alerts engine what is
+true of *their* trips. A reviewer's phone fell through to the driver audience
+and was told nothing, correctly and uselessly. The reviewer turn is its own
+branch: read the queue, tell them once a day, record it against an empty
+trip id — the `AlertsSent` table already had the shape for *what was said to
+whom and when*.
+
+### Still open
+
+- The headless task is proved by its function under test and by both
+  platforms compiling. Watching a pocketed phone send is a handset gate now
+  listed with the others.
+- The file's evidence page says no photograph was attached, because the
+  proof screen's capture is a stand-in. The camera and the signature pad are
+  the same device work they were.
+- The dispatcher tells a reviewer; nothing tells the *carrier* their paper is
+  under review or refused. That is a message in four languages and belongs
+  with the rest of the carrier's verification copy.
+
 ## 2026-08-30 — Auditing this repo's gates against the copies made from them
 
 **Did.** Three of this project's gates were ported to the next one, and all

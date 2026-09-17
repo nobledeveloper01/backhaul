@@ -26,6 +26,7 @@ every one is green**, and no simulator signs any of them off.
 | Phase 2 | **A shipper tracks a real truck on a real corridor**, end to end, on both platforms |
 | Phase 5 | **The first return load**, matched and completed by a real carrier and a real shipper |
 | Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
+| ADR-0023 | **A sealed delivery leaves a pocketed phone** that is never reopened — the Android job and the iOS refresh task watched on handsets, not the function under test |
 
 ## Deferred to a native speaker
 

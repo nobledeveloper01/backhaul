@@ -71,7 +71,7 @@ gateway is built and tested, and **the app says so on the alerts screen** —
 which used to describe which alerts would wake somebody, on an install that had
 never registered for notifications at all.
 
-### F4 — Proof of delivery · *a rendered file*
+### F4 — Proof of delivery · *a rendered file* · *closed*
 
 Photographs, signature, geotag and timestamp are captured, saved and
 **sealed** — the screen offers the one-way door and the server records it,
@@ -94,11 +94,19 @@ whatever that handset already has. Three things decided it:
   a record, and the receiver cannot tell the difference from the outside. The
   seal is now a line on the note itself for the same reason.
 
-What is left is a *rendered file*: a PDF with the signature strokes and the
-photographs in it, for the disputes that go past what text can carry. It is a
-smaller and later problem than it looked, because `pod.ts` is already the one
-place the lines are composed and a renderer would consume the same
-`PodLine[]`. Roadmap phase 4.
+**The rendered file is built, with no renderer.** `documentPdf()` in `pdf.ts`
+writes the note as PDF bytes — Helvetica, `m`/`l` strokes for the signature,
+JPEG photographs verbatim under `DCTDecode` — from the same `PodLine[]`, and
+a test reads its own output back object by object
+([ADR-0024](adr/0024-the-delivery-note-is-a-file-the-phone-writes-with-no-renderer.md)).
+The proof screen offers it beside the text note through a native seam that
+writes the file to the cache and hands it to the share sheet.
+
+What the file does not yet hold is the photographs and the strokes, because
+the app cannot supply them: capture on the proof screen mints an id and takes
+no picture, and the signature is a name with no pad. The file says so on its
+own page rather than leaving a gap. The camera and the pad are device work,
+on the release list with the rest.
 
 ### F5 — Waybill OCR
 

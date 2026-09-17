@@ -758,6 +758,13 @@ the same TurboModule contract. This is the part of the product that cannot be
 written in JavaScript, and it is why the app is React Native rather than a web
 view.
 
+Two smaller seams live beside it, each a verb or two and each deciding
+nothing: the wake that sends a pocketed delivery — a WorkManager job on
+Android, a `BGAppRefreshTask` on iOS, both of which only run the JavaScript
+sweep the foreground already runs ([ADR-0023](docs/adr/0023-the-phone-is-woken-to-send-what-it-holds-and-decides-nothing-while-awake.md))
+— and the share sheet handed a file, for the delivery note the domain writes as
+a PDF with no renderer ([ADR-0024](docs/adr/0024-the-delivery-note-is-a-file-the-phone-writes-with-no-renderer.md)).
+
 ### `server/` — ASP.NET Core on .NET 9
 
 EF Core against PostgreSQL, Swagger generated from the controllers' own XML
@@ -975,15 +982,15 @@ until every deferred gate is green** — they are listed below and at the top of
 
 | | |
 |---|---|
-| Domain tests | **585** passing |
-| Server tests | **196** endpoint, **136** domain and parity |
-| App tests | **88** passing |
+| Domain tests | **595** passing |
+| Server tests | **205** endpoint, **136** domain and parity |
+| App tests | **97** passing |
 | Console tests | **3** passing |
 | Parity fixtures | generated from `packages/domain`, compared on every build |
 | Verified against real PostgreSQL | yes, including a process restart |
 | Faces | shipper, carrier, driver — and a web console |
 | Screens | **27**, four languages, both themes, iOS and Android |
-| Decisions written down | **20** ADRs |
+| Decisions written down | **24** ADRs |
 
 ### What works end to end
 
@@ -1021,6 +1028,7 @@ every one is green**, and no simulator signs any of them off.
 | Phase 2 | **A shipper tracks a real truck on a real corridor**, end to end, on both platforms |
 | Phase 5 | **The first return load**, matched and completed by a real carrier and a real shipper |
 | Definition of done | Verified on physical iOS **and** physical Android, including a reference low-end Transsion handset |
+| ADR-0023 | **A sealed delivery leaves a pocketed phone** that is never reopened — the Android job and the iOS refresh task watched on handsets, not the function under test |
 
 **The risk this accepts is worth stating plainly.** Everything built since
 phase 1 rests on an assumption a device day tests first: that the capture loop
@@ -1070,18 +1078,21 @@ There is no equivalent trick for push.
 
 #### Still code, and still open
 
+Four of the rows that used to sit here were closed on 2026-09-17 — a carrier
+hands a trip to a driver ([ADR-0021](docs/adr/0021-a-carrier-hands-a-trip-to-a-driver-before-the-wheel-turns-and-the-handover-is-a-row.md)),
+papers wait in a queue that says how long ([ADR-0022](docs/adr/0022-papers-wait-in-a-queue-that-says-how-long-and-a-reviewer-is-told-once-a-day.md)),
+the phone is woken to send what it holds ([ADR-0023](docs/adr/0023-the-phone-is-woken-to-send-what-it-holds-and-decides-nothing-while-awake.md))
+and the delivery note is a PDF written with no renderer ([ADR-0024](docs/adr/0024-the-delivery-note-is-a-file-the-phone-writes-with-no-renderer.md)).
+What remains is blocked on data, a decision, or scale.
+
 | Open | Why it is not closed |
 |---|---|
-| **A carrier cannot hand a trip to a driver** | Awarding a bid puts the carrier in the driver's slot ([ADR-0019](docs/adr/0019-an-awarded-load-becomes-a-trip-and-the-carrier-drives-until-they-say-otherwise.md)), which is right for the owner-operators who are most of this market and leaves a fleet's carrier as driver of record |
-| **The delivery note is plain text** | It carries neither the signature strokes nor the photographs. Text works offline on a 2 GB handset with 400 MB free, which a PDF renderer does not; a rendered file is what a *disputed* delivery eventually needs. F4 |
-| **The outbox is not a background task** | It sweeps when the app runs and when it returns to the foreground. A phone that is never opened again still holds its delivery, and the fix is the native queue the tracker already uses |
 | **Corridor-segmented ETA** | What exists is the fallback tier — the trip's own pace, or a class average, marked modelled either way. The empirical model needs a corpus of completed trips, and building it now would fit a distribution to nothing while wearing its authority. F1 |
 | **Rate bands from corridor history** | Same reason. Prices are per kilometre of truck from a table, marked indicative, never presented as a market rate. F2 |
 | **Waybill OCR** | Needs photographs of real waybills. F5 |
 | **A shipper ladder** | `trust.ts` is carrier-shaped — licence, cover, punctuality. What makes a *shipper* worth working for is whether they pay and whether they pay on time, off different evidence, and nobody has decided what it is. `shipperTier` is null rather than a badge nobody earned. F10 |
 | **A real map** | The shipper sees a corridor drawn to scale, not tiles. Deliberate, and pinned to a gate rather than to anyone's judgement about whether it still feels sufficient — [ADR-0006](docs/adr/0006-the-corridor-view-is-not-a-map.md) |
 | **Bulk ingest** | Samples insert row by row. The Redis buffer and bulk `COPY` matter at ~850,000 samples a day; at pilot volume they are a premature complication |
-| **Review is manual and unqueued** | A reviewer confirms papers one at a time with no notification that something is waiting. Right for a pilot with one operator; at a hundred carriers a week the thing to build is the queue, not an automatic approval ([ADR-0017](docs/adr/0017-a-tier-is-earned-from-evidence-the-carrier-cannot-write.md)) |
 
 #### What a reviewed paper does *not* mean
 
